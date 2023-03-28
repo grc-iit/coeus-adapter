@@ -62,12 +62,28 @@ message(STATUS "found yaml-cpp at ${yaml-cpp_DIR}")
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "ADIOS2_FOUND: ${ADIOS2_FOUND}")
-message(STATUS "ADIOS2_INCLUDE_DIRS: ${ADIOS2_INCLUDE_DIRS}")
+message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
 message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
 
 # Hermes
 find_package(hermes REQUIRED)
 message(STATUS "found hermes")
+
+# MPI
+find_package(MPI REQUIRED COMPONENTS C CXX)
+message(STATUS "found mpi.h at ${MPI_CXX_INCLUDE_DIRS}")
+
+# OpenMP
+find_package(OpenMP REQUIRED COMPONENTS C CXX)
+message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
+
+# GLOG
+find_package(glog REQUIRED)
+if(glog_FOUND)
+    message(STATUS "found GLOG at ${glog_DIR}")
+endif()
+find_path(GLOG_INCLUDE_DIRS NAME glog PATH_SUFFIXES include/)
+include_directories(${GLOG_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Code Coverage
