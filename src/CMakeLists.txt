@@ -1,0 +1,69 @@
+include_directories(${CMAKE_SOURCE_DIR})
+
+#------------------------------------------------------------------------------
+# Set sources
+#------------------------------------------------------------------------------
+set(COEUS_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/coeus.cc)
+
+#------------------------------------------------------------------------------
+# Libraries
+#------------------------------------------------------------------------------
+add_library(coeus ${COEUS_SRCS})
+target_include_directories(coeus PUBLIC ${ADIOS2_INCLUDE_DIRS})
+add_dependencies(coeus
+        hermes
+        ${ADIOS2_LIBRARIES})
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install
+#-----------------------------------------------------------------------------
+install(
+  TARGETS
+    coeus
+  EXPORT
+    ${COEUS_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
+)
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install for import into other projects
+#-----------------------------------------------------------------------------
+install(
+  EXPORT
+    ${COEUS_EXPORTED_TARGETS}
+  DESTINATION
+    ${COEUS_INSTALL_DATA_DIR}/cmake/COEUS
+  FILE
+    ${COEUS_EXPORTED_TARGETS}.cmake
+)
+
+#-----------------------------------------------------------------------------
+# Export all exported targets to the build tree for use by parent project
+#-----------------------------------------------------------------------------
+if(NOT COEUS_EXTERNALLY_CONFIGURED)
+EXPORT (
+  TARGETS
+    ${COEUS_EXPORTED_LIBS}
+  FILE
+    ${COEUS_EXPORTED_TARGETS}.cmake
+)
+endif()
+
+#------------------------------------------------------------------------------
+# Set variables for parent scope
+#------------------------------------------------------------------------------
+# Used by config.cmake.build.in and Testing
+set(COEUS_INCLUDES_BUILD_TIME
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${COEUS_EXT_INCLUDE_DEPENDENCIES}
+  PARENT_SCOPE)
+
+# Used by config.cmake.install.in
+set(COEUS_INCLUDES_INSTALL_TIME
+  ${COEUS_INSTALL_INCLUDE_DIR}
+  ${COEUS_EXT_INCLUDE_DEPENDENCIES}
+  PARENT_SCOPE)
