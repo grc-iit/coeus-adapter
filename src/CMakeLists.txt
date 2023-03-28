@@ -3,24 +3,22 @@ include_directories(${CMAKE_SOURCE_DIR})
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------
-set(COEUS_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/coeus.cc)
+set(HERMES_ENGINE_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc)
 
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-add_library(coeus ${COEUS_SRCS})
-target_include_directories(coeus PUBLIC ${ADIOS2_INCLUDE_DIRS})
-add_dependencies(coeus
-        hermes
-        ${ADIOS2_LIBRARIES})
+add_library(hermes_engine ${HERMES_ENGINE_SRCS})
+target_link_libraries(hermes_engine
+        hermes MPI::MPI_CXX ${ADIOS2_LIBRARIES})
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
 install(
   TARGETS
-    coeus
+    hermes_engine
   EXPORT
     ${COEUS_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
