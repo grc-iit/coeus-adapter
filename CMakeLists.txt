@@ -25,6 +25,19 @@ option(COEUS_ENABLE_COVERAGE "Enable coverage calaculation" OFF)
 option(COEUS_ENABLE_DOXYGEN "Enable documentation" OFF)
 
 #------------------------------------------------------------------------------
+# Setup CMake Environment
+#------------------------------------------------------------------------------
+if(NOT COEUS_EXTERNALLY_CONFIGURED)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+            ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Executables.")
+    set(EXECUTABLE_OUTPUT_PATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
+            ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Libraries")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+            ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all static libraries.")
+endif()
+
+#------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
 if(NOT COEUS_INSTALL_BIN_DIR)
@@ -39,6 +52,7 @@ endif()
 if(NOT COEUS_INSTALL_DATA_DIR)
     set(COEUS_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
+message("HERE: ${COEUS_INSTALL_BIN_DIR}")
 
 #------------------------------------------------------------------------------
 # Optimization
@@ -66,8 +80,8 @@ message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
 message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
 
 # Hermes
-find_package(hermes REQUIRED)
-message(STATUS "found hermes")
+#find_package(hermes REQUIRED)
+#message(STATUS "found hermes")
 
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
@@ -76,14 +90,6 @@ message(STATUS "found mpi.h at ${MPI_CXX_INCLUDE_DIRS}")
 # OpenMP
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
 message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
-
-# GLOG
-find_package(glog REQUIRED)
-if(glog_FOUND)
-    message(STATUS "found GLOG at ${glog_DIR}")
-endif()
-find_path(GLOG_INCLUDE_DIRS NAME glog PATH_SUFFIXES include/)
-include_directories(${GLOG_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Code Coverage
