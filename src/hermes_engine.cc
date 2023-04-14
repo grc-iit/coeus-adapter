@@ -21,7 +21,8 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           name,
                                           mode,
                                           comm.Duplicate()) {
-  std::cout << __func__ << ": " << io.m_Name << ", " <<  mode << std::endl;
+  // NOTE(llogan): name = params["PluginName"]
+  std::cout << __func__ << std::endl;
   Init_();
 }
 
