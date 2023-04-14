@@ -8,6 +8,9 @@ of the ADIOS plugins interface.
 ```
 git clone https://github.com/lukemartinlogan/coeus-adapter.git
 cd coeus-adapter
+
+To compile
+```
 mkdir build
 cd build
 cmake ../
