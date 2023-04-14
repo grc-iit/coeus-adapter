@@ -16,7 +16,7 @@ int main() {
   // Specify which plugin to use
   adios2::Params params;
   // The name that you want ADIOS to use internally
-  params["PluginName"] = "hermes_engine";
+  params["PluginName"] = "my_hermes_engine";
   // The name of the shared library in the CMakeLists.txt
   params["PluginLibrary"] = "hermes_engine";
   // Any other paramaters to the engine
@@ -30,17 +30,17 @@ int main() {
   adios2::Variable<double> var = io.DefineVariable<double>(
     "myVar", shape, start, count);
 
-  // Open file for writing
+  // Write to file
   adios2::Engine writer = io.Open("/tmp/myFile.bp", adios2::Mode::Write);
-
-  // Write data
   writer.Put(var, data.data());
-
-  // Close file
   writer.Close();
 
+  // Read from file
+  adios2::Engine reader = io.Open("/tmp/myFile.bp", adios2::Mode::Read);
+  reader.Get(var, data.data());
+  reader.Close();
+
   std::cout << "Done" << std::endl;
-  // TODO(llogan): actually try doing I/O here to see if the engine was found
 
   return 0;
 }
