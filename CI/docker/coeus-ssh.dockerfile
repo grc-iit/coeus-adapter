@@ -1,4 +1,4 @@
-FROM scslab/coeus:0.2
+FROM scslab/coeus:0.5
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get install -y openssh-server sudo
