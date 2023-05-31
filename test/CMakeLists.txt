@@ -1,1 +1,2 @@
 add_subdirectory(unit)
+add_subdirectory(real_apps)
