@@ -2,6 +2,13 @@
 FROM spack/ubuntu-jammy:latest as coeus-builder
 ENV DOCKER_TAG=0.5
 
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y pkg-config
+
+ENV HERMES_REPO=/opt/hermes
+RUN git clone https://github.com/HDFGroup/hermes.git $HERMES_REPO
+RUN spack repo add ${HERMES_REPO}/ci/hermes
+
 # What we want to install and how we want to install it
 # is specified in a manifest file (spack.yaml)
 RUN mkdir /opt/spack-environment \
@@ -10,6 +17,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo "  - hdf5" \
 &&   echo "  - mpich" \
 &&   echo "  - adios2" \
+&&   echo "  - hermes@master" \
 &&   echo "  concretizer:" \
 &&   echo "    unify: true" \
 &&   echo "  config:" \
@@ -30,7 +38,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y cmake build-essential environment-modules gfortran git python3 gdb
+RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 gdb
 
 RUN apt-get install -y libyaml-cpp-dev
 
