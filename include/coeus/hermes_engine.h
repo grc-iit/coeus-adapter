@@ -12,7 +12,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
-// TODO(llogan): include hermes
+#include <hermes.h>
 
 namespace coeus {
 

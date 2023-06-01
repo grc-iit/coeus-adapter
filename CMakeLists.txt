@@ -80,8 +80,8 @@ message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
 message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
 
 # Hermes
-#find_package(hermes REQUIRED)
-#message(STATUS "found hermes")
+find_package(hermes REQUIRED)
+message(STATUS "found hermes")
 
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
