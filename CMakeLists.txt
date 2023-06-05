@@ -69,19 +69,15 @@ endif()
 # External libraries
 #------------------------------------------------------------------------------
 
-# YAML-CPP
-find_package(yaml-cpp REQUIRED)
-message(STATUS "found yaml-cpp at ${yaml-cpp_DIR}")
+# Hermes
+find_package(Hermes CONFIG REQUIRED)
+message(STATUS "found Hermes at ${Hermes_DIR}")
 
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "ADIOS2_FOUND: ${ADIOS2_FOUND}")
 message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
 message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
-
-# Hermes
-#find_package(hermes REQUIRED)
-#message(STATUS "found hermes")
 
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
