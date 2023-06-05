@@ -7,7 +7,6 @@ set(CMAKE_CXX_STANDARD 17)
 # Global variables
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${COEUS_ROOT}/include)
 
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
@@ -52,17 +51,17 @@ endif()
 if(NOT COEUS_INSTALL_DATA_DIR)
     set(COEUS_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
-message("HERE: ${COEUS_INSTALL_BIN_DIR}")
+message(STATUS "Installing in: ${COEUS_INSTALL_BIN_DIR}")
 
 #------------------------------------------------------------------------------
 # Optimization
 #------------------------------------------------------------------------------
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("IN DEBUG MODE")
-    set(CMAKE_CXX_FLAGS "-g -O0")
+    message(WARNING "Building in debug mode")
+    set(CMAKE_CXX_FLAGS "-g -O0 ${CMAKE_CXX_FLAGS}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("IN RELEASE MODE")
-    set(CMAKE_CXX_FLAGS "-g -O3")
+    message(STATUS "Building in release mode")
+    set(CMAKE_CXX_FLAGS "-g -O3 ${CMAKE_CXX_FLAGS}")
 endif()
 
 #------------------------------------------------------------------------------
@@ -75,17 +74,14 @@ message(STATUS "found Hermes at ${Hermes_DIR}")
 
 # COEUS
 find_package(ADIOS2 REQUIRED)
-message(STATUS "ADIOS2_FOUND: ${ADIOS2_FOUND}")
-message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
-message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
+message(STATUS "Found Adios2")
 
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
-message(STATUS "found mpi.h at ${MPI_CXX_INCLUDE_DIRS}")
 
 # OpenMP
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
-message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
+message(STATUS "Found OpenMP")
 
 #------------------------------------------------------------------------------
 # Code Coverage

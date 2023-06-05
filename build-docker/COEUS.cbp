@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="COEUS"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\usr\;CMake Files\..\..\usr\local\;CMake Files\..\..\usr\local\share\;CMake Files\..\..\usr\local\share\cmake\;CMake Files\..\..\usr\local\share\cmake\yaml-cpp\;CMake Files\..\..\usr\local\share\cmake\hermes\;CMake Files\..\..\usr\local\share\cmake\mercury\;CMake Files\..\..\usr\local\lib\;CMake Files\..\..\usr\local\lib\cmake\;CMake Files\..\..\usr\local\lib\cmake\adios2\;CMake Files\..\..\opt\;CMake Files\..\..\opt\software\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\cmake\;CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\cmake\thallium\;CMake Files\src\;CMake Files\test\;CMake Files\test\unit\;CMake Files\test\real_apps\;CMake Files\test\real_apps\gray-scott\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="lint">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 lint"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 test"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="/tmp/coeus-adapter/build-docker"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="hermes_engine">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/libhermes_engine.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/src"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/tmp/coeus-adapter"/>
+					<Add directory="/tmp/coeus-adapter/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-lm5tpxgujqz7zxwr7iwonubjbclvks4c/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 hermes_engine"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="hermes_engine/fast">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/libhermes_engine.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/src"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/tmp/coeus-adapter"/>
+					<Add directory="/tmp/coeus-adapter/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-lm5tpxgujqz7zxwr7iwonubjbclvks4c/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 hermes_engine/fast"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/src/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="basic">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/basic" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/tmp/coeus-adapter/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-lm5tpxgujqz7zxwr7iwonubjbclvks4c/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 basic"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="basic/fast">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/basic" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/tmp/coeus-adapter/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-lm5tpxgujqz7zxwr7iwonubjbclvks4c/include"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 basic/fast"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/unit/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="adios2-gray-scott">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/adios2-gray-scott" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 adios2-gray-scott"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="adios2-gray-scott/fast">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/adios2-gray-scott" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 adios2-gray-scott/fast"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="adios2-pdf-calc">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/adios2-pdf-calc" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 adios2-pdf-calc"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="adios2-pdf-calc/fast">
+				<Option output="/tmp/coeus-adapter/build-docker/bin/adios2-pdf-calc" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/tmp/coeus-adapter/build-docker/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DADIOS2_USE_MPI"/>
+					<Add directory="/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mpich-4.1.1-5cgwuk4p5yatcgoqt3jzis6ooacwdhl4/include"/>
+					<Add directory="/usr/include/c++/11"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/11"/>
+					<Add directory="/usr/include/c++/11/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/11/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 adios2-pdf-calc/fast"/>
+					<CompileFile command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -j12 -f &quot;/tmp/coeus-adapter/build-docker/test/real_apps/gray-scott/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/tmp/coeus-adapter/src/hermes_engine.cc">
+			<Option target="hermes_engine"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/analysis/pdf-calc.cpp">
+			<Option target="adios2-pdf-calc"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/gray-scott.cpp">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/gray-scott.h">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/main.cpp">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/restart.cpp">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/restart.h">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/settings.cpp">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/settings.h">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/writer.cpp">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/simulation/writer.h">
+			<Option target="adios2-gray-scott"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/unit/basic.cc">
+			<Option target="basic"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/yaml-cpp/yaml-cpp-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\yaml-cpp\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/yaml-cpp/yaml-cpp-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\yaml-cpp\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/yaml-cpp/yaml-cpp-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\yaml-cpp\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/yaml-cpp/yaml-cpp-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\yaml-cpp\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/hermes/hermes-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\hermes\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/hermes/hermes-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\hermes\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/hermes/hermes-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\hermes\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/hermes/hermes-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\hermes\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/mercury/mercury-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\mercury\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/mercury/mercury-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\mercury\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/mercury/mercury-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\mercury\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/share/cmake/mercury/mercury-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\share\cmake\mercury\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/CMakeFindDependencyMacro.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/FindMPI.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-c-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-c-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-config-common.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-config-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-cxx11-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-cxx11-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-fortran-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-fortran-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-targets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../usr/local/lib/cmake/adios2/adios2-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\usr\local\lib\cmake\adios2\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k/share/cmake/thallium/thallium-config.cmake">
+			<Option virtualFolder="CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\cmake\thallium\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k/share/cmake/thallium/thallium-targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\cmake\thallium\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/../../opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k/share/cmake/thallium/xpkg-import.cmake">
+			<Option virtualFolder="CMake Files\..\..\opt\software\linux-ubuntu22.04-zen2\gcc-11.3.0\mochi-thallium-0.8.3-jnfsvx4tz4legjajcl53k3fjunmcl34k\share\cmake\thallium\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/unit/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\unit\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\real_apps\"/>
+		</Unit>
+		<Unit filename="/tmp/coeus-adapter/test/real_apps/gray-scott/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\real_apps\gray-scott\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
