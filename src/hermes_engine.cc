@@ -3,6 +3,8 @@
 //
 
 #include "coeus/hermes_engine.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 namespace coeus {
 
@@ -60,8 +62,9 @@ void HermesEngine::PerformGets() {
 /** Close a particular transport */
 void HermesEngine::DoClose(const int transportIndex) {
   std::cout << __func__ << std::endl;
-  // TODO
+  fclose(fp_);
 }
+
 
 /**
  * Initialize this engine.
@@ -71,8 +74,23 @@ void HermesEngine::DoClose(const int transportIndex) {
  * */
 void HermesEngine::Init_() {
   std::cout << __func__ << std::endl;
-  // TODO
+  switch (m_OpenMode) {
+    case adios2::Mode::Write: {
+      fp_ = fopen(this->m_Name.c_str(), "w+");
+    }
+    case adios2::Mode::Read: {
+      fp_ = fopen(this->m_Name.c_str(), "r+");
+    }
+    default: {
+      return;
+    }
+  }
+  if (!fp_) {
+    perror("Failed to open input file");
+    return;
+  }
 }
+
 
 }  // namespace coeus
 
