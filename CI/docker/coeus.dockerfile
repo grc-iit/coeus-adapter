@@ -14,7 +14,10 @@ RUN mkdir /opt/spack-environment \
 &&   echo "    unify: true" \
 &&   echo "  config:" \
 &&   echo "    install_tree: /opt/software" \
-&&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml
+&&   echo "  view:" \
+&&   echo "    default:" \
+&&   echo "        root: /opt/view" \
+&&   echo "        link_type: copy") > /opt/spack-environment/spack.yaml
 
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y

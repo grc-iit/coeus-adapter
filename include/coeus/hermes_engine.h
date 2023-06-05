@@ -7,7 +7,6 @@
 
 #include <adios2.h>
 #include "adios2/engine/plugin/PluginEngineInterface.h"
-#include <mpi.h>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>

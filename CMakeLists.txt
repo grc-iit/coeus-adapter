@@ -92,7 +92,7 @@ message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
 #------------------------------------------------------------------------------
 if(COEUS_ENABLE_COVERAGE)
     set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage" CACHE STRING
-        "Flags to the coverage program to perform coverage inspection")
+            "Flags to the coverage program to perform coverage inspection")
     mark_as_advanced(COVERAGE_FLAGS)
 
     macro(set_coverage_flags target)
