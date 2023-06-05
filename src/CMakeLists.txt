@@ -10,8 +10,15 @@ set(HERMES_ENGINE_SRCS
 # Libraries
 #------------------------------------------------------------------------------
 add_library(hermes_engine ${HERMES_ENGINE_SRCS})
-target_link_libraries(hermes_engine
-        MPI::MPI_CXX ${ADIOS2_LIBRARIES})
+target_include_directories(hermes_engine PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        ${HERMES_INCLUDE_DIR}
+        )
+target_link_libraries(hermes_engine PUBLIC
+        adios2::adios2
+        hermes
+        )
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
