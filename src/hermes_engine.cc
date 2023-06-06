@@ -24,7 +24,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           name,
                                           mode,
                                           comm.Duplicate()) {
-  hapi::Hermes::Create(hermes::HermesType::kClient);
+//  hapi::Hermes::Create(hermes::HermesType::kClient);
   // NOTE(llogan): name = params["PluginName"]
   std::cout << __func__ << std::endl;
   Init_();
