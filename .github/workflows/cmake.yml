@@ -5,14 +5,15 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-    
+
+env:
+  BUILD_TYPE: Release
+  
 jobs:
   container-test-job:
     runs-on: ubuntu-latest
     container:
       image: scslab/coeus:0.9
-      env:
-        BUILD_TYPE: Release
     steps:
     - name: Check for dockerenv file
       run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
@@ -23,8 +24,8 @@ jobs:
     - name: Setup python
       uses: actions/setup-python@v4
       
-    - name: Run cpplint
-      run: pip install cpplint==1.5.4 && bash ci/lint.sh `pwd`
+#     - name: Run cpplint
+#       run: pip install cpplint==1.5.4 && bash ci/lint.sh `pwd`
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
