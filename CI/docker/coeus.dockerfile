@@ -35,7 +35,8 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 gdb
+RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 python3-pip gdb
+RUN pip install cpplint
 
 RUN apt-get install -y libyaml-cpp-dev
 
