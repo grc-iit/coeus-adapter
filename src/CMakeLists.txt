@@ -10,6 +10,12 @@ set(HERMES_ENGINE_SRCS
 # Libraries
 #------------------------------------------------------------------------------
 add_library(hermes_engine ${HERMES_ENGINE_SRCS})
+target_include_directories(hermes_engine PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        ${Hermes_INCLUDE_DIR}
+        ${ADIOS2_INCLUDE_DIR}
+        )
 target_link_libraries(hermes_engine
         ${Hermes_LIBRARIES} ${ADIOS2_LIBRARIES})
 

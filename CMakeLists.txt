@@ -2,13 +2,25 @@ cmake_minimum_required(VERSION 3.10)
 project(COEUS)
 
 set(CMAKE_CXX_STANDARD 17)
-MESSAGE(STATUS "PATH: ${PATH}")
+
 #------------------------------------------------------------------------------
 # Global variables
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${COEUS_ROOT}/include)
 
+#------------------------------------------------------------------------------
+# Solving some weirdness with CLion docker toolchain
+#------------------------------------------------------------------------------
+if(EXISTS "/.dockerenv")
+    # Inside a Docker container
+    set(ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-2.9.0-vcqnfmc52ap3xvo2tvwtnrhbd3tuzpqe/include/")
+    set(Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-nwvihkojprjcma2odcx4lojzq4t6je3b/include/")
+else()
+    # Not inside a Docker container
+    set(ADIOS2_INCLUDE_DIR "")
+endif()
+MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
+MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects.
@@ -52,17 +64,17 @@ endif()
 if(NOT COEUS_INSTALL_DATA_DIR)
     set(COEUS_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
-message("HERE: ${COEUS_INSTALL_BIN_DIR}")
+message(STATUS "Installing in: ${COEUS_INSTALL_BIN_DIR}")
 
 #------------------------------------------------------------------------------
 # Optimization
 #------------------------------------------------------------------------------
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("IN DEBUG MODE")
-    set(CMAKE_CXX_FLAGS "-g -O0")
+    message(WARNING "Building in debug mode")
+    set(CMAKE_CXX_FLAGS "-g -O0 ${CMAKE_CXX_FLAGS}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("IN RELEASE MODE")
-    set(CMAKE_CXX_FLAGS "-g -O3")
+    message(STATUS "Building in release mode")
+    set(CMAKE_CXX_FLAGS "-g -O3 ${CMAKE_CXX_FLAGS}")
 endif()
 
 #------------------------------------------------------------------------------
@@ -75,24 +87,21 @@ message(STATUS "found Hermes at ${Hermes_DIR}")
 
 # COEUS
 find_package(ADIOS2 REQUIRED)
-message(STATUS "ADIOS2_FOUND: ${ADIOS2_FOUND}")
-message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
-message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
+message(STATUS "Found Adios2")
 
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
-message(STATUS "found mpi.h at ${MPI_CXX_INCLUDE_DIRS}")
 
 # OpenMP
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
-message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
+message(STATUS "Found OpenMP")
 
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
 if(COEUS_ENABLE_COVERAGE)
     set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage" CACHE STRING
-        "Flags to the coverage program to perform coverage inspection")
+            "Flags to the coverage program to perform coverage inspection")
     mark_as_advanced(COVERAGE_FLAGS)
 
     macro(set_coverage_flags target)

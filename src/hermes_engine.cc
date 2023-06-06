@@ -5,6 +5,7 @@
 #include "coeus/hermes_engine.h"
 #include <stdio.h>
 #include <stdlib.h>
+namespace hapi = hermes::api;
 
 namespace coeus {
 
@@ -23,6 +24,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           name,
                                           mode,
                                           comm.Duplicate()) {
+//  hapi::Hermes::Create(hermes::HermesType::kClient);
   // NOTE(llogan): name = params["PluginName"]
   std::cout << __func__ << std::endl;
   Init_();

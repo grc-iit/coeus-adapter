@@ -12,3 +12,5 @@ cmake*
 *.o.d
 build
 Testing
+/build-docker/
+/build/
