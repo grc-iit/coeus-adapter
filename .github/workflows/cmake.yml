@@ -19,7 +19,9 @@ jobs:
       run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
       
     - name: Get Sources
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref }}
 
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
