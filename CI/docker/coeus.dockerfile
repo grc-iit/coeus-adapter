@@ -42,4 +42,5 @@ RUN apt-get install -y libyaml-cpp-dev
 
 COPY --from=coeus-builder /opt/spack-environment /opt/spack-environment
 COPY --from=coeus-builder /opt/software /opt/software
-COPY --from=coeus-builder /opt/view /usr/local
+COPY --from=coeus-builder /opt/view /opt/view
+COPY --from=coeus-builder /opt/view/share /usr/local/share
