@@ -24,7 +24,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           name,
                                           mode,
                                           comm.Duplicate()) {
-//  hapi::Hermes::Create(hermes::HermesType::kClient);
+ // hapi::Hermes::Create(hermes::HermesType::kClient);
   // NOTE(llogan): name = params["PluginName"]
   std::cout << __func__ << std::endl;
   Init_();
@@ -55,7 +55,27 @@ void HermesEngine::EndStep() {
 }
 
 void HermesEngine::PerformPuts() {
-  std::cout << __func__ << std::endl;
+    // Get the Hermes engine from the parent PluginEngineInterface
+    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
+
+    // Access the Hermes bucket
+    auto bkt = hermes->GetBucket("hello");
+
+    // Perform the Put operations on the bucket
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hermes::api::Context ctx;
+    hermes::BlobId blob_id;
+
+    for(size_t i = 0; i < num_blobs; ++i){
+        hermes::Blob blob(blob_size);
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        memset(blob.data(), nonce, blob_size);
+        bkt.Put(name, blob, blob_id, ctx);
+    }
+
+    //std::cout << __func__ << std::endl;
 }
 
 void HermesEngine::PerformGets() {
@@ -63,7 +83,26 @@ void HermesEngine::PerformGets() {
 
 /** Close a particular transport */
 void HermesEngine::DoClose(const int transportIndex) {
-  std::cout << __func__ << std::endl;
+    // Get the Hermes engine from the parent PluginEngineInterface
+    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
+
+    // Access the Hermes bucket
+    auto bkt = hermes->GetBucket("hello");
+
+    // Perform the Get operations on the bucket
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hermes::api::Context ctx;
+    hermes::BlobId blob_id;
+
+    for(size_t i = 0; i < num_blobs; ++i){
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        hermes::Blob blob;
+        bkt.GetBlobId(name, blob_id);
+    }
+
+    //std::cout << __func__ << std::endl;
   fclose(fp_);
 }
 
