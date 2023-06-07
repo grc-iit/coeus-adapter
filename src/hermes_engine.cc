@@ -13,7 +13,6 @@
 #include "coeus/hermes_engine.h"
 #include <stdio.h>
 #include <stdlib.h>
-
 namespace hapi = hermes::api;
 
 namespace coeus {
@@ -25,92 +24,96 @@ namespace coeus {
  * initialization of the engine. The PluginEngineInterface will store
  * the "io" variable in the "m_IO" variable.
  * */
-    HermesEngine::HermesEngine(adios2::core::IO &io,
-                               const std::string &name,
-                               const adios2::Mode mode,
-                               adios2::helper::Comm comm)
-            : adios2::plugin::PluginEngineInterface(io,
-                                                    name,
-                                                    mode,
-                                                    comm.Duplicate()) {
-        // Create object hermes
-
-        // NOTE(llogan): name = params["PluginName"]
-        std::cout << __func__ << std::endl;
-        Init_();
-    }
+HermesEngine::HermesEngine(adios2::core::IO &io,
+                           const std::string &name,
+                           const adios2::Mode mode,
+                           adios2::helper::Comm comm)
+  : adios2::plugin::PluginEngineInterface(io,
+                                          name,
+                                          mode,
+                                          comm.Duplicate()) {
+ // hapi::Hermes::Create(hermes::HermesType::kClient);
+  // NOTE(llogan): name = params["PluginName"]
+  std::cout << __func__ << std::endl;
+  Init_();
+}
 
 /**
  * Destruct the HermesEngine.
  * */
-    HermesEngine::~HermesEngine() {
-    }
+HermesEngine::~HermesEngine() {
+}
 
 /**
  * In ADIOS2, a "step" refers to a unit of data that is written or read.
  * Each step represents a snapshot of the data at a specific time, and can
  * be thought of as a frame in a video or a snapshot of a simulation.
  * */
-    adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
-                                               const float timeoutSeconds) {
-        std::cout << __func__ << std::endl;
+adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
+                                           const float timeoutSeconds) {
+  std::cout << __func__ << std::endl;
+}
+
+size_t HermesEngine::CurrentStep() const {
+  std::cout << __func__ << std::endl;
+}
+
+void HermesEngine::EndStep() {
+  std::cout << __func__ << std::endl;
+}
+
+void HermesEngine::PerformPuts() {
+    // Get the Hermes engine from the parent PluginEngineInterface
+    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
+
+    // Access the Hermes bucket
+    auto bkt = hermes->GetBucket("hello");
+
+    // Perform the Put operations on the bucket
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hermes::api::Context ctx;
+    hermes::BlobId blob_id;
+
+    for(size_t i = 0; i < num_blobs; ++i){
+        hermes::Blob blob(blob_size);
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        memset(blob.data(), nonce, blob_size);
+        bkt.Put(name, blob, blob_id, ctx);
     }
 
-    size_t HermesEngine::CurrentStep() const {
-        std::cout << __func__ << std::endl;
-    }
+    //std::cout << __func__ << std::endl;
+}
 
-    void HermesEngine::EndStep() {
-        std::cout << __func__ << std::endl;
-    }
-
-    template<typename T>
-    void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
-        std::cout << __func__ << std::endl;      
-        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
-        size_t blob_size = variable.SelectionSize() * sizeof(T);
-        hapi::Context ctx;
-        hermes::Blob blob;
-        hermes::BlobId blob_id;
-        memcpy(blob.data(), values , blob_size);
-        bkt.Put(variable.Name(), blob, blob_id, ctx);
-    }
-
-    template<typename T>
-    void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
-        std::cout << __func__ << std::endl;
-        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
-        size_t blob_size = variable.SelectionSize() * sizeof(T);
-        hapi::Context ctx;
-        hermes::BlobId blob_id;
-        hermes::Blob blob;
-        bkt.GetBlobId(variable.Name(), blob_id);
-        bkt.Get(blob_id, blob, ctx);
-        memcpy(values, blob.data(), blob_size);
-    }
-
-    template<typename T>
-    void DoPutSync_(adios2::core::Variable<T> &variable, const T *values) {
-        std::cout << __func__ << std::endl;
-    }
-
-    template<typename T>
-    void DoGetSync_(adios2::core::Variable<T> &variable, T *values) {
-        std::cout << __func__ << std::endl;
-    }
-
-    void HermesEngine::PerformPuts() {
-        std::cout << __func__ << std::endl;
-    }
-
-    void HermesEngine::PerformGets() {
-        std::cout << __func__ << std::endl;
-    }
+void HermesEngine::PerformGets() {
+}
 
 /** Close a particular transport */
-    void HermesEngine::DoClose(const int transportIndex) {
-        std::cout << __func__ << std::endl;
+void HermesEngine::DoClose(const int transportIndex) {
+    // Get the Hermes engine from the parent PluginEngineInterface
+    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
+
+    // Access the Hermes bucket
+    auto bkt = hermes->GetBucket("hello");
+
+    // Perform the Get operations on the bucket
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hermes::api::Context ctx;
+    hermes::BlobId blob_id;
+
+    for(size_t i = 0; i < num_blobs; ++i){
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        hermes::Blob blob;
+        bkt.GetBlobId(name, blob_id);
     }
+
+    //std::cout << __func__ << std::endl;
+  fclose(fp_);
+}
+
 
 /**
  * Initialize this engine.
@@ -118,10 +121,25 @@ namespace coeus {
  * How do we know which files to open? The m_IO variable must contain
  * it somewhere. I don't know where yet.
  * */
-    void HermesEngine::Init_() {
-        std::cout << __func__ << std::endl;
-        hapi::Hermes::Create(hermes::HermesType::kClient);
+void HermesEngine::Init_() {
+  std::cout << __func__ << std::endl;
+  switch (m_OpenMode) {
+    case adios2::Mode::Write: {
+      fp_ = fopen(this->m_Name.c_str(), "w+");
     }
+    case adios2::Mode::Read: {
+      fp_ = fopen(this->m_Name.c_str(), "r+");
+    }
+    default: {
+      return;
+    }
+  }
+  if (!fp_) {
+    perror("Failed to open input file");
+    return;
+  }
+}
+
 
 }  // namespace coeus
 
@@ -136,8 +154,8 @@ coeus::HermesEngine *EngineCreate(adios2::core::IO &io,
                                   const std::string &name,
                                   const adios2::Mode mode,
                                   adios2::helper::Comm comm) {
-    (void)mode;
-    return new coeus::HermesEngine(io, name, mode, comm.Duplicate());
+  (void)mode;
+  return new coeus::HermesEngine(io, name, mode, comm.Duplicate());
 }
 
 /** C wrapper to destroy engine */
