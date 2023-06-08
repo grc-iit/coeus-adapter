@@ -5,6 +5,7 @@
 #include "coeus/hermes_engine.h"
 #include <stdio.h>
 #include <stdlib.h>
+
 namespace hapi = hermes::api;
 
 namespace coeus {
@@ -24,10 +25,17 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           name,
                                           mode,
                                           comm.Duplicate()) {
- // hapi::Hermes::Create(hermes::HermesType::kClient);
+  // Create object hermes
+  //hapi::Hermes::Create(hermes::HermesType::kClient);
+  //hapi::Hermes* hermes = hapi::Hermes::Create(hermes::HermesType::kClient);
+
   // NOTE(llogan): name = params["PluginName"]
   std::cout << __func__ << std::endl;
   Init_();
+
+  // Start the Hermes core Daemon
+  //hermes->RunDaemon();
+  //hapi::Hermes::RunDaemon();
 }
 
 /**
@@ -55,9 +63,7 @@ void HermesEngine::EndStep() {
 }
 
 void HermesEngine::PerformPuts() {
-    // Get the Hermes engine from the parent PluginEngineInterface
-    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
-
+    /*
     // Access the Hermes bucket
     auto bkt = hermes->GetBucket("hello");
 
@@ -74,18 +80,12 @@ void HermesEngine::PerformPuts() {
         memset(blob.data(), nonce, blob_size);
         bkt.Put(name, blob, blob_id, ctx);
     }
-
-    //std::cout << __func__ << std::endl;
+*/
+    std::cout << __func__ << std::endl;
 }
 
 void HermesEngine::PerformGets() {
-}
-
-/** Close a particular transport */
-void HermesEngine::DoClose(const int transportIndex) {
-    // Get the Hermes engine from the parent PluginEngineInterface
-    auto hermes = static_cast<hapi::Hermes*>(m_IO.m_ADIOS.GetEngine("hermes"));
-
+    /*
     // Access the Hermes bucket
     auto bkt = hermes->GetBucket("hello");
 
@@ -100,10 +100,13 @@ void HermesEngine::DoClose(const int transportIndex) {
         char nonce = i % 256;
         hermes::Blob blob;
         bkt.GetBlobId(name, blob_id);
-    }
+    }*/
+}
 
-    //std::cout << __func__ << std::endl;
-  fclose(fp_);
+/** Close a particular transport */
+void HermesEngine::DoClose(const int transportIndex) {
+    std::cout << __func__ << std::endl;
+    fclose(fp_);
 }
 
 
