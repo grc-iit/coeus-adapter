@@ -1,6 +1,6 @@
 # Use scs-lab/base:1.0 as base image
-FROM spack/ubuntu-jammy:latest as coeus-builder
-ENV DOCKER_TAG=0.5
+FROM spack/ubuntu-jammy:v0.20.0 as builder
+ENV DOCKER_TAG=0.9
 
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y pkg-config
@@ -23,22 +23,23 @@ RUN mkdir /opt/spack-environment \
 &&   echo "    unify: true" \
 &&   echo "  config:" \
 &&   echo "    install_tree: /opt/software" \
-&&   echo "  view:" \
-&&   echo "    default:" \
-&&   echo "        root: /opt/view" \
-&&   echo "        link_type: copy") > /opt/spack-environment/spack.yaml
+&&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml
 
 # Install the software, remove unnecessary deps
 RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y
+
+RUN cd /opt/spack-environment && \
+    spack env activate --sh -d . >> /opt/spack-environment/spack.sh
 
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 gdb
+RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 python3-pip gdb
+RUN pip install cpplint
 
 RUN apt-get install -y libyaml-cpp-dev
 
-COPY --from=coeus-builder /opt/spack-environment /opt/spack-environment
-COPY --from=coeus-builder /opt/software /opt/software
-COPY --from=coeus-builder /opt/view /usr/local
+COPY --from=builder /opt/spack-environment /opt/spack-environment
+COPY --from=builder /opt/software /opt/software
+COPY --from=builder /opt/view /usr/local

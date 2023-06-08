@@ -17,7 +17,8 @@ target_include_directories(hermes_engine PUBLIC
         ${ADIOS2_INCLUDE_DIR}
         )
 target_link_libraries(hermes_engine
-        ${Hermes_LIBRARIES} ${ADIOS2_LIBRARIES})
+        ${Hermes_LIBRARIES}
+        ${ADIOS2_LIBRARIES})
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install

@@ -21,6 +21,7 @@ else()
 endif()
 MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
 MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
+
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects.
@@ -134,7 +135,7 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
-add_custom_target(lint COMMAND bash ${COEUS_ROOT}/scripts/lint.sh ${COEUS_ROOT})
+add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
