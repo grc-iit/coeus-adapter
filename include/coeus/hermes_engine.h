@@ -13,15 +13,16 @@
 #ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
 #define INCLUDE_COEUS_HERMES_ENGINE_H_
 
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <string>
-
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include <hermes.h>
+
+#include <cstdio>
+#include <cstdlib>
+
+#include <iostream>
+#include <fstream>
+#include <string>
 
 namespace coeus {
 
@@ -29,10 +30,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   FILE *fp_;
   /** Construct the HermesEngine */
-  HermesEngine(adios2::core::IO &adios,
+  HermesEngine(adios2::core::IO &adios,// NOLINT
                const std::string &name,
                const adios2::Mode mode,
-               adios2::helper::Comm comm);// NOLINT
+               adios2::helper::Comm comm);
 
   /** Destructor */
   ~HermesEngine() override;
@@ -89,7 +90,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Get data from Hermes (sync) */
   template<typename T>
   void DoGetSync_(const adios2::core::Variable<T> &variable, T *values) {
-
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fread(values, sizeof(char), total_size, fp_);
