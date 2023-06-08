@@ -6,6 +6,14 @@
 
 namespace hapi = hermes::api;
 
+// Declare the external C function
+/*extern "C" {
+coeus::HermesEngine* EngineCreate(adios2::core::IO &io,
+                                  const std::string &name,
+                                  const adios2::Mode mode,
+                                  adios2::helper::Comm comm);
+}*/
+
 int main() {
   adios2::ADIOS adios;
 
@@ -37,8 +45,8 @@ int main() {
     "myVar", shape, start, count);
 
   // Write to file
-  coeus::HermesEngine* writer = EngineCreate(io, file, adios2::Mode::Write); // Needs an extra param
-  //hapi::Hermes::HermesEngine writer = EngineCreate(io, file, adios2::Mode::Write); // Needs an extra param
+  coeus::HermesEngine* writer = EngineCreate(io, file, adios2::Mode::Write); // Needs an extra param comm
+  //hapi::Hermes::CreateBucket("bkt1");
   auto bkt1 = writer->GetBucket("myVar");
   size_t blob_size = KILOBYTES(4);
   hapi::Context ctx;
@@ -64,7 +72,7 @@ int main() {
   // hapi::Hermes::HermesEngine reader = EngineCreate(io, file, adios2::Mode::Read); // Needs an extra param
   auto bkt2 = reader->GetBucket("myVar");
   hapi::Context ctx2;
-  hermes::Blob blob2:
+  hermes::Blob blob2;
   bkt2.GetBlob("myVar", blob_id);
   REQUIRE(!blob_id.IsNull());
   bkt2.Get(blob_id, blob2, ctx2);
