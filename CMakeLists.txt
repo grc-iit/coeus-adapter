@@ -135,11 +135,7 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
-<<<<<<< HEAD
-add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
-=======
 add_custom_target(lint COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
->>>>>>> a9b7663... Final version after trying a number of things on docker
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
