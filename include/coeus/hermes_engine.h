@@ -1,17 +1,28 @@
-//
-// Created by lukemartinlogan on 3/28/23.
-//
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Distributed under BSD 3-Clause license.                                   *
+ * Copyright by the Illinois Institute of Technology.                        *
+ * All rights reserved.                                                      *
+ *                                                                           *
+ * This file is part of Coeus-adapter. The full Coeus-adapter copyright      *
+ * notice, including terms governing use, modification, and redistribution,  *
+ * is contained in the COPYING file, which can be found at the top directory.*
+ * If you do not have access to the file, you may request a copy             *
+ * from scslab@iit.edu.                                                      *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
-#define COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
+#ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
+#define INCLUDE_COEUS_HERMES_ENGINE_H_
 
 #include <adios2.h>
-#include "adios2/engine/plugin/PluginEngineInterface.h"
+#include <adios2/engine/plugin/PluginEngineInterface.h>
+#include <hermes.h>
+
+#include <cstdio>
+#include <cstdlib>
+
 #include <iostream>
 #include <fstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <hermes.h>
+#include <string>
 
 namespace coeus {
 
@@ -19,7 +30,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   FILE *fp_;
   /** Construct the HermesEngine */
-  HermesEngine(adios2::core::IO &adios,
+  HermesEngine(adios2::core::IO &adios,// NOLINT
                const std::string &name,
                const adios2::Mode mode,
                adios2::helper::Comm comm);
@@ -60,17 +71,16 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   /** Place data in Hermes */
   template<typename T>
-  void DoPutSync_(adios2::core::Variable<T> &variable,
+  void DoPutSync_(const adios2::core::Variable<T> &variable,
                   const T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fwrite(values, sizeof(char), total_size, fp_);
   }
 
-
   /** Place data in Hermes asynchronously */
   template<typename T>
-  void DoPutDeferred_(adios2::core::Variable<T> &variable,
+  void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
@@ -79,8 +89,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   /** Get data from Hermes (sync) */
   template<typename T>
-  void DoGetSync_(adios2::core::Variable<T> &variable, T *values) {
-
+  void DoGetSync_(const adios2::core::Variable<T> &variable, T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fread(values, sizeof(char), total_size, fp_);
@@ -88,7 +97,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   /** Get data from Hermes (async) */
   template<typename T>
-  void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
+  void DoGetDeferred_(const adios2::core::Variable<T> &variable, T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fread(values, sizeof(char), total_size, fp_);
@@ -125,4 +134,4 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
 }  // namespace coeus
 
-#endif  // COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
+#endif  // INCLUDE_COEUS_HERMES_ENGINE_H_

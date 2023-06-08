@@ -13,14 +13,15 @@ set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 #------------------------------------------------------------------------------
 if(EXISTS "/.dockerenv")
     # Inside a Docker container
-    set(ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-2.9.0-vcqnfmc52ap3xvo2tvwtnrhbd3tuzpqe/include/")
-    set(Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-nwvihkojprjcma2odcx4lojzq4t6je3b/include/")
+    file(GLOB ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-*/include")
+    file(GLOB Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
 else()
     # Not inside a Docker container
     set(ADIOS2_INCLUDE_DIR "")
 endif()
 MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
 MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
+
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects.
@@ -134,7 +135,7 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
-add_custom_target(lint COMMAND bash ${COEUS_ROOT}/scripts/lint.sh ${COEUS_ROOT})
+add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
