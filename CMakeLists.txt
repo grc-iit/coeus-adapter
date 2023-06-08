@@ -8,6 +8,20 @@ set(CMAKE_CXX_STANDARD 17)
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
+#------------------------------------------------------------------------------
+# Solving some weirdness with CLion docker toolchain
+#------------------------------------------------------------------------------
+if(EXISTS "/.dockerenv")
+    # Inside a Docker container
+    file(GLOB ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-*/include")
+    file(GLOB Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
+else()
+    # Not inside a Docker container
+    set(ADIOS2_INCLUDE_DIR "")
+endif()
+MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
+MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
+
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects.
@@ -121,7 +135,11 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
+<<<<<<< HEAD
 add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
+=======
+add_custom_target(lint COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
+>>>>>>> a9b7663... Final version after trying a number of things on docker
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
