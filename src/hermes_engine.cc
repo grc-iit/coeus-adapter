@@ -5,7 +5,7 @@
 #include "coeus/hermes_engine.h"
 #include <stdio.h>
 #include <stdlib.h>
-//#include "hermes_shm/util/singleton.h"
+//#include <bucket.h>
 
 namespace hapi = hermes::api;
 
@@ -27,16 +27,15 @@ HermesEngine::HermesEngine(adios2::core::IO &io,
                                           mode,
                                           comm.Duplicate()) {
   // Create object hermes
-  hapi::Hermes::Create(hermes::HermesType::kClient);
- // hapi::Hermes* hermes = hapi::Hermes::Create(hermes::HermesType::kClient);
+  //hapi::Hermes::Create(hermes::HermesType::kClient);
+  //HERMES->Create(hermes::HermesType::kClient);
 
   // NOTE(llogan): name = params["PluginName"]
   std::cout << __func__ << std::endl;
   Init_();
-
   // Start the Hermes core Daemon
- // hermes->RunDaemon();
-  //hapi::Hermes::RunDaemon();
+  // hermes->RunDaemon();
+  // hapi::Hermes::RunDaemon();
 }
 
 /**
@@ -64,11 +63,41 @@ void HermesEngine::EndStep() {
 }
 
 void HermesEngine::PerformPuts() {
+    // Perform the Put operations using Hermes
+    hapi::Bucket bkt = HERMES->GetBucket("hello");
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hapi::Context ctx;
+    hermes::BlobId blob_id;
+
+    for(size_t i = 0; i < num_blobs; ++i){
+        hermes::Blob blob(blob_size);
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        memset(blob.data(), nonce, blob_size);
+        bkt.Put(name, blob, blob_id, ctx);
+    }
+
     std::cout << __func__ << std::endl;
 }
 
 void HermesEngine::PerformGets() {
+    // Perform the Get operations using Hermes
+    hapi::Bucket bkt = HERMES->GetBucket("hello");
+    size_t num_blobs = 256;
+    size_t blob_size = KILOBYTES(4);
+    hapi::Context ctx;
+    hermes::BlobId blob_id;
 
+    for(size_t i = 0; i < num_blobs; ++i){
+        std::string name = std::to_string(i);
+        char nonce = i % 256;
+        hermes::Blob blob;
+        bkt.GetBlobId(name, blob_id);
+        bkt.Get(blob_id, blob, ctx);
+    }
+
+    std::cout << __func__ << std::endl;
 }
 
 /** Close a particular transport */
