@@ -13,10 +13,8 @@ set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 #------------------------------------------------------------------------------
 if(EXISTS "/.dockerenv")
     # Inside a Docker container
-
     file(GLOB ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-*/include")
     file(GLOB Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
-
 else()
     # Not inside a Docker container
     set(ADIOS2_INCLUDE_DIR "")
