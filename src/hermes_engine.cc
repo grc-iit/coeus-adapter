@@ -60,18 +60,21 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-    void HermesEngine::Connect() {
-        HERMES->Create(hermes::HermesType::kClient);
-        std::cout << __func__ << std::endl;
-    }
-
     void HermesEngine::Put(const std::string& name, std::vector<double> variableData) {
         // Perform the Put operations using Hermes
         hapi::Bucket bkt = HERMES->GetBucket(name);
         size_t blob_size = KILOBYTES(4);
         hapi::Context ctx;
+        hermes::Blob blob;
         hermes::BlobId blob_id;
-        memset(blob.data(), variableData.data() , blob_size);
+
+
+        std::vector<int> intVariableData(variableData.size());
+        for (size_t i = 0; i < variableData.size(); ++i) {
+            intVariableData[i] = static_cast<int>(variableData[i]);
+        }
+        memcpy(blob.data(), intVariableData.data() , blob_size);
+
         bkt.Put(name, blob, blob_id, ctx);
         std::cout << __func__ << std::endl;
     }
@@ -91,10 +94,12 @@ namespace coeus {
 
 
     void HermesEngine::PerformPuts() {
+        std::cout << __func__ << std::endl;
 
     }
 
     void HermesEngine::PerformGets() {
+        std::cout << __func__ << std::endl;
 
     }
 
@@ -113,7 +118,7 @@ namespace coeus {
  * */
     void HermesEngine::Init_() {
         std::cout << __func__ << std::endl;
-        hapi::Hermes::Create(hermes::HermesType::kClient);
+        //hapi::Hermes::Create(hermes::HermesType::kClient);
         switch (m_OpenMode) {
             case adios2::Mode::Write: {
                 fp_ = fopen(this->m_Name.c_str(), "w+");
@@ -130,6 +135,7 @@ namespace coeus {
             return;
         }
     }
+
 
 
 }  // namespace coeus
