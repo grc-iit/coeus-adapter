@@ -114,6 +114,37 @@ if(COEUS_ENABLE_COVERAGE)
     endmacro()
 endif()
 
+
+#-----------------------------------------------------------------------------
+# Enable Testing
+#-----------------------------------------------------------------------------
+# General function used to hook ctest to python test tool lib
+function(pytest test_type test_name)
+    set(script ${CMAKE_SOURCE_DIR}/CI/py_hermes_ci/bin/run_test)
+    add_test(NAME ${test_name}
+            COMMAND ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR} ${HERMES_USE_ADDRESS_SANITIZER})
+endfunction()
+
+include(CTest)
+
+# Add testing directory
+if(CMAKE_PROJECT_NAME STREQUAL HERMES AND BUILD_TESTING)
+    find_package(Catch2 3.0.1 REQUIRED)
+    find_program(IOR_EXE ior)
+    if(IOR_EXE)
+        message(STATUS "Found ior at ${IOR_EXE}")
+        set(HERMES_HAVE_IOR "YES")
+    else()
+        message(WARNING "Couldn't find the 'ior' executable. Some tests will be skipped.")
+        set(HERMES_HAVE_IOR "NO")
+    endif()
+    enable_testing()
+endif()
+
+
+
+
+
 #------------------------------------------------------------------------------
 # Documentation
 #------------------------------------------------------------------------------
