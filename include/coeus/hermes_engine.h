@@ -71,16 +71,20 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
     size_t bytes_written = fwrite(values, sizeof(char), total_size, fp_);
   }
 
-
+ 
   /** Place data in Hermes asynchronously */
-  template<typename T>
+  /*template<typename T>
   void DoPutDeferred_(adios2::core::Variable<T> &variable,
                       const T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fwrite(values, sizeof(char), total_size, fp_);
+  }*/
+ 
+  template<typename T>
+  void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
   }
-
+ 
   /** Get data from Hermes (sync) */
   template<typename T>
   void DoGetSync_(adios2::core::Variable<T> &variable, T *values) {
@@ -89,14 +93,18 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fread(values, sizeof(char), total_size, fp_);
   }
-
+ 
   /** Get data from Hermes (async) */
   template<typename T>
+  void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
+  }
+ 
+  /*template<typename T>
   void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
     std::cout << __func__ << std::endl;
     size_t total_size = variable.SelectionSize() * sizeof(T);
     size_t bytes_written = fread(values, sizeof(char), total_size, fp_);
-  }
+  }*/
 
   /** Close a particular transport */
   void DoClose(const int transportIndex = -1) override;
