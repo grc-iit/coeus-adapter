@@ -27,8 +27,6 @@ namespace coeus {
                                                     mode,
                                                     comm.Duplicate()) {
         // Create object hermes
-        //hapi::Hermes::Create(hermes::HermesType::kClient);
-        //HERMES->Create(hermes::HermesType::kClient);
 
         // NOTE(llogan): name = params["PluginName"]
         std::cout << __func__ << std::endl;
@@ -115,6 +113,7 @@ namespace coeus {
  * */
     void HermesEngine::Init_() {
         std::cout << __func__ << std::endl;
+        hapi::Hermes::Create(hermes::HermesType::kClient);
         switch (m_OpenMode) {
             case adios2::Mode::Write: {
                 fp_ = fopen(this->m_Name.c_str(), "w+");
