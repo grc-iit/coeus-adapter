@@ -68,12 +68,7 @@ namespace coeus {
         hermes::Blob blob;
         hermes::BlobId blob_id;
 
-
-        std::vector<int> intVariableData(variableData.size());
-        for (size_t i = 0; i < variableData.size(); ++i) {
-            intVariableData[i] = static_cast<int>(variableData[i]);
-        }
-        memcpy(blob.data(), intVariableData.data() , blob_size);
+        memcpy(blob.data(), variableData.data() , blob_size);
 
         bkt.Put(name, blob, blob_id, ctx);
         std::cout << __func__ << std::endl;
