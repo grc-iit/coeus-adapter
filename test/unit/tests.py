@@ -12,6 +12,6 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(self.TEST_BUFFER_POOL_CMD, spawn_info)
+        node = Exec(self.BASIC_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
