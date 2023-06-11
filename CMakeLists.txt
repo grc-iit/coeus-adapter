@@ -114,7 +114,6 @@ if(COEUS_ENABLE_COVERAGE)
     endmacro()
 endif()
 
-
 #-----------------------------------------------------------------------------
 # Enable Testing
 #-----------------------------------------------------------------------------
@@ -140,10 +139,6 @@ if(CMAKE_PROJECT_NAME STREQUAL COEUS AND BUILD_TESTING)
     endif()
     enable_testing()
 endif()
-
-
-
-
 
 #------------------------------------------------------------------------------
 # Documentation
