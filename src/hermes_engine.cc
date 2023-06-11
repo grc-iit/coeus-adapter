@@ -60,33 +60,29 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-    void HermesEngine::Put(const std::string& name, std::vector<double> variableData) {
-        // Perform the Put operations using Hermes
-        hapi::Bucket bkt = HERMES->GetBucket(name);
-        size_t blob_size = KILOBYTES(4);
+  
+  void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
+        std::cout << __func__ << std::endl;      
+        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
+        size_t blob_size = variable.SelectionSize() * sizeof(T);
         hapi::Context ctx;
         hermes::Blob blob;
         hermes::BlobId blob_id;
-
-        memcpy(blob.data(), variableData.data() , blob_size);
-
+        memcpy(blob.data(), values , blob_size);
         bkt.Put(name, blob, blob_id, ctx);
-        std::cout << __func__ << std::endl;
     }
-
-    hermes::Blob HermesEngine::Get(const std::string& name) {
-        // Perform the Get operations using Hermes
-        hapi::Bucket bkt = HERMES->GetBucket(name);
-        size_t blob_size = KILOBYTES(4);
+    
+    void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
+        std::cout << __func__ << std::endl;
+        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
+        size_t blob_size = variable.SelectionSize() * sizeof(T);
         hapi::Context ctx;
         hermes::BlobId blob_id;
         hermes::Blob blob;
         bkt.GetBlobId(name, blob_id);
         bkt.Get(blob_id, blob, ctx);
-        std::cout << __func__ << std::endl;
-        return blob;
+        memcpy(values, blob.data(), blob_size);
     }
-
 
     void HermesEngine::PerformPuts() {
         std::cout << __func__ << std::endl;
