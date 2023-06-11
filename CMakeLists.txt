@@ -128,7 +128,7 @@ endfunction()
 include(CTest)
 
 # Add testing directory
-if(CMAKE_PROJECT_NAME STREQUAL HERMES AND BUILD_TESTING)
+if(CMAKE_PROJECT_NAME STREQUAL COEUS AND BUILD_TESTING)
     find_package(Catch2 3.0.1 REQUIRED)
     find_program(IOR_EXE ior)
     if(IOR_EXE)
