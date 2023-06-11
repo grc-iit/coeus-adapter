@@ -3,6 +3,8 @@
 import sys, os
 import pathlib
 
+# Need to update script to COEUS project
+
 if __name__ == '__main__':
     if len(sys.argv) != 5:
         print("USAGE: ./run_test [TEST_TYPE] [TEST_NAME] [CMAKE_BINARY_DIR] [ADDRESS_SANITIZER]")
@@ -18,12 +20,24 @@ if __name__ == '__main__':
     # The root of Hermes
     HERMES_ROOT = str(pathlib.Path(__file__).parent.
                       parent.parent.parent.resolve())
+    # The root of Coeus
+    # COEUS_ROOT = str(pathlib.Path(__file__).parent.
+      #                 parent.parent.parent.resolve())
+
     ADAPTER_TEST_ROOT = f"{HERMES_ROOT}/adapter/test"
+    # ADAPTER_TEST_ROOT = f"{COEUS_ROOT}/adapter/test" # Probably need to add the directory /adapter
+
     # Ensure that all calls beneath know how to resolve jarvis_util
     sys.path.insert(0, f"{HERMES_ROOT}/ci/jarvis-util")
+    # sys.path.insert(0, f"{COEUS_ROOT}/ci/jarvis-util")
+
     # Ensure subsequent classes know how to resolve py_hermes_ci package
     sys.path.insert(0, f"{HERMES_ROOT}/ci/py_hermes_ci")
-    # Choose which unit test file to load
+    # sys.path.insert(0, f"{COEUS_ROOT}/ci/py_hermes_ci")
+
+    # Choose which unit test file to (we are just going to test 'Native')
+    # if test_type == 'native':
+    #   pkg_dir = f"{COEUS_ROOT}/test"
     if test_type == 'stdio':
         pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
     elif test_type == 'posix':
@@ -32,7 +46,7 @@ if __name__ == '__main__':
         pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
     elif test_type == 'vfd':
         pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
-    elif test_type == 'native':
+    if test_type == 'native':
         pkg_dir = f"{HERMES_ROOT}/test"
     elif test_type == 'data_stager':
         pkg_dir = f"{HERMES_ROOT}/data_stager/test"
@@ -49,4 +63,5 @@ if __name__ == '__main__':
                           pkg_dir,
                           to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(HERMES_ROOT, cmake_binary_dir, address_sanitizer)
+    # tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
     tests.call(test_name)
