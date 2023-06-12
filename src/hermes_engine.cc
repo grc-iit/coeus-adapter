@@ -60,7 +60,7 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-  
+    template<typename T>
     void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
         std::cout << __func__ << std::endl;      
         hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
@@ -71,7 +71,8 @@ namespace coeus {
         memcpy(blob.data(), values , blob_size);
         bkt.Put(variable.Name(), blob, blob_id, ctx);
     }
-    
+
+    template<typename T>
     void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
@@ -79,7 +80,7 @@ namespace coeus {
         hapi::Context ctx;
         hermes::BlobId blob_id;
         hermes::Blob blob;
-        bkt.GetBlobId(name, blob_id);
+        bkt.GetBlobId(variable.Name(), blob_id);
         bkt.Get(blob_id, blob, ctx);
         memcpy(values, blob.data(), blob_size);
     }

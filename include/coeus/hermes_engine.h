@@ -48,11 +48,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Execute all deferred puts */
   void PerformPuts() override;
 
-  static void Put(const std::string& name, std::vector<double> variableData) ;
-
-  static hermes::Blob Get(const std::string& name);
-
-    /** Execute all deferred gets */
+  /** Execute all deferred gets */
   void PerformGets() override;
 
  protected:
