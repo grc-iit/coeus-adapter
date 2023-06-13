@@ -81,7 +81,6 @@ endif()
 #------------------------------------------------------------------------------
 # External libraries
 #------------------------------------------------------------------------------
-
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
