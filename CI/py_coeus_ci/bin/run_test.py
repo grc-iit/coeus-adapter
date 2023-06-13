@@ -6,17 +6,13 @@ import pathlib
 # Need to update script to COEUS project
 
 if __name__ == '__main__':
-    if len(sys.argv) != 5:
-        print("USAGE: ./run_test [TEST_TYPE] [TEST_NAME] [CMAKE_BINARY_DIR] [ADDRESS_SANITIZER]")
+    if len(sys.argv) != 4:
+        print("USAGE: ./run_test [TEST_TYPE] [TEST_NAME] [CMAKE_BINARY_DIR]")
         exit(1)
     test_type = sys.argv[1]
     test_name = sys.argv[2]
     cmake_binary_dir = sys.argv[3]
-    address_sanitizer = sys.argv[4]
-    if address_sanitizer.lower() in ['on', 'true', 'yes']:
-        address_sanitizer = True
-    else:
-        address_sanitizer = False
+    address_sanitizer = False
     # The root of Hermes
     HERMES_ROOT = str(pathlib.Path(__file__).parent.
                       parent.parent.parent.resolve())
