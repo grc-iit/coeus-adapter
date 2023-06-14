@@ -13,7 +13,6 @@
 #include "coeus/hermes_engine.h"
 #include <stdio.h>
 #include <stdlib.h>
-//#include <bucket.h>
 
 namespace hapi = hermes::api;
 
@@ -39,9 +38,6 @@ namespace coeus {
         // NOTE(llogan): name = params["PluginName"]
         std::cout << __func__ << std::endl;
         Init_();
-        // Start the Hermes core Daemonqui
-        // hermes->RunDaemon();
-        // hapi::Hermes::RunDaemon();
     }
 
 /**
@@ -68,8 +64,8 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-  
-  void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
+    template<typename T>
+    void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
         std::cout << __func__ << std::endl;      
         hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
         size_t blob_size = variable.SelectionSize() * sizeof(T);
@@ -77,9 +73,10 @@ namespace coeus {
         hermes::Blob blob;
         hermes::BlobId blob_id;
         memcpy(blob.data(), values , blob_size);
-        bkt.Put(name, blob, blob_id, ctx);
+        bkt.Put(variable.Name(), blob, blob_id, ctx);
     }
-    
+
+    template<typename T>
     void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
@@ -87,27 +84,33 @@ namespace coeus {
         hapi::Context ctx;
         hermes::BlobId blob_id;
         hermes::Blob blob;
-        bkt.GetBlobId(name, blob_id);
+        bkt.GetBlobId(variable.Name(), blob_id);
         bkt.Get(blob_id, blob, ctx);
         memcpy(values, blob.data(), blob_size);
     }
 
+    template<typename T>
+    void DoPutSync_(adios2::core::Variable<T> &variable, const T *values) {
+        std::cout << __func__ << std::endl;
+    }
+
+    template<typename T>
+    void DoGetSync_(adios2::core::Variable<T> &variable, T *values) {
+        std::cout << __func__ << std::endl;
+    }
+
     void HermesEngine::PerformPuts() {
         std::cout << __func__ << std::endl;
-
     }
 
     void HermesEngine::PerformGets() {
         std::cout << __func__ << std::endl;
-
     }
 
 /** Close a particular transport */
     void HermesEngine::DoClose(const int transportIndex) {
         std::cout << __func__ << std::endl;
-        fclose(fp_);
     }
-
 
 /**
  * Initialize this engine.
@@ -117,25 +120,8 @@ namespace coeus {
  * */
     void HermesEngine::Init_() {
         std::cout << __func__ << std::endl;
-        //hapi::Hermes::Create(hermes::HermesType::kClient);
-        switch (m_OpenMode) {
-            case adios2::Mode::Write: {
-                fp_ = fopen(this->m_Name.c_str(), "w+");
-            }
-            case adios2::Mode::Read: {
-                fp_ = fopen(this->m_Name.c_str(), "r+");
-            }
-            default: {
-                return;
-            }
-        }
-        if (!fp_) {
-            perror("Failed to open input file");
-            return;
-        }
+        hapi::Hermes::Create(hermes::HermesType::kClient);
     }
-
-
 
 }  // namespace coeus
 

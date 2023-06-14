@@ -28,7 +28,6 @@ namespace coeus {
 
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-  FILE *fp_;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &adios,// NOLINT
                const std::string &name,
@@ -80,8 +79,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
 
   template<typename T>
-  void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
-  }
+  void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values);
  
   /** Get data from Hermes (sync) */
   template<typename T>
@@ -95,6 +93,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   template<typename T>
   void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
   }
+
 
   /** Close a particular transport */
   void DoClose(const int transportIndex = -1) override;
