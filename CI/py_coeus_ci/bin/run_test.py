@@ -30,6 +30,7 @@ if __name__ == '__main__':
         pkg_dir = f"{COEUS_ROOT}/test/unit"
     else:
         raise Exception("Could not find the unit test")
+
     # Load the unit test
     from jarvis_util.util.naming import to_camel_case
     from jarvis_util.util.import_mod import load_class
