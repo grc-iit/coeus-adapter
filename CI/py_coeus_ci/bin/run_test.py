@@ -35,7 +35,7 @@ if __name__ == '__main__':
     elif test_type == 'vfd':
         pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
     elif test_type == 'native':
-        pkg_dir = f"{COEUS_ROOT}/test"
+        pkg_dir = f"{COEUS_ROOT}/test/unit"
     elif test_type == 'data_stager':
         pkg_dir = f"{COEUS_ROOT}/data_stager/test"
     elif test_type == 'kvstore':
