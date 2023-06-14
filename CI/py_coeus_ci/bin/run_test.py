@@ -26,22 +26,8 @@ if __name__ == '__main__':
     sys.path.insert(0, f"{COEUS_ROOT}/CI/py_coeus_ci")
 
     # Choose which unit test file to (we are just going to test 'Native')
-    if test_type == 'stdio':
-        pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
-    elif test_type == 'posix':
-        pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
-    elif test_type == 'mpiio':
-        pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
-    elif test_type == 'vfd':
-        pkg_dir = f"{ADAPTER_TEST_ROOT}/{test_type}"
-    elif test_type == 'native':
+    if test_type == 'native':
         pkg_dir = f"{COEUS_ROOT}/test/unit"
-    elif test_type == 'data_stager':
-        pkg_dir = f"{COEUS_ROOT}/data_stager/test"
-    elif test_type == 'kvstore':
-        pkg_dir = f"{COEUS_ROOT}/adapter/kvstore"
-    elif test_type == 'java_wrapper':
-        pkg_dir = f"{COEUS_ROOT}/wrapper/java"
     else:
         raise Exception("Could not find the unit test")
     # Load the unit test
