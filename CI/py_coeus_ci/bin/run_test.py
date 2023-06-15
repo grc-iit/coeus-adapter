@@ -1,10 +1,6 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
 import sys, os
 import pathlib
-
-
-# Need to update script to COEUS project
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
@@ -14,10 +10,9 @@ if __name__ == '__main__':
     test_name = sys.argv[2]
     cmake_binary_dir = sys.argv[3]
     address_sanitizer = False
-    # The root of Coeus
-    COEUS_ROOT = str(pathlib.Path(__file__).parent.
-                      parent.parent.parent.resolve())
 
+    # The root of Coeus
+    COEUS_ROOT = str(pathlib.Path(__file__).parent.parent.parent.parent.resolve())
     ADAPTER_TEST_ROOT = f"{COEUS_ROOT}/adapter/test"
 
     # Ensure that all calls beneath know how to resolve jarvis_util
@@ -26,7 +21,7 @@ if __name__ == '__main__':
     # Ensure subsequent classes know how to resolve py_coeus_ci package
     sys.path.insert(0, f"{COEUS_ROOT}/CI/py_coeus_ci")
 
-    # Choose which unit test file to (we are just going to test 'Native')
+    # Unit test file to load
     if test_type == 'native':
         pkg_dir = f"{COEUS_ROOT}/test/unit"
     else:
@@ -35,8 +30,6 @@ if __name__ == '__main__':
     # Load the unit test
     from jarvis_util.util.naming import to_camel_case
     from jarvis_util.util.import_mod import load_class
-    test_cls = load_class(f"tests",
-                          pkg_dir,
-                          to_camel_case(f"{test_type}_test_manager"))
+    test_cls = load_class(f"tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
     tests.call(test_name)
