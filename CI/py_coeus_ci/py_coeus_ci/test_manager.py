@@ -73,21 +73,6 @@ class TestManager(ABC):
             if hostfile:
                 env['HERMES_HOSTFILE'] = hostfile.path
 
-        # Hermes interceptor paths
-        if use_hermes:
-            if api == 'posix':
-                env['LD_PRELOAD'] = f"{self.CMAKE_BINARY_DIR}/bin" \
-                                    f"/libhermes_posix.so"
-            elif api == 'stdio':
-                env['LD_PRELOAD'] = f"{self.CMAKE_BINARY_DIR}/bin" \
-                                    f"/libhermes_stdio.so"
-            elif api == 'mpiio':
-                env['LD_PRELOAD'] = f"{self.CMAKE_BINARY_DIR}/bin" \
-                                    f"/libhermes_mpiio.so"
-            elif api == 'vfd':
-                env['HDF5_PLUGIN_PATH'] = f"{self.CMAKE_BINARY_DIR}/bin"
-                env['HDF5_DRIVER'] = 'hdf5_hermes_vfd'
-
         # Get libasan path
         # Assumes GCC for now
         # TODO(llogan): check if ADDRESS_SANITIZER is enabled...
