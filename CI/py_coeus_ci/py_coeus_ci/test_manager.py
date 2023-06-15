@@ -31,8 +31,8 @@ class TestManager(ABC):
         self.MY_DIR = str(pathlib.Path(inspect.getfile(LocalExecInfo)).parent)
         self.CMAKE_SOURCE_DIR = cmake_source_dir
         self.CMAKE_BINARY_DIR = cmake_binary_dir
-        self.HERMES_TRAIT_PATH = f"{self.CMAKE_BINARY_DIR}/bin"
-        self.HERMES_CLIENT_CONF = f"{self.CMAKE_SOURCE_DIR}/test/data/hermes_client.yaml"
+        self.HERMES_TRAIT_PATH = f"{self.CMAKE_BINARY_DIR}/bin" # Change path?
+        self.HERMES_CLIENT_CONF = f"{self.CMAKE_SOURCE_DIR}/test/data/hermes_client.yaml" # Change path?
         self.ADDRESS_SANITIZER = address_sanitizer
         self.daemon = None
         self.disable_testing = False
@@ -176,7 +176,8 @@ class TestManager(ABC):
                  collect_output=False))
 
         print("Start daemon")
-        self.daemon = Exec(f"{self.CMAKE_BINARY_DIR}/bin/hermes_daemon",
+        #self.daemon = Exec(f"{self.CMAKE_BINARY_DIR}/bin/hermes_daemon",
+        self.daemon = Exec(hermes_daemon,
                            LocalExecInfo(
                                hostfile=spawn_info.hostfile,
                                env=spawn_info.basic_env,
@@ -192,7 +193,8 @@ class TestManager(ABC):
         :return: None
         """
         print("Stop daemon")
-        Exec(f"{self.CMAKE_BINARY_DIR}/bin/finalize_hermes",
+        #Exec(f"{self.CMAKE_BINARY_DIR}/bin/finalize_hermes",
+        Exec(finalize_hermes,
              LocalExecInfo(
                  env=spawn_info.basic_env))
         self.daemon.wait()

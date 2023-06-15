@@ -114,6 +114,15 @@ if(COEUS_ENABLE_COVERAGE)
 endif()
 
 #------------------------------------------------------------------------------
+# Enable Testing
+#------------------------------------------------------------------------------
+function(pytest test_type test_name)
+    set(script ${CMAKE_SOURCE_DIR}/CI/py_coeus_ci/bin/run_test.py)
+    add_test(NAME ${test_name}
+            COMMAND ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR})
+endfunction()
+
+#------------------------------------------------------------------------------
 # Documentation
 #------------------------------------------------------------------------------
 if(COEUS_ENABLE_DOXYGEN)
