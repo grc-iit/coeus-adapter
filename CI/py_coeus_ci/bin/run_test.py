@@ -3,6 +3,7 @@
 import sys, os
 import pathlib
 
+
 # Need to update script to COEUS project
 
 if __name__ == '__main__':
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     COEUS_ROOT = str(pathlib.Path(__file__).parent.
                       parent.parent.parent.resolve())
 
-    ADAPTER_TEST_ROOT = f"{COEUS_ROOT}/adapter/test" # Do we need to add the directory?
+    ADAPTER_TEST_ROOT = f"{COEUS_ROOT}/adapter/test"
 
     # Ensure that all calls beneath know how to resolve jarvis_util
     sys.path.insert(0, f"{COEUS_ROOT}/CI/jarvis-util")
