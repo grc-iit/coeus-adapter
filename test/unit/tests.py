@@ -1,4 +1,4 @@
-from py_hermes_ci.test_manager import TestManager
+from py_coeus_ci.test_manager import TestManager
 from jarvis_util import *
 
 class NativeTestManager(TestManager):
