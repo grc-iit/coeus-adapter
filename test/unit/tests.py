@@ -8,7 +8,7 @@ class NativeTestManager(TestManager):
     def set_paths(self):
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
 
-    def basic(self):
+    def test_basic(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
