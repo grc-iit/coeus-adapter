@@ -42,7 +42,7 @@ namespace coeus {
 
 /**
  * Destruct the HermesEngine.
- * *
+ * */
     HermesEngine::~HermesEngine() {
     }
 
