@@ -10,26 +10,26 @@ class NativeTestManager(TestManager):
         self.GraySIM_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-gray-scott"
         self.GrayCalc_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-pdf-calc"
 
-def test_basic(self):
+    def test_basic(self):
+            spawn_info = self.spawn_info(nprocs=1,
+                                         hermes_conf='hermes_server')
+            self.start_daemon(spawn_info)
+            node = Exec(self.BASIC_CMD, spawn_info)
+            self.stop_daemon(spawn_info)
+            return node.exit_code
+
+    def test_gray_scott_sim(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(self.BASIC_CMD, spawn_info)
+        node = Exec(self.GraySIM_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
 
-def test_gray_scott_sim(self):
-    spawn_info = self.spawn_info(nprocs=1,
-                                 hermes_conf='hermes_server')
-    self.start_daemon(spawn_info)
-    node = Exec(self.GraySIM_CMD, spawn_info)
-    self.stop_daemon(spawn_info)
-    return node.exit_code
-
-def test_pdf_calc(self):
-    spawn_info = self.spawn_info(nprocs=1,
-                                 hermes_conf='hermes_server')
-    self.start_daemon(spawn_info)
-    node = Exec(self.GrayCalc_CMD, spawn_info)
-    self.stop_daemon(spawn_info)
-    return node.exit_code
+    def test_pdf_calc(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        node = Exec(self.GrayCalc_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return node.exit_code
