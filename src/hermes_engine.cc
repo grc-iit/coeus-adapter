@@ -65,7 +65,7 @@ namespace coeus {
     }
 
     template<typename T>
-    void HermesEngine::DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
+    void HermesEngine::DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) { //NOLINT
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
         size_t blob_size = variable.SelectionSize() * sizeof(T);
@@ -78,7 +78,7 @@ namespace coeus {
     }
 
     template<typename T>
-    void HermesEngine::DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
+    void HermesEngine::DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) { //NOLINT
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
         size_t blob_size = variable.SelectionSize() * sizeof(T);
@@ -90,12 +90,12 @@ namespace coeus {
     }
 
     template<typename T>
-    void DoPutSync_(adios2::core::Variable<T> &variable, const T *values) {
+    void DoPutSync_(adios2::core::Variable<T> &variable, const T *values) { //NOLINT
         std::cout << __func__ << std::endl;
     }
 
     template<typename T>
-    void DoGetSync_(adios2::core::Variable<T> &variable, T *values) {
+    void DoGetSync_(adios2::core::Variable<T> &variable, T *values) { //NOLINT
         std::cout << __func__ << std::endl;
     }
 
