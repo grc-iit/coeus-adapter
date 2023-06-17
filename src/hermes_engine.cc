@@ -68,7 +68,9 @@ namespace coeus {
     void HermesEngine::DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
+        std::cout << "GetBucket Done" << std::endl;
         size_t blob_size = variable.SelectionSize() * sizeof(T);
+        std::cout << "SelectionSize Done" << std::endl;
         hapi::Context ctx;
         hermes::BlobId blob_id;
         hermes::Blob blob;
@@ -81,12 +83,18 @@ namespace coeus {
     void HermesEngine::DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
         std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
+        std::cout << "GetBucket Done" << std::endl;
         size_t blob_size = variable.SelectionSize() * sizeof(T);
+        std::cout << "SelectionSize Done" << std::endl;
         hapi::Context ctx;
         hermes::Blob blob(blob_size);
         hermes::BlobId blob_id;
+        blob.resize(blob_size);
+        std::cout << "Before memcpy " << std::endl;
         memcpy(blob.data(), values , blob_size);
+        std::cout << "memcpy Done" << std::endl;
         bkt.Put(variable.m_Name, blob, blob_id, ctx);
+        std::cout << "Put Done" << std::endl;
     }
 
     template<typename T>
