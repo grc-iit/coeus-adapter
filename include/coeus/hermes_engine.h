@@ -96,19 +96,19 @@ namespace coeus {
          * */
 
 #define declare_type(T) \
-    void DoPutSync(adios2::core::Variable<T> &variable, \
+    void DoPutSync(adios2::core::Variable<T> &variable, /* NOLINT */\
                    const T *values) override { \
       DoPutSync_(variable, values); \
     } \
-    void DoPutDeferred(adios2::core::Variable<T> &variable, \
+    void DoPutDeferred(adios2::core::Variable<T> &variable, /* NOLINT */ \
                        const T *values) override { \
       DoPutDeferred_(variable, values);\
     } \
-    void DoGetSync(adios2::core::Variable<T> &variable, \
+    void DoGetSync(adios2::core::Variable<T> &variable, /* NOLINT */ \
                    T *values) override { \
       DoGetSync_(variable, values); \
     } \
-    void DoGetDeferred(adios2::core::Variable<T> &variable, \
+    void DoGetDeferred(adios2::core::Variable<T> &variable, /* NOLINT */ \
                        T *values) override { \
       DoGetDeferred_(variable, values);\
     }
