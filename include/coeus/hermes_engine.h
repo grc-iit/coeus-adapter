@@ -28,9 +28,8 @@
 #include <string>
 
 namespace coeus {
-
-    class HermesEngine : public adios2::plugin::PluginEngineInterface {
-    public:
+class HermesEngine : public adios2::plugin::PluginEngineInterface {
+ public:
         /** Construct the HermesEngine */
         HermesEngine(adios2::core::IO &adios, //NOLINT
                      const std::string &name,
@@ -48,7 +47,7 @@ namespace coeus {
          * and can be thought of as a frame in a video or a snapshot of a simulation.
          * */
         adios2::StepStatus BeginStep(adios2::StepMode mode,
-                                     const float timeoutSeconds = -1.0) override;
+                     const float timeoutSeconds = -1.0) override;
 
         /** Define the end of a step */
         void EndStep() override;
@@ -64,7 +63,7 @@ namespace coeus {
         /** Execute all deferred gets */
         void PerformGets() override;
 
-    protected:
+ protected:
         /** Initialize (wrapper around Init_)*/
         void Init() override { Init_(); }
 
