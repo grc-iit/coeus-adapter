@@ -83,7 +83,7 @@ namespace coeus {
         hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
         size_t blob_size = variable.SelectionSize() * sizeof(T);
         hapi::Context ctx;
-        hermes::Blob blob;
+        hermes::Blob blob(blob_size);
         hermes::BlobId blob_id;
         memcpy(blob.data(), values , blob_size);
         bkt.Put(variable.m_Name, blob, blob_id, ctx);
