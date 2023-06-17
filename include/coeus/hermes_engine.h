@@ -31,7 +31,7 @@ namespace coeus {
     class HermesEngine : public adios2::plugin::PluginEngineInterface {
     public:
         /** Construct the HermesEngine */
-        HermesEngine(adios2::core::IO &adios,
+        HermesEngine(adios2::core::IO &adios, //NOLINT
                      const std::string &name,
                      const adios2::Mode mode,
                      adios2::helper::Comm comm);
@@ -72,19 +72,19 @@ namespace coeus {
 
         /** Place data in Hermes */
         template<typename T>
-        void DoPutSync_(adios2::core::Variable<T> &variable, const T *values);
+        void DoPutSync_(adios2::core::Variable<T> &variable, const T *values);// NOLINT
 
         /** Place data in Hermes asynchronously */
         template<typename T>
-        void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values);
+        void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values);// NOLINT
 
         /** Get data from Hermes (sync) */
         template<typename T>
-        void DoGetSync_(adios2::core::Variable<T> &variable, T *values);
+        void DoGetSync_(adios2::core::Variable<T> &variable, T *values);// NOLINT
 
         /** Get data from Hermes (async) */
         template<typename T>
-        void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values);
+        void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values);// NOLINT
 
         /** Close a particular transport */
         void DoClose(const int transportIndex = -1) override;
