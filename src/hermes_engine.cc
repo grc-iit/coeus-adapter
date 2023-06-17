@@ -42,7 +42,7 @@ namespace coeus {
 
 /**
  * Destruct the HermesEngine.
- * */
+ * *
     HermesEngine::~HermesEngine() {
     }
 
@@ -66,7 +66,7 @@ namespace coeus {
 
     template<typename T>
     void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
-        std::cout << __func__ << std::endl;      
+        std::cout << __func__ << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
         size_t blob_size = variable.SelectionSize() * sizeof(T);
         hapi::Context ctx;
@@ -143,3 +143,4 @@ coeus::HermesEngine *EngineCreate(adios2::core::IO &io,
 /** C wrapper to destroy engine */
 void EngineDestroy(coeus::HermesEngine *obj) { delete obj; }
 }
+
