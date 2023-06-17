@@ -42,7 +42,7 @@ namespace coeus {
 
 /**
  * Destruct the HermesEngine.
- * *
+ * */
     HermesEngine::~HermesEngine() {
     }
 
@@ -65,28 +65,28 @@ namespace coeus {
     }
 
     template<typename T>
-    void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
+    void HermesEngine::DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
         std::cout << __func__ << std::endl;
-        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
+        hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
+        size_t blob_size = variable.SelectionSize() * sizeof(T);
+        hapi::Context ctx;
+        hermes::BlobId blob_id;
+        hermes::Blob blob;
+        bkt.GetBlobId(variable.m_Name , blob_id);
+        bkt.Get(blob_id, blob, ctx);
+        memcpy(values, blob.data(), blob_size);
+    }
+
+    template<typename T>
+    void HermesEngine::DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values) {
+        std::cout << __func__ << std::endl;
+        hapi::Bucket bkt = HERMES->GetBucket(variable.m_Name);
         size_t blob_size = variable.SelectionSize() * sizeof(T);
         hapi::Context ctx;
         hermes::Blob blob;
         hermes::BlobId blob_id;
         memcpy(blob.data(), values , blob_size);
-        bkt.Put(variable.Name(), blob, blob_id, ctx);
-    }
-
-    template<typename T>
-    void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values) {
-        std::cout << __func__ << std::endl;
-        hapi::Bucket bkt = HERMES->GetBucket(variable.Name());
-        size_t blob_size = variable.SelectionSize() * sizeof(T);
-        hapi::Context ctx;
-        hermes::BlobId blob_id;
-        hermes::Blob blob;
-        bkt.GetBlobId(variable.Name(), blob_id);
-        bkt.Get(blob_id, blob, ctx);
-        memcpy(values, blob.data(), blob_size);
+        bkt.Put(variable.m_Name, blob, blob_id, ctx);
     }
 
     template<typename T>
