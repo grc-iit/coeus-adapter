@@ -25,7 +25,7 @@ namespace coeus {
  * initialization of the engine. The PluginEngineInterface will store
  * the "io" variable in the "m_IO" variable.
  * */
-    HermesEngine::HermesEngine(adios2::core::IO &io,
+    HermesEngine::HermesEngine(adios2::core::IO &io, //NOLINT
                                const std::string &name,
                                const adios2::Mode mode,
                                adios2::helper::Comm comm)
@@ -132,7 +132,7 @@ namespace coeus {
 extern "C" {
 
 /** C wrapper to create engine */
-coeus::HermesEngine *EngineCreate(adios2::core::IO &io,
+coeus::HermesEngine *EngineCreate(adios2::core::IO &io, //NOLINT
                                   const std::string &name,
                                   const adios2::Mode mode,
                                   adios2::helper::Comm comm) {

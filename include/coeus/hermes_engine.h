@@ -31,7 +31,7 @@ namespace coeus {
     class HermesEngine : public adios2::plugin::PluginEngineInterface {
     public:
         /** Construct the HermesEngine */
-        HermesEngine(adios2::core::IO &adios,
+        HermesEngine(adios2::core::IO &adios, //NOLINT
                      const std::string &name,
                      const adios2::Mode mode,
                      adios2::helper::Comm comm);
