@@ -10,21 +10,24 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+/*#ifndef COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
+#define COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_*/
 
-
-#ifndef COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
-#define COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
+#ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
+#define INCLUDE_COEUS_HERMES_ENGINE_H_
 
 #include <adios2.h>
-#include "adios2/engine/plugin/PluginEngineInterface.h"
-#include <iostream>
-#include <fstream>
-#include <stdio.h>
-#include <stdlib.h>
+#include <adios2/engine/plugin/PluginEngineInterface.h>
 #include <hermes.h>
 
-namespace coeus {
+#include <cstdio>
+#include <cstdlib>
 
+#include <iostream>
+#include <fstream>
+#include <string>
+
+namespace coeus {
     class HermesEngine : public adios2::plugin::PluginEngineInterface {
     public:
         /** Construct the HermesEngine */
@@ -91,6 +94,7 @@ namespace coeus {
          * ADIOS2_FOREACH_STDTYPE_1ARG is a macro which iterates over every
          * known type (e.g., int, double, float, etc).
          * */
+
 #define declare_type(T) \
     void DoPutSync(adios2::core::Variable<T> &variable, \
                    const T *values) override { \
@@ -114,4 +118,4 @@ namespace coeus {
 
 }  // namespace coeus
 
-#endif  // COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
+#endif  // INCLUDE_COEUS_HERMES_ENGINE_H_
