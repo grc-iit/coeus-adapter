@@ -135,7 +135,9 @@ class TestManager(ABC):
         test_name = test_name.strip()
         if test_name in self.tests_:
             print(f"Running test: {test_name}")
-            exit_code = self.tests_[test_name]()
+            print(f"Test args: {args}")
+            #exit_code = self.tests_[test_name]()
+            exit_code = self.tests_[test_name](*args) # Pass the arguments to  the test function
         else:
             print(f"{test_name} was not found. Available tests: ")
             for i, test in enumerate(self.tests_):
