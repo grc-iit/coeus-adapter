@@ -128,7 +128,7 @@ class TestManager(ABC):
             if callable(getattr(self, attr)):
                 self.tests_[attr] = getattr(self, attr)
 
-    def call(self, test_name):
+    def call(self, test_name, *args): # Added *args to enable test arguments
         self.set_paths()
         if self.disable_testing:
             return
