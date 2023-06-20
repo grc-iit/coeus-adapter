@@ -128,16 +128,15 @@ class TestManager(ABC):
             if callable(getattr(self, attr)):
                 self.tests_[attr] = getattr(self, attr)
 
-    def call(self, test_name, *args): # Added *args to enable test arguments
+    def call(self, test_name): # Maybe add args def call(self, test_name, *args):
         self.set_paths()
         if self.disable_testing:
             return
         test_name = test_name.strip()
         if test_name in self.tests_:
             print(f"Running test: {test_name}")
-            print(f"Test args: {args}")
-            #exit_code = self.tests_[test_name]()
-            exit_code = self.tests_[test_name](*args) # Pass the arguments to  the test function
+            exit_code = self.tests_[test_name]()
+            #exit_code = self.tests_[test_name](*args)
         else:
             print(f"{test_name} was not found. Available tests: ")
             for i, test in enumerate(self.tests_):

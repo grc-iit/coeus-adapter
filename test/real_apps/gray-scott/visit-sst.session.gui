@@ -42,7 +42,7 @@
             <Field name="visible" type="bool">false</Field>
             <Field name="posted" type="bool">false</Field>
         </Object>
-        <Field name="plotDatabases" type="stringVector">"localhost:gs.bp.sst" </Field>
+        <Field name="plotDatabases" type="stringVector">"localhost:Fgs.bp.sst" </Field>
         <Object name="TimeFormat">
             <Field name="displayMode" type="string">Cycles</Field>
             <Field name="precision" type="int">5</Field>
