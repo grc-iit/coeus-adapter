@@ -12,6 +12,8 @@
 
 #include "coeus/hermes_engine.h"
 
+namespace hapi = hermes::api;
+
 int main() {
   adios2::ADIOS adios;
 
