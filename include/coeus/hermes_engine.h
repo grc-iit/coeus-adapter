@@ -72,11 +72,13 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
         /** Place data in Hermes */
         template<typename T>
-        void DoPutSync_(const adios2::core::Variable<T> &variable, const T *values);
+        void DoPutSync_(const adios2::core::Variable<T> &variable,
+                        const T *values);
 
         /** Place data in Hermes asynchronously */
         template<typename T>
-        void DoPutDeferred_(const adios2::core::Variable<T> &variable, const T *values);
+        void DoPutDeferred_(const adios2::core::Variable<T> &variable,
+                            const T *values);
 
         /** Get data from Hermes (sync) */
         template<typename T>
@@ -84,7 +86,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
         /** Get data from Hermes (async) */
         template<typename T>
-        void DoGetDeferred_(const adios2::core::Variable<T> &variable, T *values);
+        void DoGetDeferred_(const adios2::core::Variable<T> &variable,
+                            T *values);
 
         /** Close a particular transport */
         void DoClose(const int transportIndex = -1) override;
