@@ -92,7 +92,8 @@ namespace coeus {
     }
 
     template<typename T>
-    void DoPutSync_(const adios2::core::Variable<T> &variable, const T *values) {
+    void DoPutSync_(const adios2::core::Variable<T> &variable,
+                    const T *values) {
         std::cout << __func__ << std::endl;
     }
 
