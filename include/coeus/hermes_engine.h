@@ -72,19 +72,22 @@ namespace coeus {
 
         /** Place data in Hermes */
         template<typename T>
-        void DoPutSync_(adios2::core::Variable<T> &variable, const T *values);// NOLINT
+        void DoPutSync_(const adios2::core::Variable<T> &variable,
+                        const T *values);
 
         /** Place data in Hermes asynchronously */
         template<typename T>
-        void DoPutDeferred_(adios2::core::Variable<T> &variable, const T *values);// NOLINT
+        void DoPutDeferred_(const adios2::core::Variable<T> &variable,
+                            const T *values);
 
         /** Get data from Hermes (sync) */
         template<typename T>
-        void DoGetSync_(adios2::core::Variable<T> &variable, T *values);// NOLINT
+        void DoGetSync_(const adios2::core::Variable<T> &variable, T *values);
 
         /** Get data from Hermes (async) */
         template<typename T>
-        void DoGetDeferred_(adios2::core::Variable<T> &variable, T *values);// NOLINT
+        void DoGetDeferred_(const adios2::core::Variable<T> &variable,
+                            T *values);
 
         /** Close a particular transport */
         void DoClose(const int transportIndex = -1) override;
