@@ -26,7 +26,7 @@ class NativeTestManager(TestManager):
         self.stop_daemon(spawn_info)
         return node.exit_code
 
-    def test_pdf_calc(self, input_file, output_file, num_bins, output_inputdata):
+    def test_pdf_calc(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
