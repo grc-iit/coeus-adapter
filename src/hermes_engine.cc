@@ -146,3 +146,4 @@ coeus::HermesEngine *EngineCreate(adios2::core::IO &io,//NOLINT
 /** C wrapper to destroy engine */
 void EngineDestroy(coeus::HermesEngine *obj) { delete obj; }
 }
+
