@@ -9,6 +9,7 @@ class NativeTestManager(TestManager):
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
         self.GraySIM_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-gray-scott"
         self.GrayCalc_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-pdf-calc"
+        self.Simulation_Path = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott/simulation"
 
     def test_basic(self):
             spawn_info = self.spawn_info(nprocs=1,
@@ -30,6 +31,7 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(self.GrayCalc_CMD, spawn_info)
+        #node = Exec(self.GrayCalc_CMD, spawn_info)
+        node = Exec(f"mpirun -n 1 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
