@@ -23,15 +23,15 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(self.GraySIM_CMD, spawn_info)
+        node = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
+
 
     def test_pdf_calc(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        #node = Exec(self.GrayCalc_CMD, spawn_info)
-        node = Exec(f"mpirun -n 1 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        node = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} {self.Simulation_Path}/gs.bp pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
