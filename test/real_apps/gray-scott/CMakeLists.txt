@@ -2,7 +2,6 @@
 # Distributed under the OSI-approved Apache License, Version 2.0.  See
 # accompanying file Copyright.txt for details.
 #------------------------------------------------------------------------------#
-
 add_executable(adios2-gray-scott
   simulation/main.cpp
   simulation/gray-scott.cpp
@@ -38,5 +37,5 @@ install(DIRECTORY "catalyst"
 install(PROGRAMS "cleanup.sh" 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/adios2-examples/gray-scott) 
 
-pytest(native test_pdf_calc)
 pytest(native test_gray_scott_sim)
+pytest(native test_pdf_calc)
