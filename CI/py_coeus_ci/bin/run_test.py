@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # else:
     #    test_args = []
 
-    test_cls = load_class(f"tests2", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
+    test_cls = load_class(f"native_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
     #tests.call(test_name, *test_args)
     tests.call(test_name)
