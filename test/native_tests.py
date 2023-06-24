@@ -7,7 +7,7 @@ class NativeTestManager(TestManager):
 
     def set_paths(self):
         self.INSTALL_PATH= f"{self.CMAKE_BINARY_DIR}/bin"
-        self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott/simulation"
+        self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott"
 
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
         self.GraySIM_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-gray-scott"
