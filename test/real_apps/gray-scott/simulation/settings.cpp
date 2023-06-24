@@ -1,6 +1,7 @@
 #include "../../gray-scott/simulation/settings.h"
 
 #include <fstream>
+#include "coeus/hermes_engine.h"
 
 #include "../../gray-scott/simulation/json.hpp"
 
