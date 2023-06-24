@@ -39,3 +39,5 @@ install(PROGRAMS "cleanup.sh"
 
 pytest(native test_gray_scott_sim)
 pytest(native test_pdf_calc)
+pytest(native test_gray_scott_sim_parallel)
+pytest(native test_pdf_calc_parallel)
