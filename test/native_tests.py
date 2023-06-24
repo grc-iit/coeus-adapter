@@ -43,16 +43,29 @@ class NativeTestManager(TestManager):
 
         Copy(f"{self.GRAY_SCOTT_PATH}/cleanup.sh", self.INSTALL_FOLDER)
 
-    def test_gray_scott_sim(self):
+    def test_gray_scott_simulation_file(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info()
         simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
         return simulation.exit_code
 
 
-    def test_pdf_calc(self):
+    def test_gray_scott_analysis_file(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info()
         simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
         analysis = Exec(f"mpirun {self.GrayCalc_CMD} {self.INSTALL_PATH}/gs.bp {self.INSTALL_PATH}/pdf.bp 100", spawn_info)
+        return simulation.exit_code + analysis.exit_code
+
+    def test_gray_scott_simulation_file_parallel(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info()
+        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        return simulation.exit_code
+
+    def test_gray_scott_analysis_file_parallel(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info()
+        simulation = Exec(f"mpirun -n 4{self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} {self.INSTALL_PATH}/gs.bp {self.INSTALL_PATH}/pdf.bp 100", spawn_info)
         return simulation.exit_code + analysis.exit_code

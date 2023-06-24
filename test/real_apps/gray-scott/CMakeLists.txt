@@ -37,5 +37,7 @@ install(DIRECTORY "catalyst"
 install(PROGRAMS "cleanup.sh" 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/adios2-examples/gray-scott) 
 
-pytest(native test_gray_scott_sim)
-pytest(native test_pdf_calc)
+pytest(native test_gray_scott_simulation_file)
+pytest(native test_gray_scott_analysis_file)
+pytest(native test_gray_scott_simulation_file_parallel)
+pytest(native test_gray_scott_analysis_file_parallel)
