@@ -10,12 +10,15 @@ add_executable(adios2-gray-scott
   simulation/restart.cpp
 )
 #target_link_libraries(adios2-gray-scott adios2::adios2 MPI::MPI_C)
-
 add_executable(adios2-pdf-calc analysis/pdf-calc.cpp)
 target_link_libraries(adios2-pdf-calc adios2::adios2 MPI::MPI_C)
 install(TARGETS adios2-pdf-calc 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+add_dependencies(adios2-gray-scott hermes_engine)
+target_link_libraries(adios2-gray-scott PRIVATE hermes_engine MPI::MPI_C)
+install(TARGETS adios2-gray-scott
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 
 install(FILES "adios2.xml" "adios2-inline-plugin.xml" "adios2-fides-staging.xml"
@@ -35,27 +38,16 @@ install(DIRECTORY "catalyst"
 install(PROGRAMS "cleanup.sh" 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/adios2-examples/gray-scott)
 
+pytest(native test_gray_scott_simulation_file)
+pytest(native test_gray_scott_analysis_file)
+pytest(native test_gray_scott_simulation_file_parallel)
+pytest(native test_gray_scott_analysis_file_parallel)
 
-##############################################################################
-##############################################################################
-add_dependencies(adios2-gray-scott hermes_engine)
-target_link_libraries(adios2-gray-scott PRIVATE hermes_engine MPI::MPI_C)
-install(TARGETS adios2-gray-scott
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-##############################################################################
-##############################################################################
-pytest(native test_gray_scott_sim)
-
-set_tests_properties(test_gray_scott_sim PROPERTIES ENVIRONMENT
+set_tests_properties(test_gray_scott_simulation_file PROPERTIES ENVIRONMENT
         "LD_LIBRARY_PATH=${COEUS_BINARY_DIR}/bin:$ENV{LD_LIBRARY_PATH}")
-##############################################################################
-##############################################################################
-pytest(native test_pdf_calc)
-
-set_tests_properties(test_pdf_calc PROPERTIES ENVIRONMENT
+set_tests_properties(test_gray_scott_analysis_file PROPERTIES ENVIRONMENT
         "LD_LIBRARY_PATH=${COEUS_BINARY_DIR}/bin:$ENV{LD_LIBRARY_PATH}")
-##############################################################################
-##############################################################################
-#pytest(native test_pdf_calc)
-#pytest(native test_gray_scott_sim_parallel)
-#pytest(native test_pdf_calc_parallel)
+set_tests_properties(test_gray_scott_simulation_file_parallel PROPERTIES ENVIRONMENT
+        "LD_LIBRARY_PATH=${COEUS_BINARY_DIR}/bin:$ENV{LD_LIBRARY_PATH}")
+set_tests_properties(test_gray_scott_analysis_file_parallel PROPERTIES ENVIRONMENT
+        "LD_LIBRARY_PATH=${COEUS_BINARY_DIR}/bin:$ENV{LD_LIBRARY_PATH}")
