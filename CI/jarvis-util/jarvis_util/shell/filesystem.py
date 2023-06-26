@@ -67,3 +67,21 @@ class Chmod(Exec):
         if len(cmds) == 0:
             raise Exception('Must set either path+mode or modes')
         super().__init__(cmds, exec_info)
+
+
+class Copy(Exec):
+    """
+    Change the mode of a file
+    """
+
+    def __init__(self, target=None, destination=None, exec_info=None):
+        """
+        Change the mode of a file
+
+        :param target: path to file to copy
+        :param destination: destination of the new file
+        """
+        if isinstance(target, str) and isinstance(destination, str):
+            super().__init__(f'cp {target} {destination}', exec_info)
+        else:
+            raise Exception('target and destination must be strings')
