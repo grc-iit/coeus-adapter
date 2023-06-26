@@ -20,28 +20,36 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
-    def test_gray_scott_sim(self):
+    def test_gray_scott_simulation_file(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(f"mpirun -n 1 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
-        return node.exit_code
+        return simulation.exit_code
 
-    def test_pdf_calc(self):
+    def test_gray_scott_analysis_file(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(f"mpirun -n 1 {self.GrayCalc_CMD} {self.gsbp_path}/gs.bp pdf.bp 100", spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun {self.GrayCalc_CMD} {self.gsbp_path}/gs.bp {self.gsbp_path}/pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
-        return node.exit_code
-"""
-    def test_gray_scott_sim_parallel(self):
-        node = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json")
-        return node.exit_code
+        return simulation.exit_code + analysis.exit_code
 
+    def test_gray_scott_simulation_file_parallel(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        self.stop_daemon(spawn_info)
+        return simulation.exit_code
 
-    def test_pdf_calc_parallel(self):
-        node = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} {self.gsbp_path}/gs.bp pdf.bp 100")
-        return node.exit_code
-"""
+    def test_gray_scott_analysis_file_parallel(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.Simulation_Path}/settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} {self.gsbp_path}/gs.bp {self.gsbp_path}/pdf.bp 100", spawn_info)
+        self.stop_daemon(spawn_info)
+        return simulation.exit_code + analysis.exit_code
