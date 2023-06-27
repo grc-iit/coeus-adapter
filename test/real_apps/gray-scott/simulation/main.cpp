@@ -5,7 +5,6 @@
 
 #include <adios2.h>
 #include <mpi.h>
-#include "coeus/hermes_engine.h"
 
 #include "../../gray-scott/common/timer.hpp"
 #include "../../gray-scott/simulation/gray-scott.h"
