@@ -41,3 +41,8 @@ pytest(native test_gray_scott_simulation_file)
 pytest(native test_gray_scott_analysis_file)
 pytest(native test_gray_scott_simulation_file_parallel)
 pytest(native test_gray_scott_analysis_file_parallel)
+
+pytest(native test_gray_scott_simulation_file_hermes)
+pytest(native test_gray_scott_analysis_file_hermes)
+pytest(native test_gray_scott_simulation_file_parallel_hermes)
+pytest(native test_gray_scott_analysis_file_parallel_hermes)
