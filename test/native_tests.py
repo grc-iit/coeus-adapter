@@ -8,12 +8,10 @@ class NativeTestManager(TestManager):
     def set_paths(self):
         self.INSTALL_PATH= f"{self.CMAKE_BINARY_DIR}/bin"
         self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott"
-        self.GSBP_PATH = f"{self.CMAKE_BINARY_DIR}/test/real_apps/gray-scott"
 
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
         self.GraySIM_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-gray-scott"
         self.GrayCalc_CMD = f"{self.CMAKE_BINARY_DIR}/bin/adios2-pdf-calc"
-
 
     def test_basic(self):
             spawn_info = self.spawn_info(nprocs=1,
@@ -27,6 +25,7 @@ class NativeTestManager(TestManager):
         Mkdir(self.INSTALL_PATH)
 
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
+        Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-fides-staging.xml", self.INSTALL_PATH)
 
@@ -36,6 +35,7 @@ class NativeTestManager(TestManager):
         Copy(f"{self.GRAY_SCOTT_PATH}/visit-sst.session.gui", self.INSTALL_PATH)
 
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files.json", self.INSTALL_PATH)
+        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hermes.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-staging.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-inline.json", self.INSTALL_PATH)
 
@@ -47,41 +47,87 @@ class NativeTestManager(TestManager):
 
 
     def clean_simulation(self):
-        spawn_info = self.spawn_info()
-        paths_to_remove = [f"{self.GSBP_PATH}/*.bp", f"{self.GSBP_PATH}/*.bp.dir",
-                           f"{self.GSBP_PATH}/*.h5", f"{self.GSBP_PATH}/*.sst", f"{self.GSBP_PATH}/*.ssc",
-                           f"{self.GSBP_PATH}/*_insitumpi_*", f"{self.GSBP_PATH}/*.png",
-                           f"{self.GSBP_PATH}/*.pnm", f"{self.GSBP_PATH}/*.jpg", f"{self.GSBP_PATH}/*.log"]
+        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        paths_to_remove = ["*.bp", "*.bp.dir", "*.h5", "*.sst", "*.ssc",
+                           "*_insitumpi_*", "*.png", "*.pnm", "*.jpg", "*.log"]
         rm = Rm(paths_to_remove, spawn_info)
         return rm
 
     def test_gray_scott_simulation_file(self):
         self.prepare_simulation()
-        spawn_info = self.spawn_info()
-        simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
+        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
 
     def test_gray_scott_analysis_file(self):
         self.prepare_simulation()
-        spawn_info = self.spawn_info()
-        simulation = Exec(f"mpirun {self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun {self.GrayCalc_CMD} {self.GSBP_PATH}/gs.bp {self.GSBP_PATH}/pdf.bp 100", spawn_info)
+        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
     def test_gray_scott_simulation_file_parallel(self):
         self.prepare_simulation()
-        spawn_info = self.spawn_info()
-        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
+        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
     def test_gray_scott_analysis_file_parallel(self):
         self.prepare_simulation()
-        spawn_info = self.spawn_info()
-        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} {self.INSTALL_PATH}/settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} {self.GSBP_PATH}/gs.bp {self.GSBP_PATH}/pdf.bp 100", spawn_info)
+        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
+    # Testing with Hermes
+    def test_gray_scott_simulation_file_hermes(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server',
+                                     cwd=self.INSTALL_PATH)
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        self.stop_daemon(spawn_info)
+        self.clean_simulation()
+        return simulation.exit_code
+
+
+    def test_gray_scott_analysis_file_hermes(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server',
+                                     cwd=self.INSTALL_PATH)
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        analysis = Exec(f"mpirun {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
+        self.stop_daemon(spawn_info)
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
+    def test_gray_scott_simulation_file_parallel_hermes(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server',
+                                     cwd=self.INSTALL_PATH)
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        self.stop_daemon(spawn_info)
+        self.clean_simulation()
+        return simulation.exit_code
+
+    def test_gray_scott_analysis_file_parallel_hermes(self):
+        self.prepare_simulation()
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server',
+                                     cwd=self.INSTALL_PATH)
+        self.start_daemon(spawn_info)
+        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
+        self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
