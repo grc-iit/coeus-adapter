@@ -48,7 +48,10 @@ class NativeTestManager(TestManager):
 
     def clean_simulation(self):
         spawn_info = self.spawn_info()
-        paths_to_remove = ["build", "*.bp", "*.bp.dir", "*.h5", "*.sst", "*.ssc", "*_insitumpi_*", "*.png", "*.pnm", "*.jpg", "*.log"]
+        paths_to_remove = [f"{self.GSBP_PATH}/*.bp", f"{self.GSBP_PATH}/*.bp.dir",
+                           f"{self.GSBP_PATH}/*.h5", f"{self.GSBP_PATH}/*.sst", f"{self.GSBP_PATH}/*.ssc",
+                           f"{self.GSBP_PATH}/*_insitumpi_*", f"{self.GSBP_PATH}/*.png",
+                           f"{self.GSBP_PATH}/*.pnm", f"{self.GSBP_PATH}/*.jpg", f"{self.GSBP_PATH}/*.log"]
         rm = Rm(paths_to_remove, spawn_info)
         return rm
 
