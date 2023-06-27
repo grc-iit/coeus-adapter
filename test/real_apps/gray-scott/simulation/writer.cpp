@@ -1,4 +1,6 @@
 #include "../../gray-scott/simulation/writer.h"
+#include "coeus/hermes_engine.h"
+
 
 void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
 {

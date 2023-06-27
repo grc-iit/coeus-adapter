@@ -3,6 +3,8 @@
 // https://github.com/kaityo256/sevendayshpc/tree/master/day5
 
 #include "../../gray-scott/simulation/gray-scott.h"
+#include "coeus/hermes_engine.h"
+
 
 #include <mpi.h>
 #include <random>

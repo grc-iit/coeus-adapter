@@ -16,7 +16,7 @@ namespace hapi = hermes::api;
 
 int main() {
   adios2::ADIOS adios;
-
+  std::cout << "Hola" << std::endl;
   // NOTE(llogan): LD_LIBRARY_PATH must point to the directory which contains
   // the libhermes_engine.so file.
 
