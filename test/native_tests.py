@@ -45,11 +45,13 @@ class NativeTestManager(TestManager):
 
         Copy(f"{self.GRAY_SCOTT_PATH}/cleanup.sh", self.INSTALL_PATH)
 
+
     def clean_simulation(self):
         spawn_info = self.spawn_info()
-        clean = Exec(f"{self.GRAY_SCOTT_PATH}/cleanup.sh", spawn_info)
-        return clean
-    
+        paths_to_remove = ["build", "*.bp", "*.bp.dir", "*.h5", "*.sst", "*.ssc", "*_insitumpi_*", "*.png", "*.pnm", "*.jpg", "*.log"]
+        rm = Rm(paths_to_remove, spawn_info)
+        return rm
+
     def test_gray_scott_simulation_file(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info()
