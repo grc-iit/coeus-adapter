@@ -24,8 +24,8 @@ class NativeTestManager(TestManager):
     def prepare_simulation(self):
         Mkdir(self.INSTALL_PATH)
 
-        Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
-        Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml", self.INSTALL_PATH)
+        #Copy(f"{self.GRAY_SCOTT_PATH}/adios_XML/adios2.xml", self.INSTALL_PATH)
+        #Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-fides-staging.xml", self.INSTALL_PATH)
 
@@ -35,7 +35,7 @@ class NativeTestManager(TestManager):
         Copy(f"{self.GRAY_SCOTT_PATH}/visit-sst.session.gui", self.INSTALL_PATH)
 
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files.json", self.INSTALL_PATH)
-        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hermes.json", self.INSTALL_PATH)
+        #Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hermes.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-staging.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-inline.json", self.INSTALL_PATH)
 
@@ -48,7 +48,7 @@ class NativeTestManager(TestManager):
 
     def clean_simulation(self):
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        paths_to_remove = ["*.bp", "*.bp.dir", "*.h5", "*.sst", "*.ssc",
+        paths_to_remove = ["*.xml", "*.bp", "*.bp.dir", "*.h5", "*.sst", "*.ssc",
                            "*_insitumpi_*", "*.png", "*.pnm", "*.jpg", "*.log"]
         rm = Rm(paths_to_remove, spawn_info)
         return rm
@@ -56,33 +56,37 @@ class NativeTestManager(TestManager):
     def test_gray_scott_simulation_file(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code
+        return simulation.exit_code + setup.exit_code
 
 
     def test_gray_scott_analysis_file(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
         analysis = Exec(f"mpirun {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code + analysis.exit_code + setup.exit_code
 
     def test_gray_scott_simulation_file_parallel(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code
+        return simulation.exit_code + setup.exit_code
 
     def test_gray_scott_analysis_file_parallel(self):
         self.prepare_simulation()
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun -n 4 {self.GraySIM_CMD} settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code + analysis.exit_code + setup.exit_code
 
     # Testing with Hermes
     def test_gray_scott_simulation_file_hermes(self):
@@ -91,10 +95,12 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}", spawn_info)
+        rename = Exec(f"mv -u adios2-hermes.xml adios2.xml", spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code
+        return simulation.exit_code + setup.exit_code + rename.exit_code
 
 
     def test_gray_scott_analysis_file_hermes(self):
@@ -103,11 +109,13 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}", spawn_info)
+        rename = Exec(f"mv -u adios2-hermes.xml adios2.xml", spawn_info)
+        simulation = Exec(f"mpirun {self.GraySIM_CMD} settings-files.json", spawn_info)
         analysis = Exec(f"mpirun {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code + analysis.exit_code + setup.exit_code + rename.exit_code
 
     def test_gray_scott_simulation_file_parallel_hermes(self):
         self.prepare_simulation()
@@ -115,10 +123,12 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}", spawn_info)
+        rename = Exec(f"mv -u adios2-hermes.xml adios2.xml", spawn_info)
+        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code
+        return simulation.exit_code + setup.exit_code + rename.exit_code
 
     def test_gray_scott_analysis_file_parallel_hermes(self):
         self.prepare_simulation()
@@ -126,8 +136,10 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files-hermes.json", spawn_info)
+        setup = Exec(f"cp -u {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}", spawn_info)
+        rename = Exec(f"mv -u adios2-hermes.xml adios2.xml", spawn_info)
+        simulation = Exec(f"mpirun -n 2 {self.GraySIM_CMD} settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 {self.GrayCalc_CMD} gs.bp pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code + analysis.exit_code + setup.exit_code + rename.exit_code
