@@ -18,9 +18,13 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
-    def prepare_simulation(self):
+    def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
-        
+        if mode is "file":
+            Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
+        else:
+            Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
+
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-fides-staging.xml", self.INSTALL_PATH)
@@ -49,88 +53,79 @@ class NativeTestManager(TestManager):
         return rm
 
     def test_gray_scott_simulation_file(self):
-        self.prepare_simulation()
+        self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        setup = Exec(f"cp {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + setup.exit_code
+        return simulation.exit_code
 
 
     def test_gray_scott_analysis_file(self):
-        self.prepare_simulation()
+        self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        setup = Exec(f"cp {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code + setup.exit_code
+        return simulation.exit_code + analysis.exit_code
 
     def test_gray_scott_simulation_file_parallel(self):
-        self.prepare_simulation()
+        self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun -n 4 ./adios2-gray-scott settings-files.json", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + setup.exit_code
+        return simulation.exit_code
 
     def test_gray_scott_analysis_file_parallel(self):
-        self.prepare_simulation()
+        self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2.xml {self.INSTALL_PATH}", spawn_info)
         simulation = Exec(f"mpirun -n 4 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code + setup.exit_code
+        return simulation.exit_code + analysis.exit_code
 
     # Testing with Hermes
     def test_gray_scott_simulation_file_hermes(self):
-        self.prepare_simulation()
+        self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}/adios2.xml", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + setup.exit_code 
-
+        return simulation.exit_code
 
     def test_gray_scott_analysis_file_hermes(self):
-        self.prepare_simulation()
+        self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}/adios2.xml", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code + setup.exit_code 
+        return simulation.exit_code + analysis.exit_code
 
     def test_gray_scott_simulation_file_parallel_hermes(self):
-        self.prepare_simulation()
+        self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}/adios2.xml", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + setup.exit_code 
+        return simulation.exit_code
 
     def test_gray_scott_analysis_file_parallel_hermes(self):
-        self.prepare_simulation()
+        self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        setup = Exec(f"cp  {self.GRAY_SCOTT_PATH}/adios2-hermes.xml {self.INSTALL_PATH}/adios2.xml", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code + setup.exit_code 
+        return simulation.exit_code + analysis.exit_code
