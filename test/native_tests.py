@@ -20,7 +20,7 @@ class NativeTestManager(TestManager):
 
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
-        if mode is "file":
+        if mode == "file":
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
         else:
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
@@ -84,7 +84,7 @@ class NativeTestManager(TestManager):
         return simulation.exit_code + analysis.exit_code
 
     # Testing with Hermes
-    def test_gray_scott_simulation_file_hermes(self):
+    def test_gray_scott_simulation_hermes(self):
         self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
@@ -95,7 +95,7 @@ class NativeTestManager(TestManager):
         self.clean_simulation()
         return simulation.exit_code
 
-    def test_gray_scott_analysis_file_hermes(self):
+    def test_gray_scott_analysis_hermes(self):
         self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
@@ -107,7 +107,7 @@ class NativeTestManager(TestManager):
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
-    def test_gray_scott_simulation_file_parallel_hermes(self):
+    def test_gray_scott_simulation_hermes_parallel(self):
         self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
@@ -118,7 +118,7 @@ class NativeTestManager(TestManager):
         self.clean_simulation()
         return simulation.exit_code
 
-    def test_gray_scott_analysis_file_parallel_hermes(self):
+    def test_gray_scott_analysis_hermes_parallel(self):
         self.prepare_simulation("Hermes")
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server',
