@@ -34,5 +34,5 @@ jobs:
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       
     - name: Test
-      run: cd ${{github.workspace}}/build && ctest --output-on-failure
+      run: cd ${{github.workspace}}/build && ctest --verbose
 
