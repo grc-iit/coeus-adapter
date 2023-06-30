@@ -64,7 +64,7 @@ class NativeTestManager(TestManager):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+        analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 10", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
@@ -79,7 +79,7 @@ class NativeTestManager(TestManager):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
         simulation = Exec(f"mpirun -n 4 ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+        analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 10", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
@@ -102,7 +102,7 @@ class NativeTestManager(TestManager):
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+        analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 10", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
@@ -125,7 +125,7 @@ class NativeTestManager(TestManager):
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+        analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 10", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
