@@ -82,6 +82,6 @@ class Copy(Exec):
         :param destination: destination of the new file
         """
         if isinstance(target, str) and isinstance(destination, str):
-            super().__init__(f'cp {target} {destination}', exec_info)
+            super().__init__(f'cp -r {target} {destination}', exec_info)
         else:
             raise Exception('target and destination must be strings')
