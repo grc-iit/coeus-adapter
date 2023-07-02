@@ -100,8 +100,8 @@ class NativeTestManager(TestManager):
         self.start_daemon(spawn_info)
         Mkdir(f"test_gray_scott_simulation_hermes_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_output", spawn_info)
         self.stop_daemon(spawn_info)
+        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
@@ -114,8 +114,8 @@ class NativeTestManager(TestManager):
         Mkdir(f"test_gray_scott_analysis_hermes_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_output", spawn_info)
         self.stop_daemon(spawn_info)
+        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
@@ -127,8 +127,8 @@ class NativeTestManager(TestManager):
         self.start_daemon(spawn_info)
         Mkdir(f"test_gray_scott_simulation_hermes_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_parallel_output", spawn_info)
         self.stop_daemon(spawn_info)
+        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_parallel_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
@@ -141,7 +141,7 @@ class NativeTestManager(TestManager):
         Mkdir(f"test_gray_scott_analysis_hermes_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_parallel_output", spawn_info)
         self.stop_daemon(spawn_info)
+        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_parallel_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
