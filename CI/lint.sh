@@ -1,6 +1,5 @@
 #!/bin/bash
 PROJECT_ROOT=$1
-
 cpplint --recursive \
 --exclude="${PROJECT_ROOT}/build" \
 --exclude="${PROJECT_ROOT}/build_docker" \
