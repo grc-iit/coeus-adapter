@@ -18,12 +18,15 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
+
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
         if mode == "file":
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
         else:
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
+
+        Mkdir(f"results", spawn_info)
 
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
@@ -55,9 +58,9 @@ class NativeTestManager(TestManager):
     def test_gray_scott_simulation_file(self):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        Mkdir(f"test_gray_scott_simulation_file_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_file_output", spawn_info)
+        Copy(f"gs.bp", f"results/sim_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/sim_ckpt.bp", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
@@ -65,29 +68,31 @@ class NativeTestManager(TestManager):
     def test_gray_scott_analysis_file(self):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        Mkdir(f"test_gray_scott_analysis_file_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_file_output", spawn_info)
+        Copy(f"gs.bp", f"results/ana_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/ana_ckpt.bp", spawn_info)
+        Copy(f"pdf.bp", f"results/ana_pdf.bp", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
     def test_gray_scott_simulation_file_parallel(self):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        Mkdir(f"test_gray_scott_simulation_file_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 4 ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_file_parallel_output", spawn_info)
+        Copy(f"gs.bp", f"results/sim_par_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/sim_par_ckpt.bp", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
     def test_gray_scott_analysis_file_parallel(self):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        Mkdir(f"test_gray_scott_analysis_file_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 4 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_file_parallel_output", spawn_info)
+        Copy(f"gs.bp", f"results/ana_par_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/ana_par_ckpt.bp", spawn_info)
+        Copy(f"pdf.bp", f"results/ana_par_pdf.bp", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
@@ -98,10 +103,10 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        Mkdir(f"test_gray_scott_simulation_hermes_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
+        Copy(f"gs.bp", f"results/sim_her_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/sim_her_ckpt.bp", spawn_info)
         self.stop_daemon(spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
@@ -111,11 +116,12 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        Mkdir(f"test_gray_scott_analysis_hermes_output", spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+        Copy(f"gs.bp", f"results/ana_her_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/ana_her_ckpt.bp", spawn_info)
+        Copy(f"pdf.bp", f"results/ana_her_pdf.bp", spawn_info)
         self.stop_daemon(spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
@@ -125,10 +131,10 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        Mkdir(f"test_gray_scott_simulation_hermes_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
+        Copy(f"gs.bp", f"results/sim_her_par_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/sim_her_par_ckpt.bp", spawn_info)
         self.stop_daemon(spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_simulation_hermes_parallel_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code
 
@@ -138,10 +144,12 @@ class NativeTestManager(TestManager):
                                      hermes_conf='hermes_server',
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
-        Mkdir(f"test_gray_scott_analysis_hermes_parallel_output", spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
+
+        Copy(f"gs.bp", f"results/ana_her_par_gs.bp", spawn_info)
+        Copy(f"ckpt.bp", f"results/ana_her_par_ckpt.bp", spawn_info)
+        Copy(f"pdf.bp", f"results/ana_her_par_pdf.bp", spawn_info)
         self.stop_daemon(spawn_info)
-        Copy(f"*.bp", f"test_gray_scott_analysis_hermes_parallel_output", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
