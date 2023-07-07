@@ -89,7 +89,7 @@ class TestManager(ABC):
         if hermes_mode == 'kBypass':
             env['HERMES_ADAPTER_MODE'] = 'kBypass'
 
-        env['LD_LIBRARY_PATH'] = f'{self.CMAKE_BINARY_DIR}/bin'
+        env['LD_LIBRARY_PATH'] = f'{self.CMAKE_BINARY_DIR}/bin:{os.getenv("LD_LIBRARY_PATH")}'
 
         return SpawnInfo(nprocs=nprocs,
                          ppn=ppn,
