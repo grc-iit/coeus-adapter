@@ -26,8 +26,8 @@ class NativeTestManager(TestManager):
         else:
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
 
-        Mkdir(f"results", spawn_info)
-
+        #Mkdir(f"results", spawn_info)
+        Mkdir(f"{self.INSTALL_PATH}/results")
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-fides-staging.xml", self.INSTALL_PATH)
