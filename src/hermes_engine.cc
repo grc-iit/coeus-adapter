@@ -96,8 +96,8 @@ namespace coeus {
             // Save the information to a file
         std::string filename = "/tmp/tmp.5TUlmkfNlZ/data_Get.txt";
         std::ofstream outputFile(filename);
-        if (outputFile.is_open()){
-            for (size_t i = 0; i < blob_size / sizeof(T); ++i){
+        if (outputFile.is_open()) {
+            for (size_t i = 0; i < blob_size / sizeof(T); ++i) {
                 outputFile << values[i] << " ";
             }
             outputFile.close();
@@ -127,8 +127,8 @@ namespace coeus {
             // Save the information to a file
         std::string filename = "/tmp/tmp.5TUlmkfNlZ/data_Put.txt";
         std::ofstream outputFile(filename);
-        if (outputFile.is_open()){
-            for (size_t i = 0; i < blob_size / sizeof(T); ++i){
+        if (outputFile.is_open()) {
+            for (size_t i = 0; i < blob_size / sizeof(T); ++i) {
                 outputFile << values[i] << " ";
             }
             outputFile.close();
