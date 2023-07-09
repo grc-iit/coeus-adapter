@@ -62,30 +62,18 @@ namespace coeus {
     * and can be thought of as a frame in a video or a snapshot of a simulation.
 * */
 
-    int currentStep = 0;
-
     adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
-
-        size_t current_step = CurrentStep(); //do we need to do something with the currentStep?
-
-        return adios2::StepStatus::OK;
-
+        m_CurrentStep = m_CurrentStep + 1;
+        adios2::StepStatus status = adios2::StepStatus::OK;
+        return status;
     }
+
 
     size_t HermesEngine::CurrentStep() const {
         std::cout << __func__ << std::endl;
-       /* hapi::Bucket bkt = HERMES->GetBucket("step");
-        size_t blob_size = sizeof(size_t);
-        hapi::Context ctx;
-        hermes::BlobId blob_id;
-        hermes::Blob blob(blob_size);
-        bkt.GetBlobId("step", blob_id);
-        bkt.Get(blob_id, blob, ctx);
-        size_t stepValue;
-        memcpy(&stepValue, blob.data(), sizeof(size_t));
-        return stepValue;*/
+        return m_CurrentStep;
     }
 
     void HermesEngine::EndStep() {
@@ -106,7 +94,7 @@ namespace coeus {
         memcpy(values, blob.data(), blob_size);
         #ifdef SAVE_TO_FILE
             // Save the information to a file
-        std::string filename = "/tmp/tmp.VQdVBqQYtL/data_Get.txt";
+        std::string filename = "/tmp/tmp.5TUlmkfNlZ/data_Get.txt";
         std::ofstream outputFile(filename);
         if (outputFile.is_open())
         {
@@ -139,41 +127,24 @@ namespace coeus {
 
         bkt.Put(variable.m_Name, blob, blob_id, ctx);
 
-        /*
-        std::vector<T> values2(variable.SelectionSize());
-        size_t blob_size2 = variable.SelectionSize() * sizeof(T);
-        hapi::Context ctx2;
-        hermes::BlobId blob_id2;
-        hermes::Blob blob2(blob_size2);
-        bkt.GetBlobId(variable.m_Name , blob_id2);
-        bkt.Get(blob_id2, blob2, ctx2);
-        memcpy(values2.data(), blob2.data(), blob_size);
-
-        bool areEqual = (memcmp(values, values2.data(), blob_size) == 0);
-        if (areEqual) {
-            std::cout << "values and values2 are the same." << std::endl;
-        } else {
-            std::cout << "values and values2 are different." << std::endl;
-        }
-         ##########################################################################################*/
-#ifdef SAVE_TO_FILE
-        // Save the information to a file
-    std::string filename = "/tmp/tmp.VQdVBqQYtL/data_Put.txt";
-    std::ofstream outputFile(filename);
-    if (outputFile.is_open())
-    {
-        for (size_t i = 0; i < blob_size / sizeof(T); ++i)
+        #ifdef SAVE_TO_FILE
+            // Save the information to a file
+        std::string filename = "/tmp/tmp.5TUlmkfNlZ/data_Put.txt";
+        std::ofstream outputFile(filename);
+        if (outputFile.is_open())
         {
-            outputFile << values[i] << " ";
+            for (size_t i = 0; i < blob_size / sizeof(T); ++i)
+            {
+                outputFile << values[i] << " ";
+            }
+            outputFile.close();
+            std::cout << "Data saved to file: " << filename << std::endl;
         }
-        outputFile.close();
-        std::cout << "Data saved to file: " << filename << std::endl;
-    }
-    else
-    {
-        std::cout << "Unable to open file: " << filename << std::endl;
-    }
-#endif // SAVE_TO_FILE
+        else
+        {
+            std::cout << "Unable to open file: " << filename << std::endl;
+        }
+        #endif // SAVE_TO_FILE
     }
 
     template<typename T>

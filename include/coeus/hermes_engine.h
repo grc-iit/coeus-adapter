@@ -64,7 +64,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         void PerformGets() override;
 
  protected:
-        /** Initialize (wrapper around Init_)*/
+
+        size_t m_CurrentStep = 0;
+
+    /** Initialize (wrapper around Init_)*/
         void Init() override { Init_(); }
 
         /** Actual engine initialization */
