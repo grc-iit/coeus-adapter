@@ -31,17 +31,6 @@ if __name__ == '__main__':
     from jarvis_util.util.naming import to_camel_case
     from jarvis_util.util.import_mod import load_class
 
-    # Modify the arguments for the pdf-calc test
-   # if test_name == 'test_pdf_calc':
-    #     input_file = ''
-    #     output_file = ''
-    #    num_bins = 1000
-    #    output_inputdata = 'YES'
-    #    test_args = [input_file, output_file, str(num_bins), output_inputdata]
-    # else:
-    #    test_args = []
-
     test_cls = load_class(f"native_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
-    #tests.call(test_name, *test_args)
     tests.call(test_name)
