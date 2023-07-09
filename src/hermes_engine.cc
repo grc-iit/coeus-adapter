@@ -65,7 +65,7 @@ namespace coeus {
     adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
-        m_CurrentStep = m_CurrentStep + 1;
+        ++m_CurrentStep;
         adios2::StepStatus status = adios2::StepStatus::OK;
         return status;
     }
