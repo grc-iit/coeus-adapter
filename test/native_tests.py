@@ -9,6 +9,8 @@ class NativeTestManager(TestManager):
         self.INSTALL_PATH= f"{self.CMAKE_BINARY_DIR}/bin"
         self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott"
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
+        self.PUT_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/put_test"
+        self.GET_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/get_test"
 
     def test_basic(self):
             spawn_info = self.spawn_info(nprocs=1,
@@ -18,6 +20,21 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
+    def test_put_test(self):
+            spawn_info = self.spawn_info(nprocs=1,
+                                         hermes_conf='hermes_server')
+            self.start_daemon(spawn_info)
+            node = Exec(self.PUT_TEST_CMD, spawn_info)
+            self.stop_daemon(spawn_info)
+            return node.exit_code
+
+    def test_get_test(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        node = Exec(self.GET_TEST_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return node.exit_code
 
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
