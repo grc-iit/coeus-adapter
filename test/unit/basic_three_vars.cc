@@ -35,10 +35,31 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    /*adios2::Engine reader = io.Open(file, adios2::Mode::Read);
-    reader.BeginStep();
-    reader.Get("myVar",);
-    reader.EndStep();*/
+    // Define variable
+    std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
+    std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
+    std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
+
+    const adios2::Dims shape = {2, 3};
+    const adios2::Dims start = {0, 0};
+    const adios2::Dims count = {2, 3};
+
+    adios2::Variable<double> var1 = io.DefineVariable<double>(
+            "myVar1", shape, start, count);
+    adios2::Variable<double> var2 = io.DefineVariable<double>(
+            "myVar2", shape, start, count);
+    adios2::Variable<double> var3 = io.DefineVariable<double>(
+            "myVar3", shape, start, count);
+
+    // Write to file
+    adios2::Engine writer = io.Open(file, adios2::Mode::Write);
+    writer.Put(var, data.data());
+    writer.Close();
+
+    // Read from file
+    adios2::Engine reader = io.Open(file, adios2::Mode::Read);
+    reader.Get(var, data.data());
+    reader.Close();
 
     std::cout << "Done" << std::endl;
 
