@@ -1,7 +1,7 @@
 add_executable(basic ${CMAKE_CURRENT_SOURCE_DIR}/basic.cc)
 add_executable(put_test ${CMAKE_CURRENT_SOURCE_DIR}/put_test.cc)
 add_executable(get_test ${CMAKE_CURRENT_SOURCE_DIR}/get_test.cc)
-add_executable(basic_three_vars ${CMAKE_CURRENT_SOURCE_DIR}/basic_three_vars.cc basic_three_vars.cc)
+add_executable(basic_three_vars ${CMAKE_CURRENT_SOURCE_DIR}/basic_three_vars.cc)
 add_dependencies(basic hermes_engine)
 add_dependencies(put_test hermes_engine)
 add_dependencies(get_test hermes_engine)

@@ -53,12 +53,25 @@ int main() {
 
     // Write to file
     adios2::Engine writer = io.Open(file, adios2::Mode::Write);
-    writer.Put(var, data.data());
+    writer.BeginStep();
+    writer.Put(var1, data1.data());
+    writer.EndStep();
+
+    writer.BeginStep();
+    writer.Put(var2, data2.data());
+    writer.EndStep();
+
+    writer.BeginStep();
+    writer.Put(var3, data3.data());
+    writer.EndStep();
+
     writer.Close();
 
     // Read from file
     adios2::Engine reader = io.Open(file, adios2::Mode::Read);
-    reader.Get(var, data.data());
+    reader.BeginStep();
+    reader.Get(var1, data1.data());
+    reader.EndStep();
     reader.Close();
 
     std::cout << "Done" << std::endl;
