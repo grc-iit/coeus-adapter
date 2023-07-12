@@ -61,7 +61,7 @@ namespace coeus {
     * Logically, a "step" represents a snapshot of the data at a specific time,
     * and can be thought of as a frame in a video or a snapshot of a simulation.
 * */
-    int GetCurrentStep(){
+    int GetCurrentStep() {
         std::cout << __func__ << std::endl;
         int currentStep = 0;
         hapi::Bucket bkt_step = HERMES->GetBucket("step");
@@ -78,12 +78,12 @@ namespace coeus {
     adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
-        // Increase the current step and save in hermes the value of the current step.
+        // Increase currentStep and save it in Hermes
         int currentStep;
-        if (firstStep == 0){
+        if (firstStep == 0) {
             currentStep = 0;
             firstStep++;
-        }else{
+        } else {
             currentStep = GetCurrentStep();
         }
 
@@ -93,7 +93,7 @@ namespace coeus {
         hermes::Blob blob(blob_size);
         hermes::BlobId blob_id;
 
-        currentStep =static_cast<int>(currentStep) + 1 ;
+        currentStep = static_cast<int>(currentStep) + 1;
         memcpy(blob.data(), &currentStep, blob_size);
         bkt.Put("step", blob, blob_id, ctx);
         std::cout << "We are at step: " << currentStep << std::endl;
@@ -111,19 +111,18 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-    //Get the step we are currently at so we can retrieve the appropriate value.
+    // Get the step we are currently at so we can retrieve the appropriate value.
 
 
     template<typename T>
     void HermesEngine::DoGetDeferred_(
             const adios2::core::Variable<T> &variable, T *values) {
-
         std::cout << __func__ << std::endl;
 
-        //Get the step
+        // Get the step
         int currentStep = GetCurrentStep();
 
-        //Retrieve the value of the variable in the current step
+        // Retrieve the value of the variable in the current step
         std::string filename = variable.m_Name + std::to_string(currentStep);
 
         std::cout << "File name is: " << filename << std::endl;
@@ -139,13 +138,12 @@ namespace coeus {
     template<typename T>
     void HermesEngine::DoPutDeferred_(
             const adios2::core::Variable<T> &variable, const T *values) {
-
         std::cout << __func__ << std::endl;
 
-        //Get current step
+        // Get current step
         int currentStep = GetCurrentStep();
 
-        //Create a bucket with the associated step
+        // Create a bucket with the associated step
         std::string filename = variable.m_Name + std::to_string(currentStep);
 
         std::cout << "File name is: " << filename << std::endl;

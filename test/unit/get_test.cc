@@ -10,8 +10,8 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
 #include <cassert>
+#include "coeus/hermes_engine.h"
 
 namespace hapi = hermes::api;
 
@@ -60,12 +60,12 @@ int main() {
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var,data_get);
+    reader.Get(var, data_get);
     assert(data2 == data_get);
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var,data_get);
+    reader.Get(var, data_get);
     assert(data3 == data_get);
     reader.EndStep();
 
