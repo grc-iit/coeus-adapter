@@ -12,9 +12,8 @@ target_link_libraries(get_test PRIVATE hermes_engine MPI::MPI_CXX)
 target_link_libraries(basic_three_vars PRIVATE hermes_engine MPI::MPI_CXX)
 
 pytest(native test_basic)
-pytest(native test_put_test)
-pytest(native test_put_and_get_test)
 pytest(native test_basic_three_vars)
+pytest(native test_put_and_get_test)
 
 set_tests_properties(${test_name} PROPERTIES ENVIRONMENT
             "LD_LIBRARY_PATH=${COEUS_BINARY_DIR}/bin:$ENV{LD_LIBRARY_PATH}")

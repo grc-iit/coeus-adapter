@@ -22,14 +22,6 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
-    def test_put_test(self):
-            spawn_info = self.spawn_info(nprocs=1,
-                                         hermes_conf='hermes_server')
-            self.start_daemon(spawn_info)
-            node = Exec(self.PUT_TEST_CMD, spawn_info)
-            self.stop_daemon(spawn_info)
-            return node.exit_code
-
     def test_put_and_get_test(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
