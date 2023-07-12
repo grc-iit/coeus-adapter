@@ -11,7 +11,9 @@ class NativeTestManager(TestManager):
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
         self.PUT_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/put_test"
         self.GET_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/get_test"
-        self.BACIS_THREE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic_three_vars"
+        self.BASIC_THREE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic_three_vars"
+        self.PUT_2VARS_CMD = f"{self.CMAKE_BINARY_DIR}/bin/put_2vars_test"
+        self.GET_2VARS_CMD = f"{self.CMAKE_BINARY_DIR}/bin/get_2vars_test"
 
 
     def test_basic(self):
@@ -35,9 +37,20 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        node = Exec(self.BACIS_THREE_CMD, spawn_info)
+        node = Exec(self.BASIC_THREE_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
+
+    def test_put_and_get_2vars_test(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                         hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        put = Exec(self.PUT_2VARS_CMD, spawn_info)
+        get = Exec(self.GET_2VARS_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return put.exit_code + get.exit_code
+
+
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
         if mode == "file":
