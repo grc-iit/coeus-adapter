@@ -111,8 +111,8 @@ namespace coeus {
         std::cout << __func__ << std::endl;
     }
 
-    // Get the step we are currently at so we can retrieve the appropriate value.
-
+    // Get the step we are currently at so
+    // we can retrieve the appropriate value.
 
     template<typename T>
     void HermesEngine::DoGetDeferred_(
