@@ -11,6 +11,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/hermes_engine.h"
+#include <cassert>
 
 namespace hapi = hermes::api;
 
@@ -35,12 +36,42 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    /*adios2::Engine reader = io.Open(file, adios2::Mode::Read);
+    // Define variables for comparison
+    std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
+    std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
+    std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
+
+
+    std::vector<double> data_get(6);
+
+    const adios2::Dims shape = {2, 3};
+    const adios2::Dims start = {0, 0};
+    const adios2::Dims count = {2, 3};
+
+    adios2::Variable<double> var = io.DefineVariable<double>(
+            "myVar", shape, start, count);
+
+    adios2::Engine reader = io.Open(file, adios2::Mode::Read);
+    std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
+
     reader.BeginStep();
-    reader.Get("myVar",);
-    reader.EndStep();*/
+    reader.Get(var, data_get);
+    assert(data1 == data_get);
+    reader.EndStep();
 
+    reader.BeginStep();
+    reader.Get(var,data_get);
+    assert(data2 == data_get);
+    reader.EndStep();
+
+    reader.BeginStep();
+    reader.Get(var,data_get);
+    assert(data3 == data_get);
+    reader.EndStep();
+
+    reader.Close();
+
+    std::cout << "All data arrays match!" << std::endl;
     std::cout << "Done" << std::endl;
-
     return 0;
 }

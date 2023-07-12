@@ -102,7 +102,7 @@ namespace coeus {
     }
 
 
-    size_t HermesEngine::CurrentStep() const noexcept {
+    size_t HermesEngine::CurrentStep() const {
         std::cout << __func__ << std::endl;
         return 0;
     }
@@ -135,22 +135,6 @@ namespace coeus {
         bkt.GetBlobId(filename , blob_id);
         bkt.Get(blob_id, blob, ctx);
         memcpy(values, blob.data(), blob.size());
-
-        /*
-        #ifdef SAVE_TO_FILE
-            // Save the information to a file
-        std::string filename = "/tmp/tmp.VQdVBqQYtL/data_Get.txt";
-        std::ofstream outputFile(filename);
-        if (outputFile.is_open()) {
-            for (size_t i = 0; i < blob_size / sizeof(T); ++i) {
-                outputFile << values[i] << " ";
-            }
-            outputFile.close();
-            std::cout << "Data saved to file: " << filename << std::endl;
-        } else {
-            std::cout << "Unable to open file: " << filename << std::endl;
-        }
-        #endif*/
     }
 
     template<typename T>
@@ -173,25 +157,8 @@ namespace coeus {
         hermes::BlobId blob_id;
         memcpy(blob.data(), values , blob_size);
         bkt.Put(filename, blob, blob_id, ctx);
-/*
-        #ifdef SAVE_TO_FILE
-            // Save the information to a file
-        std::string filename = "/tmp/tmp.VQdVBqQYtL/build-ares/bin/results/data_Put.txt";
-        std::ofstream outputFile(filename);
-        if (outputFile.is_open()) {
-            outputFile << "  " << std::endl;
-            outputFile << "Put request, Variable name: " << variable.m_Name << std::endl;
-            outputFile << "  " << std::endl;
+        std::cout << "Bucket id PUT: " << bkt.GetId() << std::endl;
 
-            for (size_t i = 0; i < blob_size / sizeof(T); ++i) {
-                outputFile << values[i] << " ";
-            }
-            outputFile.close();
-            std::cout << "Data saved to file: " << filename << std::endl;
-        } else {
-            std::cout << "Unable to open file: " << filename << std::endl;
-        }
-        #endif*/
     }
 
     template<typename T>

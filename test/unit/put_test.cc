@@ -35,31 +35,33 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    // Define variables
-    std::vector<double> data = {2, 2, 3, 1, 2, 2};
+    // Define variable
+    std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
+    std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
+    std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
+
     const adios2::Dims shape = {2, 3};
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var = io.DefineVariable<double>(
+    adios2::Variable<double> var1 = io.DefineVariable<double>(
             "myVar", shape, start, count);
 
     // Write to file
     adios2::Engine writer = io.Open(file, adios2::Mode::Write);
+    writer.BeginStep();
+    writer.Put(var1, data1.data());
+    writer.EndStep();
 
     writer.BeginStep();
-    std::cout << "Writing data" << std::endl;
-    writer.Put(var, data.data());
-    std::cout << "Data written" << std::endl;
+    writer.Put(var1, data2.data());
+    writer.EndStep();
+
+    writer.BeginStep();
+    writer.Put(var1, data3.data());
     writer.EndStep();
 
     writer.Close();
-    std::cout << "Writer closed" << std::endl;
-
-    // Read from file
-   // adios2::Engine reader = io.Open(file, adios2::Mode::Read);
-    //reader.Get(var, data.data());
-    //reader.Close();
 
     std::cout << "Done" << std::endl;
 

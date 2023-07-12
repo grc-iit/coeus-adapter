@@ -11,6 +11,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/hermes_engine.h"
+#include <cassert>
 
 namespace hapi = hermes::api;
 
@@ -44,21 +45,21 @@ int main() {
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var1 = io.DefineVariable<double>(
+    adios2::Variable<double> var = io.DefineVariable<double>(
             "myVar", shape, start, count);
 
     // Write to file
     adios2::Engine writer = io.Open(file, adios2::Mode::Write);
     writer.BeginStep();
-    writer.Put(var1, data1.data());
+    writer.Put(var, data1.data());
     writer.EndStep();
 
     writer.BeginStep();
-    writer.Put(var1, data2.data());
+    writer.Put(var, data2.data());
     writer.EndStep();
 
     writer.BeginStep();
-    writer.Put(var1, data3.data());
+    writer.Put(var, data3.data());
     writer.EndStep();
 
     writer.Close();
@@ -67,32 +68,27 @@ int main() {
     std::vector<double> data2_get(data2);
     std::vector<double> data3_get(data3);
 
-
-
     // Read from file
     adios2::Engine reader = io.Open(file, adios2::Mode::Read);
     reader.BeginStep();
-    reader.Get(var1, data1_get.data());
+    reader.Get(var, data1_get.data());
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var1, data2_get.data());
+    reader.Get(var, data2_get.data());
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var1, data3_get.data());
+    reader.Get(var, data3_get.data());
     reader.EndStep();
 
     reader.Close();
 
-    bool data1Equal = (data1 == data1_get);
-    bool data2Equal = (data2 == data2_get);
-    bool data3Equal = (data3 == data3_get);
+    assert(data1 == data1_get);
+    assert(data2 == data2_get);
+    assert(data3 == data3_get);
 
-
-    std::cout << "data1 is equal to data1_get: " << std::boolalpha << data1Equal << std::endl;
-    std::cout << "data2 is equal to data2_get: " << std::boolalpha << data2Equal << std::endl;
-    std::cout << "data3 is equal to data1_get: " << std::boolalpha << data3Equal << std::endl;
+    std::cout << "All data arrays match!" << std::endl;
 
     std::cout << "Done" << std::endl;
 
