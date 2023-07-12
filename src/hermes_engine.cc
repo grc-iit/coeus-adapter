@@ -127,7 +127,6 @@ namespace coeus {
         std::string filename = variable.m_Name + std::to_string(currentStep);
 
         std::cout << "File name is: " << filename << std::endl;
-
         hapi::Bucket bkt = HERMES->GetBucket(filename);
         hapi::Context ctx;
         hermes::BlobId blob_id;
@@ -157,8 +156,6 @@ namespace coeus {
         hermes::BlobId blob_id;
         memcpy(blob.data(), values , blob_size);
         bkt.Put(filename, blob, blob_id, ctx);
-        std::cout << "Bucket id PUT: " << bkt.GetId() << std::endl;
-
     }
 
     template<typename T>
