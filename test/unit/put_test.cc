@@ -44,21 +44,21 @@ int main() {
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var1 = io.DefineVariable<double>(
+    adios2::Variable<double> var = io.DefineVariable<double>(
             "myVar", shape, start, count);
 
     // Write to file
     adios2::Engine writer = io.Open(file, adios2::Mode::Write);
     writer.BeginStep();
-    writer.Put(var1, data1.data());
+    writer.Put(var, data1.data());
     writer.EndStep();
 
     writer.BeginStep();
-    writer.Put(var1, data2.data());
+    writer.Put(var, data2.data());
     writer.EndStep();
 
     writer.BeginStep();
-    writer.Put(var1, data3.data());
+    writer.Put(var, data3.data());
     writer.EndStep();
 
     writer.Close();
