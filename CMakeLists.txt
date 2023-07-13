@@ -96,6 +96,8 @@ find_package(MPI REQUIRED COMPONENTS C CXX)
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
 message(STATUS "Found OpenMP")
 
+#spdlog
+add_subdirectory(external_libraries/spdlog)
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------

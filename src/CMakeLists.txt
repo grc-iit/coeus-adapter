@@ -14,12 +14,11 @@ target_include_directories(hermes_engine PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
         ${Hermes_INCLUDE_DIR}
-        ${ADIOS2_INCLUDE_DIR}
-        )
-target_link_libraries(hermes_engine
+        ${ADIOS2_INCLUDE_DIR})
+target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
-        ${ADIOS2_LIBRARIES})
-
+        ${ADIOS2_LIBRARIES}
+        ${TARGET_LOGGER})
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

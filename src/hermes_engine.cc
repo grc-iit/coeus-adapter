@@ -11,6 +11,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/hermes_engine.h"
+#include "spdlog/spdlog.h"
 #include <stdio.h>
 #include <stdlib.h>
 
