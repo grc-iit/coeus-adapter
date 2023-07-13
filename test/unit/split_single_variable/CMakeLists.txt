@@ -1,0 +1,9 @@
+add_executable(split_single_var_put put_test.cc)
+add_dependencies(split_single_var_put hermes_engine)
+target_link_libraries(split_single_var_put PRIVATE hermes_engine MPI::MPI_CXX)
+
+add_executable(split_single_var_get get_test.cc)
+add_dependencies(split_single_var_get hermes_engine)
+target_link_libraries(split_single_var_get PRIVATE hermes_engine MPI::MPI_CXX)
+
+pytest(native test_split_single_variable)

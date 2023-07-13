@@ -10,6 +10,7 @@ set(HERMES_ENGINE_SRCS
 # Libraries
 #------------------------------------------------------------------------------
 add_library(hermes_engine ${HERMES_ENGINE_SRCS})
+add_dependencies(hermes_engine spdlog)
 target_include_directories(hermes_engine PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>

@@ -1,4 +1,4 @@
 add_subdirectory(basic)
 add_subdirectory(basic_multi_variable)
-add_subdirectory(split_single_var)
-add_subdirectory(split_multi_var)
+add_subdirectory(split_single_variable)
+add_subdirectory(split_multi_variable)
