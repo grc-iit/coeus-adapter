@@ -9,11 +9,13 @@ class NativeTestManager(TestManager):
         self.INSTALL_PATH= f"{self.CMAKE_BINARY_DIR}/bin"
         self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott"
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
-        self.PUT_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/put_test"
-        self.GET_TEST_CMD = f"{self.CMAKE_BINARY_DIR}/bin/get_test"
-        self.BASIC_THREE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic_three_vars"
-        self.PUT_2VARS_CMD = f"{self.CMAKE_BINARY_DIR}/bin/put_2vars_test"
-        self.GET_2VARS_CMD = f"{self.CMAKE_BINARY_DIR}/bin/get_2vars_test"
+        self.BASIC_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic_multi_variable"
+
+        self.SPLIT_PUT_SINGLE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_single_var_put"
+        self.SPLIT_GET_SINGLE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_single_var_get"
+
+        self.SPLIT_PUT_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_multi_var_put"
+        self.SPLIT_GET_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_multi_var_get"
 
 
     def test_basic(self):
@@ -24,29 +26,29 @@ class NativeTestManager(TestManager):
             self.stop_daemon(spawn_info)
             return node.exit_code
 
-    def test_put_and_get_test(self):
+    def test_basic_multi_variable(self):
         spawn_info = self.spawn_info(nprocs=1,
                                      hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        put = Exec(self.PUT_TEST_CMD, spawn_info)
-        get = Exec(self.GET_TEST_CMD, spawn_info)
-        self.stop_daemon(spawn_info)
-        return put.exit_code + get.exit_code
-
-    def test_basic_three_vars(self):
-        spawn_info = self.spawn_info(nprocs=1,
-                                     hermes_conf='hermes_server')
-        self.start_daemon(spawn_info)
-        node = Exec(self.BASIC_THREE_CMD, spawn_info)
+        node = Exec(self.BASIC_MULTI_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return node.exit_code
 
-    def test_put_and_get_2vars_test(self):
+    def test_split_single_variable(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        put = Exec(self.SPLIT_PUT_SINGLE_CMD, spawn_info)
+        get = Exec(self.SPLIT_GET_SINGLE_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return put.exit_code + get.exit_code
+
+    def test_split_multiple_variable(self):
         spawn_info = self.spawn_info(nprocs=1,
                                          hermes_conf='hermes_server')
         self.start_daemon(spawn_info)
-        put = Exec(self.PUT_2VARS_CMD, spawn_info)
-        get = Exec(self.GET_2VARS_CMD, spawn_info)
+        put = Exec(self.SPLIT_PUT_MULTI_CMD, spawn_info)
+        get = Exec(self.SPLIT_GET_MULTI_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return put.exit_code + get.exit_code
 
