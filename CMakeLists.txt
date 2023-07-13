@@ -97,6 +97,7 @@ find_package(OpenMP REQUIRED COMPONENTS C CXX)
 message(STATUS "Found OpenMP")
 
 #spdlog
+set(SPDLOG_INSTALL ON)
 add_subdirectory(external_libraries/spdlog)
 #------------------------------------------------------------------------------
 # Code Coverage
@@ -157,4 +158,4 @@ add_subdirectory(test)
 #------------------------------------------------------------------------------
 # Install COEUS
 #------------------------------------------------------------------------------
-install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
+#install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
