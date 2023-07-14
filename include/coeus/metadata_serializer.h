@@ -82,6 +82,24 @@ struct VariableMetadata {
   }
 };
 
+std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
+  out << "Name: " << data.name << "\n";
+  out << "Shape: ";
+  for (const auto &s : data.shape) {
+    out << s << " ";
+  }
+  out << "\nStart: ";
+  for (const auto &s : data.start) {
+    out << s << " ";
+  }
+  out << "\nCount: ";
+  for (const auto &c : data.count) {
+    out << c << " ";
+  }
+  out << "\nConstant Shape: " << (data.constantShape ? "True" : "False");
+  return out;
+}
+
 class MetadataSerializer{
     public:
 

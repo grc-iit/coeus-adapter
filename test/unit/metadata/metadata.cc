@@ -47,13 +47,13 @@ int main() {
 
   std::string serializedMetadata = MetadataSerializer::SerializeMetadata(var);
 
-  std::cout << serializedMetadata << std::endl;
-
   hermes::Blob blob(serializedMetadata);
 
   VariableMetadata deserializedMetadata = MetadataSerializer::DeserializeMetadata(blob);
 
   assert(deserializedMetadata==var);
+
+  std::cout << deserializedMetadata << std::endl;
 
   return 0;
 }
