@@ -9,17 +9,17 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-add_library(hermes_engine ${HERMES_ENGINE_SRCS})
+add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/metadata_serializer.h)
 add_dependencies(hermes_engine spdlog)
 target_include_directories(hermes_engine PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        ../include
         ${Hermes_INCLUDE_DIR}
         ${ADIOS2_INCLUDE_DIR})
 target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
-        spdlog)
+        spdlog
+        cereal)
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

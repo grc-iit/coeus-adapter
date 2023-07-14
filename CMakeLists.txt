@@ -97,8 +97,8 @@ find_package(OpenMP REQUIRED COMPONENTS C CXX)
 message(STATUS "Found OpenMP")
 
 #spdlog
-set(SPDLOG_INSTALL ON)
 add_subdirectory(external_libraries/spdlog)
+add_subdirectory(external_libraries/cereal)
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
