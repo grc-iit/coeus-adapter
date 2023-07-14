@@ -41,7 +41,8 @@ namespace coeus {
         // NOTE(llogan): name = params["PluginName"]
         std::cout << __func__ << std::endl;
         Init_();
-        currentStep = 0;
+
+        rank = m_Comm.Rank();
     }
 
 /**
@@ -81,16 +82,21 @@ namespace coeus {
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
         // Increase currentStep and save it in Hermes
-        currentStep++;
+        if(rank == 0) {
+            currentStep++;
+            hapi::Bucket bkt = HERMES->GetBucket("step");
+            size_t blob_size = sizeof(int);
+            hapi::Context ctx;
+            hermes::Blob blob(blob_size);
+            hermes::BlobId blob_id;
+            //currentStep = static_cast<int>(currentStep) + 1;
+            memcpy(blob.data(), &currentStep, blob_size);
+            bkt.Put("step", blob, blob_id, ctx);
+        }
 
-        hapi::Bucket bkt = HERMES->GetBucket("step");
-        size_t blob_size = sizeof(int);
-        hapi::Context ctx;
-        hermes::Blob blob(blob_size);
-        hermes::BlobId blob_id;
-        //currentStep = static_cast<int>(currentStep) + 1;
-        memcpy(blob.data(), &currentStep, blob_size);
-        bkt.Put("step", blob, blob_id, ctx);
+        // Broadcast the updated value of currentStep from the root process to all other processes
+        m_Comm.Bcast(&currentStep, 1, 0);
+
         std::cout << "We are at step: " << currentStep << std::endl;
         adios2::StepStatus status = adios2::StepStatus::OK;
         return status;
@@ -134,12 +140,7 @@ namespace coeus {
     void HermesEngine::DoPutDeferred_(
             const adios2::core::Variable<T> &variable, const T *values) {
 
-        // Define number of processes MPI and rank of current process
-        //int numProcesses = m_Comm.Size();
-        // Get current step
-        //currentStep = GetCurrentStep();
-        //currentStep = this->currentStep;
-        int rank = m_Comm.Rank();
+        //int rank = m_Comm.Rank();
         std::cout << __func__ << " - Step: " << currentStep << ", Rank: " << rank << ", Putting: " << variable.m_Name << " with value: " << *values << std::endl;
 
         // Create a bucket with the associated step and process rank

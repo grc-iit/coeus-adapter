@@ -64,8 +64,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         void PerformGets() override;
 
  private:
-        int firstStep = 0;
-        int currentStep;
+        //int firstStep = 0;
+        int currentStep = 0;
+        int rank;
+
  protected:
     /** Initialize (wrapper around Init_)*/
         void Init() override { Init_(); }
