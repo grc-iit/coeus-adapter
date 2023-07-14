@@ -41,6 +41,7 @@ namespace coeus {
         // NOTE(llogan): name = params["PluginName"]
         std::cout << __func__ << std::endl;
         Init_();
+        currentStep = 0;
     }
 
 /**
@@ -80,21 +81,14 @@ namespace coeus {
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
         // Increase currentStep and save it in Hermes
-        int currentStep;
-        if (firstStep == 0) {
-            currentStep = 0;
-            firstStep++;
-        } else {
-            currentStep = GetCurrentStep();
-        }
+        currentStep++;
 
         hapi::Bucket bkt = HERMES->GetBucket("step");
         size_t blob_size = sizeof(int);
         hapi::Context ctx;
         hermes::Blob blob(blob_size);
         hermes::BlobId blob_id;
-
-        currentStep = static_cast<int>(currentStep) + 1;
+        //currentStep = static_cast<int>(currentStep) + 1;
         memcpy(blob.data(), &currentStep, blob_size);
         bkt.Put("step", blob, blob_id, ctx);
         std::cout << "We are at step: " << currentStep << std::endl;
@@ -139,20 +133,18 @@ namespace coeus {
     template<typename T>
     void HermesEngine::DoPutDeferred_(
             const adios2::core::Variable<T> &variable, const T *values) {
-        std::cout << __func__ << std::endl;
-
-        // Get current step
-        int currentStep = GetCurrentStep();
 
         // Define number of processes MPI and rank of current process
-        int numProcesses = m_Comm.Size();
+        //int numProcesses = m_Comm.Size();
+        // Get current step
+        //currentStep = GetCurrentStep();
+        //currentStep = this->currentStep;
         int rank = m_Comm.Rank();
-        std::cout << "Number of processes: " << numProcesses << std::endl;
-        std::cout << "Rank is: " << rank << std::endl;
+        std::cout << __func__ << " - Step: " << currentStep << ", Rank: " << rank << ", Putting: " << variable.m_Name << " with value: " << *values << std::endl;
 
-        // Create a bucket with the associated step
-        std::string filename = variable.m_Name + std::to_string(currentStep);
-        std::cout << "File name is: " << filename << std::endl;
+        // Create a bucket with the associated step and process rank
+        std::string filename = variable.m_Name + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+        std::cout << "Bucket name is: " << filename << std::endl;
 
         hapi::Bucket bkt = HERMES->GetBucket(filename);
         size_t blob_size = variable.SelectionSize() * sizeof(T);
@@ -162,47 +154,30 @@ namespace coeus {
         memcpy(blob_values.data(), values, blob_size);
         bkt.Put(filename, blob_values, blob_id_values, ctx);
 
-        //////////// METADATA //////////////
-        std::cout << "Name is: " << variable.m_Name << std::endl;
-        std::cout << "Data is: " << *values << std::endl;
-        std::cout << "Shape is: ";
-        for (const auto& element : variable.m_Shape) {
-            std::cout << element << " ";
+        if (filename.compare(0, 4, "step") != 0) {
+            // Store metadata in a separate metadata bucket
+            std::string metadataName = "metadata_" + filename;
+            std::cout << "Metadata Bucket name: " << metadataName << std::endl;
+
+            hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
+            size_t blob_shape_size = variable.m_Shape.size();
+            hermes::Blob blob_shape(blob_shape_size);
+            hermes::BlobId blob_id_shape;
+            memcpy(blob_shape.data(), &variable.m_Shape, blob_shape_size);
+            bkt_metadata.Put(metadataName + "_shape", blob_shape, blob_id_shape, ctx);
+
+            size_t blob_start_size = variable.m_Start.size();
+            hermes::Blob blob_start(blob_start_size);
+            hermes::BlobId blob_id_start;
+            memcpy(blob_start.data(), &variable.m_Start, blob_start_size);
+            bkt_metadata.Put(metadataName + "_start", blob_start, blob_id_start, ctx);
+
+            size_t blob_count_size = variable.m_Count.size();
+            hermes::Blob blob_count(blob_count_size);
+            hermes::BlobId blob_id_count;
+            memcpy(blob_count.data(), &variable.m_Count, blob_count_size);
+            bkt_metadata.Put(metadataName + "_count", blob_count, blob_id_count, ctx);
         }
-        std::cout << std::endl;
-        std::cout << "Start is: ";
-        for (const auto& element : variable.m_Start) {
-            std::cout << element << " ";
-        }
-        std::cout << std::endl;
-        std::cout << "Count is: ";
-        for (const auto& element : variable.m_Count) {
-            std::cout << element << " ";
-        }
-        std::cout << std::endl;
-        //////////////////////////
-
-        std::string metadataName = "metadata_" + filename;
-        std::cout << metadataName << std::endl;
-
-        hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-        size_t blob_shape_size = variable.m_Shape.size();
-        hermes::Blob blob_shape(blob_shape_size);
-        hermes::BlobId blob_id_shape;
-        memcpy(blob_shape.data(), &variable.m_Shape, blob_shape_size);
-        bkt_metadata.Put(metadataName + "_shape", blob_shape, blob_id_shape, ctx);
-
-        size_t blob_start_size = variable.m_Start.size();
-        hermes::Blob blob_start(blob_start_size);
-        hermes::BlobId blob_id_start;
-        memcpy(blob_start.data(), &variable.m_Start, blob_start_size);
-        bkt_metadata.Put(metadataName + "_start", blob_start, blob_id_start, ctx);
-
-        size_t blob_count_size = variable.m_Count.size();
-        hermes::Blob blob_count(blob_count_size);
-        hermes::BlobId blob_id_count;
-        memcpy(blob_count.data(), &variable.m_Count, blob_count_size);
-        bkt_metadata.Put(metadataName + "_count", blob_count, blob_id_count, ctx);
     }
 
     template<typename T>
