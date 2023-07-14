@@ -16,6 +16,8 @@
 #ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
 #define INCLUDE_COEUS_HERMES_ENGINE_H_
 
+#include "coeus/metadata_serializer.h"
+
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include <hermes.h>
