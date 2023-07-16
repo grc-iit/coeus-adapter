@@ -69,6 +69,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         //int firstStep = 0;
         int currentStep = 0;
         int rank;
+        template<typename T>
+        void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable);
+
 
  protected:
     /** Initialize (wrapper around Init_)*/

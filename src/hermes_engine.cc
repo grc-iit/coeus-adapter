@@ -123,6 +123,59 @@ namespace coeus {
     }
 
     template<typename T>
+    void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable){
+        std::cout << __func__ << " Seaching for- Step: " << currentStep << ", Rank: " << rank  << ", Putting: " << variable.m_Name << std::endl;
+        // Get the bucket with the associated step and process rank
+        std::string filename = variable.m_Name + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+        hapi::Bucket bkt = HERMES->GetBucket(filename);
+        hapi::Context ctx;
+
+        Def = nullptr;
+
+        if (filename.compare(0, 4, "step") != 0) {
+            std::string metadataName = "metadata_" + filename;
+            hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
+
+            hermes::Blob blob_metadata;
+            hermes::BlobId blob_id_metadata;
+            bkt.GetBlobId(metadataName , blob_id_metadata);
+            bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx);
+            VariableMetadata deserializedMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
+
+            /*std::vector<size_t> VecShape;
+            std::vector<size_t> VecStart;
+            std::vector<size_t> VecCount;
+
+            hermes::Blob blob_shape;
+            hermes::BlobId blob_id_shape;
+            bkt.GetBlobId(metadataName + "_shape", blob_id_shape);
+            bkt_metadata.Get(blob_id_shape, blob_shape, ctx);
+            VecShape.assign(reinterpret_cast<const size_t*>(blob_shape.data()), reinterpret_cast<const size_t*>(blob_shape.data() + blob_shape.size()));
+
+            hermes::Blob blob_start;
+            hermes::BlobId blob_id_start;
+            bkt.GetBlobId(metadataName "_start" , blob_id_start);
+            bkt_metadata.Get(blob_id_start, blob_start, ctx);
+            VecStart.assign(reinterpret_cast<const size_t*>(blob_start.data()), reinterpret_cast<const size_t*>(blob_start.data() + blob_start.size()));
+
+            hermes::Blob blob_count;
+            hermes::BlobId blob_id_count;
+            bkt.GetBlobId(metadataName "_count" , blob_id_count);
+            bkt_metadata.Get(blob_id_count, blob_count, ctx);
+            VecCount.assign(reinterpret_cast<const size_t*>(blob_count.data()), reinterpret_cast<const size_t*>(blob_count.data() + blob_count.size()));
+            */
+
+            //Now that we have the metada in the system we need to upload it to the IO
+            adios2::core::VariableStruct *metadata = &(engine->m_IO.DefineStructVariable(
+                    deserializedMetadata.name, *Def, deserializedMetadata.shape, deserializedMetadata.start, deserializedMetadata.count));
+
+
+        }
+
+
+    }
+
+    template<typename T>
     void HermesEngine::DoPutDeferred_(
             const adios2::core::Variable<T> &variable, const T *values) {
 
@@ -141,13 +194,21 @@ namespace coeus {
         memcpy(blob_values.data(), values, blob_size);
         bkt.Put(filename, blob_values, blob_id_values, ctx);
 
+
         if (filename.compare(0, 4, "step") != 0) {
             // Store metadata in a separate metadata bucket
             std::string metadataName = "metadata_" + filename;
             std::cout << "Metadata Bucket name: " << metadataName << std::endl;
 
+            std::string serializedMetadata = MetadataSerializer::SerializeMetadata(variable);
             hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-            size_t blob_shape_size = variable.m_Shape.size();
+            size_t blob_metadata_size = serializedMetadata.size();
+            hermes::Blob blob_metadata(blob_metadata_size);
+            hermes::BlobId blob_id_metadata;
+            memcpy(blob_metadata.data(), serializedMetadata.data(), blob_metadata_size);
+            bkt_metadata.Put(metadataName, blob_metadata, blob_id_metadata, ctx);
+
+            /*size_t blob_shape_size = variable.m_Shape.size();
             hermes::Blob blob_shape(blob_shape_size);
             hermes::BlobId blob_id_shape;
             memcpy(blob_shape.data(), &variable.m_Shape, blob_shape_size);
@@ -163,7 +224,7 @@ namespace coeus {
             hermes::Blob blob_count(blob_count_size);
             hermes::BlobId blob_id_count;
             memcpy(blob_count.data(), &variable.m_Count, blob_count_size);
-            bkt_metadata.Put(metadataName + "_count", blob_count, blob_id_count, ctx);
+            bkt_metadata.Put(metadataName + "_count", blob_count, blob_id_count, ctx);*/
         }
     }
 
