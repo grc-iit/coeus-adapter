@@ -10,6 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
+#include <cassert>
 #include "coeus/hermes_engine.h"
 
 namespace hapi = hermes::api;
@@ -35,37 +36,51 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    // Define variable
+    // Define variables for comparison
     std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
     std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
     std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
+
+    std::vector<double> data_get(6);
 
     const adios2::Dims shape = {2, 3};
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var = io.DefineVariable<double>(
-            "myVar", shape, start, count);
+    adios2::Variable<double> var;
 
-    // Write to file
-    adios2::Engine writer = io.Open(file, adios2::Mode::Write);
-    std::cout << "-- WRITER ENGINE INITIALIZED --" << std::endl;
+    // = io.DefineVariable<double>("myVar", shape, start, count);
 
-    writer.BeginStep();
-    writer.Put(var, data1.data());
-    writer.EndStep();
+    adios2::Engine reader = io.Open(file, adios2::Mode::Read);
+    std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
 
-    writer.BeginStep();
-    writer.Put(var, data2.data());
-    writer.EndStep();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data1 == data_get);
+    assert(var.Shape() == shape);
+    assert(var.Start() == start);
+    assert(var.Count() == count);
+    reader.EndStep();
 
-    writer.BeginStep();
-    writer.Put(var, data3.data());
-    writer.EndStep();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data2 == data_get);
+    assert(var.Shape() == shape);
+    assert(var.Start() == start);
+    assert(var.Count() == count);
+    reader.EndStep();
 
-    writer.Close();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data3 == data_get);
+    assert(var.Shape() == shape);
+    assert(var.Start() == start);
+    assert(var.Count() == count);
+    reader.EndStep();
 
+    reader.Close();
+
+    std::cout << "All data arrays match!" << std::endl;
     std::cout << "Done" << std::endl;
-
     return 0;
 }

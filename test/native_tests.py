@@ -17,6 +17,9 @@ class NativeTestManager(TestManager):
         self.SPLIT_PUT_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_multi_var_put"
         self.SPLIT_GET_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_multi_var_get"
 
+        self.SPLIT_PUT_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_put"
+        self.SPLIT_GET_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_get"
+
 
     def test_basic(self):
             spawn_info = self.spawn_info(nprocs=1,
@@ -49,6 +52,15 @@ class NativeTestManager(TestManager):
         self.start_daemon(spawn_info)
         put = Exec(self.SPLIT_PUT_MULTI_CMD, spawn_info)
         get = Exec(self.SPLIT_GET_MULTI_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return put.exit_code + get.exit_code
+
+    def test_split_metadata(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        put = Exec(self.SPLIT_PUT_METADATA_CMD, spawn_info)
+        get = Exec(self.SPLIT_GET_METADATA_CMD, spawn_info)
         self.stop_daemon(spawn_info)
         return put.exit_code + get.exit_code
 
