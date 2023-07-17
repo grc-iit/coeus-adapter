@@ -28,6 +28,7 @@ struct VariableMetadata {
   std::vector<size_t> start;
   std::vector<size_t> count;
   bool constantShape;
+  std::string dataType;
 
   VariableMetadata() = default;
 
@@ -38,6 +39,7 @@ struct VariableMetadata {
     start = variable.m_Start;
     count = variable.Count();
     constantShape = variable.IsConstantDims();
+    dataType = adios2::ToString(variable.m_Type);
   }
 
   template<typename T>
@@ -49,6 +51,7 @@ struct VariableMetadata {
     constantShape = false; /* We need to see if this is correct.
                            *  Though this is mostly just for the unit test,
                            *  as the engine will reference the adios::core::variable constructor */
+    dataType = variable.Type();
   }
 
   bool operator==(const VariableMetadata& other) const {
@@ -79,7 +82,7 @@ struct VariableMetadata {
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(name, shape, start, count, constantShape);
+    ar(name, shape, start, count, constantShape, dataType);
   }
 };
 
