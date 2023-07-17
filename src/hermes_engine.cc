@@ -104,6 +104,11 @@ namespace coeus {
             std::vector<size_t> variableCount = variableMetadata.count;
             bool variableConstantShape = variableMetadata.constantShape;
 
+            // Converting std::vector<size_t> to adios2::Dims which is an alias for std::vector<size_t>
+            adios2::Dims adiosVariableShape = variableShape;
+            adios2::Dims adiosVariableStart = variableStart;
+            adios2::Dims adiosVariableCount = variableCount;
+
             // Print the metadata for debugging
             std::cout << "variableName: " << variableName << std::endl;
             std::cout << "variableShape: ";
@@ -123,22 +128,27 @@ namespace coeus {
             std::cout << std::endl;
             std::cout << "variableConstantShape: " << variableConstantShape << std::endl;
 
-            if (!m_IO.InquireVariable<T>(variableName)) {
-                adios2::DataType variableType = adios2::GetType<T>();
-                adios2::Variable<T> var = m_IO.DefineVariable<T>(variableName, variableShape, variableStart, variableCount);
-                // Perform additional configurations on the variable if needed
-                // var.SetShape(variableShape);
-                // var.SetMemorySelection(variableCount);
-                // var.SetStepSelection(currentStep);
-
-                // Add the variable to the engine's registered variables
-                RegisterVariable(var);
-            }
-
+            AddVariable<double>(variableName, adiosVariableShape,
+                                adiosVariableStart, adiosVariableCount);
         }
         return adios2::StepStatus::OK;
     }
 
+    template <typename T>
+    void HermesEngine::AddVariable(const std::string &name, adios2::Dims shape,
+                                   adios2::Dims start, adios2::Dims count) {
+        if (!m_IO.InquireVariable<T>(name)) {
+            adios2::DataType variableType = adios2::GetType<T>()
+            adios2::Variable<T> var = m_IO.DefineVariable<T>(name, shape, start, count);
+            // Perform additional configurations on the variable if needed
+            // var.SetShape(variableShape);
+            // var.SetMemorySelection(variableCount);
+            // var.SetStepSelection(currentStep);
+
+            // Add the variable to the engine's registered variables
+            RegisterVariable(var);
+        }
+    }
 
     size_t HermesEngine::CurrentStep() const {
         std::cout << __func__ << std::endl;
