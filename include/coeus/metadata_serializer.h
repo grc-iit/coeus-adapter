@@ -113,7 +113,7 @@ class MetadataSerializer{
     }
 
     template<typename T>
-    static std::string SerializeMetadata(adios2::core::Variable<T> &variable){
+    static std::string SerializeMetadata(adios2::core::Variable<T> variable){
       VariableMetadata variableMetadata(variable);
       return SerializeMetadata(variableMetadata);
     }

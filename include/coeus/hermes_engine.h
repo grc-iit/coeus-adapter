@@ -65,12 +65,14 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         /** Execute all deferred gets */
         void PerformGets() override;
 
+        adios2::core::Engine *m_Engine = NULL;
+
  private:
         //int firstStep = 0;
         int currentStep = 0;
         int rank;
-        template<typename T>
-        void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable);
+
+
 
 
  protected:
@@ -89,6 +91,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         template<typename T>
         void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                             const T *values);
+
+        template<typename T>
+        void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable);
 
         /** Get data from Hermes (sync) */
         template<typename T>

@@ -68,6 +68,7 @@ namespace coeus {
     adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                                const float timeoutSeconds) {
         std::cout << __func__ << std::endl;
+        m_Engine = this;
         // Increase currentStep and save it in Hermes
         if(rank == 0) {
           currentStep++;
@@ -83,6 +84,12 @@ namespace coeus {
 
         // Broadcast the updated value of currentStep from the root process to all other processes
         m_Comm.Bcast(&currentStep, 1, 0);
+        /*
+        if (this->m_OpenMode == adios2::Mode::Write){
+
+        }*/
+
+        std::cout << "Current Mode is : " << this->m_OpenMode << std::endl;
 
         std::cout << "We are at step: " << currentStep << std::endl;
         return adios2::StepStatus::OK;
@@ -121,16 +128,14 @@ namespace coeus {
         bkt.Get(blob_id, blob, ctx);
         memcpy(values, blob.data(), blob.size());
     }
-
+/*
     template<typename T>
-    void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable){
+    void getMetadataAndUpload(adios2::core::Engine *engine, int currentStep, int rank ,const adios2::core::Variable<T> &variable){
         std::cout << __func__ << " Seaching for- Step: " << currentStep << ", Rank: " << rank  << ", Putting: " << variable.m_Name << std::endl;
         // Get the bucket with the associated step and process rank
         std::string filename = variable.m_Name + std::to_string(currentStep) + "_rank" + std::to_string(rank);
         hapi::Bucket bkt = HERMES->GetBucket(filename);
         hapi::Context ctx;
-
-        Def = nullptr;
 
         if (filename.compare(0, 4, "step") != 0) {
             std::string metadataName = "metadata_" + filename;
@@ -142,7 +147,7 @@ namespace coeus {
             bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx);
             VariableMetadata deserializedMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
 
-            /*std::vector<size_t> VecShape;
+            std::vector<size_t> VecShape;
             std::vector<size_t> VecStart;
             std::vector<size_t> VecCount;
 
@@ -163,17 +168,16 @@ namespace coeus {
             bkt.GetBlobId(metadataName "_count" , blob_id_count);
             bkt_metadata.Get(blob_id_count, blob_count, ctx);
             VecCount.assign(reinterpret_cast<const size_t*>(blob_count.data()), reinterpret_cast<const size_t*>(blob_count.data() + blob_count.size()));
-            */
+
 
             //Now that we have the metada in the system we need to upload it to the IO
-            adios2::core::VariableStruct *metadata = &(engine->m_IO.DefineStructVariable(
-                    deserializedMetadata.name, *Def, deserializedMetadata.shape, deserializedMetadata.start, deserializedMetadata.count));
-
+            adios2::core::VariableStruct *metadata = &(engine->m_IO.DefineVariable(
+                    deserializedMetadata.name, deserializedMetadata.shape, deserializedMetadata.start, deserializedMetadata.count));
+            engine->RegisterCreatedVariable(variable);
 
         }
-
-
     }
+    */
 
     template<typename T>
     void HermesEngine::DoPutDeferred_(
@@ -200,7 +204,7 @@ namespace coeus {
             std::string metadataName = "metadata_" + filename;
             std::cout << "Metadata Bucket name: " << metadataName << std::endl;
 
-            std::string serializedMetadata = MetadataSerializer::SerializeMetadata(variable);
+            std::string serializedMetadata = MetadataSerializer::SerializeMetadata<T>(variable);
             hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
             size_t blob_metadata_size = serializedMetadata.size();
             hermes::Blob blob_metadata(blob_metadata_size);
