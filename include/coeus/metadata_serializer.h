@@ -14,11 +14,12 @@
 #define COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
 
 #include <adios2/core/Variable.h>
+#include <adios2/cxx11/Variable.h>
 #include "cereal/archives/binary.hpp"
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <hermes_types.h>
-#include <adios2/cxx11/Variable.h>
+
 
 // Define your struct
 struct VariableMetadata {
@@ -31,7 +32,7 @@ struct VariableMetadata {
   VariableMetadata() = default;
 
   template<typename T>
-  explicit VariableMetadata(adios2::core::Variable<T> &variable){
+  explicit VariableMetadata(adios2::core::Variable<T> &variable) {
     name = variable.m_Name;
     shape = variable.Shape();
     start = variable.m_Start;
@@ -103,7 +104,7 @@ std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
 class MetadataSerializer{
     public:
 
-    static std::string SerializeMetadata(VariableMetadata variableMetadata){
+    static std::string SerializeMetadata(VariableMetadata variableMetadata) {
       std::stringstream ss;
       {
         cereal::BinaryOutputArchive oarchive(ss);
@@ -113,18 +114,18 @@ class MetadataSerializer{
     }
 
     template<typename T>
-    static std::string SerializeMetadata(adios2::core::Variable<T> variable){
+    static std::string SerializeMetadata(adios2::core::Variable<T> variable) {
       VariableMetadata variableMetadata(variable);
       return SerializeMetadata(variableMetadata);
     }
 
   template<typename T>
-  static std::string SerializeMetadata(adios2::Variable<T> &variable){
+  static std::string SerializeMetadata(adios2::Variable<T> &variable) {
     VariableMetadata variableMetadata(variable);
     return SerializeMetadata(variableMetadata);
   }
 
-    static VariableMetadata DeserializeMetadata(hermes::Blob &blob){
+    static VariableMetadata DeserializeMetadata(hermes::Blob &blob) {
       VariableMetadata variableMetadata;
       std::stringstream ss;
       {
@@ -136,4 +137,5 @@ class MetadataSerializer{
     }
 };
 
-#endif //COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
+
+#endif // COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_

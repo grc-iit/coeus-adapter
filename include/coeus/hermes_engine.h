@@ -16,11 +16,11 @@
 #ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
 #define INCLUDE_COEUS_HERMES_ENGINE_H_
 
-#include "coeus/metadata_serializer.h"
-
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include <hermes.h>
+
+#include "coeus/metadata_serializer.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -68,7 +68,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         adios2::core::Engine *m_Engine = NULL;
 
  private:
-        //int firstStep = 0;
         int currentStep = 0;
         int rank;
 
@@ -93,7 +92,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                             const T *values);
 
         template<typename T>
-        void getMetadataAndUpload(adios2::core::Engine *engine, adios2::core::StructDefinition *Def ,const adios2::core::Variable<T> &variable);
+        void getMetadataAndUpload(adios2::core::Engine *engine, int currentStep,
+                                  int rank, const adios2::core::Variable<T> &variable);
 
         /** Get data from Hermes (sync) */
         template<typename T>
