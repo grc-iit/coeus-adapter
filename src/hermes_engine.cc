@@ -97,31 +97,44 @@ namespace coeus {
             bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx);
 
             VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
-            // Now you can access the variable metadata
+            // Now we can access the variable metadata
             std::string variableName = variableMetadata.name;
-            std::cout << "variableName: " << variableName << std::endl;
             std::vector<size_t> variableShape = variableMetadata.shape;
+            std::vector<size_t> variableStart = variableMetadata.start;
+            std::vector<size_t> variableCount = variableMetadata.count;
+            bool variableConstantShape = variableMetadata.constantShape;
+
+            // Print the metadata for debugging
+            std::cout << "variableName: " << variableName << std::endl;
             std::cout << "variableShape: ";
             for (const auto& shape : variableShape) {
                 std::cout << shape << " ";
             }
             std::cout << std::endl;
-            std::vector<size_t> variableStart = variableMetadata.start;
             std::cout << "variableStart: ";
             for (const auto& start : variableStart) {
                 std::cout << start << " ";
             }
             std::cout << std::endl;
-            std::vector<size_t> variableCount = variableMetadata.count;
             std::cout << "variableCount: ";
             for (const auto& count : variableCount) {
                 std::cout << count << " ";
             }
             std::cout << std::endl;
-            bool variableConstantShape = variableMetadata.constantShape;
             std::cout << "variableConstantShape: " << variableConstantShape << std::endl;
 
-            // Call getMetadataAndUpload with the serialized metadata
+            if (!m_IO.InquireVariable<T>(variableName)) {
+                adios2::DataType variableType = adios2::GetType<T>();
+                adios2::Variable<T> var = m_IO.DefineVariable<T>(variableName, variableShape, variableStart, variableCount);
+                // Perform additional configurations on the variable if needed
+                // var.SetShape(variableShape);
+                // var.SetMemorySelection(variableCount);
+                // var.SetStepSelection(currentStep);
+
+                // Add the variable to the engine's registered variables
+                RegisterVariable(var);
+            }
+
         }
         return adios2::StepStatus::OK;
     }

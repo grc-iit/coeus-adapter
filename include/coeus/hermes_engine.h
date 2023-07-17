@@ -48,6 +48,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
          * Logically, a "step" represents a snapshot of the data at a specific time,
          * and can be thought of as a frame in a video or a snapshot of a simulation.
          * */
+
         adios2::StepStatus BeginStep(adios2::StepMode mode,
                      const float timeoutSeconds = -1.0) override;
 
