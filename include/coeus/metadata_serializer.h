@@ -54,6 +54,10 @@ struct VariableMetadata {
     dataType = variable.Type();
   }
 
+  adios2::DataType getDataType() {
+    return adios2::helper::GetDataTypeFromString(dataType);
+  }
+
   bool operator==(const VariableMetadata& other) const {
     return name == other.name &&
            shape == other.shape &&
