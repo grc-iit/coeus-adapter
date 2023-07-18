@@ -83,18 +83,21 @@ namespace coeus {
         // Broadcast the updated value of currentStep from the
         // root process to all other processes
         m_Comm.Bcast(&currentStep, 1, 0);
-
-        std::cout << "Current Mode is : " << this->m_OpenMode << std::endl;
         std::cout << "We are at step: " << currentStep << std::endl;
 
+        // Retrieve filename HERE (we are using "metadata_myVar")
+        // ........
+        // ........
+
         if (this->m_OpenMode == adios2::Mode::Read) {
+            // Retrieve the metadata
             std::string metadataName = "metadata_myVar" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
             hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-            hapi::Context ctx;
+            hapi::Context ctx_metadata;
             hermes::Blob blob_metadata;
             hermes::BlobId blob_id_metadata;
             bkt_metadata.GetBlobId(metadataName, blob_id_metadata);
-            bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx);
+            bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx_metadata);
 
             VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
             // Now we can access the variable metadata
@@ -104,50 +107,17 @@ namespace coeus {
             std::vector<size_t> variableCount = variableMetadata.count;
             bool variableConstantShape = variableMetadata.constantShape;
 
-            // Converting std::vector<size_t> to adios2::Dims which is an alias for std::vector<size_t>
-            adios2::Dims adiosVariableShape = variableShape;
-            adios2::Dims adiosVariableStart = variableStart;
-            adios2::Dims adiosVariableCount = variableCount;
+            //adios2::DataType dataType = variableMetadata.getDataType();
 
-            // Print the metadata for debugging
-            std::cout << "variableName: " << variableName << std::endl;
-            std::cout << "variableShape: ";
-            for (const auto& shape : variableShape) {
-                std::cout << shape << " ";
+            adios2::core::Variable<double> *inquire_var = m_IO.InquireVariable<double>(variableName);
+            if(!inquire_var) {
+                std::cout << "!inquire_var" << std::endl;
+                m_IO.DefineVariable<double>(variableName,variableShape,
+                                            variableStart, variableCount,
+                                            variableConstantShape);
             }
-            std::cout << std::endl;
-            std::cout << "variableStart: ";
-            for (const auto& start : variableStart) {
-                std::cout << start << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "variableCount: ";
-            for (const auto& count : variableCount) {
-                std::cout << count << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "variableConstantShape: " << variableConstantShape << std::endl;
-
-            AddVariable<double>(variableName, adiosVariableShape,
-                                adiosVariableStart, adiosVariableCount);
         }
         return adios2::StepStatus::OK;
-    }
-
-    template <typename T>
-    void HermesEngine::AddVariable(const std::string &name, adios2::Dims shape,
-                                   adios2::Dims start, adios2::Dims count) {
-        if (!m_IO.InquireVariable<T>(name)) {
-            adios2::DataType variableType = adios2::GetType<T>()
-            adios2::Variable<T> var = m_IO.DefineVariable<T>(name, shape, start, count);
-            // Perform additional configurations on the variable if needed
-            // var.SetShape(variableShape);
-            // var.SetMemorySelection(variableCount);
-            // var.SetStepSelection(currentStep);
-
-            // Add the variable to the engine's registered variables
-            RegisterVariable(var);
-        }
     }
 
     size_t HermesEngine::CurrentStep() const {

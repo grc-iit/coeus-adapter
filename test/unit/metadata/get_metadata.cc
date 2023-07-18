@@ -47,7 +47,7 @@ int main() {
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var;
+    //adios2::Variable<double> var;
 
     // = io.DefineVariable<double>("myVar", shape, start, count);
 
@@ -55,28 +55,25 @@ int main() {
     std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
 
     reader.BeginStep();
-    reader.Get(var, data_get);
+    reader.Get("myVar", data_get);
     assert(data1 == data_get);
-    assert(var.Shape() == shape);
-    assert(var.Start() == start);
-    assert(var.Count() == count);
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var, data_get);
+    reader.Get("myVar", data_get);
     assert(data2 == data_get);
-    assert(var.Shape() == shape);
-    assert(var.Start() == start);
-    assert(var.Count() == count);
     reader.EndStep();
 
     reader.BeginStep();
-    reader.Get(var, data_get);
+    reader.Get("myVar", data_get);
     assert(data3 == data_get);
-    assert(var.Shape() == shape);
-    assert(var.Start() == start);
-    assert(var.Count() == count);
     reader.EndStep();
+
+    // Check metadata
+    adios2::Variable<double> var_inquired = io.InquireVariable<double>("myVar");
+    assert(var_inquired.Shape() == shape);
+    assert(var_inquired.Start() == start);
+    assert(var_inquired.Count() == count);
 
     reader.Close();
 

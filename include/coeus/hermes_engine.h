@@ -92,14 +92,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
         void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                             const T *values);
 
-        template<typename T>
-        void getMetadataAndUpload(adios2::core::Engine *engine, int currentStep,
-                                  int rank, const adios2::core::Variable<T> &variable);
-
-        template<typename T>
-        void AddVariable(const std::string &name, adios2::Dims shape,
-                         adios2::Dims start, adios2::Dims count);
-
     /** Get data from Hermes (sync) */
         template<typename T>
         void DoGetSync_(const adios2::core::Variable<T> &variable, T *values);
