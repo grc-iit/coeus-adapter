@@ -71,8 +71,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
  private:
         int currentStep = 0;
         int rank;
-
-
+        std::vector<std::string> listOfVars;
 
 
  protected:

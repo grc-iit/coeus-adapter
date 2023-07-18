@@ -70,23 +70,26 @@ namespace coeus {
         m_Engine = this;
         // Increase currentStep and save it in Hermes
         if (rank == 0) {
-          currentStep++;
-          hapi::Bucket bkt = HERMES->GetBucket("step");
-          size_t blob_size = sizeof(int);
-          hapi::Context ctx;
-          hermes::Blob blob(blob_size);
-          hermes::BlobId blob_id;
-          // currentStep = static_cast<int>(currentStep) + 1;
-          memcpy(blob.data(), &currentStep, blob_size);
-          bkt.Put("step", blob, blob_id, ctx);
+            currentStep++;
+            hapi::Bucket bkt = HERMES->GetBucket("step");
+            size_t blob_size = sizeof(int);
+            hapi::Context ctx;
+            hermes::Blob blob(blob_size);
+            hermes::BlobId blob_id;
+            // currentStep = static_cast<int>(currentStep) + 1;
+            memcpy(blob.data(), &currentStep, blob_size);
+            bkt.Put("step", blob, blob_id, ctx);
         }
         // Broadcast the updated value of currentStep from the
         // root process to all other processes
         m_Comm.Bcast(&currentStep, 1, 0);
         std::cout << "We are at step: " << currentStep << std::endl;
 
-        // Retrieve filename HERE (we are using "metadata_myVar")
-        // ........
+        // Retrieve filename HERE (right now we are using "metadata_myVar")
+        std::cout << "List of variables is:" << std::endl;
+        for (const std::string& varName : listOfVars) {
+            std::cout << varName << std::endl;
+        }
         // ........
 
         if (this->m_OpenMode == adios2::Mode::Read) {
@@ -220,6 +223,12 @@ namespace coeus {
         memcpy(blob_values.data(), values, blob_size);
         bkt.Put(filename, blob_values, blob_id_values, ctx);
 
+        // Check if the value is already in the list
+        auto it = std::find(listOfVars.begin(), listOfVars.end(), variable.m_Name);
+        if (it == listOfVars.end()) {
+            listOfVars.push_back(variable.m_Name);
+        }
+
         if (filename.compare(0, 4, "step") != 0) {
             // Store metadata in a separate metadata bucket
             std::string metadataName = "metadata_" + filename;
@@ -252,24 +261,6 @@ namespace coeus {
                    serializedMetadata.data(), blob_metadata_size);
             bkt_metadata.Put(metadataName,
                              blob_metadata, blob_id_metadata, ctx);
-
-            /*size_t blob_shape_size = variable.m_Shape.size();
-            hermes::Blob blob_shape(blob_shape_size);
-            hermes::BlobId blob_id_shape;
-            memcpy(blob_shape.data(), &variable.m_Shape, blob_shape_size);
-            bkt_metadata.Put(metadataName + "_shape", blob_shape, blob_id_shape, ctx);
-
-            size_t blob_start_size = variable.m_Start.size();
-            hermes::Blob blob_start(blob_start_size);
-            hermes::BlobId blob_id_start;
-            memcpy(blob_start.data(), &variable.m_Start, blob_start_size);
-            bkt_metadata.Put(metadataName + "_start", blob_start, blob_id_start, ctx);
-
-            size_t blob_count_size = variable.m_Count.size();
-            hermes::Blob blob_count(blob_count_size);
-            hermes::BlobId blob_id_count;
-            memcpy(blob_count.data(), &variable.m_Count, blob_count_size);
-            bkt_metadata.Put(metadataName + "_count", blob_count, blob_id_count, ctx);*/
         }
     }
 
