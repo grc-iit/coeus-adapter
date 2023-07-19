@@ -13,13 +13,12 @@
 #ifndef COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
 #define COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
 
-#include <adios2/core/Variable.h>
-#include <adios2/cxx11/Variable.h>
-#include "cereal/archives/binary.hpp"
+#include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
+#include <adios2/core/Variable.h>
+#include <adios2/cxx11/Variable.h>
 #include <hermes_types.h>
-
 
 // Define your struct
 struct VariableMetadata {
@@ -33,7 +32,7 @@ struct VariableMetadata {
   VariableMetadata() = default;
 
   template<typename T>
-  explicit VariableMetadata(adios2::core::Variable<T> &variable) {
+  explicit VariableMetadata(const adios2::core::Variable<T> &variable) {
     name = variable.m_Name;
     shape = variable.Shape();
     start = variable.m_Start;
@@ -43,14 +42,15 @@ struct VariableMetadata {
   }
 
   template<typename T>
-  VariableMetadata(adios2::Variable<T> variable) {
+  explicit VariableMetadata(const adios2::Variable<T> variable) {
     name = variable.Name();
     shape = variable.Shape();
     start = variable.Start();
     count = variable.Count();
-    constantShape = false; /* We need to see if this is correct.
-                           *  Though this is mostly just for the unit test,
-                           *  as the engine will reference the adios::core::variable constructor */
+    constantShape = false;
+    /* We need to see if this is correct.
+       Though this is mostly just for the unit test,
+       as the engine will reference the adios::core::variable constructor */
     dataType = variable.Type();
   }
 
@@ -109,8 +109,7 @@ std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
 }
 
 class MetadataSerializer{
-    public:
-
+ public:
     static std::string SerializeMetadata(VariableMetadata variableMetadata) {
       std::stringstream ss;
       {
@@ -127,7 +126,7 @@ class MetadataSerializer{
     }
 
   template<typename T>
-  static std::string SerializeMetadata(adios2::Variable<T> &variable) {
+  static std::string SerializeMetadata(const adios2::Variable<T> &variable) {
     VariableMetadata variableMetadata(variable);
     return SerializeMetadata(variableMetadata);
   }
