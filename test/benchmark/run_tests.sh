@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cd ../../build
+cd ../../build-remote
 ctest -L benchmark
