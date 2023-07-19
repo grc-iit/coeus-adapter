@@ -94,30 +94,55 @@ namespace coeus {
 
         if (this->m_OpenMode == adios2::Mode::Read) {
             // Retrieve the metadata
-            std::string metadataName = "metadata_myVar" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-            hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-            hapi::Context ctx_metadata;
-            hermes::Blob blob_metadata;
-            hermes::BlobId blob_id_metadata;
-            bkt_metadata.GetBlobId(metadataName, blob_id_metadata);
-            bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx_metadata);
+            if(currentStep == 1){//load the existing variables in the first step
+                hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
+                hapi::Context ctx_vars;
 
-            VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
-            // Now we can access the variable metadata
-            std::string variableName = variableMetadata.name;
-            std::vector<size_t> variableShape = variableMetadata.shape;
-            std::vector<size_t> variableStart = variableMetadata.start;
-            std::vector<size_t> variableCount = variableMetadata.count;
-            bool variableConstantShape = variableMetadata.constantShape;
+                std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
+                std::vector<hermes::Blob> blobs;
 
-            //adios2::DataType dataType = variableMetadata.getDataType();
+                for (const auto& blobId : blobIds) {
+                    hermes::Blob blob;
+                    bkt_vars.Get(blobId, blob, ctx_vars);
 
-            adios2::core::Variable<double> *inquire_var = m_IO.InquireVariable<double>(variableName);
-            if(!inquire_var) {
-                std::cout << "!inquire_var" << std::endl;
-                m_IO.DefineVariable<double>(variableName,variableShape,
-                                            variableStart, variableCount,
-                                            variableConstantShape);
+                    const char* dataPtr = reinterpret_cast<const char*>(blob.data());
+
+                    std::string varName(dataPtr, blob.size());
+
+                    std::cout << "variable is: " << varName << std::endl;
+
+                    listOfVars.push_back(varName);
+                }
+            }
+            for (std::string Varname : listOfVars){
+                std::string metadataName = "metadata_" + Varname + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+                hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
+                hapi::Context ctx_metadata;
+                hermes::Blob blob_metadata;
+                hermes::BlobId blob_id_metadata;
+                bkt_metadata.GetBlobId(metadataName, blob_id_metadata);
+                bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx_metadata);
+
+                VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
+                // Now we can access the variable metadata
+                std::string variableName = variableMetadata.name;
+                std::vector<size_t> variableShape = variableMetadata.shape;
+                std::vector<size_t> variableStart = variableMetadata.start;
+                std::vector<size_t> variableCount = variableMetadata.count;
+                bool variableConstantShape = variableMetadata.constantShape;
+                //adios2::DataType dataType = variableMetadata.getDataType();
+
+#define declare_type(T)                                                                                                 \
+                adios2::core::Variable<T> *inquire_var = m_IO.InquireVariable<T>(variableName);                         \
+                if(!inquire_var) {                                                                                      \
+                    adios2::core::Variable<T> *variable = m_IO.DefineVariable<T>(variableName,variableShape,            \
+                                                variableStart, variableCount,                                           \
+                                                variableConstantShape);                                                 \
+                    this->RegisterCreatedVariable(variable);                                                            \
+                }                                                                                                       \
+                ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+#undef declare_type
+
             }
         }
         return adios2::StepStatus::OK;
@@ -143,7 +168,6 @@ namespace coeus {
                 std::to_string(currentStep) + "_rank" +
                 std::to_string(rank);
 
-        std::cout << "File name is: " << filename << std::endl;
         hapi::Bucket bkt = HERMES->GetBucket(filename);
         hapi::Context ctx;
         hermes::BlobId blob_id;
@@ -225,8 +249,16 @@ namespace coeus {
 
         // Check if the value is already in the list
         auto it = std::find(listOfVars.begin(), listOfVars.end(), variable.m_Name);
+
         if (it == listOfVars.end()) {
             listOfVars.push_back(variable.m_Name);
+            //Update the metadata bucket in hermes with the new variable
+            hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
+            hapi::Context ctx_vars;
+            hermes::Blob blob_vars(variable.m_Name.size());
+            hermes::BlobId blob_id_vars;
+            memcpy(blob_vars.data(), variable.m_Name.data(), variable.m_Name.size());
+            bkt_vars.Put(variable.m_Name, blob_vars, blob_id_vars, ctx);
         }
 
         if (filename.compare(0, 4, "step") != 0) {
