@@ -10,15 +10,21 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
-#define COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
+#ifndef INCLUDE_COEUS_METADATA_SERIALIZER_H_
+#define INCLUDE_COEUS_METADATA_SERIALIZER_H_
+
+#include "metadata_serializer.h"
+
+#include <hermes_types.h>
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <adios2/core/Variable.h>
 #include <adios2/cxx11/Variable.h>
-#include <hermes_types.h>
+
+#include <vector>
+#include <string>
 
 // Define your struct
 struct VariableMetadata {
@@ -85,8 +91,8 @@ struct VariableMetadata {
   }
 
   template <class Archive>
-  void serialize(Archive &ar) {
-    ar(name, shape, start, count, constantShape, dataType);
+  void serialize(Archive* ar) {
+      (*ar)(name, shape, start, count, constantShape, dataType);
   }
 };
 
@@ -121,27 +127,27 @@ class MetadataSerializer{
 
     template<typename T>
     static std::string SerializeMetadata(adios2::core::Variable<T> variable) {
-      VariableMetadata variableMetadata(variable);
-      return SerializeMetadata(variableMetadata);
+        VariableMetadata variableMetadata(variable);
+        return SerializeMetadata(variableMetadata);
     }
 
-  template<typename T>
-  static std::string SerializeMetadata(const adios2::Variable<T> &variable) {
-    VariableMetadata variableMetadata(variable);
-    return SerializeMetadata(variableMetadata);
-  }
+    template<typename T>
+    static std::string SerializeMetadata(const adios2::Variable<T> &variable) {
+        const VariableMetadata variableMetadata(variable);
+        return SerializeMetadata(variableMetadata);
+    }
 
     static VariableMetadata DeserializeMetadata(hermes::Blob &blob) {
       VariableMetadata variableMetadata;
       std::stringstream ss;
       {
-        ss.write((char*)blob.data(), blob.size());
-        cereal::BinaryInputArchive iarchive(ss);
-        iarchive(variableMetadata);
+          ss.write(reinterpret_cast<char*>(blob.data()), blob.size());
+          cereal::BinaryInputArchive iarchive(ss);
+          iarchive(variableMetadata);
       }
       return variableMetadata;
     }
 };
 
 
-#endif // COEUS_INCLUDE_COEUS_METADATA_SERIALIZER_H_
+#endif  // INCLUDE_COEUS_METADATA_SERIALIZER_H_
