@@ -124,17 +124,13 @@ namespace coeus {
                 std::vector<size_t> variableCount = variableMetadata.count;
                 bool variableConstantShape = variableMetadata.constantShape;
                 //adios2::DataType dataType = variableMetadata.getDataType();
+                adios2::core::Variable<double> *inquire_var = m_IO.InquireVariable<double>(variableName);
+                if(!inquire_var) {
+                    std::cout << "!inquire" << varName << std::endl;
 
-#define declare_type(T)                                                                                                 \
-                adios2::core::Variable<T> *inquire_var = m_IO.InquireVariable<T>(variableName);                         \
-                if(!inquire_var) {                                                                                      \
-                    adios2::core::Variable<T> *variable = m_IO.DefineVariable<T>(variableName,variableShape,            \
-                                                variableStart, variableCount,                                           \
-                                                variableConstantShape);                                                 \
-                    this->RegisterCreatedVariable(variable);                                                            \
-                }                                                                                                       \
-                ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
-#undef declare_type
+                    m_IO.DefineVariable<double>(variableName,variableShape,
+                                                variableStart, variableCount, variableConstantShape);
+                }
 
             }
         }
