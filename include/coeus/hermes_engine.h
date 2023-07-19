@@ -21,12 +21,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 #include <vector>
+
+#include <hermes.h>
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
-
-#include <hermes.h>
 
 #include "coeus/metadata_serializer.h"
 

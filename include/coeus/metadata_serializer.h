@@ -13,18 +13,16 @@
 #ifndef INCLUDE_COEUS_METADATA_SERIALIZER_H_
 #define INCLUDE_COEUS_METADATA_SERIALIZER_H_
 
-#include "metadata_serializer.h"
-
 #include <hermes_types.h>
+
+#include <vector>
+#include <string>
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <adios2/core/Variable.h>
 #include <adios2/cxx11/Variable.h>
-
-#include <vector>
-#include <string>
 
 // Define your struct
 struct VariableMetadata {
@@ -91,8 +89,8 @@ struct VariableMetadata {
   }
 
   template <class Archive>
-  void serialize(Archive* ar) {
-      (*ar)(name, shape, start, count, constantShape, dataType);
+  void serialize(Archive &ar) {
+      ar(name, shape, start, count, constantShape, dataType);
   }
 };
 
@@ -137,7 +135,7 @@ class MetadataSerializer{
         return SerializeMetadata(variableMetadata);
     }
 
-    static VariableMetadata DeserializeMetadata(hermes::Blob &blob) {
+    static VariableMetadata DeserializeMetadata(const hermes::Blob &blob) {
       VariableMetadata variableMetadata;
       std::stringstream ss;
       {
