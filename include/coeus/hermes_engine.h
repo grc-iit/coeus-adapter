@@ -16,18 +16,19 @@
 #ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
 #define INCLUDE_COEUS_HERMES_ENGINE_H_
 
-#include <adios2.h>
-#include <adios2/engine/plugin/PluginEngineInterface.h>
-#include <hermes.h>
-
-#include "coeus/metadata_serializer.h"
-
 #include <cstdio>
 #include <cstdlib>
 
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+
+#include <adios2.h>
+#include <adios2/engine/plugin/PluginEngineInterface.h>
+#include <hermes.h>
+
+#include "coeus/metadata_serializer.h"
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -70,9 +71,16 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
  private:
         int currentStep = 0;
+
         int rank;
+
         std::vector<std::string> listOfVars;
 
+        void IncrementCurrentStep();
+
+        void LoadExistingVariables();
+
+        void DefineVariableIfNeeded(const std::string& varName);
 
  protected:
     /** Initialize (wrapper around Init_)*/

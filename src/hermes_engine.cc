@@ -11,11 +11,9 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/hermes_engine.h"
-#include "spdlog/spdlog.h"
 #include <stdio.h>
 #include <stdlib.h>
-
-#define SAVE_TO_FILE
+#include "spdlog/spdlog.h"
 
 namespace hapi = hermes::api;
 
@@ -64,11 +62,7 @@ namespace coeus {
     * and can be thought of as a frame in a video or a snapshot of a simulation.
 * */
 
-    adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
-                                               const float timeoutSeconds) {
-        std::cout << __func__ << std::endl;
-        m_Engine = this;
-        // Increase currentStep and save it in Hermes
+    void HermesEngine::IncrementCurrentStep() {
         if (rank == 0) {
             currentStep++;
             hapi::Bucket bkt = HERMES->GetBucket("step");
@@ -76,10 +70,221 @@ namespace coeus {
             hapi::Context ctx;
             hermes::Blob blob(blob_size);
             hermes::BlobId blob_id;
-            // currentStep = static_cast<int>(currentStep) + 1;
             memcpy(blob.data(), &currentStep, blob_size);
             bkt.Put("step", blob, blob_id, ctx);
         }
+    }
+
+    void HermesEngine::LoadExistingVariables() {
+        hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
+        hapi::Context ctx_vars;
+        std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
+        std::vector<hermes::Blob> blobs;
+        for (const auto& blobId : blobIds) {
+            hermes::Blob blob;
+            bkt_vars.Get(blobId, blob, ctx_vars);
+            const char* dataPtr = reinterpret_cast<const char*>(blob.data());
+            std::string varName(dataPtr, blob.size());
+            std::cout << "Variable is: " << varName << std::endl;
+            listOfVars.push_back(varName);
+        }
+    }
+
+
+    void HermesEngine::DefineVariableIfNeeded(const std::string& varName) {
+        std::string metadataName = "metadata_" + varName +
+                std::to_string(currentStep) + "_rank" + std::to_string(rank);
+        hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
+        hapi::Context ctx_metadata;
+        hermes::Blob blob_metadata;
+        hermes::BlobId blob_id_metadata;
+        bkt_metadata.GetBlobId(metadataName, blob_id_metadata);
+        bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx_metadata);
+
+        VariableMetadata variableMetadata =
+                MetadataSerializer::DeserializeMetadata(blob_metadata);
+        adios2::core::VariableBase* inquire_var = nullptr;
+        switch (variableMetadata.getDataType()) {
+            case adios2::DataType::Int8:
+                inquire_var = m_IO.InquireVariable<int8_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<int8_t>(
+                            varName,
+                            variableMetadata.shape,
+                            variableMetadata.start,
+                            variableMetadata.count,
+                            variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Int16:
+                inquire_var = m_IO.InquireVariable<int16_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<int16_t>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Int32:
+                inquire_var = m_IO.InquireVariable<int32_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<int32_t>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Int64:
+                inquire_var = m_IO.InquireVariable<int64_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<int64_t>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::UInt8:
+                inquire_var = m_IO.InquireVariable<uint8_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<uint8_t>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::UInt16:
+                inquire_var = m_IO.InquireVariable<uint16_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<uint16_t>
+                            (varName,
+                              variableMetadata.shape,
+                              variableMetadata.start,
+                              variableMetadata.count,
+                              variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::UInt32:
+                inquire_var = m_IO.InquireVariable<uint32_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<uint32_t>
+                            (varName,
+                              variableMetadata.shape,
+                              variableMetadata.start,
+                              variableMetadata.count,
+                              variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::UInt64:
+                inquire_var = m_IO.InquireVariable<uint64_t>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<uint64_t>
+                            (varName,
+                              variableMetadata.shape,
+                              variableMetadata.start,
+                              variableMetadata.count,
+                              variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Float:
+                inquire_var = m_IO.InquireVariable<float>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<float>
+                            (varName,
+                               variableMetadata.shape,
+                               variableMetadata.start,
+                               variableMetadata.count,
+                               variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Double:
+                inquire_var = m_IO.InquireVariable<double>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<double>
+                            (varName,
+                                variableMetadata.shape,
+                                variableMetadata.start,
+                                variableMetadata.count,
+                                variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::LongDouble:
+                inquire_var = m_IO.InquireVariable<long double>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<long double>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::FloatComplex:
+                inquire_var =
+                        m_IO.InquireVariable<std::complex<float>>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<std::complex<float>>
+                            (varName,
+                            variableMetadata.shape,
+                            variableMetadata.start,
+                            variableMetadata.count,
+                            variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::DoubleComplex:
+                inquire_var =
+                        m_IO.InquireVariable<std::complex<double>>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<std::complex<double>>
+                            (varName,
+                            variableMetadata.shape,
+                            variableMetadata.start,
+                            variableMetadata.count,
+                            variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::String:
+                inquire_var = m_IO.InquireVariable<std::string>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<std::string>
+                            (varName,
+                             variableMetadata.shape,
+                             variableMetadata.start,
+                             variableMetadata.count,
+                             variableMetadata.constantShape);
+                }
+                break;
+            case adios2::DataType::Char:
+                inquire_var = m_IO.InquireVariable<char>(varName);
+                if (!inquire_var) {
+                    m_IO.DefineVariable<char>
+                            (varName,
+                              variableMetadata.shape,
+                              variableMetadata.start,
+                              variableMetadata.count,
+                              variableMetadata.constantShape);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+
+    adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
+                                               const float timeoutSeconds) {
+        std::cout << __func__ << std::endl;
+        m_Engine = this;
+        // Increase currentStep and save it in Hermes
+        IncrementCurrentStep();
+
         // Broadcast the updated value of currentStep from the
         // root process to all other processes
         m_Comm.Bcast(&currentStep, 1, 0);
@@ -87,51 +292,11 @@ namespace coeus {
 
         if (this->m_OpenMode == adios2::Mode::Read) {
             // Retrieve the metadata
-            if(currentStep == 1){//load the existing variables in the first step
-                hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
-                hapi::Context ctx_vars;
-
-                std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
-                std::vector<hermes::Blob> blobs;
-
-                for (const auto& blobId : blobIds) {
-                    hermes::Blob blob;
-                    bkt_vars.Get(blobId, blob, ctx_vars);
-
-                    const char* dataPtr = reinterpret_cast<const char*>(blob.data());
-
-                    std::string varName(dataPtr, blob.size());
-
-                    std::cout << "variable is: " << varName << std::endl;
-
-                    listOfVars.push_back(varName);
-                }
+            if (currentStep == 1) {
+                LoadExistingVariables();
             }
-            for (std::string varName : listOfVars){
-                std::string metadataName = "metadata_" + varName + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-                hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-                hapi::Context ctx_metadata;
-                hermes::Blob blob_metadata;
-                hermes::BlobId blob_id_metadata;
-                bkt_metadata.GetBlobId(metadataName, blob_id_metadata);
-                bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx_metadata);
-
-                VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
-                // Now we can access the variable metadata
-                std::string variableName = variableMetadata.name;
-                std::vector<size_t> variableShape = variableMetadata.shape;
-                std::vector<size_t> variableStart = variableMetadata.start;
-                std::vector<size_t> variableCount = variableMetadata.count;
-                bool variableConstantShape = variableMetadata.constantShape;
-                //adios2::DataType dataType = variableMetadata.getDataType();
-                adios2::core::Variable<double> *inquire_var = m_IO.InquireVariable<double>(variableName);
-                if(!inquire_var) {
-                    std::cout << "!inquire" << varName << std::endl;
-
-                    m_IO.DefineVariable<double>(variableName,variableShape,
-                                                variableStart, variableCount, variableConstantShape);
-                }
-
+            for (std::string varName : listOfVars) {
+                DefineVariableIfNeeded(varName);
             }
         }
         return adios2::StepStatus::OK;
@@ -167,54 +332,6 @@ namespace coeus {
     }
 
 
-   /* template<typename T>
-    void getMetadataAndUpload(adios2::core::Engine *engine, int currentStep,
-                              int rank, const adios2::core::Variable<T> &variable) {
-        std::cout << __func__ << " Seaching for- Step: " << currentStep << ", Rank: " << rank  << ", Putting: " << variable.m_Name << std::endl;
-        // Get the bucket with the associated step and process rank
-        std::string filename = variable.m_Name + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-        hapi::Bucket bkt = HERMES->GetBucket(filename);
-        hapi::Context ctx;
-
-        if (filename.compare(0, 4, "step") != 0) {
-            std::string metadataName = "metadata_" + filename;
-            hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
-
-            hermes::Blob blob_metadata;
-            hermes::BlobId blob_id_metadata;
-            bkt.GetBlobId(metadataName , blob_id_metadata);
-            bkt_metadata.Get(blob_id_metadata, blob_metadata, ctx);
-            VariableMetadata deserializedMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
-
-            std::vector<size_t> VecShape;
-            std::vector<size_t> VecStart;
-            std::vector<size_t> VecCount;
-
-            hermes::Blob blob_shape;
-            hermes::BlobId blob_id_shape;
-            bkt.GetBlobId(metadataName + "_shape", blob_id_shape);
-            bkt_metadata.Get(blob_id_shape, blob_shape, ctx);
-            VecShape.assign(reinterpret_cast<const size_t*>(blob_shape.data()), reinterpret_cast<const size_t*>(blob_shape.data() + blob_shape.size()));
-
-            hermes::Blob blob_start;
-            hermes::BlobId blob_id_start;
-            bkt.GetBlobId(metadataName "_start" , blob_id_start);
-            bkt_metadata.Get(blob_id_start, blob_start, ctx);
-            VecStart.assign(reinterpret_cast<const size_t*>(blob_start.data()), reinterpret_cast<const size_t*>(blob_start.data() + blob_start.size()));
-
-            hermes::Blob blob_count;
-            hermes::BlobId blob_id_count;
-            bkt.GetBlobId(metadataName "_count" , blob_id_count);
-            bkt_metadata.Get(blob_id_count, blob_count, ctx);
-            VecCount.assign(reinterpret_cast<const size_t*>(blob_count.data()), reinterpret_cast<const size_t*>(blob_count.data() + blob_count.size()));
-
-            //Now that we have the metadata in the system we need to upload it to the IO
-            adios2::core::VariableStruct *metadata = engine->m_IO.DefineVariable<T>(
-                    deserializedMetadata.name, VecShape, VecStart, VecCount);
-            engine->RegisterCreatedVariable(metadata);
-        }
-    }*/
-
 
     template<typename T>
     void HermesEngine::DoPutDeferred_(
@@ -237,41 +354,26 @@ namespace coeus {
         bkt.Put(filename, blob_values, blob_id_values, ctx);
 
         // Check if the value is already in the list
-        auto it = std::find(listOfVars.begin(), listOfVars.end(), variable.m_Name);
+        auto it = std::find(listOfVars.begin(),
+                            listOfVars.end(),
+                            variable.m_Name);
 
         if (it == listOfVars.end()) {
             listOfVars.push_back(variable.m_Name);
-            //Update the metadata bucket in hermes with the new variable
+            // Update the metadata bucket in hermes with the new variable
             hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
             hapi::Context ctx_vars;
             hermes::Blob blob_vars(variable.m_Name.size());
             hermes::BlobId blob_id_vars;
-            memcpy(blob_vars.data(), variable.m_Name.data(), variable.m_Name.size());
+            memcpy(blob_vars.data(),
+                   variable.m_Name.data(),
+                   variable.m_Name.size());
             bkt_vars.Put(variable.m_Name, blob_vars, blob_id_vars, ctx);
         }
 
         if (filename.compare(0, 4, "step") != 0) {
             // Store metadata in a separate metadata bucket
             std::string metadataName = "metadata_" + filename;
-            std::cout << "Metadata Bucket name: " << metadataName << std::endl;
-
-///////////////// PRINT METADATA ///////////////////////////////
-            std::cout << "Shape: ";
-            for (const auto& shape : variable.m_Shape) {
-                std::cout << shape << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Start: ";
-            for (const auto& start : variable.m_Start) {
-                std::cout << start << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "Count: ";
-            for (const auto& count : variable.m_Count) {
-                std::cout << count << " ";
-            }
-            std::cout << std::endl;
-////////////////////////////////////////////////////////////////
             std::string serializedMetadata =
                     MetadataSerializer::SerializeMetadata<T>(variable);
             hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
