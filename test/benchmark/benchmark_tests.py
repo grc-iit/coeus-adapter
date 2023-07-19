@@ -21,9 +21,6 @@ class NativeTestManager(TestManager):
         self.SPLIT_GET_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_get"
 
 
-
-
-
     def test_gray_scott_simulation_file_bench(self):
         spawn_info = self.spawn_info(cwd=f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott")
         simulation = Exec(f"mpirun -n 4 ../../../build/bin/adios2-gray-scott simulation/settings-files.json", spawn_info)
