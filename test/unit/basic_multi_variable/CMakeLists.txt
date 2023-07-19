@@ -1,4 +1,4 @@
 add_executable(basic_multi_variable basic_three_vars.cc)
 add_dependencies(basic_multi_variable hermes_engine)
 target_link_libraries(basic_multi_variable PRIVATE hermes_engine MPI::MPI_CXX)
-#pytest(native test_basic_multi_variable)
+pytest(native test_basic_multi_variable)
