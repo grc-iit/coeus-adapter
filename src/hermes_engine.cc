@@ -85,13 +85,6 @@ namespace coeus {
         m_Comm.Bcast(&currentStep, 1, 0);
         std::cout << "We are at step: " << currentStep << std::endl;
 
-        // Retrieve filename HERE (right now we are using "metadata_myVar")
-        std::cout << "List of variables is:" << std::endl;
-        for (const std::string& varName : listOfVars) {
-            std::cout << varName << std::endl;
-        }
-        // ........
-
         if (this->m_OpenMode == adios2::Mode::Read) {
             // Retrieve the metadata
             if(currentStep == 1){//load the existing variables in the first step
@@ -114,8 +107,8 @@ namespace coeus {
                     listOfVars.push_back(varName);
                 }
             }
-            for (std::string Varname : listOfVars){
-                std::string metadataName = "metadata_" + Varname + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+            for (std::string varName : listOfVars){
+                std::string metadataName = "metadata_" + varName + std::to_string(currentStep) + "_rank" + std::to_string(rank);
                 hapi::Bucket bkt_metadata = HERMES->GetBucket(metadataName);
                 hapi::Context ctx_metadata;
                 hermes::Blob blob_metadata;
