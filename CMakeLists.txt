@@ -125,6 +125,15 @@ function(pytest test_type test_name)
             COMMAND python3 ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR})
 endfunction()
 
+function(pytest_benchmark test_type test_name label)
+    set(script ${CMAKE_SOURCE_DIR}/CI/py_coeus_ci/bin/run_bench_test.py)
+    add_test(NAME ${test_name}
+            COMMAND python3 ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR})
+    set_tests_properties(${test_name} PROPERTIES LABELS ${label})
+endfunction()
+
+
+
 #------------------------------------------------------------------------------
 # Documentation
 #------------------------------------------------------------------------------

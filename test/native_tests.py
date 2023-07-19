@@ -199,3 +199,4 @@ class NativeTestManager(TestManager):
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
+

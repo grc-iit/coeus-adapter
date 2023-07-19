@@ -3,13 +3,12 @@ import sys, os
 import pathlib
 
 if __name__ == '__main__':
-    if len(sys.argv) != 5:
-        print("USAGE: ./run_bench_test [TEST_TYPE] [TEST_NAME] [NUM_PROCESSES] [CMAKE_BINARY_DIR]")
+    if len(sys.argv) != 4:
+        print("USAGE: ./run_bench_test [TEST_TYPE] [TEST_NAME] [CMAKE_BINARY_DIR]")
         exit(1)
     test_type = sys.argv[1]
     test_name = sys.argv[2]
-    num_processes = sys.argv[3]
-    cmake_binary_dir = sys.argv[4]
+    cmake_binary_dir = sys.argv[3]
     address_sanitizer = False
 
     # The root of Coeus
@@ -34,4 +33,4 @@ if __name__ == '__main__':
 
     test_cls = load_class(f"benchmark_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
-    tests.call(test_name, num_processes)
+    tests.call(test_name)
