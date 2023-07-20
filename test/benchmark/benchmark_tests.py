@@ -1,4 +1,4 @@
-from py_coeus_ci.test_manager import TestManager
+from py_coeus_ci.test_manager_bench import TestManager
 from jarvis_util import *
 
 class NativeTestManager(TestManager):
@@ -21,8 +21,8 @@ class NativeTestManager(TestManager):
         self.SPLIT_GET_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_get"
 
 
-    def test_gray_scott_simulation_file_bench(self):
-        spawn_info = self.spawn_info(cwd=f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott")
-        simulation = Exec(f"mpirun -n 4 ../../../build/bin/adios2-gray-scott simulation/settings-files.json", spawn_info)
+    def test_gray_scott_simulation_file_bench(self, num_processes):
+        spawn_info = self.spawn_info(cwd=f"{self.GRAY_SCOTT_PATH}")
+        simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
         return simulation.exit_code
 
