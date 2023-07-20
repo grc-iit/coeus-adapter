@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "spdlog/spdlog.h"
+#include "adios2/common/ADIOSMacros.h"
 
 namespace hapi = hermes::api;
 
@@ -104,191 +105,21 @@ namespace coeus {
         VariableMetadata variableMetadata =
                 MetadataSerializer::DeserializeMetadata(blob_metadata);
         adios2::core::VariableBase* inquire_var = nullptr;
-/*#define DEFINE_VARIABLE(T) \
-        inquire_var = m_IO.InquireVariable<T>(varName); \
-        if (!inquire_var) {\
-            std::cout << "--------- !inquire_var: DataType ---------" << variableMetadata.getDataType() << std::endl; \
-            m_IO.DefineVariable<T>( \
-                varName, \
-                variableMetadata.shape, \
-                variableMetadata.start, \
-                variableMetadata.count, \
-                variableMetadata.constantShape); \
+
+#define DEFINE_VARIABLE(T) \
+        inquire_var = m_IO.InquireVariable<T>(varName);                              \
+        if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) { \
+            if (!inquire_var) {                   \
+                m_IO.DefineVariable<T>( \
+                        varName, \
+                        variableMetadata.shape, \
+                        variableMetadata.start, \
+                        variableMetadata.count, \
+                        variableMetadata.constantShape); \
+            }                  \
         }
-        ADIOS2_FOREACH_ATTRIBUTE_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE*/
-        switch (variableMetadata.getDataType()) {
-            case adios2::DataType::Int8:
-                inquire_var = m_IO.InquireVariable<int8_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<int8_t>(
-                            varName,
-                            variableMetadata.shape,
-                            variableMetadata.start,
-                            variableMetadata.count,
-                            variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Int16:
-                inquire_var = m_IO.InquireVariable<int16_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<int16_t>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Int32:
-                inquire_var = m_IO.InquireVariable<int32_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<int32_t>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Int64:
-                inquire_var = m_IO.InquireVariable<int64_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<int64_t>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::UInt8:
-                inquire_var = m_IO.InquireVariable<uint8_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<uint8_t>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::UInt16:
-                inquire_var = m_IO.InquireVariable<uint16_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<uint16_t>
-                            (varName,
-                              variableMetadata.shape,
-                              variableMetadata.start,
-                              variableMetadata.count,
-                              variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::UInt32:
-                inquire_var = m_IO.InquireVariable<uint32_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<uint32_t>
-                            (varName,
-                              variableMetadata.shape,
-                              variableMetadata.start,
-                              variableMetadata.count,
-                              variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::UInt64:
-                inquire_var = m_IO.InquireVariable<uint64_t>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<uint64_t>
-                            (varName,
-                              variableMetadata.shape,
-                              variableMetadata.start,
-                              variableMetadata.count,
-                              variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Float:
-                inquire_var = m_IO.InquireVariable<float>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<float>
-                            (varName,
-                               variableMetadata.shape,
-                               variableMetadata.start,
-                               variableMetadata.count,
-                               variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Double:
-                inquire_var = m_IO.InquireVariable<double>(varName);
-                if (!inquire_var) {
-                    std::cout << "!inquire_var I am double" << std::endl;
-                    m_IO.DefineVariable<double>
-                            (varName,
-                                variableMetadata.shape,
-                                variableMetadata.start,
-                                variableMetadata.count,
-                                variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::LongDouble:
-                inquire_var = m_IO.InquireVariable<long double>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<long double>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::FloatComplex:
-                inquire_var =
-                        m_IO.InquireVariable<std::complex<float>>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<std::complex<float>>
-                            (varName,
-                            variableMetadata.shape,
-                            variableMetadata.start,
-                            variableMetadata.count,
-                            variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::DoubleComplex:
-                inquire_var =
-                        m_IO.InquireVariable<std::complex<double>>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<std::complex<double>>
-                            (varName,
-                            variableMetadata.shape,
-                            variableMetadata.start,
-                            variableMetadata.count,
-                            variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::String:
-                inquire_var = m_IO.InquireVariable<std::string>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<std::string>
-                            (varName,
-                             variableMetadata.shape,
-                             variableMetadata.start,
-                             variableMetadata.count,
-                             variableMetadata.constantShape);
-                }
-                break;
-            case adios2::DataType::Char:
-                inquire_var = m_IO.InquireVariable<char>(varName);
-                if (!inquire_var) {
-                    m_IO.DefineVariable<char>
-                            (varName,
-                              variableMetadata.shape,
-                              variableMetadata.start,
-                              variableMetadata.count,
-                              variableMetadata.constantShape);
-                }
-                break;
-            default:
-                break;
-        }
+        ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
+#undef DEFINE_VARIABLE
     }
 
 
