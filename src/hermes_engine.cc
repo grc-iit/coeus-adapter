@@ -104,6 +104,19 @@ namespace coeus {
         VariableMetadata variableMetadata =
                 MetadataSerializer::DeserializeMetadata(blob_metadata);
         adios2::core::VariableBase* inquire_var = nullptr;
+/*#define DEFINE_VARIABLE(T) \
+        inquire_var = m_IO.InquireVariable<T>(varName); \
+        if (!inquire_var) {\
+            std::cout << "--------- !inquire_var: DataType ---------" << variableMetadata.getDataType() << std::endl; \
+            m_IO.DefineVariable<T>( \
+                varName, \
+                variableMetadata.shape, \
+                variableMetadata.start, \
+                variableMetadata.count, \
+                variableMetadata.constantShape); \
+        }
+        ADIOS2_FOREACH_ATTRIBUTE_STDTYPE_1ARG(DEFINE_VARIABLE)
+#undef DEFINE_VARIABLE*/
         switch (variableMetadata.getDataType()) {
             case adios2::DataType::Int8:
                 inquire_var = m_IO.InquireVariable<int8_t>(varName);
@@ -207,6 +220,7 @@ namespace coeus {
             case adios2::DataType::Double:
                 inquire_var = m_IO.InquireVariable<double>(varName);
                 if (!inquire_var) {
+                    std::cout << "!inquire_var I am double" << std::endl;
                     m_IO.DefineVariable<double>
                             (varName,
                                 variableMetadata.shape,
