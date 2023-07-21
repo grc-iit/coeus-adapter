@@ -10,6 +10,5 @@ cpplint --recursive \
 --exclude="${PROJECT_ROOT}/CMake" \
 --exclude="${PROJECT_ROOT}/CI" \
 --exclude="${PROJECT_ROOT}/external_libraries" \
---exclude="${PROJECT_ROOT}/test/unit" \
 --exclude="${PROJECT_ROOT}/test/real_apps/gray-scott" \
 "${PROJECT_ROOT}"
