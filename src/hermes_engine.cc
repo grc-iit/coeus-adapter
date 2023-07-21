@@ -43,6 +43,8 @@ void HermesEngine::Init_() {
   hapi::Hermes::Create(hermes::HermesType::kClient);
 
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+  console_sink->set_level(spdlog::level::warn);
+  console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 #ifdef debug
   console_sink->set_level(spdlog::level::off);
 #else
@@ -50,9 +52,12 @@ void HermesEngine::Init_() {
 #endif
   console_sink->set_pattern("[coeus engine] [%^%!%l%$] %v");
 
-  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/coeus_engine.txt", true);
-  file_sink->set_pattern("[coeus engine] [%^%!%l%$] %v");
+  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine_test.txt", true);
   file_sink->set_level(spdlog::level::trace);
+  file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
+
+  auto mix_log = std::make_shared<spdlog::logger>(spdlog::logger("debug_logger", {console_sink, file_sink}));
+  mix_log->set_level(spdlog::level::debug);
 
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
@@ -83,41 +88,44 @@ HermesEngine::~HermesEngine() {
 void HermesEngine::IncrementCurrentStep() {
   if (rank == 0) {
     currentStep++;
-    HermesPut("step", sizeof(int), &currentStep);
+    HermesPut("step","step",sizeof(int), &currentStep);
   }
   // Broadcast the updated value of currentStep from the
   // root process to all other processes
   m_Comm.Bcast(&currentStep, 1, 0);
 }
 
-void HermesEngine::LoadExistingVariables() {
-  hapi::Bucket bkt_vars = HERMES->GetBucket("VariablesUsed");
-  hapi::Context ctx_vars;
-  std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
-  std::vector<hermes::Blob> blobs;
-  for (const auto &blobId : blobIds) {
-    hermes::Blob blob;
-    bkt_vars.Get(blobId, blob, ctx_vars);
-    const char *dataPtr = reinterpret_cast<const char *>(blob.data());
-    std::string varName(dataPtr, blob.size());
-    std::cout << "Variable is: " << varName << std::endl;
-    listOfVars.push_back(varName);
-  }
+void HermesEngine::LoadMetadata() {
+    std::string filename = "step_" +  std::to_string(currentStep) +
+            "_rank_" +  std::to_string(rank);
+    hapi::Bucket bkt_vars = HERMES->GetBucket(filename);
+    hapi::Context ctx_vars;
+    std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
+    for (const auto &blobId : blobIds) {
+        hermes::Blob blob;
+        bkt_vars.Get(blobId, blob, ctx_vars);
+        VariableMetadata variableMetadata =
+                MetadataSerializer::DeserializeMetadata(blob);
+        std::string varName = bkt_vars.GetBlobName(blobId);
+        std::cout << "Variable is: " << varName << std::endl;
+        listOfVars.push_back(varName);
+        DefineVariable(variableMetadata);
+    }
 }
 
 void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
-  adios2::core::VariableBase *inquire_var = nullptr;
+
+    if(currentStep != 1) { // If the metadata is defined delete current value to update it
+        m_IO.RemoveVariable(variableMetadata.name);
+    }
 #define DEFINE_VARIABLE(T) \
-          inquire_var = m_IO.InquireVariable<T>(variableMetadata.name);                              \
-          if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) { \
-              if (!inquire_var) {                   \
-                  m_IO.DefineVariable<T>( \
-                          variableMetadata.name, \
-                          variableMetadata.shape, \
-                          variableMetadata.start, \
-                          variableMetadata.count, \
-                          variableMetadata.constantShape); \
-              }                  \
+          if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
+              m_IO.DefineVariable<T>( \
+                      variableMetadata.name, \
+                      variableMetadata.shape, \
+                      variableMetadata.start, \
+                      variableMetadata.count, \
+                      variableMetadata.constantShape); \
           }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
@@ -125,20 +133,13 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
+    std::cout << __func__ << std::endl;
   // Increase currentStep and save it in Hermes
   IncrementCurrentStep();
 
   if (m_OpenMode == adios2::Mode::Read) {
     // Retrieve the metadata
-    if (currentStep == 1) {
-      LoadExistingVariables();
-    }
-    for (const std::string &varName : listOfVars) {
-      std::string metadataName = "metadata_" + varName + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-      auto blob_metadata = HermesGet(metadataName, metadataName);
-      VariableMetadata variableMetadata = MetadataSerializer::DeserializeMetadata(blob_metadata);
-      DefineVariable(variableMetadata);
-    }
+      LoadMetadata();
   }
   engine_logger->info("rank {} on mode {}", rank, adios2::ToString(mode));
   return adios2::StepStatus::OK;
@@ -154,22 +155,22 @@ void HermesEngine::EndStep() {
 }
 
 template<typename T>
-void HermesEngine::HermesPut(const std::string &bucket_name, size_t blob_size, T values) {
+void HermesEngine::HermesPut(const std::string &bucket_name, const std::string &blob_name, size_t blob_size, T values) {
   hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
   hapi::Context ctx;
-  hermes::Blob blob_values(blob_size);
-  hermes::BlobId blob_id_values;
-  memcpy(blob_values.data(), values, blob_size);
-  bkt.Put(bucket_name, blob_values, blob_id_values, ctx);
+  hermes::Blob blob(blob_size);
+  hermes::BlobId blob_id;
+  memcpy(blob.data(), values, blob_size);
+  bkt.Put(blob_name, blob, blob_id, ctx);
 }
 
-hermes::Blob HermesEngine::HermesGet(const std::string &bucket_name, const std::string &varName) {
+hermes::Blob HermesEngine::HermesGet(const std::string &bucket_name, const std::string &blob_name) {
   hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
   hapi::Context ctx;
   hermes::Blob blob;
-  hermes::BlobId blob_id_metadata;
-  bkt.GetBlobId(varName, blob_id_metadata);
-  bkt.Get(blob_id_metadata, blob, ctx);
+  hermes::BlobId blob_id;
+  bkt.GetBlobId(blob_name, blob_id);
+  bkt.Get(blob_id, blob, ctx);
   return blob;
 }
 
@@ -182,12 +183,7 @@ void HermesEngine::DoGetDeferred_(
   std::string filename = variable.m_Name +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-  hapi::Bucket bkt = HERMES->GetBucket(filename);
-  hapi::Context ctx;
-  hermes::BlobId blob_id;
-  hermes::Blob blob;
-  bkt.GetBlobId(filename, blob_id);
-  bkt.Get(blob_id, blob, ctx);
+  hermes::Blob blob = HermesGet(filename,variable.m_Name);
   memcpy(values, blob.data(), blob.size());
 }
 
@@ -199,11 +195,12 @@ void HermesEngine::DoPutDeferred_(
             << " with value: " << *values << std::endl;
 
   // Create a bucket with the associated step and process rank
-  std::string bucket_name = variable.m_Name +
+  std::string filename = variable.m_Name +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
-  std::cout << "Bucket name is: " << bucket_name << std::endl;
 
-  HermesPut(bucket_name, variable.SelectionSize() * sizeof(T), values);
+  std::cout << "Bucket name is: " << filename << std::endl;
+
+  HermesPut(filename, variable.m_Name ,variable.SelectionSize() * sizeof(T), values);
 
   // Check if the value is already in the list
   auto it = std::find(listOfVars.begin(),
@@ -211,18 +208,18 @@ void HermesEngine::DoPutDeferred_(
                       variable.m_Name);
 
   // Update the metadata bucket in hermes with the new variable
-  if (it == listOfVars.end()) {
-    listOfVars.push_back(variable.m_Name);
-    HermesPut("VariablesUsed", variable.m_Name.size(), variable.m_Name.data());
-  }
+  if (it == listOfVars.end() && filename.compare(0, 4, "step") != 0) {
 
-  if (bucket_name.compare(0, 4, "step") != 0) {
-    // Store metadata in a separate metadata bucket
-    std::string serializedMetadata =
-        MetadataSerializer::SerializeMetadata<T>(variable);
-    HermesPut("metadata_" + bucket_name,
-              serializedMetadata.size(),
-              serializedMetadata.data());
+      std::string filename_metadata = "step_" +  std::to_string(currentStep) +
+                             "_rank_" +  std::to_string(rank);
+      listOfVars.push_back(variable.m_Name);
+
+      std::string serializedMetadata =
+              MetadataSerializer::SerializeMetadata<T>(variable);
+
+      HermesPut(filename_metadata, variable.m_Name
+              ,serializedMetadata.size(), serializedMetadata.data());
+
   }
 }
 

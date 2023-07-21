@@ -87,10 +87,12 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   void LoadExistingVariables();
 
-  void DefineVariable(VariableMetadata variableMetadata);
+  void LoadMetadata();
+
+    void DefineVariable(VariableMetadata variableMetadata);
 
   template<typename T>
-  void HermesPut(const std::string &bucket_name, size_t blob_size, T values);
+  void HermesPut(const std::string &bucket_name, const std::string &blob_name, size_t blob_size, T values);
 
   hermes::Blob HermesGet(const std::string &bucket_name, const std::string &varName);
 
