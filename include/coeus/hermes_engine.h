@@ -15,7 +15,7 @@
 
 #ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
 #define INCLUDE_COEUS_HERMES_ENGINE_H_
-
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -28,95 +28,107 @@
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
+#include <adios2/common/ADIOSMacros.h>
 
 #include "coeus/metadata_serializer.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-        /** Construct the HermesEngine */
-        HermesEngine(adios2::core::IO &adios, //NOLINT
-                     const std::string &name,
-                     const adios2::Mode mode,
-                     adios2::helper::Comm comm);
+  /** Construct the HermesEngine */
+  HermesEngine(adios2::core::IO &adios, //NOLINT
+               const std::string &name,
+               const adios2::Mode mode,
+               adios2::helper::Comm comm);
 
-        /** Destructor */
-        ~HermesEngine() override;
+  /** Destructor */
+  ~HermesEngine() override;
 
-        /**
-         * Define the beginning of a step. A step is typically the offset from
-         * the beginning of a file. It is measured as a size_t.
-         *
-         * Logically, a "step" represents a snapshot of the data at a specific time,
-         * and can be thought of as a frame in a video or a snapshot of a simulation.
-         * */
+  /**
+   * Define the beginning of a step. A step is typically the offset from
+   * the beginning of a file. It is measured as a size_t.
+   *
+   * Logically, a "step" represents a snapshot of the data at a specific time,
+   * and can be thought of as a frame in a video or a snapshot of a simulation.
+   * */
 
-        adios2::StepStatus BeginStep(adios2::StepMode mode,
-                     const float timeoutSeconds = -1.0) override;
+  adios2::StepStatus BeginStep(adios2::StepMode mode,
+                               const float timeoutSeconds = -1.0) override;
 
-        /** Define the end of a step */
-        void EndStep() override;
+  /** Define the end of a step */
+  void EndStep() override;
 
-        /**
-         * Returns the current step
-         * */
-        size_t CurrentStep() const override;
+  /**
+   * Returns the current step
+   * */
+  size_t CurrentStep() const override;
 
-        /** Execute all deferred puts */
-        void PerformPuts() override;
+  /** Execute all deferred puts */
+  void PerformPuts() override{engine_logger->info("rank {}", rank);}
 
-        /** Execute all deferred gets */
-        void PerformGets() override;
+  /** Execute all deferred gets */
+  void PerformGets() override{engine_logger->info("rank {}", rank);}
 
-        adios2::core::Engine *m_Engine = NULL;
+  adios2::core::Engine *m_Engine = NULL;
 
  private:
-        int currentStep = 0;
+  int currentStep = 0;
 
-        int rank;
+  int rank;
+  int comm_size;
 
-        std::vector<std::string> listOfVars;
+  std::vector<std::string> listOfVars;
 
-        void IncrementCurrentStep();
+  std::shared_ptr<spdlog::logger> engine_logger;
 
-        void LoadExistingVariables();
+  void IncrementCurrentStep();
 
-        void DefineVariableIfNeeded(const std::string& varName);
+  void LoadExistingVariables();
+
+  void DefineVariable(VariableMetadata variableMetadata);
+
+  template<typename T>
+  void HermesPut(const std::string &bucket_name, size_t blob_size, T values);
+
+  hermes::Blob HermesGet(const std::string &bucket_name, const std::string &varName);
 
  protected:
-    /** Initialize (wrapper around Init_)*/
-        void Init() override { Init_(); }
+  /** Initialize (wrapper around Init_)*/
+  void Init() override { Init_(); }
 
-        /** Actual engine initialization */
-        void Init_();
+  /** Actual engine initialization */
+  void Init_();
 
-        /** Place data in Hermes */
-        template<typename T>
-        void DoPutSync_(const adios2::core::Variable<T> &variable,
-                        const T *values);
+  /** Place data in Hermes */
+  template<typename T>
+  void DoPutSync_(const adios2::core::Variable<T> &variable,
+                  const T *values) {engine_logger->info("rank {}", rank);}
 
-        /** Place data in Hermes asynchronously */
-        template<typename T>
-        void DoPutDeferred_(const adios2::core::Variable<T> &variable,
-                            const T *values);
+  /** Place data in Hermes asynchronously */
+  template<typename T>
+  void DoPutDeferred_(const adios2::core::Variable<T> &variable,
+                      const T *values);
 
-    /** Get data from Hermes (sync) */
-        template<typename T>
-        void DoGetSync_(const adios2::core::Variable<T> &variable, T *values);
+  /** Get data from Hermes (sync) */
+  template<typename T>
+  void DoGetSync_(const adios2::core::Variable<T> &variable,
+                  T *values) {engine_logger->info("rank {}", rank);}
 
-        /** Get data from Hermes (async) */
-        template<typename T>
-        void DoGetDeferred_(const adios2::core::Variable<T> &variable,
-                            T *values);
+  /** Get data from Hermes (async) */
+  template<typename T>
+  void DoGetDeferred_(const adios2::core::Variable<T> &variable,
+                      T *values);
 
-        /** Close a particular transport */
-        void DoClose(const int transportIndex = -1) override;
+  /** Close a particular transport */
+  void DoClose(const int transportIndex = -1) override {engine_logger->info("rank {}", rank);}
 
-        /**
-         * Declares DoPutSync and DoPutDeferred for a number of predefined types.
-         * ADIOS2_FOREACH_STDTYPE_1ARG is a macro which iterates over every
-         * known type (e.g., int, double, float, etc).
-         * */
+  /**
+   * Declares DoPutSync and DoPutDeferred for a number of predefined types.
+   * ADIOS2_FOREACH_STDTYPE_1ARG is a macro which iterates over every
+   * known type (e.g., int, double, float, etc).
+   * */
 
 #define declare_type(T) \
     void DoPutSync(adios2::core::Variable<T> &variable, \
@@ -135,7 +147,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                        T *values) override { \
       DoGetDeferred_(variable, values);\
     }
-        ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+  ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
 #undef declare_type
 };
 
