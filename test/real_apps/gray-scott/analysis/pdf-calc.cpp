@@ -233,8 +233,11 @@ int main(int argc, char *argv[])
 
             // Inquire variable
             var_u_in = reader_io.InquireVariable<double>("U");
+            std::cout << "InquireVariable<double>('U'): " << var_u_in << std::endl;
             var_v_in = reader_io.InquireVariable<double>("V");
+            std::cout << "InquireVariable<double>('V'): " << var_v_in << std::endl;
             var_step_in = reader_io.InquireVariable<int>("step");
+            std::cout << "InquireVariable<int>('step'): " << var_step_in << std::endl;
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
             std::pair<double, double> minmax_v = var_v_in.MinMax();
