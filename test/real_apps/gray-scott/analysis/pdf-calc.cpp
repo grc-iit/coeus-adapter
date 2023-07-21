@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <fstream>
 
 #include "adios2.h"
 
@@ -233,11 +234,47 @@ int main(int argc, char *argv[])
 
             // Inquire variable
             var_u_in = reader_io.InquireVariable<double>("U");
-            std::cout << "InquireVariable<double>('U'): " << var_u_in << std::endl;
+            std::cout << "Var U rank: " << rank
+                      << "\nVar U step: " << stepAnalysis
+                      << "\nVar U name: " << var_u_in.Name()
+                      << "\nU Start: ";
+            for (size_t i = 0; i < var_u_in.Start().size(); ++i) {
+                std::cout << var_u_in.Start()[i] << " ";
+            }
+            std::cout << "\nU Shape: ";
+            for (size_t i = 0; i < var_u_in.Shape().size(); ++i) {
+                std::cout << var_u_in.Shape()[i] << " ";
+            }
+            std::cout << "\nU Count: ";
+            for (size_t i = 0; i < var_u_in.Count().size(); ++i) {
+                std::cout << var_u_in.Count()[i] << " ";
+            }
+            std::cout << std::endl;
+
+
+
             var_v_in = reader_io.InquireVariable<double>("V");
-            std::cout << "InquireVariable<double>('V'): " << var_v_in << std::endl;
+            std::cout << "Var V rank: " << rank
+                      << "\nVar V step: " << stepAnalysis
+                      << "\nVar V name: " << var_v_in.Name()
+                      << "\nV Start: ";
+            for (size_t i = 0; i < var_v_in.Start().size(); ++i) {
+                std::cout << var_v_in.Start()[i] << " ";
+            }
+            std::cout << "\nV Shape: ";
+            for (size_t i = 0; i < var_v_in.Shape().size(); ++i) {
+                std::cout << var_v_in.Shape()[i] << " ";
+            }
+            std::cout << "\nV Count: ";
+            for (size_t i = 0; i < var_v_in.Count().size(); ++i) {
+                std::cout << var_v_in.Count()[i] << " ";
+            }
+            std::cout << std::endl;
+
+
+
+
             var_step_in = reader_io.InquireVariable<int>("step");
-            std::cout << "InquireVariable<int>('step'): " << var_step_in << std::endl;
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
             std::pair<double, double> minmax_v = var_v_in.MinMax();
