@@ -75,6 +75,13 @@ int main() {
     assert(var_inquired.Start() == start);
     assert(var_inquired.Count() == count);
 
+
+    std::pair<double, double> minmax_u = var_inquired.MinMax();
+
+    std::cout << "Minimum value U: " << minmax_u.first << std::endl;
+    std::cout << "Maximum value V: " << minmax_u.second << std::endl;
+
+
     reader.Close();
 
     std::cout << "All data arrays match!" << std::endl;
