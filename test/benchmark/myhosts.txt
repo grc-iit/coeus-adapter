@@ -1,2 +1,2 @@
 ares-comp-02:1
-ares-comp-03:1
+ares-comp-03:2
