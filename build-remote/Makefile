@@ -315,6 +315,19 @@ split_metadata_get/fast:
 .PHONY : split_metadata_get/fast
 
 #=============================================================================
+# Target rules for targets named logger_test
+
+# Build rule for target.
+logger_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 logger_test
+.PHONY : logger_test
+
+# fast build rule for target.
+logger_test/fast:
+	$(MAKE) $(MAKESILENT) -f test/unit/logging/CMakeFiles/logger_test.dir/build.make test/unit/logging/CMakeFiles/logger_test.dir/build
+.PHONY : logger_test/fast
+
+#=============================================================================
 # Target rules for targets named adios2-gray-scott
 
 # Build rule for target.
@@ -359,6 +372,7 @@ help:
 	@echo "... basic"
 	@echo "... basic_multi_variable"
 	@echo "... hermes_engine"
+	@echo "... logger_test"
 	@echo "... metadata"
 	@echo "... split_metadata_get"
 	@echo "... split_metadata_put"
