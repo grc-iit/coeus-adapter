@@ -1,0 +1,313 @@
+Start testing: Jul 22 05:39 CDT
+----------------------------------------------------------
+12/12 Testing: test_gray_scott_analysis_file_parallel_bench_1
+12/12 Test: test_gray_scott_analysis_file_parallel_bench_1
+Command: "/usr/bin/python3" "/home/jmendezbenegassimarq/coeus-adapter/CI/py_coeus_ci/bin/run_bench_test.py" "native" "test_gray_scott_analysis_file_parallel_bench" "/home/jmendezbenegassimarq/coeus-adapter/build-remote" "1"
+Directory: /home/jmendezbenegassimarq/coeus-adapter/build-remote/test/benchmark
+"test_gray_scott_analysis_file_parallel_bench_1" start time: Jul 22 05:39 CDT
+Output:
+----------------------------------------------------------
+[WARNING] yaksa: 3 leaked handle pool objects
+[WARNING] yaksa: 3 leaked handle pool objects
+Running test: test_gray_scott_analysis_file_parallel_bench
+Simulation writes data using engine type:              BP5
+IO parameters:  
+    AsyncWrite = false
+    DataTransport = MPI
+    NumAggregators = 1
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Discard
+    QueueLimit = 1
+    RendezvousReaderCount = 0
+========================================
+grid:             64x64x64
+restart:          no
+steps:            100
+plotgap:          10
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-07
+output:           gs.bp
+adios_config:     adios2.xml
+process layout:   2x1x1
+local grid size:  32x64x64
+========================================
+Simulation at step 10 writing output step     1
+Simulation at step 20 writing output step     2
+Simulation at step 30 writing output step     3
+Simulation at step 40 writing output step     4
+Simulation at step 50 writing output step     5
+Simulation at step 60 writing output step     6
+Simulation at step 70 writing output step     7
+checkpoint at step 70 create file ckpt.bp
+checkpoint at step 70 create file ckpt.bp
+Simulation at step 80 writing output step     8
+Simulation at step 90 writing output step     9
+Simulation at step 100 writing output step     10
+PDF analysis reads from Simulation using engine type:  BP5
+PDF analysis writes using engine type:                 BP5
+Var U rank: 1
+Var U step: 0
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 0
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+Var U rank: 0
+Var U step: 0
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 0
+Var V step: 0
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+PDF Analysis step 0 processing sim output step 0 sim compute step 10
+Var U rank: 1
+Var U step: 1
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 1
+Var V name: VVar U rank: 0
+Var U step: 1
+Var U name: U
+U Start: 0 
+V Start: 0 0 0 
+V Shape: 64 64 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 64 
+V Count: 64 64 64 
+
+Var V rank: 0
+Var V step: 1
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+PDF Analysis step 1 processing sim output step 1 sim compute step 20
+Var U rank: 0
+Var U step: 2
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 Var U rank: 1
+Var U step: 2
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+
+Var V rank: 0
+Var V step: 2
+Var V name: V
+V Start: 0 0 0 Var V rank: 1
+Var V step: 2
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64
+V Shape: 64 64 64 
+V Count: 64 64 64 
+ 64 
+PDF Analysis step 2 processing sim output step 2 sim compute step 30
+Var U rank: 0
+Var U step: 3
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 3
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 3
+Var V name: 
+Var V rank: 0
+Var V step: 3
+Var V name: V
+V Start: 0 0 0 V
+V Start: 0 0 0 
+V Shape: 64 64
+V Shape: 64 64 64 
+V Count: 64 64 64 
+V Count: 64 64 64 
+ 64 
+PDF Analysis step 3 processing sim output step 3 sim compute step 40
+Var U rank: 0
+Var U step: 4
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 4
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 4
+Var V name: 
+Var V rank: 0
+Var V step: 4
+Var V name: V
+V Start: 0 0 0 V
+V Start: 0 0 0 
+V Shape: 64 
+V Shape: 64 64 64 
+V Count: 64 6464 64 
+V Count: 64 64 64 
+ 64 
+PDF Analysis step 4 processing sim output step 4 sim compute step 50
+Var U rank: 0
+Var U step: 5
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 5
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 640 0 
+U Shape: 64 64 64 
+U Count:  
+Var V rank: 0
+Var V step: 5
+Var V name: V
+V Start: 0 0 064 64 64 
+Var V rank: 1
+Var V step: 5
+Var V name:  
+V Shape: 64 64 64 
+V Count: 64 V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+64 64 
+PDF Analysis step 5 processing sim output step 5 sim compute step 60
+Var U rank: 0
+Var U step: 6
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 6
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 640 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 6 
+Var V rank: 0
+Var V step: 6
+Var V name: V
+V Start: 0 0 0
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64  
+V Shape: 64 64 64 
+V Count: 64 64 64 
+V Count: 64 64 64 
+64 64 
+PDF Analysis step 6 processing sim output step 6 sim compute step 70
+Var U rank: 0
+Var U step: 7
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 7
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 7
+Var V name: 
+Var V rank: 0
+Var V step: 7
+Var V name: V
+V Start: 0 0 0 V
+V Start: 0 0 0 
+V Shape: 64 
+V Shape: 64 64 64 
+V Count: 64 64 64 64 
+V Count: 64 64 64 
+64 
+PDF Analysis step 7 processing sim output step 7 sim compute step 80
+Var U rank: 0
+Var U step: 8
+Var U name: U
+U Start: 0 Var U rank: 1
+Var U step: 8
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64 
+Var V rank: 1
+Var V step: 8
+Var V rank: 0
+Var V step: 8
+Var V name: V
+V Start: 0 0 0 
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 
+V Shape: 64 64 64 
+V Count: 64 6464 64 
+V Count: 64 64 64  64 
+
+PDF Analysis step 8 processing sim output step 8 sim compute step 90
+Var U rank: 1
+Var U step: 9
+Var U name: U
+U Start: 0 0 0 
+U Shape: 64 64 64 
+U Count: Var U rank: 0
+Var U step: 9
+Var U name: U
+U Start: 0 64 64 64 
+Var V rank: 1
+Var V step: 9
+Var V name: V0 0 
+U Shape: 64 64 64 
+U Count: 64 64 64
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+ 
+Var V rank: 0
+Var V step: 9
+Var V name: V
+V Start: 0 0 0 
+V Shape: 64 64 64 
+V Count: 64 64 64 
+PDF Analysis step 9 processing sim output step 9 sim compute step 100
+<end of output>
+Test time =   9.21 sec
+----------------------------------------------------------
+Test Passed.
+"test_gray_scott_analysis_file_parallel_bench_1" end time: Jul 22 05:39 CDT
+"test_gray_scott_analysis_file_parallel_bench_1" time elapsed: 00:00:09
+----------------------------------------------------------
+
+End testing: Jul 22 05:39 CDT
+
+benchmark =   9.21 sec*proc
+
