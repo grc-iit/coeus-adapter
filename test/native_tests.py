@@ -10,6 +10,7 @@ class NativeTestManager(TestManager):
         self.GRAY_SCOTT_PATH = f"{self.CMAKE_SOURCE_DIR}/test/real_apps/gray-scott"
         self.BASIC_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic"
         self.BASIC_MULTI_CMD = f"{self.CMAKE_BINARY_DIR}/bin/basic_multi_variable"
+        self.CURRENT_STEP_CMD = f"{self.CMAKE_BINARY_DIR}/bin/currentStep"
 
         self.SPLIT_PUT_SINGLE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_single_var_put"
         self.SPLIT_GET_SINGLE_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_single_var_get"
@@ -19,6 +20,7 @@ class NativeTestManager(TestManager):
 
         self.SPLIT_PUT_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_put"
         self.SPLIT_GET_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_get"
+
 
 
     def test_basic(self):
@@ -64,6 +66,13 @@ class NativeTestManager(TestManager):
         self.stop_daemon(spawn_info)
         return put.exit_code + get.exit_code
 
+    def test_currentStep(self):
+        spawn_info = self.spawn_info(nprocs=1,
+                                     hermes_conf='hermes_server')
+        self.start_daemon(spawn_info)
+        node = Exec(self.CURRENT_STEP_CMD, spawn_info)
+        self.stop_daemon(spawn_info)
+        return node.exit_code
 
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
