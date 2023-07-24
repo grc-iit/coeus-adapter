@@ -234,7 +234,53 @@ int main(int argc, char *argv[])
 
             // Inquire variable
             var_u_in = reader_io.InquireVariable<double>("U");
+            std::cout << "Var U rank " << rank << " Shape: [";
+            for (size_t i = 0; i < var_u_in.Shape().size(); ++i) {
+                std::cout << var_u_in.Shape()[i];
+                if (i < var_u_in.Shape().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var U " << rank << " Start: [";
+            for (size_t i = 0; i < var_u_in.Start().size(); ++i) {
+                std::cout << var_u_in.Start()[i];
+                if (i < var_u_in.Start().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var U " << rank << " Count: [";
+            for (size_t i = 0; i < var_u_in.Count().size(); ++i) {
+                std::cout << var_u_in.Count()[i];
+                if (i < var_u_in.Count().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+
             var_v_in = reader_io.InquireVariable<double>("V");
+            std::cout << "Var V " << rank << "  Shape: [";
+            for (size_t i = 0; i < var_v_in.Shape().size(); ++i) {
+                std::cout << var_v_in.Shape()[i];
+                if (i < var_v_in.Shape().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var V " << rank << " Start: [";
+            for (size_t i = 0; i < var_v_in.Start().size(); ++i) {
+                std::cout << var_v_in.Start()[i];
+                if (i < var_v_in.Start().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var V " << rank << " Count: [";
+            for (size_t i = 0; i < var_v_in.Count().size(); ++i) {
+                std::cout << var_v_in.Count()[i];
+                if (i < var_v_in.Count().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
+
             var_step_in = reader_io.InquireVariable<int>("step");
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
