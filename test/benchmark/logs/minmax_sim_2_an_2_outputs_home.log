@@ -1,0 +1,193 @@
+Start testing: Jul 24 10:51 CDT
+----------------------------------------------------------
+12/12 Testing: test_gray_scott_analysis_file_parallel_bench_1
+12/12 Test: test_gray_scott_analysis_file_parallel_bench_1
+Command: "/usr/bin/python3" "/home/jmendezbenegassimarq/coeus-adapter/CI/py_coeus_ci/bin/run_bench_test.py" "native" "test_gray_scott_analysis_file_parallel_bench" "/home/jmendezbenegassimarq/coeus-adapter/build-remote" "1"
+Directory: /home/jmendezbenegassimarq/coeus-adapter/build-remote/test/benchmark
+"test_gray_scott_analysis_file_parallel_bench_1" start time: Jul 24 10:51 CDT
+Output:
+----------------------------------------------------------
+[WARNING] yaksa: 3 leaked handle pool objects
+[WARNING] yaksa: 3 leaked handle pool objects
+Running test: test_gray_scott_analysis_file_parallel_bench
+Simulation writes data using engine type:              BP5
+IO parameters:  
+    AsyncWrite = false
+    DataTransport = MPI
+    NumAggregators = 1
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Discard
+    QueueLimit = 1
+    RendezvousReaderCount = 0
+========================================
+grid:             64x64x64
+restart:          no
+steps:            100
+plotgap:          10
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-07
+output:           gs.bp
+adios_config:     adios2.xml
+process layout:   2x1x1
+local grid size:  32x64x64
+========================================
+Simulation at step 10 writing output step     1
+Simulation at step 20 writing output step     2
+Simulation at step 30 writing output step     3
+Simulation at step 40 writing output step     4
+Simulation at step 50 writing output step     5
+Simulation at step 60 writing output step     6
+Simulation at step 70 writing output step     7
+checkpoint at step 70 create file ckpt.bp
+checkpoint at step 70 create file ckpt.bp
+Simulation at step 80 writing output step     8
+Simulation at step 90 writing output step     9
+Simulation at step 100 writing output step     10
+PDF analysis reads from Simulation using engine type:  BP5
+PDF analysis writes using engine type:                 BP5
+Min U rank 1 step 0 : 0.104002
+Max U rank 1 step 0 : 1
+Min V rank 1 step 0 : 0
+Max V rank 1 step 0 : 0.600691
+GET value U rank 1 step 0 : 0
+Min U rank 0 step 0 : 0.104002
+Max U rank 0 step 0 : 1
+Min V rank 0 step 0 : 0
+Max V rank 0 step 0 : 0.600691
+GET value V rank 1 step 0 : 0
+GET value U rank 0 step 0 : 0
+GET value V rank 0 step 0 : 0
+PDF Analysis step 0 processing sim output step 0 sim compute step 10
+Min U rank 1 step 1 : 0.133413
+Max U rank 1 step 1 : 1
+Min V rank 1 step 1 : 0
+Max V rank 1 step 1 : 0.567946
+Min U rank 0 step 1 : GET value U rank 1 step 1 : 1
+GET value V rank 1 step 1 : 0.133413
+Max U rank 0 step 1 : 1
+Min V rank 0 step 1 : 00
+
+Max V rank 0 step 1 : 0.567946
+GET value U rank 0 step 1 : 1
+GET value V rank 0 step 1 : 0
+PDF Analysis step 1 processing sim output step 1 sim compute step 20
+Min U rank 1 step 2 : 0.106269Min U rank 0 step 2 : 
+Max U rank 1 step 2 : 1
+Min V rank 1 step 2 : 0
+Max V rank 1 step 2 : 0.106269
+Max U rank 0 step 2 : 1
+Min V rank 0 step 2 : 0
+Max V rank 0 step 0.537413
+GET value U rank 1 step 2 : 2 : 0.537413
+1
+GET value V rank 1 step 2 : GET value U rank 0 step 2 : 1
+GET value V rank 0 step 2 : 00
+
+PDF Analysis step 2 processing sim output step 2 sim compute step 30
+Min U rank 1 step 3 : 0.105466Min U rank 0 step 3 : 
+Max U rank 1 step 3 : 1
+Min V rank 1 step 3 : 0
+Max V rank 1 step 3 : 0.484679
+0.105466
+Max U rank 0 step 3 : 1
+Min V rank 0 step 3 : 0
+Max V rank 0 step 3 : 0.484679
+GET value U rank 1 step 3 : 1
+GET value U rank 0 step 3 : 1
+GET value V rank 0 step 3 : 0
+GET value V rank 1 step 3 : 0
+PDF Analysis step 3 processing sim output step 3 sim compute step 40
+Min U rank 1 step 4 : 0.135941
+Min U rank 0 step 4 : Max U rank 1 step 4 : 1
+Min V rank 1 step 4 : 0
+Max V rank 1 step 4 : 0.501088
+0.135941
+Max U rank 0 step 4 : 1
+Min V rank 0 step 4 : 0
+Max V rank 0 step 4 : 0.501088
+GET value U rank 1 step 4 : 1
+GET value V rank 1 step 4 : GET value U rank 0 step 4 : 1
+GET value V rank 0 step 4 : 0
+0
+PDF Analysis step 4 processing sim output step 4 sim compute step 50
+Min U rank 1 step 5 : 0.136739
+Min U rank 0 step 5 : Max U rank 1 step 5 : 1
+Min V rank 1 step 5 : 0
+Max V rank 1 step 5 : 0.448413
+0.136739
+Max U rank 0 step 5 : 1
+Min V rank 0 step 5 : 0
+Max V rank 0 step 5 : 0.448413
+GET value U rank 1 step 5 : 1
+GET value V rank 1 step 5 : GET value U rank 0 step 5 : 1
+GET value V rank 0 step 0
+5 : 0
+PDF Analysis step 5 processing sim output step 5 sim compute step 60
+Min U rank 1 step 6 : 0.122046Min U rank 0 step 6 : 
+Max U rank 1 step 6 : 1
+Min V rank 1 step 6 : 0
+Max V rank 1 step 6 : 0.456522
+0.122046
+Max U rank 0 step 6 : 1
+Min V rank 0 step 6 : 0
+Max V rank 0 step 6 : 0.456522
+GET value U rank 0 step 6 : GET value U rank 1 step 6 : 1
+GET value V rank 1 step 6 : 6.92901e-551
+GET value V rank 0 step 6 : 0
+
+PDF Analysis step 6 processing sim output step 6 sim compute step 70
+Min U rank 1 step 7 : 0.139476Min U rank 0 step 7 : 
+Max U rank 1 step 7 : 1
+Min V rank 1 step 7 : 5.21882e-78
+Max V rank 1 step 7 : 0.448282
+0.139476
+Max U rank 0 step 7 : 1
+Min V rank 0 step 7 : 5.21882e-78
+Max V rank 0 step 7 : 0.448282
+GET value U rank GET value U rank 1 step 7 : 1
+GET value V rank 1 step 0 step 7 : 1
+GET value V rank 0 step 77 : 3.98154e-49
+ : 0
+PDF Analysis step 7 processing sim output step 7 sim compute step 80
+Min U rank 1 step 8 : 0.1508Min U rank 0 step 8 : 
+Max U rank 1 step 8 : 1
+Min V rank 1 step 8 : 1.14625e-68
+Max V rank 1 step 8 : 0.457302
+0.1508
+Max U rank 0 step 8 : 1
+Min V rank 0 step 8 : 1.14625e-68
+Max V rank 0 step 8GET value U rank 1 step 8 : 1 : 0.457302
+GET value U rank 0 step 8 : 1
+GET value V rank 1 step 8 : 3.29646e-45
+
+GET value V rank 0 step 8 : 5.21882e-78
+PDF Analysis step 8 processing sim output step 8 sim compute step 90
+Min U rank 1 step 9 : 0.144978Min U rank 0 step 9
+Max U rank 1 step 9 : 1
+Min V rank 1 step 9 : 8.24719e-63
+Max V rank 1 step 9 : 0.410653
+ : 0.144978
+Max U rank 0 step 9 : 1
+Min V rank 0 step 9 : 8.24719e-63
+Max V rank 0 step 9 : 0.410653
+GET value U rank 1 step 9 : 1
+GET value V rank 1 step 9 : 2.74141e-42
+GET value U rank 0 step 9 : 1
+GET value V rank 0 step 9 : 1.14625e-68
+PDF Analysis step 9 processing sim output step 9 sim compute step 100
+<end of output>
+Test time =  24.84 sec
+----------------------------------------------------------
+Test Passed.
+"test_gray_scott_analysis_file_parallel_bench_1" end time: Jul 24 10:52 CDT
+"test_gray_scott_analysis_file_parallel_bench_1" time elapsed: 00:00:24
+----------------------------------------------------------
+
+End testing: Jul 24 10:52 CDT
+
+benchmark =  24.84 sec*proc
+
