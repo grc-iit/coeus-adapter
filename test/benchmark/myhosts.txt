@@ -1,2 +1,2 @@
-ares-comp-03:2
-ares-comp-04:4
+ares-comp-18:2
+ares-comp-19:4
