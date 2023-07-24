@@ -234,51 +234,15 @@ int main(int argc, char *argv[])
 
             // Inquire variable
             var_u_in = reader_io.InquireVariable<double>("U");
-            std::cout << "Var U rank: " << rank
-                      << "\nVar U step: " << stepAnalysis
-                      << "\nVar U name: " << var_u_in.Name()
-                      << "\nU Start: ";
-            for (size_t i = 0; i < var_u_in.Start().size(); ++i) {
-                std::cout << var_u_in.Start()[i] << " ";
-            }
-            std::cout << "\nU Shape: ";
-            for (size_t i = 0; i < var_u_in.Shape().size(); ++i) {
-                std::cout << var_u_in.Shape()[i] << " ";
-            }
-            std::cout << "\nU Count: ";
-            for (size_t i = 0; i < var_u_in.Count().size(); ++i) {
-                std::cout << var_u_in.Count()[i] << " ";
-            }
-            std::cout << std::endl;
-
-
-
             var_v_in = reader_io.InquireVariable<double>("V");
-            std::cout << "Var V rank: " << rank
-                      << "\nVar V step: " << stepAnalysis
-                      << "\nVar V name: " << var_v_in.Name()
-                      << "\nV Start: ";
-            for (size_t i = 0; i < var_v_in.Start().size(); ++i) {
-                std::cout << var_v_in.Start()[i] << " ";
-            }
-            std::cout << "\nV Shape: ";
-            for (size_t i = 0; i < var_v_in.Shape().size(); ++i) {
-                std::cout << var_v_in.Shape()[i] << " ";
-            }
-            std::cout << "\nV Count: ";
-            for (size_t i = 0; i < var_v_in.Count().size(); ++i) {
-                std::cout << var_v_in.Count()[i] << " ";
-            }
-            std::cout << std::endl;
-
-
-
-
             var_step_in = reader_io.InquireVariable<int>("step");
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
+            std::cout << "Min U rank " << rank << " step " << stepAnalysis << " : " << minmax_u.first << std::endl;
+            std::cout << "Max U rank " << rank << " step " << stepAnalysis << " : " << minmax_u.second << std::endl;
             std::pair<double, double> minmax_v = var_v_in.MinMax();
-
+            std::cout << "Min V rank " << rank << " step " << stepAnalysis << " : " << minmax_v.first << std::endl;
+            std::cout << "Max V rank " << rank << " step " << stepAnalysis << " : " << minmax_v.second << std::endl;
             shape = var_u_in.Shape();
 
             // Calculate global and local sizes of U and V
@@ -337,7 +301,9 @@ int main(int argc, char *argv[])
 
             // Read adios2 data
             reader.Get<double>(var_u_in, u);
+            std::cout << "Get U rank " << rank << " step " << stepAnalysis << " : " << u.data() << std::endl;
             reader.Get<double>(var_v_in, v);
+            std::cout << "Get V rank " << rank << " step " << stepAnalysis << " : " << v.data() << std::endl;
             if (shouldIWrite)
             {
                 reader.Get<int>(var_step_in, &simStep);
