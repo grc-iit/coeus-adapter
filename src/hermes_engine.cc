@@ -36,6 +36,12 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
 * Initialize this engine.
 * */
 void HermesEngine::Init_() {
+
+
+
+
+  m_Engine = this;
+
   rank = m_Comm.Rank();
 
   comm_size = m_Comm.Size();
@@ -95,6 +101,127 @@ void HermesEngine::IncrementCurrentStep() {
   m_Comm.Bcast(&currentStep, 1, 0);
 }
 
+    bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
+                                      adios2::MinMaxStruct &MinMax) {
+
+        std::cout << __func__ << std::endl;
+        // Idea:
+        // Get the corresponding hermes data with the name, we can obtain this with the Var.m_Name
+        // save the corresponding data of the variable passed as input to the MiMax structure
+        std::string filename = Var.m_Name + "_step_" + std::to_string(Step) + "_rank" + std::to_string(rank);
+
+        hermes::Blob blob = HermesGet(filename, Var.m_Name);
+
+        // For now, we suppose that the values inside the blob are doubles
+        const double* doubleData = reinterpret_cast<const double*>(blob.data());
+
+        // Find the actual min and max values within the array
+        for (size_t i = 0; i < blob.size(); ++i) {
+            std::cout << "Element is: " << doubleData[i] << std::endl;
+            void* elementPtr = const_cast<void*>(static_cast<const void*>(&doubleData[i]));
+            ApplyElementMinMax(MinMax, Var.m_Type, elementPtr); // Pass the address of the double value
+        }
+
+        return true;
+    }
+
+    void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type, void *Element) {
+
+        std::cout << __func__ << std::endl;
+
+        switch (Type)
+        {
+            case adios2::DataType::None:
+                std::cout << "In case 20"<< std::endl;
+                break;
+            case adios2::DataType::Char:
+
+                std::cout << "In case 11"<< std::endl;
+            case adios2::DataType::Int8:
+
+                std::cout << "In case 10"<< std::endl;
+                if (*(int8_t *)Element < MinMax.MinUnion.field_int8)
+                    MinMax.MinUnion.field_int8 = *(int8_t *)Element;
+                if (*(int8_t *)Element > MinMax.MaxUnion.field_int8)
+                    MinMax.MaxUnion.field_int8 = *(int8_t *)Element;
+                break;
+            case adios2::DataType::Int16:
+                std::cout << "In case 8"<< std::endl;
+                if (*(int16_t *)Element < MinMax.MinUnion.field_int16)
+                    MinMax.MinUnion.field_int16 = *(int16_t *)Element;
+                if (*(int16_t *)Element > MinMax.MaxUnion.field_int16)
+                    MinMax.MaxUnion.field_int16 = *(int16_t *)Element;
+                break;
+            case adios2::DataType::Int32:
+                std::cout << "In case 7"<< std::endl;
+                if (*(int32_t *)Element < MinMax.MinUnion.field_int32)
+                    MinMax.MinUnion.field_int32 = *(int32_t *)Element;
+                if (*(int32_t *)Element > MinMax.MaxUnion.field_int32)
+                    MinMax.MaxUnion.field_int32 = *(int32_t *)Element;
+                break;
+            case adios2::DataType::Int64:
+                std::cout << "In case 6"<< std::endl;
+                if (*(int64_t *)Element < MinMax.MinUnion.field_int64)
+                    MinMax.MinUnion.field_int64 = *(int64_t *)Element;
+                if (*(int64_t *)Element > MinMax.MaxUnion.field_int64)
+                    MinMax.MaxUnion.field_int64 = *(int64_t *)Element;
+                break;
+            case adios2::DataType::UInt8:
+                std::cout << "In case 5"<< std::endl;
+                if (*(uint8_t *)Element < MinMax.MinUnion.field_uint8)
+                    MinMax.MinUnion.field_uint8 = *(uint8_t *)Element;
+                if (*(uint8_t *)Element > MinMax.MaxUnion.field_uint8)
+                    MinMax.MaxUnion.field_uint8 = *(uint8_t *)Element;
+                break;
+            case adios2::DataType::UInt16:
+                std::cout << "In case 4"<< std::endl;
+                if (*(uint16_t *)Element < MinMax.MinUnion.field_uint16)
+                    MinMax.MinUnion.field_uint16 = *(uint16_t *)Element;
+                if (*(uint16_t *)Element > MinMax.MaxUnion.field_uint16)
+                    MinMax.MaxUnion.field_uint16 = *(uint16_t *)Element;
+                break;
+            case adios2::DataType::UInt32:
+                std::cout << "In case 3"<< std::endl;
+                if (*(uint32_t *)Element < MinMax.MinUnion.field_uint32)
+                    MinMax.MinUnion.field_uint32 = *(uint32_t *)Element;
+                if (*(uint32_t *)Element > MinMax.MaxUnion.field_uint32)
+                    MinMax.MaxUnion.field_uint32 = *(uint32_t *)Element;
+                break;
+            case adios2::DataType::UInt64:
+                std::cout << "In case 3"<< std::endl;
+                if (*(uint64_t *)Element < MinMax.MinUnion.field_uint64)
+                    MinMax.MinUnion.field_uint64 = *(uint64_t *)Element;
+                if (*(uint64_t *)Element > MinMax.MaxUnion.field_uint64)
+                    MinMax.MaxUnion.field_uint64 = *(uint64_t *)Element;
+                break;
+            case adios2::DataType::Float:
+                std::cout << "In case 2"<< std::endl;
+                if (*(float *)Element < MinMax.MinUnion.field_float)
+                    MinMax.MinUnion.field_float = *(float *)Element;
+                if (*(float *)Element > MinMax.MaxUnion.field_float)
+                    MinMax.MaxUnion.field_float = *(float *)Element;
+                break;
+            case adios2::DataType::Double:
+                std::cout << "In case Double"<< std::endl;
+                if (*(double *)Element < MinMax.MinUnion.field_double)
+                    MinMax.MinUnion.field_double = *(double *)Element;
+                if (*(double *)Element > MinMax.MaxUnion.field_double)
+                    MinMax.MaxUnion.field_double = *(double *)Element;
+                break;
+            case adios2::DataType::LongDouble:
+                if (*(long double *)Element < MinMax.MinUnion.field_ldouble)
+                    MinMax.MinUnion.field_ldouble = *(long double *)Element;
+                if (*(long double *)Element > MinMax.MaxUnion.field_ldouble)
+                    MinMax.MaxUnion.field_ldouble = *(long double *)Element;
+                break;
+            case adios2::DataType::FloatComplex:
+            case adios2::DataType::DoubleComplex:
+            case adios2::DataType::String:
+            case adios2::DataType::Struct:
+                break;
+        }
+    }
+
 void HermesEngine::LoadMetadata() {
     std::string filename = "step_" +  std::to_string(currentStep) +
             "_rank_" +  std::to_string(rank);
@@ -119,21 +246,27 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
         m_IO.RemoveVariable(variableMetadata.name);
     }
 #define DEFINE_VARIABLE(T) \
-          if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
-              m_IO.DefineVariable<T>( \
+    if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
+          m_IO.DefineVariable<T>( \
                       variableMetadata.name, \
                       variableMetadata.shape, \
                       variableMetadata.start, \
                       variableMetadata.count, \
                       variableMetadata.constantShape); \
           }
-  ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
+        ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
 }
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
     std::cout << __func__ << std::endl;
+
+    const std::map<std::string, std::shared_ptr<Engine>>& engines = m_IO.GetEngines();
+
+    for (const auto& pair : engines) {
+        std::cout << "Key: " << pair.first << ", Value: " << pair.second->m_Name << std::endl;
+    }
   // Increase currentStep and save it in Hermes
   IncrementCurrentStep();
 
@@ -174,13 +307,14 @@ hermes::Blob HermesEngine::HermesGet(const std::string &bucket_name, const std::
   return blob;
 }
 
-template<typename T>
+
+    template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   std::cout << __func__ << std::endl;
 
   // Retrieve the value of the variable in the current step
-  std::string filename = variable.m_Name +
+  std::string filename = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   hermes::Blob blob = HermesGet(filename,variable.m_Name);
@@ -195,7 +329,7 @@ void HermesEngine::DoPutDeferred_(
             << " with value: " << *values << std::endl;
 
   // Create a bucket with the associated step and process rank
-  std::string filename = variable.m_Name +
+  std::string filename = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   std::cout << "Bucket name is: " << filename << std::endl;
@@ -221,6 +355,7 @@ void HermesEngine::DoPutDeferred_(
               ,serializedMetadata.size(), serializedMetadata.data());
 
   }
+
 }
 
 }  // namespace coeus

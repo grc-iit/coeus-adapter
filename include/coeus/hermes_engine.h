@@ -28,7 +28,8 @@
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
-#include <adios2/common/ADIOSMacros.h>
+
+
 
 #include "coeus/metadata_serializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
@@ -63,7 +64,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /**
    * Returns the current step
    * */
-  size_t CurrentStep() const override;
+  size_t CurrentStep() const final;
 
   /** Execute all deferred puts */
   void PerformPuts() override{engine_logger->info("rank {}", rank);}
@@ -71,13 +72,16 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Execute all deferred gets */
   void PerformGets() override{engine_logger->info("rank {}", rank);}
 
-  adios2::core::Engine *m_Engine = NULL;
+  bool VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
+                        adios2::MinMaxStruct &MinMax) override;
 
  private:
   int currentStep = 0;
 
   int rank;
   int comm_size;
+
+  adios2::core::Engine *m_Engine = NULL;
 
   std::vector<std::string> listOfVars;
 
@@ -89,7 +93,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   void LoadMetadata();
 
-    void DefineVariable(VariableMetadata variableMetadata);
+  void DefineVariable(VariableMetadata variableMetadata);
 
   template<typename T>
   void HermesPut(const std::string &bucket_name, const std::string &blob_name, size_t blob_size, T values);
@@ -107,6 +111,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   template<typename T>
   void DoPutSync_(const adios2::core::Variable<T> &variable,
                   const T *values) {engine_logger->info("rank {}", rank);}
+
+  static void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
+                                   void *Element);
+
 
   /** Place data in Hermes asynchronously */
   template<typename T>
