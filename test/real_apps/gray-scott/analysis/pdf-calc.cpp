@@ -301,9 +301,9 @@ int main(int argc, char *argv[])
 
             // Read adios2 data
             reader.Get<double>(var_u_in, u);
-            std::cout << "Get U rank " << rank << " step " << stepAnalysis << " : " << u.data() << std::endl;
+            std::cout << "GET value U rank " << rank << " step " << stepAnalysis << " : " << *u.data() << std::endl;
             reader.Get<double>(var_v_in, v);
-            std::cout << "Get V rank " << rank << " step " << stepAnalysis << " : " << v.data() << std::endl;
+            std::cout << "GET value V rank " << rank << " step " << stepAnalysis << " : " << *v.data() << std::endl;
             if (shouldIWrite)
             {
                 reader.Get<int>(var_step_in, &simStep);
