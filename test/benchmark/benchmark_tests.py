@@ -66,8 +66,7 @@ class NativeTestManager(TestManager):
     def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        simulation = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-pdf-calc /tmp/gs.bp /tmp/pdf.bp 100", spawn_info)
-
+        simulation = Exec(f"mpirun -n 2 --hostfile myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun -n 2 --hostfile myhosts.txt ./adios2-pdf-calc /home/jmendezbenegassimarq/gs.bp /home/jmendezbenegassimarq/pdf.bp 100", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code

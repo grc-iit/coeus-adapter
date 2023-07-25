@@ -305,10 +305,6 @@ int main(int argc, char *argv[])
                 count1 = shape[0] - count1 * (comm_size - 1);
             }
 
-            /*std::cout << "  rank " << rank << " slice start={" <<  start1
-              << ",0,0} count={" << count1  << "," << shape[1] << "," <<
-              shape[2]
-              << "}" << std::endl;*/
 
             // Set selection
             var_u_in.SetSelection(adios2::Box<adios2::Dims>(
