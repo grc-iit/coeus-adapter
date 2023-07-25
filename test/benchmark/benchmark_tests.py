@@ -31,6 +31,7 @@ class NativeTestManager(TestManager):
 
         #Mkdir(f"results", spawn_info)
         Mkdir(f"{self.INSTALL_PATH}/results")
+        Mkdir(f"{self.INSTALL_PATH}/logs")
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-inline-plugin.xml", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/adios2-fides-staging.xml", self.INSTALL_PATH)
@@ -68,5 +69,7 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
         simulation = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-pdf-calc /mnt/nvme/jmendezbenegassimarq/gs.bp /mnt/nvme/jmendezbenegassimarq/pdf.bp 100", spawn_info)
+        #simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json > logs/simulation_log.txt", spawn_info)
+        #analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100 > logs/analysis_log.txt", spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
