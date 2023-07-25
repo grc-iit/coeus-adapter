@@ -72,7 +72,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Execute all deferred gets */
   void PerformGets() override{engine_logger->info("rank {}", rank);}
 
-  bool VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
+  bool VariableMinMax(const adios2::core::VariableBase &, const size_t Step,
                         adios2::MinMaxStruct &MinMax) override;
 
  private:

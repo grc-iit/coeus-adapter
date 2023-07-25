@@ -37,9 +37,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
 * */
 void HermesEngine::Init_() {
 
-
-
-
   m_Engine = this;
 
   rank = m_Comm.Rank();
@@ -101,44 +98,48 @@ void HermesEngine::IncrementCurrentStep() {
   m_Comm.Bcast(&currentStep, 1, 0);
 }
 
-    bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
+bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
                                       adios2::MinMaxStruct &MinMax) {
+    std::cout << __func__ << std::endl;
 
-        std::cout << __func__ << std::endl;
-        // Idea:
-        // Get the corresponding hermes data with the name, we can obtain this with the Var.m_Name
-        // save the corresponding data of the variable passed as input to the MiMax structure
-        std::string filename = Var.m_Name + "_step_" + std::to_string(Step) + "_rank" + std::to_string(rank);
+    //We should do this for all the types?
+    MinMax.MinUnion.field_double = std::numeric_limits<double>::max();
 
-        hermes::Blob blob = HermesGet(filename, Var.m_Name);
+    // Idea:
+    // Get the corresponding hermes data with the name, we can obtain this with the Var.m_Name
+    // save the corresponding data of the variable passed as input to the MiMax structure
+    //for (size_t step = 1; step <= currentStep; ++step) {
+    std::string filename = Var.m_Name + "_step_" + std::to_string(currentStep)
+            + "_rank" + std::to_string(rank);
 
-        // For now, we suppose that the values inside the blob are doubles
-        const double* doubleData = reinterpret_cast<const double*>(blob.data());
+// Obtain the blob from Hermes using the filename and variable name
+    hermes::Blob blob = HermesGet(filename, Var.m_Name);
 
-        // Find the actual min and max values within the array
-        for (size_t i = 0; i < blob.size(); ++i) {
-            std::cout << "Element is: " << doubleData[i] << std::endl;
-            void* elementPtr = const_cast<void*>(static_cast<const void*>(&doubleData[i]));
-            ApplyElementMinMax(MinMax, Var.m_Type, elementPtr); // Pass the address of the double value
-        }
+// Calculate the number of elements in the blob (assuming the values are doubles)
+    size_t dataSize = blob.size() / sizeof(double);
 
-        return true;
+// Create a pointer to the double data inside the blob
+    const double *doubleData = reinterpret_cast<const double *>(blob.data());
+// Iterate through the data and call ApplyElementMinMax for each element
+    for (size_t i = 0; i < dataSize; ++i) {
+        void *elementPtr = const_cast<void *>(static_cast<const void *>(&doubleData[i]));
+        ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);
     }
 
-    void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type, void *Element) {
+    //}
+    return true;
+}
 
-        std::cout << __func__ << std::endl;
-
+void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
+                                      adios2::DataType Type, void *Element) {
         switch (Type)
         {
             case adios2::DataType::None:
                 std::cout << "In case 20"<< std::endl;
                 break;
             case adios2::DataType::Char:
-
                 std::cout << "In case 11"<< std::endl;
             case adios2::DataType::Int8:
-
                 std::cout << "In case 10"<< std::endl;
                 if (*(int8_t *)Element < MinMax.MinUnion.field_int8)
                     MinMax.MinUnion.field_int8 = *(int8_t *)Element;
@@ -153,35 +154,30 @@ void HermesEngine::IncrementCurrentStep() {
                     MinMax.MaxUnion.field_int16 = *(int16_t *)Element;
                 break;
             case adios2::DataType::Int32:
-                std::cout << "In case 7"<< std::endl;
                 if (*(int32_t *)Element < MinMax.MinUnion.field_int32)
                     MinMax.MinUnion.field_int32 = *(int32_t *)Element;
                 if (*(int32_t *)Element > MinMax.MaxUnion.field_int32)
                     MinMax.MaxUnion.field_int32 = *(int32_t *)Element;
                 break;
             case adios2::DataType::Int64:
-                std::cout << "In case 6"<< std::endl;
                 if (*(int64_t *)Element < MinMax.MinUnion.field_int64)
                     MinMax.MinUnion.field_int64 = *(int64_t *)Element;
                 if (*(int64_t *)Element > MinMax.MaxUnion.field_int64)
                     MinMax.MaxUnion.field_int64 = *(int64_t *)Element;
                 break;
             case adios2::DataType::UInt8:
-                std::cout << "In case 5"<< std::endl;
                 if (*(uint8_t *)Element < MinMax.MinUnion.field_uint8)
                     MinMax.MinUnion.field_uint8 = *(uint8_t *)Element;
                 if (*(uint8_t *)Element > MinMax.MaxUnion.field_uint8)
                     MinMax.MaxUnion.field_uint8 = *(uint8_t *)Element;
                 break;
             case adios2::DataType::UInt16:
-                std::cout << "In case 4"<< std::endl;
                 if (*(uint16_t *)Element < MinMax.MinUnion.field_uint16)
                     MinMax.MinUnion.field_uint16 = *(uint16_t *)Element;
                 if (*(uint16_t *)Element > MinMax.MaxUnion.field_uint16)
                     MinMax.MaxUnion.field_uint16 = *(uint16_t *)Element;
                 break;
             case adios2::DataType::UInt32:
-                std::cout << "In case 3"<< std::endl;
                 if (*(uint32_t *)Element < MinMax.MinUnion.field_uint32)
                     MinMax.MinUnion.field_uint32 = *(uint32_t *)Element;
                 if (*(uint32_t *)Element > MinMax.MaxUnion.field_uint32)
@@ -202,7 +198,6 @@ void HermesEngine::IncrementCurrentStep() {
                     MinMax.MaxUnion.field_float = *(float *)Element;
                 break;
             case adios2::DataType::Double:
-                std::cout << "In case Double"<< std::endl;
                 if (*(double *)Element < MinMax.MinUnion.field_double)
                     MinMax.MinUnion.field_double = *(double *)Element;
                 if (*(double *)Element > MinMax.MaxUnion.field_double)
@@ -242,17 +237,24 @@ void HermesEngine::LoadMetadata() {
 
 void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
 
-    if(currentStep != 1) { // If the metadata is defined delete current value to update it
+    if(currentStep != 1) {
+        // If the metadata is defined delete current value to update it
         m_IO.RemoveVariable(variableMetadata.name);
     }
 #define DEFINE_VARIABLE(T) \
     if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
-          m_IO.DefineVariable<T>( \
+         adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>( \
                       variableMetadata.name, \
                       variableMetadata.shape, \
                       variableMetadata.start, \
                       variableMetadata.count, \
-                      variableMetadata.constantShape); \
+                      variableMetadata.constantShape));                           \
+         variable->m_AvailableStepsCount = 1;                                   \
+         variable->m_ShapeID = adios2::ShapeID::GlobalArray;                            \
+         variable->m_SingleValue = false;                                       \
+         variable->m_Min = std::numeric_limits<T>::max();                       \
+         variable->m_Max = std::numeric_limits<T>::min();                         \
+         variable->m_Engine = this;                                               \
           }
         ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
@@ -262,11 +264,6 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
     std::cout << __func__ << std::endl;
 
-    const std::map<std::string, std::shared_ptr<Engine>>& engines = m_IO.GetEngines();
-
-    for (const auto& pair : engines) {
-        std::cout << "Key: " << pair.first << ", Value: " << pair.second->m_Name << std::endl;
-    }
   // Increase currentStep and save it in Hermes
   IncrementCurrentStep();
 
@@ -288,7 +285,8 @@ void HermesEngine::EndStep() {
 }
 
 template<typename T>
-void HermesEngine::HermesPut(const std::string &bucket_name, const std::string &blob_name, size_t blob_size, T values) {
+void HermesEngine::HermesPut(const std::string &bucket_name,
+                             const std::string &blob_name, size_t blob_size, T values) {
   hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
   hapi::Context ctx;
   hermes::Blob blob(blob_size);
@@ -334,7 +332,8 @@ void HermesEngine::DoPutDeferred_(
 
   std::cout << "Bucket name is: " << filename << std::endl;
 
-  HermesPut(filename, variable.m_Name ,variable.SelectionSize() * sizeof(T), values);
+  HermesPut(filename, variable.m_Name ,
+            variable.SelectionSize() * sizeof(T), values);
 
   // Check if the value is already in the list
   auto it = std::find(listOfVars.begin(),

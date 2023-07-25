@@ -117,6 +117,7 @@ void Writer::write(int step, const GrayScott &sim)
         writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
+
         writer.Put<double>(var_v, v.data());
         writer.EndStep();
     }
@@ -138,12 +139,26 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else
     {
+
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
 
         writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
+        std::cout << "Vector u: ";
+        for (const double& value : u) {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;
+
+        // Find the minimum and maximum values in the vector u
+        auto min_element = std::min_element(u.begin(), u.end());
+        auto max_element = std::max_element(u.begin(), u.end());
+
+        // Print the minimum and maximum values
+        std::cout << "Minimum value: " << *min_element << std::endl;
+        std::cout << "Maximum value: " << *max_element << std::endl;
         writer.Put<double>(var_v, v.data());
         writer.EndStep();
     }
