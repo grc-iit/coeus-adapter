@@ -16,6 +16,7 @@
             <parameter key="OpenTimeoutSecs" value="60.0"/>
             <!-- BP5 engine parameters -->
             <parameter key="NumAggregators" value="1"/>
+            <parameter key="AggregatorRatio" value="1.0"/>
             <parameter key="AsyncWrite" value="false"/>
             <!-- BP5 reader parameter -->
             <!--parameter key="SelectSteps" value="0:n:10"/-->
