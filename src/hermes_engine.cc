@@ -29,14 +29,14 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+  engine_logger->info("rank {} with name {} and mode {}",
+                      rank, name, adios2::ToString(mode));
 }
 
 /**
 * Initialize this engine.
 * */
 void HermesEngine::Init_() {
-
   rank = m_Comm.Rank();
 
   comm_size = m_Comm.Size();
@@ -100,7 +100,8 @@ void HermesEngine::IncrementCurrentStep() {
 }
 
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
-                                  const size_t Step, adios2::MinMaxStruct &MinMax) {
+                                  const size_t Step,
+                                  adios2::MinMaxStruct &MinMax) {
     std::cout << __func__ << std::endl;
 /*
     // We initialize the min and max values
@@ -132,8 +133,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
 
 void HermesEngine::InitElementMinMax(adios2::MinMaxStruct &MinMax,
                                      adios2::DataType Type) {
-    switch (Type)
-    {
+    switch (Type) {
         case adios2::DataType::None:
             break;
         case adios2::DataType::Char:
@@ -201,72 +201,72 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
                 std::cout << "In case 11"<< std::endl;
             case adios2::DataType::Int8:
                 std::cout << "In case 10"<< std::endl;
-                if (*(int8_t *)Element < MinMax.MinUnion.field_int8)
+                if (*reinterpret_cast<int8_t*>(Element) < MinMax.MinUnion.field_int8)
                     MinMax.MinUnion.field_int8 = *(int8_t *)Element;
-                if (*(int8_t *)Element > MinMax.MaxUnion.field_int8)
+                if (*reinterpret_cast<int8_t*>(Element) > MinMax.MaxUnion.field_int8)
                     MinMax.MaxUnion.field_int8 = *(int8_t *)Element;
                 break;
             case adios2::DataType::Int16:
                 std::cout << "In case 8"<< std::endl;
-                if (*(int16_t *)Element < MinMax.MinUnion.field_int16)
+                if (*reinterpret_cast<int16_t*>(Element) < MinMax.MinUnion.field_int16)
                     MinMax.MinUnion.field_int16 = *(int16_t *)Element;
-                if (*(int16_t *)Element > MinMax.MaxUnion.field_int16)
+                if (*reinterpret_cast<int16_t*>(Element) > MinMax.MaxUnion.field_int16)
                     MinMax.MaxUnion.field_int16 = *(int16_t *)Element;
                 break;
             case adios2::DataType::Int32:
-                if (*(int32_t *)Element < MinMax.MinUnion.field_int32)
+                if  (*reinterpret_cast<int32_t*>(Element) < MinMax.MinUnion.field_int32)
                     MinMax.MinUnion.field_int32 = *(int32_t *)Element;
-                if (*(int32_t *)Element > MinMax.MaxUnion.field_int32)
+                if  (*reinterpret_cast<int32_t*>(Element) > MinMax.MaxUnion.field_int32)
                     MinMax.MaxUnion.field_int32 = *(int32_t *)Element;
                 break;
             case adios2::DataType::Int64:
-                if (*(int64_t *)Element < MinMax.MinUnion.field_int64)
+                if (*reinterpret_cast<int64_t*>(Element) < MinMax.MinUnion.field_int64)
                     MinMax.MinUnion.field_int64 = *(int64_t *)Element;
-                if (*(int64_t *)Element > MinMax.MaxUnion.field_int64)
+                if (*reinterpret_cast<int64_t*>(Element) > MinMax.MaxUnion.field_int64)
                     MinMax.MaxUnion.field_int64 = *(int64_t *)Element;
                 break;
             case adios2::DataType::UInt8:
-                if (*(uint8_t *)Element < MinMax.MinUnion.field_uint8)
+                if (*reinterpret_cast<uint8_t*>(Element) < MinMax.MinUnion.field_uint8)
                     MinMax.MinUnion.field_uint8 = *(uint8_t *)Element;
-                if (*(uint8_t *)Element > MinMax.MaxUnion.field_uint8)
+                if (*reinterpret_cast<uint8_t*>(Element) > MinMax.MaxUnion.field_uint8)
                     MinMax.MaxUnion.field_uint8 = *(uint8_t *)Element;
                 break;
             case adios2::DataType::UInt16:
-                if (*(uint16_t *)Element < MinMax.MinUnion.field_uint16)
+                if (*reinterpret_cast<uint16_t*>(Element) < MinMax.MinUnion.field_uint16)
                     MinMax.MinUnion.field_uint16 = *(uint16_t *)Element;
-                if (*(uint16_t *)Element > MinMax.MaxUnion.field_uint16)
+                if (*reinterpret_cast<uint16_t*>(Element) > MinMax.MaxUnion.field_uint16)
                     MinMax.MaxUnion.field_uint16 = *(uint16_t *)Element;
                 break;
             case adios2::DataType::UInt32:
-                if (*(uint32_t *)Element < MinMax.MinUnion.field_uint32)
+                if (*reinterpret_cast<uint32_t*>(Element) < MinMax.MinUnion.field_uint32)
                     MinMax.MinUnion.field_uint32 = *(uint32_t *)Element;
-                if (*(uint32_t *)Element > MinMax.MaxUnion.field_uint32)
+                if (*reinterpret_cast<uint32_t*>(Element) > MinMax.MaxUnion.field_uint32)
                     MinMax.MaxUnion.field_uint32 = *(uint32_t *)Element;
                 break;
             case adios2::DataType::UInt64:
                 std::cout << "In case 3"<< std::endl;
-                if (*(uint64_t *)Element < MinMax.MinUnion.field_uint64)
+                if (*reinterpret_cast<uint64_t*>(Element) < MinMax.MinUnion.field_uint64)
                     MinMax.MinUnion.field_uint64 = *(uint64_t *)Element;
-                if (*(uint64_t *)Element > MinMax.MaxUnion.field_uint64)
+                if (*reinterpret_cast<uint64_t*>(Element) > MinMax.MaxUnion.field_uint64)
                     MinMax.MaxUnion.field_uint64 = *(uint64_t *)Element;
                 break;
             case adios2::DataType::Float:
                 std::cout << "In case 2"<< std::endl;
-                if (*(float *)Element < MinMax.MinUnion.field_float)
+                if (*reinterpret_cast<float*>(Element) < MinMax.MinUnion.field_float)
                     MinMax.MinUnion.field_float = *(float *)Element;
-                if (*(float *)Element > MinMax.MaxUnion.field_float)
+                if (*reinterpret_cast<float*>(Element) < MinMax.MinUnion.field_float)
                     MinMax.MaxUnion.field_float = *(float *)Element;
                 break;
             case adios2::DataType::Double:
-                if (*(double *)Element < MinMax.MinUnion.field_double)
+                if (*reinterpret_cast<double*>(Element) < MinMax.MinUnion.field_double)
                     MinMax.MinUnion.field_double = *(double *)Element;
-                if (*(double *)Element > MinMax.MaxUnion.field_double)
+                if (*reinterpret_cast<double*>(Element) > MinMax.MaxUnion.field_double)
                     MinMax.MaxUnion.field_double = *(double *)Element;
                 break;
             case adios2::DataType::LongDouble:
-                if (*(long double *)Element < MinMax.MinUnion.field_ldouble)
-                    MinMax.MinUnion.field_ldouble = *(long double *)Element;
-                if (*(long double *)Element > MinMax.MaxUnion.field_ldouble)
+                if (*reinterpret_cast<long double*>(Element) < MinMax.MinUnion.field_ldouble)
+                MinMax.MinUnion.field_ldouble = *(long double *)Element;
+                if (*reinterpret_cast<long double*>(Element) > MinMax.MaxUnion.field_ldouble)
                     MinMax.MaxUnion.field_ldouble = *(long double *)Element;
                 break;
             case adios2::DataType::FloatComplex:

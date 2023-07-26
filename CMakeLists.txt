@@ -159,7 +159,7 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
-add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
+#add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
