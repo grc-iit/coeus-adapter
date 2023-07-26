@@ -59,6 +59,7 @@ int main() {
     std::cout << "--- WRITER ENGINE INITIALIZED ---" << std::endl;
 
     writer.BeginStep();
+    //writer.CurrentStep();
     writer.Put(var_u, data_u1.data());
     writer.Put(var_v, data_v1.data());
     writer.EndStep();

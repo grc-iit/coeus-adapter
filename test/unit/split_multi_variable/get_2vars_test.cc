@@ -63,6 +63,7 @@ int main() {
     std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
 
     reader.BeginStep();
+    //reader.CurrentStep();
     reader.Get(var_u, data_get_u);
     reader.Get(var_v, data_get_v);
     assert(data_u1 == data_get_u);
