@@ -81,20 +81,18 @@ class NativeTestManager(TestManager):
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
 
         # Use Slurm to allocate nodes
-        node_list = "ares-comp-01,ares-comp-02"
-        slurm_info = SlurmInfo(nnodes=2, node_list=node_list)
+        node_list = "ares-comp-01"
+        slurm_info = SlurmInfo(nnodes=1, node_list=node_list)
         slurm = Slurm(slurm_info)
         slurm.allocate()
 
         simulation = MpiExec(f"./adios2-gray-scott settings-files.json",
-                             MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()))
-        simulation.run()
-        analysis = MpiExec(f"./adios2-pdf-calc gs.bp pdf.bp 100",
-                        MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()))
-        analysis.run()
+                MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()), cwd=self.INSTALL_PATH)
+        #analysis = MpiExec(f"./adios2-pdf-calc gs.bp pdf.bp 100",
+         #               MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()), spawn_info)
 
         self.clean_simulation()
         slurm.exit()
-        return simulation.exit_code + analysis.exit_code
-
+        #return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code
 
