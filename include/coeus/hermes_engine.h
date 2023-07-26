@@ -25,7 +25,6 @@
 #include <vector>
 
 #include <hermes.h>
-
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 
@@ -67,10 +66,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   size_t CurrentStep() const final;
 
   /** Execute all deferred puts */
-  void PerformPuts() override{engine_logger->info("rank {}", rank);}
+  void PerformPuts() override {engine_logger->info("rank {}", rank);}
 
   /** Execute all deferred gets */
-  void PerformGets() override{engine_logger->info("rank {}", rank);}
+  void PerformGets() override {engine_logger->info("rank {}", rank);}
 
   bool VariableMinMax(const adios2::core::VariableBase &, const size_t Step,
                         adios2::MinMaxStruct &MinMax) override;
@@ -80,8 +79,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   int rank;
   int comm_size;
-
-  adios2::core::Engine *m_Engine = NULL;
 
   std::vector<std::string> listOfVars;
 
@@ -96,9 +93,11 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void DefineVariable(VariableMetadata variableMetadata);
 
   template<typename T>
-  void HermesPut(const std::string &bucket_name, const std::string &blob_name, size_t blob_size, T values);
+  void HermesPut(const std::string &bucket_name,
+                 const std::string &blob_name, size_t blob_size, T values);
 
-  hermes::Blob HermesGet(const std::string &bucket_name, const std::string &varName);
+  hermes::Blob HermesGet(const std::string &bucket_name,
+                         const std::string &varName);
 
  protected:
   /** Initialize (wrapper around Init_)*/
@@ -115,8 +114,11 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   static void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
                                    void *Element);
 
+  static void InitElementMinMax(adios2::MinMaxStruct &MinMax,
+                                         adios2::DataType Type);
 
-  /** Place data in Hermes asynchronously */
+
+    /** Place data in Hermes asynchronously */
   template<typename T>
   void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values);
@@ -132,7 +134,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                       T *values);
 
   /** Close a particular transport */
-  void DoClose(const int transportIndex = -1) override {engine_logger->info("rank {}", rank);}
+  void DoClose(const int transportIndex = -1) override {
+      engine_logger->info("rank {}", rank);}
 
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.

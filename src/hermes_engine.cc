@@ -37,8 +37,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
 * */
 void HermesEngine::Init_() {
 
-  m_Engine = this;
-
   rank = m_Comm.Rank();
 
   comm_size = m_Comm.Size();
@@ -55,11 +53,13 @@ void HermesEngine::Init_() {
 #endif
   console_sink->set_pattern("[coeus engine] [%^%!%l%$] %v");
 
-  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/engine_test.txt", true);
+  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+          "logs/engine_test.txt", true);
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
-  auto mix_log = std::make_shared<spdlog::logger>(spdlog::logger("debug_logger", {console_sink, file_sink}));
+  auto mix_log = std::make_shared<spdlog::logger>(spdlog::logger(
+          "debug_logger", {console_sink, file_sink}));
   mix_log->set_level(spdlog::level::debug);
 
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
@@ -91,43 +91,103 @@ HermesEngine::~HermesEngine() {
 void HermesEngine::IncrementCurrentStep() {
   if (rank == 0) {
     currentStep++;
-    HermesPut("step","step",sizeof(int), &currentStep);
+    HermesPut("step", "step",
+              sizeof(int), &currentStep);
   }
   // Broadcast the updated value of currentStep from the
   // root process to all other processes
   m_Comm.Bcast(&currentStep, 1, 0);
 }
 
-bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var, const size_t Step,
-                                      adios2::MinMaxStruct &MinMax) {
+bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
+                                  const size_t Step, adios2::MinMaxStruct &MinMax) {
     std::cout << __func__ << std::endl;
+/*
+    // We initialize the min and max values
+    InitElementMinMax(MinMax, Var.m_Type);
 
-    //We should do this for all the types?
-    MinMax.MinUnion.field_double = std::numeric_limits<double>::max();
-
-    // Idea:
-    // Get the corresponding hermes data with the name, we can obtain this with the Var.m_Name
-    // save the corresponding data of the variable passed as input to the MiMax structure
-    //for (size_t step = 1; step <= currentStep; ++step) {
     std::string filename = Var.m_Name + "_step_" + std::to_string(currentStep)
-            + "_rank" + std::to_string(rank);
-
-// Obtain the blob from Hermes using the filename and variable name
+                           + "_rank" + std::to_string(rank);
+    // Obtain the blob from Hermes using the filename and variable name
     hermes::Blob blob = HermesGet(filename, Var.m_Name);
 
-// Calculate the number of elements in the blob (assuming the values are doubles)
-    size_t dataSize = blob.size() / sizeof(double);
+    VariableMetadata variableMetadata =
+            MetadataSerializer::DeserializeMetadata(blob);//??*/
 
-// Create a pointer to the double data inside the blob
-    const double *doubleData = reinterpret_cast<const double *>(blob.data());
-// Iterate through the data and call ApplyElementMinMax for each element
-    for (size_t i = 0; i < dataSize; ++i) {
-        void *elementPtr = const_cast<void *>(static_cast<const void *>(&doubleData[i]));
-        ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);
-    }
-
-    //}
+/*
+ *
+#define DEFINE_VARIABLE(T) \
+    if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
+            size_t dataSize = blob.size() / sizeof(T);                               \
+        const T *data = reinterpret_cast<const T *>(blob.data());               \
+        for (size_t i = 0; i < dataSize; ++i) {                                             \
+                void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
+                ApplyElementMinMax(MinMax, adios2::GetType<T>(), elementPtr);                   \
+            }                                                                               \
+        ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
+#undef DEFINE_VARIABLE
+*/
     return true;
+}
+
+void HermesEngine::InitElementMinMax(adios2::MinMaxStruct &MinMax,
+                                     adios2::DataType Type) {
+    switch (Type)
+    {
+        case adios2::DataType::None:
+            break;
+        case adios2::DataType::Char:
+            std::cout << "In case 11"<< std::endl;
+        case adios2::DataType::Int8:
+            MinMax.MinUnion.field_int8 = std::numeric_limits<int8_t>::max();
+            MinMax.MaxUnion.field_int8 = std::numeric_limits<int8_t>::min();
+            break;
+        case adios2::DataType::Int16:
+            MinMax.MinUnion.field_int16 = std::numeric_limits<int16_t>::max();
+            MinMax.MaxUnion.field_int16 = std::numeric_limits<int16_t>::min();
+            break;
+        case adios2::DataType::Int32:
+            MinMax.MinUnion.field_int32 = std::numeric_limits<int32_t>::max();
+            MinMax.MaxUnion.field_int32 = std::numeric_limits<int32_t>::min();
+            break;
+        case adios2::DataType::Int64:
+            MinMax.MinUnion.field_int64 = std::numeric_limits<int64_t>::max();
+            MinMax.MaxUnion.field_int64 = std::numeric_limits<int64_t>::min();
+            break;
+        case adios2::DataType::UInt8:
+            MinMax.MinUnion.field_uint8 = std::numeric_limits<uint8_t>::max();
+            MinMax.MaxUnion.field_uint8 = std::numeric_limits<uint8_t>::min();
+            break;
+        case adios2::DataType::UInt16:
+            MinMax.MinUnion.field_uint16 = std::numeric_limits<uint16_t>::max();
+            MinMax.MaxUnion.field_uint16 = std::numeric_limits<uint16_t>::min();
+            break;
+        case adios2::DataType::UInt32:
+            MinMax.MinUnion.field_uint32 = std::numeric_limits<uint32_t>::max();
+            MinMax.MaxUnion.field_uint32 = std::numeric_limits<uint32_t>::min();
+            break;
+        case adios2::DataType::UInt64:
+            MinMax.MinUnion.field_uint64 = std::numeric_limits<uint64_t>::max();
+            MinMax.MaxUnion.field_uint64 = std::numeric_limits<uint64_t>::min();
+            break;
+        case adios2::DataType::Float:
+            MinMax.MinUnion.field_float = std::numeric_limits<float>::max();
+            MinMax.MaxUnion.field_float = std::numeric_limits<float>::min();
+            break;
+        case adios2::DataType::Double:
+            MinMax.MinUnion.field_double = std::numeric_limits<double>::max();
+            MinMax.MaxUnion.field_double = std::numeric_limits<double>::min();
+            break;
+        case adios2::DataType::LongDouble:
+            MinMax.MinUnion.field_ldouble = std::numeric_limits<long double>::max();
+            MinMax.MaxUnion.field_ldouble = std::numeric_limits<long double>::min();
+            break;
+        case adios2::DataType::FloatComplex:
+        case adios2::DataType::DoubleComplex:
+        case adios2::DataType::String:
+        case adios2::DataType::Struct:
+            break;
+    }
 }
 
 void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
