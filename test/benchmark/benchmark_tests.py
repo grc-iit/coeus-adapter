@@ -85,9 +85,10 @@ class NativeTestManager(TestManager):
         slurm_info = SlurmInfo(nnodes=1, node_list=node_list)
         slurm = Slurm(slurm_info)
         slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.INSTALL_PATH)
 
-        simulation = MpiExec(f"./adios2-gray-scott settings-files.json",
-                MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile(), cwd=self.INSTALL_PATH), slurm_info)
+        simulation = MpiExec(f"./adios2-gray-scott settings-files.json", mpi_exec_info)
         #analysis = MpiExec(f"./adios2-pdf-calc gs.bp pdf.bp 100",
          #               MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()), spawn_info)
 
