@@ -128,7 +128,7 @@ endfunction()
 function(pytest_benchmark test_type test_name label)
     set(script ${CMAKE_SOURCE_DIR}/CI/py_coeus_ci/bin/run_bench_test.py)
     # Number of processes we want to run
-    set(processes_list 1)
+    set(processes_list 4)
     foreach(num_processes ${processes_list})
         add_test(NAME ${test_name}_${num_processes}
                 COMMAND python3 ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR} ${num_processes})
