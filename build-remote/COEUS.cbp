@@ -17,16 +17,6 @@
 					<DistClean command="/usr/bin/gmake -j40 -f &quot;/tmp/tmp.5TUlmkfNlZ/build-remote/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
-			<Target title="lint">
-				<Option working_dir="/tmp/tmp.5TUlmkfNlZ/build-remote"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/gmake -j40 -f &quot;/tmp/tmp.5TUlmkfNlZ/build-remote/Makefile&quot;  VERBOSE=1 lint"/>
-					<CompileFile command="/usr/bin/gmake -j40 -f &quot;/tmp/tmp.5TUlmkfNlZ/build-remote/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/gmake -j40 -f &quot;/tmp/tmp.5TUlmkfNlZ/build-remote/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/gmake -j40 -f &quot;/tmp/tmp.5TUlmkfNlZ/build-remote/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
 			<Target title="test">
 				<Option working_dir="/tmp/tmp.5TUlmkfNlZ/build-remote"/>
 				<Option type="4"/>
