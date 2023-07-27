@@ -2,9 +2,14 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <chrono>
 
 #include <adios2.h>
 #include <mpi.h>
+
+#include "../../../../external_libraries/spdlog/include/spdlog/logger.h"
+#include "../../../../external_libraries/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
+#include "../../../../external_libraries/spdlog/include/spdlog/sinks/basic_file_sink.h"
 
 #include "../../gray-scott/common/timer.hpp"
 #include "../../gray-scott/simulation/gray-scott.h"
@@ -58,6 +63,8 @@ void print_simulator_settings(const GrayScott &s)
 
 int main(int argc, char **argv)
 {
+    auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
+
     int provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     int rank, procs, wrank;
@@ -70,6 +77,20 @@ int main(int argc, char **argv)
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &procs);
+
+    // Create the logger and set up console and file sinks
+    std::string binaryDir = BINARY_DIR;
+
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::debug);
+    console_sink->set_pattern("%v");
+
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/sim_test.txt", true);
+    file_sink->set_level(spdlog::level::trace);
+    file_sink->set_pattern("%v");
+
+    spdlog::logger logger("debug_logger", { console_sink, file_sink });
+    logger.set_level(spdlog::level::debug);
 
     if (argc < 2)
     {
@@ -176,6 +197,11 @@ int main(int argc, char **argv)
 
     log.close();
 #endif
-
+    auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
+    auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
+   // std::cout << "###########################################################" << std::endl;
+   // std::cout << "Simulation Total Execution Time Process " << rank << ": " << app_duration.count() << " milliseconds" << std::endl;
+   // std::cout << "###########################################################" << std::endl;
+    logger.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
     MPI_Finalize();
 }
