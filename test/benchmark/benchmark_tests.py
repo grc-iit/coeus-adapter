@@ -1,5 +1,6 @@
 from py_coeus_ci.test_manager_bench import TestManager
 from jarvis_util import *
+from jarvis_util.shell.slurm import SlurmInfo, Slurm
 
 class NativeTestManager(TestManager):
     def spawn_all_nodes(self):
@@ -64,12 +65,35 @@ class NativeTestManager(TestManager):
         simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
         return simulation.exit_code
 
+    #def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
+        #   self.prepare_simulation("file")
+        #spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
+        #simulation = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
+        #analysis = Exec(f"mpirun -n 3 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-pdf-calc /mnt/nvme/jmendezbenegassimarq/gs.bp /mnt/nvme/jmendezbenegassimarq/pdf.bp 100", spawn_info)
+        ##simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json > logs/simulation_log.txt", spawn_info)
+        ##analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100 > logs/analysis_log.txt", spawn_info)
+        #self.clean_simulation()
+        #return simulation.exit_code + analysis.exit_code
+
+
     def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
         self.prepare_simulation("file")
         spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        simulation = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n 3 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-pdf-calc /mnt/nvme/jmendezbenegassimarq/gs.bp /mnt/nvme/jmendezbenegassimarq/pdf.bp 100", spawn_info)
-        #simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json > logs/simulation_log.txt", spawn_info)
-        #analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100 > logs/analysis_log.txt", spawn_info)
+
+        # Use Slurm to allocate nodes
+        node_list = "ares-comp-01"
+        slurm_info = SlurmInfo(nnodes=1, node_list=node_list)
+        slurm = Slurm(slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.INSTALL_PATH)
+
+        simulation = MpiExec(f"./adios2-gray-scott settings-files.json", mpi_exec_info)
+        #analysis = MpiExec(f"./adios2-pdf-calc gs.bp pdf.bp 100",
+         #               MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()), spawn_info)
+
         self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
+        slurm.exit()
+        #return simulation.exit_code + analysis.exit_code
+        return simulation.exit_code
+

@@ -172,19 +172,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named lint
-
-# Build rule for target.
-lint: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 lint
-.PHONY : lint
-
-# fast build rule for target.
-lint/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/lint.dir/build.make CMakeFiles/lint.dir/build
-.PHONY : lint/fast
-
-#=============================================================================
 # Target rules for targets named hermes_engine
 
 # Build rule for target.
@@ -366,7 +353,6 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... test"
-	@echo "... lint"
 	@echo "... adios2-gray-scott"
 	@echo "... adios2-pdf-calc"
 	@echo "... basic"
