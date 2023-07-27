@@ -91,19 +91,17 @@ HermesEngine::~HermesEngine() {
 void HermesEngine::IncrementCurrentStep() {
   if (rank == 0) {
     currentStep++;
-    HermesPut("step", "step",
-              sizeof(int), &currentStep);
   }
   // Broadcast the updated value of currentStep from the
   // root process to all other processes
   m_Comm.Bcast(&currentStep, 1, 0);
 }
-
+/*
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
     std::cout << __func__ << std::endl;
-/*
+
     // We initialize the min and max values
     InitElementMinMax(MinMax, Var.m_Type);
 
@@ -113,10 +111,8 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
     hermes::Blob blob = HermesGet(filename, Var.m_Name);
 
     VariableMetadata variableMetadata =
-            MetadataSerializer::DeserializeMetadata(blob);//??*/
+            MetadataSerializer::DeserializeMetadata(blob);//??
 
-/*
- *
 #define DEFINE_VARIABLE(T) \
     if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) {     \
             size_t dataSize = blob.size() / sizeof(T);                               \
@@ -127,9 +123,38 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
             }                                                                               \
         ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
-*/
+
     return true;
-}
+}*/
+
+bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
+                                     const size_t Step,
+                                     adios2::MinMaxStruct &MinMax) {
+        std::cout << __func__ << std::endl;
+
+        // We initialize the min and max values
+        InitElementMinMax(MinMax, Var.m_Type);
+
+        std::string filename = Var.m_Name + "_step_" + std::to_string(currentStep)
+                               + "_rank" + std::to_string(rank);
+        // Obtain the blob from Hermes using the filename and variable name
+        hermes::Blob blob = HermesGet(filename, Var.m_Name);
+        // For now, we suppose that the values inside the blob are doubles
+        const double *doubleData = reinterpret_cast<const double *>(blob.data());
+        size_t dataSize = blob.size() / sizeof(double);
+
+        // Create a vector from the raw pointer
+        const std::vector<double> doubleVector(doubleData, doubleData + dataSize);
+
+        // Print the values of the vector
+
+        for (size_t i = 0; i < doubleVector.size(); ++i) {
+            void *elementPtr = const_cast<void *>(static_cast<const void *>(&doubleVector[i]));
+            ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);
+            }
+
+        return true;
+    }
 
 void HermesEngine::InitElementMinMax(adios2::MinMaxStruct &MinMax,
                                      adios2::DataType Type) {
@@ -297,7 +322,7 @@ void HermesEngine::LoadMetadata() {
 
 void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
 
-    if(currentStep != 1) {
+    if (currentStep != 1) {
         // If the metadata is defined delete current value to update it
         m_IO.RemoveVariable(variableMetadata.name);
     }
@@ -401,7 +426,7 @@ void HermesEngine::DoPutDeferred_(
                       variable.m_Name);
 
   // Update the metadata bucket in hermes with the new variable
-  if (it == listOfVars.end() && filename.compare(0, 4, "step") != 0) {
+  if (it == listOfVars.end()) {
 
       std::string filename_metadata = "step_" +  std::to_string(currentStep) +
                              "_rank_" +  std::to_string(rank);

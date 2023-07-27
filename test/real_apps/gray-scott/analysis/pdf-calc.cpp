@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            int stepSimOut = reader.CurrentStep();
+            int stepSimOut = stepAnalysis;
 
             // Inquire variable and set the selection at the first step only
             // This assumes that the variable dimensions do not change across
@@ -282,6 +282,29 @@ int main(int argc, char *argv[])
             std::cout << "]" << std::endl;
 
             var_step_in = reader_io.InquireVariable<int>("step");
+
+            std::cout << "Var step rank " << rank << " Shape: [";
+            for (size_t i = 0; i < var_step_in.Shape().size(); ++i) {
+                std::cout << var_step_in.Shape()[i];
+                if (i < var_step_in.Shape().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var Step " << rank << " Start: [";
+            for (size_t i = 0; i < var_step_in.Start().size(); ++i) {
+                std::cout << var_step_in.Start()[i];
+                if (i < var_step_in.Start().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "] - Var Step " << rank << " Count: [";
+            for (size_t i = 0; i < var_step_in.Count().size(); ++i) {
+                std::cout << var_step_in.Count()[i];
+                if (i < var_step_in.Count().size() - 1) {
+                    std::cout << ", ";
+                }
+            }
+            std::cout << "]" << std::endl;
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
             std::cout << "Min U rank " << rank << " step " << stepAnalysis << " : " << minmax_u.first << std::endl;

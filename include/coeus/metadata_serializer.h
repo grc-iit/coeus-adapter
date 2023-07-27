@@ -35,28 +35,57 @@ struct VariableMetadata {
 
   VariableMetadata() = default;
 
-  template<typename T>
-  explicit VariableMetadata(const adios2::core::Variable<T> &variable) {
-    name = variable.m_Name;
-    shape = variable.Shape();
-    start = variable.m_Start;
-    count = variable.Count();
-    constantShape = variable.IsConstantDims();
-    dataType = adios2::ToString(variable.m_Type);
-  }
+    template<typename T>
+    explicit VariableMetadata(const adios2::core::Variable<T> &variable) {
+        name = variable.m_Name;
+        shape = variable.Shape();
 
-  template<typename T>
-  explicit VariableMetadata(const adios2::Variable<T> variable) {
-    name = variable.Name();
-    shape = variable.Shape();
-    start = variable.Start();
-    count = variable.Count();
-    constantShape = false;
-    /* We need to see if this is correct.
-       Though this is mostly just for the unit test,
-       as the engine will reference the adios::core::variable constructor */
-    dataType = variable.Type();
-  }
+        // Check if start is empty or null and assign an empty array if so
+        if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+            start = std::vector<size_t>();
+        } else {
+            start = variable.m_Start;
+        }
+
+        count = variable.Count();
+
+        // Check if count is empty or null and assign an empty array if so
+        if (variable.Count().empty() || variable.Count().data() == nullptr) {
+            count = std::vector<size_t>();
+        } else {
+            count = variable.Count();
+        }
+
+        constantShape = variable.IsConstantDims();
+        dataType = adios2::ToString(variable.m_Type);
+    }
+
+    template<typename T>
+    explicit VariableMetadata(const adios2::Variable<T> variable) {
+        name = variable.Name();
+        shape = variable.Shape();
+
+        // Check if start is empty or null and assign an empty array if so
+        if (variable.Start().empty() || variable.Start().data() == nullptr) {
+            start = std::vector<size_t>();
+        } else {
+            start = variable.Start();
+        }
+
+        // Check if count is empty or null and assign an empty array if so
+        if (variable.Count().empty() || variable.Count().data() == nullptr) {
+            count = std::vector<size_t>();
+        } else {
+            count = variable.Count();
+        }
+
+        constantShape = false;
+        /* We need to see if this is correct.
+           Though this is mostly just for the unit test,
+           as the engine will reference the adios::core::variable constructor */
+        dataType = variable.Type();
+    }
+
 
   adios2::DataType getDataType() {
     return adios2::helper::GetDataTypeFromString(dataType);
