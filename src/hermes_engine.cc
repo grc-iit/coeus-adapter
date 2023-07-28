@@ -303,8 +303,10 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
     }
 
 void HermesEngine::LoadMetadata() {
+
     std::string filename = "step_" +  std::to_string(currentStep) +
             "_rank_" +  std::to_string(rank);
+
     hapi::Bucket bkt_vars = HERMES->GetBucket(filename);
     hapi::Context ctx_vars;
     std::vector<hermes::BlobId> blobIds = bkt_vars.GetContainedBlobIds();
@@ -314,7 +316,6 @@ void HermesEngine::LoadMetadata() {
         VariableMetadata variableMetadata =
                 MetadataSerializer::DeserializeMetadata(blob);
         std::string varName = bkt_vars.GetBlobName(blobId);
-        std::cout << "Variable is: " << varName << std::endl;
         listOfVars.push_back(varName);
         DefineVariable(variableMetadata);
     }
@@ -335,7 +336,6 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
                       variableMetadata.count, \
                       variableMetadata.constantShape));                           \
          variable->m_AvailableStepsCount = 1;                                   \
-         variable->m_ShapeID = adios2::ShapeID::GlobalArray;                            \
          variable->m_SingleValue = false;                                       \
          variable->m_Min = std::numeric_limits<T>::max();                       \
          variable->m_Max = std::numeric_limits<T>::min();                         \
@@ -349,13 +349,24 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
     std::cout << __func__ << std::endl;
 
-  // Increase currentStep and save it in Hermes
   IncrementCurrentStep();
 
+  if (m_OpenMode == adios2::Mode::Write) {
+      HermesPut("total_steps", "total_steps", sizeof(int), &currentStep);
+  }
+
   if (m_OpenMode == adios2::Mode::Read) {
-    // Retrieve the metadata
+      // Retrieve the metadata
+      if(currentStep == 1){
+          hermes::Blob blob = HermesGet("total_steps","total_steps");
+          total_steps = *reinterpret_cast<const int*>(blob.data());
+      }
+      if (currentStep > total_steps) {
+          return adios2::StepStatus::EndOfStream;
+      }
       LoadMetadata();
   }
+
   engine_logger->info("rank {} on mode {}", rank, adios2::ToString(mode));
   return adios2::StepStatus::OK;
 }
@@ -372,7 +383,8 @@ void HermesEngine::EndStep() {
 template<typename T>
 void HermesEngine::HermesPut(const std::string &bucket_name,
                              const std::string &blob_name, size_t blob_size, T values) {
-  hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
+    std::cout << __func__ << std::endl;
+    hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
   hapi::Context ctx;
   hermes::Blob blob(blob_size);
   hermes::BlobId blob_id;
@@ -381,6 +393,7 @@ void HermesEngine::HermesPut(const std::string &bucket_name,
 }
 
 hermes::Blob HermesEngine::HermesGet(const std::string &bucket_name, const std::string &blob_name) {
+    std::cout << __func__ << std::endl;
   hapi::Bucket bkt = HERMES->GetBucket(bucket_name);
   hapi::Context ctx;
   hermes::Blob blob;
@@ -394,7 +407,7 @@ hermes::Blob HermesEngine::HermesGet(const std::string &bucket_name, const std::
     template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-  std::cout << __func__ << std::endl;
+        std::cout << __func__ << std::endl;
 
   // Retrieve the value of the variable in the current step
   std::string filename = variable.m_Name + "_step_" +

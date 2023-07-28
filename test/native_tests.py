@@ -150,8 +150,6 @@ class NativeTestManager(TestManager):
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"gs.bp", f"results/sim_her_gs.bp", spawn_info)
-        Copy(f"ckpt.bp", f"results/sim_her_ckpt.bp", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code
@@ -164,9 +162,6 @@ class NativeTestManager(TestManager):
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-        Copy(f"gs.bp", f"results/ana_her_gs.bp", spawn_info)
-        Copy(f"ckpt.bp", f"results/ana_her_ckpt.bp", spawn_info)
-        Copy(f"pdf.bp", f"results/ana_her_pdf.bp", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
@@ -178,8 +173,6 @@ class NativeTestManager(TestManager):
                                      cwd=self.INSTALL_PATH)
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
-        Copy(f"gs.bp", f"results/sim_her_par_gs.bp", spawn_info)
-        Copy(f"ckpt.bp", f"results/sim_her_par_ckpt.bp", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code
@@ -192,10 +185,6 @@ class NativeTestManager(TestManager):
         self.start_daemon(spawn_info)
         simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json", spawn_info)
         analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100", spawn_info)
-
-        Copy(f"gs.bp", f"results/ana_her_par_gs.bp", spawn_info)
-        Copy(f"ckpt.bp", f"results/ana_her_par_ckpt.bp", spawn_info)
-        Copy(f"pdf.bp", f"results/ana_her_par_pdf.bp", spawn_info)
         self.stop_daemon(spawn_info)
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code

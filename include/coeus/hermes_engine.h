@@ -77,6 +77,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
  private:
   int currentStep = 0;
 
+  int total_steps = 0;
+
   int rank;
   int comm_size;
 
