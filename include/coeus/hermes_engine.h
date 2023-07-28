@@ -75,11 +75,12 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                         adios2::MinMaxStruct &MinMax) override;
 
  private:
-  int currentStep = -1;
+  int currentStep = 0;
 
   int total_steps = 0;
 
   int rank;
+
   int comm_size;
 
   std::vector<std::string> listOfVars;
@@ -137,7 +138,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   /** Close a particular transport */
   void DoClose(const int transportIndex = -1) override {
-      engine_logger->info("rank {}", rank);}
+      engine_logger->info("rank {}", rank);
+  }
 
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.
