@@ -1,6 +1,7 @@
 from py_coeus_ci.test_manager_bench import TestManager
 from jarvis_util import *
 from jarvis_util.shell.slurm import SlurmInfo, Slurm
+import time
 
 class NativeTestManager(TestManager):
     def spawn_all_nodes(self):
@@ -65,6 +66,19 @@ class NativeTestManager(TestManager):
         simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
         return simulation.exit_code
 
+
+    def test_gray_scott_analysis_file_bench(self, num_processes):
+        self.prepare_simulation("file")
+        spawn_info = self.spawn_info(cwd=f"{self.GRAY_SCOTT_PATH}")
+        simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
+        analysis = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp", spawn_info)
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_test_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_an_test_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_an_test_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt", f"{self.INSTALL_PATH}/logs/an_test_{num_processes}_procs.txt")
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
     #def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
         #   self.prepare_simulation("file")
         #spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
@@ -76,9 +90,20 @@ class NativeTestManager(TestManager):
         #return simulation.exit_code + analysis.exit_code
 
 
+### THIS TEST WORKS
+ #   def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
+  #      self.prepare_simulation("file")
+
+        #      hostfile = f"{self.HOSTFILE_PATH}/myhosts.txt"
+        #mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.GRAY_SCOTT_PATH)
+        #cmd = f"{self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        #simulation = MpiExec(cmd, mpi_exec_info)
+
+        #self.clean_simulation()
+    #return simulation.exit_code
+
     def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
         self.prepare_simulation("file")
-        spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
 
         # Use Slurm to allocate nodes
         node_list = "ares-comp-01"
@@ -86,14 +111,11 @@ class NativeTestManager(TestManager):
         slurm = Slurm(slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
-        mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.INSTALL_PATH)
+        mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.GRAY_SCOTT_PATH)
+        cmd = f"{self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        simulation = MpiExec(cmd, mpi_exec_info)
 
-        simulation = MpiExec(f"./adios2-gray-scott settings-files.json", mpi_exec_info)
-        #analysis = MpiExec(f"./adios2-pdf-calc gs.bp pdf.bp 100",
-         #               MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=slurm.get_hostfile()), spawn_info)
-
-        self.clean_simulation()
         slurm.exit()
-        #return simulation.exit_code + analysis.exit_code
+        self.clean_simulation()
         return simulation.exit_code
 

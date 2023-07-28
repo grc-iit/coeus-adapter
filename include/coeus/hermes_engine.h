@@ -75,7 +75,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                         adios2::MinMaxStruct &MinMax) override;
 
  private:
-  int currentStep = 0;
+  int currentStep = -1;
 
   int total_steps = 0;
 
