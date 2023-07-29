@@ -139,6 +139,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Close a particular transport */
   void DoClose(const int transportIndex = -1) override {
       engine_logger->info("rank {}", rank);
+      if (m_OpenMode == adios2::Mode::Write) {
+          HermesPut("total_steps", "total_steps_" + m_IO.m_Name, sizeof(int), &currentStep);
+      }
   }
 
   /**

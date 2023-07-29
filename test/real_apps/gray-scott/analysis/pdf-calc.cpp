@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
         bool shouldIWrite = (!rank || reader_io.EngineType() == "HDF5");
 
         // read data per timestep
-        int stepAnalysis = 0;
+        int stepAnalysis = 1;
         while (true)
         {
 
@@ -277,8 +277,14 @@ int main(int argc, char *argv[])
 
 
             auto minmax_start_time = std::chrono::high_resolution_clock::now();
+
             std::pair<double, double> minmax_u = var_u_in.MinMax();
+            logger_minmax.debug("Max U {} ", minmax_u.first);
+            logger_minmax.debug("Min U {} ", minmax_u.second);
             std::pair<double, double> minmax_v = var_v_in.MinMax();
+            logger_minmax.debug("Max V {} ", minmax_v.first);
+            logger_minmax.debug("Min V {} ", minmax_v.second);
+
             auto minmax_end_time = std::chrono::high_resolution_clock::now();
             auto minmax_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(minmax_end_time - minmax_start_time);
             logger_minmax.debug("Rank {} - Step {} - ET {} - nanoseconds", rank, stepAnalysis, minmax_duration.count());
