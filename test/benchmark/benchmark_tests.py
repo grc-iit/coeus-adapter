@@ -61,11 +61,6 @@ class NativeTestManager(TestManager):
         rm = Rm(paths_to_remove, spawn_info)
         return rm
 
-    def test_gray_scott_simulation_file_bench(self, num_processes):
-        spawn_info = self.spawn_info(cwd=f"{self.GRAY_SCOTT_PATH}")
-        simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
-        return simulation.exit_code
-
 
     def test_gray_scott_analysis_file_bench(self, num_processes):
         self.prepare_simulation("file")
@@ -79,15 +74,6 @@ class NativeTestManager(TestManager):
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
-    #def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
-        #   self.prepare_simulation("file")
-        #spawn_info = self.spawn_info(cwd=self.INSTALL_PATH)
-        #simulation = Exec(f"mpirun -n 2 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-gray-scott settings-files.json", spawn_info)
-        #analysis = Exec(f"mpirun -n 3 --hostfile {self.HOSTFILE_PATH}/myhosts.txt ./adios2-pdf-calc /mnt/nvme/jmendezbenegassimarq/gs.bp /mnt/nvme/jmendezbenegassimarq/pdf.bp 100", spawn_info)
-        ##simulation = Exec(f"mpirun -n 2 ./adios2-gray-scott settings-files.json > logs/simulation_log.txt", spawn_info)
-        ##analysis = Exec(f"mpirun -n 2 ./adios2-pdf-calc gs.bp pdf.bp 100 > logs/analysis_log.txt", spawn_info)
-        #self.clean_simulation()
-        #return simulation.exit_code + analysis.exit_code
 
 
 ### THIS TEST WORKS
@@ -111,6 +97,7 @@ class NativeTestManager(TestManager):
         slurm = Slurm(slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
+
         mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.GRAY_SCOTT_PATH)
         cmd = f"{self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
         simulation = MpiExec(cmd, mpi_exec_info)
