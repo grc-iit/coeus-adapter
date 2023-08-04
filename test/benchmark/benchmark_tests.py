@@ -75,34 +75,29 @@ class NativeTestManager(TestManager):
         return simulation.exit_code + analysis.exit_code
 
 
-
-### THIS TEST WORKS
- #   def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
-  #      self.prepare_simulation("file")
-
-        #      hostfile = f"{self.HOSTFILE_PATH}/myhosts.txt"
-        #mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.GRAY_SCOTT_PATH)
-        #cmd = f"{self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
-        #simulation = MpiExec(cmd, mpi_exec_info)
-
-        #self.clean_simulation()
-    #return simulation.exit_code
-
     def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
         self.prepare_simulation("file")
-
         # Use Slurm to allocate nodes
+        num_nodes = 1
         node_list = "ares-comp-01"
-        slurm_info = SlurmInfo(nnodes=1, node_list=node_list)
-        slurm = Slurm(slurm_info)
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
 
-        mpi_exec_info = MpiExecInfo(nprocs=num_processes, ppn=2, hostfile=hostfile, cwd=self.GRAY_SCOTT_PATH)
-        cmd = f"{self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
-        simulation = MpiExec(cmd, mpi_exec_info)
+        ssh_info = SshExecInfo(
+            hostfile=hostfile,
+            #user="jmendezbenegassimarq",
+            #pkey="~/id_rsa",
+            nprocs=num_processes,
+            ppn=2
+        )
+        cmd = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        simulation = SshExec(cmd, ssh_info)
 
         slurm.exit()
         self.clean_simulation()
         return simulation.exit_code
+
+
 
