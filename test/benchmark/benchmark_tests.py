@@ -87,8 +87,6 @@ class NativeTestManager(TestManager):
 
         ssh_info = SshExecInfo(
             hostfile=hostfile,
-            #user="jmendezbenegassimarq",
-            #pkey="~/id_rsa",
             nprocs=num_processes,
             ppn=2
         )
