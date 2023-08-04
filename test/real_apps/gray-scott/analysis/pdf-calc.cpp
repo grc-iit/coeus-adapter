@@ -136,10 +136,6 @@ int main(int argc, char *argv[])
     // Create the logger and set up console and file sinks
     std::string binaryDir = BINARY_DIR;
 
-    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink->set_level(spdlog::level::debug);
-    console_sink->set_pattern("%v");
-
     auto file_sink_inquire = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/inquire_an_logs.txt", true);
     auto file_sink_minmax = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/minmax_an_logs.txt", true);
     auto file_sink_total = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/total_an_logs.txt", true);
@@ -153,9 +149,9 @@ int main(int argc, char *argv[])
     file_sink_total->set_level(spdlog::level::trace);
     file_sink_total->set_pattern("%v");
 
-    spdlog::logger logger_inquire("inquire_logger", { console_sink, file_sink_inquire });
-    spdlog::logger logger_minmax("minmax_logger", { console_sink, file_sink_minmax });
-    spdlog::logger logger_total("total_logger", { console_sink, file_sink_total });
+    spdlog::logger logger_inquire("inquire_logger", {file_sink_inquire });
+    spdlog::logger logger_minmax("minmax_logger", {file_sink_minmax });
+    spdlog::logger logger_total("total_logger", {file_sink_total });
 
     logger_inquire.set_level(spdlog::level::debug);
     logger_minmax.set_level(spdlog::level::debug);
@@ -260,6 +256,7 @@ int main(int argc, char *argv[])
                 break;
             }
 
+            // int stepSimOut = reader.CurrentStep();
             int stepSimOut = stepAnalysis;
 
             // Inquire variable and set the selection at the first step only
@@ -279,11 +276,7 @@ int main(int argc, char *argv[])
             auto minmax_start_time = std::chrono::high_resolution_clock::now();
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
-            logger_minmax.debug("Max U {} ", minmax_u.first);
-            logger_minmax.debug("Min U {} ", minmax_u.second);
             std::pair<double, double> minmax_v = var_v_in.MinMax();
-            logger_minmax.debug("Max V {} ", minmax_v.first);
-            logger_minmax.debug("Min V {} ", minmax_v.second);
 
             auto minmax_end_time = std::chrono::high_resolution_clock::now();
             auto minmax_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(minmax_end_time - minmax_start_time);
