@@ -1,3 +1,4 @@
-#pytest_benchmark(native test_gray_scott_simulation_file_bench benchmark)
-#pytest_benchmark(native test_gray_scott_analysis_file_bench benchmark)
-pytest_benchmark(native test_gray_scott_analysis_file_parallel_bench benchmark)
+pytest_benchmark(native test_gray_scott_simulation_file_bench benchmark)
+pytest_benchmark(native test_gray_scott_simulation_hermes_bench benchmark)
+pytest_benchmark(native test_gray_scott_analysis_file_bench benchmark)
+pytest_benchmark(native test_gray_scott_analysis_hermes_bench benchmark)

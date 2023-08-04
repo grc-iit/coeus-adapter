@@ -62,29 +62,14 @@ class NativeTestManager(TestManager):
         return rm
 
 
-    def test_gray_scott_analysis_file_bench(self, num_processes):
+    def test_gray_scott_simulation_file_bench(self, num_processes):
         self.prepare_simulation("file")
-        spawn_info = self.spawn_info(cwd=f"{self.GRAY_SCOTT_PATH}")
-        simulation = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json", spawn_info)
-        analysis = Exec(f"mpirun -n {num_processes} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp", spawn_info)
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_test_{num_processes}_procs.txt")
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_an_test_{num_processes}_procs.txt")
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_an_test_{num_processes}_procs.txt")
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt", f"{self.INSTALL_PATH}/logs/an_test_{num_processes}_procs.txt")
-        self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
-
-
-    def test_gray_scott_analysis_file_parallel_bench(self, num_processes):
-        self.prepare_simulation("file")
-        # Use Slurm to allocate nodes
         num_nodes = 1
         node_list = "ares-comp-01"
         slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
         slurm = Slurm(slurm_info=slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
-
         ssh_info = SshExecInfo(
             hostfile=hostfile,
             nprocs=num_processes,
@@ -92,10 +77,83 @@ class NativeTestManager(TestManager):
         )
         cmd = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
         simulation = SshExec(cmd, ssh_info)
-
         slurm.exit()
+
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_bp5_{num_processes}_procs.txt")
+        self.clean_simulation()
+        return simulation.exit_code
+
+    def test_gray_scott_simulation_hermes_bench(self, num_processes):
+        self.prepare_simulation("hermes")
+        num_nodes = 1
+        node_list = "ares-comp-01"
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        ssh_info = SshExecInfo(
+            hostfile=hostfile,
+            nprocs=num_processes,
+            ppn=2
+        )
+        cmd = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        simulation = SshExec(cmd, ssh_info)
+        slurm.exit()
+
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_hermes_{num_processes}_procs.txt")
         self.clean_simulation()
         return simulation.exit_code
 
 
+    def test_gray_scott_analysis_file_bench(self, num_processes):
+        self.prepare_simulation("file")
+        num_nodes = 1
+        node_list = "ares-comp-01"
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        ssh_info = SshExecInfo(
+            hostfile=hostfile,
+            nprocs=num_processes,
+            ppn=2
+        )
+        cmd_sim = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        cmd_an = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp"
+        simulation = SshExec(cmd_sim, ssh_info)
+        analysis = SshExec(cmd_an, ssh_info)
+        slurm.exit()
 
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt", f"{self.INSTALL_PATH}/logs/an_bp5_{num_processes}_procs.txt")
+
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
+
+    def test_gray_scott_analysis_hermes_bench(self, num_processes):
+        self.prepare_simulation("file")
+        num_nodes = 1
+        node_list = "ares-comp-01"
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        ssh_info = SshExecInfo(
+            hostfile=hostfile,
+            nprocs=num_processes,
+            ppn=2
+        )
+        cmd_sim = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        cmd_an = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp"
+        simulation = SshExec(cmd_sim, ssh_info)
+        analysis = SshExec(cmd_an, ssh_info)
+        slurm.exit()
+
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_hermes_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_hermes_{num_processes}_procs.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt", f"{self.INSTALL_PATH}/logs/an_hermes_{num_processes}_procs.txt")
+
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
