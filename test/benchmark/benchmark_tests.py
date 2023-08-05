@@ -96,7 +96,9 @@ class NativeTestManager(TestManager):
         hostfile = slurm.get_hostfile()
         hosts_str = ','.join(hostfile)
 
-        cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
+              f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
+              f"simulation/settings-files.json"
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd, ssh_info)
@@ -114,12 +116,14 @@ class NativeTestManager(TestManager):
         slurm = Slurm(slurm_info=slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
-        ssh_info = SshExecInfo(
-            hostfile=hostfile,
-            nprocs=num_processes,
-            ppn=2
-        )
-        cmd = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
+        hosts_str = ','.join(hostfile)
+
+        cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
+              f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
+              f"simulation/settings-files.json"
+
+        first_host = hostfile[0]
+        ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd, ssh_info)
         slurm.exit()
 
@@ -135,13 +139,18 @@ class NativeTestManager(TestManager):
         slurm = Slurm(slurm_info=slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
-        ssh_info = SshExecInfo(
-            hostfile=hostfile,
-            nprocs=num_processes,
-            ppn=2
-        )
-        cmd_sim = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
-        cmd_an = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp"
+        hosts_str = ','.join(hostfile)
+
+        cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
+                  f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
+                  f"simulation/settings-files.json"
+
+        cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir" \
+                 f" {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc" \
+                 f" gs.bp pdf.bp 100"
+
+        first_host = hostfile[0]
+        ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd_sim, ssh_info)
         analysis = SshExec(cmd_an, ssh_info)
         slurm.exit()
@@ -155,19 +164,24 @@ class NativeTestManager(TestManager):
 
 
     def test_gray_scott_analysis_hermes_bench(self, num_processes):
-        self.prepare_simulation("file")
+        self.prepare_simulation("hermes")
         num_nodes, node_list = self.get_slurm_info(num_processes)
         slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
         slurm = Slurm(slurm_info=slurm_info)
         slurm.allocate()
         hostfile = slurm.get_hostfile()
-        ssh_info = SshExecInfo(
-            hostfile=hostfile,
-            nprocs=num_processes,
-            ppn=2
-        )
-        cmd_sim = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott simulation/settings-files.json"
-        cmd_an = f"mpirun -n {num_processes} --wdir {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc gs.bp pdf.bp"
+        hosts_str = ','.join(hostfile)
+
+        cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
+                  f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
+                  f"simulation/settings-files.json"
+
+        cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir" \
+                 f" {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc" \
+                 f" gs.bp pdf.bp 100"
+
+        first_host = hostfile[0]
+        ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd_sim, ssh_info)
         analysis = SshExec(cmd_an, ssh_info)
         slurm.exit()
