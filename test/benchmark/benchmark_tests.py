@@ -26,12 +26,8 @@ class NativeTestManager(TestManager):
 
     def prepare_simulation(self, mode):
         Mkdir(self.INSTALL_PATH)
-        if mode == "file_nvme":
+        if mode == "file":
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
-            Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-nvme.json", f"{self.INSTALL_PATH}/settings-files.json")
-        elif mode == "file_hdd":
-            Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
-            Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hdd.json", f"{self.INSTALL_PATH}/settings-files.json")
         else:
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
 
@@ -94,7 +90,7 @@ class NativeTestManager(TestManager):
 
 
     def test_gray_scott_simulation_file_bench_NVME(self, num_processes):
-        self.prepare_simulation("file_nvme")
+        self.prepare_simulation("file")
         num_nodes, node_list = self.get_slurm_info(num_processes)
         slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
         slurm = Slurm(slurm_info=slurm_info)
@@ -119,12 +115,12 @@ class NativeTestManager(TestManager):
         Exec(pfs_start, spawn_info)
 
         cmd_mkdir = f"pvfs2-mkdir /mnt/nvme/jmendezbenegassimarq/client/gs.bp && " \
-                    f"/mnt/nvme/jmendezbenegassimarq/client/ckpt.bp"
+                    f"pvfs2-mkdir /mnt/nvme/jmendezbenegassimarq/client/ckpt.bp"
         Exec(cmd_mkdir, spawn_info)
 
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
-               {self.INSTALL_PATH}/settings-files.json"
+               simulation/settings-files-nvme.json"
 
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
@@ -142,7 +138,7 @@ class NativeTestManager(TestManager):
 
 
     def test_gray_scott_simulation_file_bench_HDD(self, num_processes):
-        self.prepare_simulation("file_hdd")
+        self.prepare_simulation("file")
         num_nodes, node_list = self.get_slurm_info(num_processes)
         slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
         slurm = Slurm(slurm_info=slurm_info)
@@ -166,7 +162,8 @@ class NativeTestManager(TestManager):
                      {hosts_file_path} /mnt/hdd/jmendezbenegassimarq/client"
         Exec(pfs_start, spawn_info)
 
-        cmd_mkdir = f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/gs.bp"
+        cmd_mkdir = f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/gs.bp && " \
+                    f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/ckpt.bp"
         Exec(cmd_mkdir, spawn_info)
 
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
@@ -186,6 +183,135 @@ class NativeTestManager(TestManager):
         slurm.exit()
         self.clean_simulation()
         return simulation.exit_code
+
+
+
+    def test_gray_scott_analysis_file_bench_NVME(self, num_processes):
+        self.prepare_simulation("file")
+        num_nodes, node_list = self.get_slurm_info(num_processes)
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        hosts_str = ','.join(hostfile)
+        hosts = "\n".join(hosts_str.split(','))
+        # Write the hosts to a temporary path
+        hosts_file_path = os.path.abspath('hosts_file.txt')
+        with open(hosts_file_path, 'w') as file:
+            file.write(hosts)
+        spawn_info = self.spawn_info(cwd=self.CMAKE_SOURCE_DIR)
+
+        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
+                             --metaservers {hosts_str} --logging none --storage /mnt/nvme/jmendezbenegassimarq/data \
+                             --metadata /mnt/nvme/jmendezbenegassimarq/meta --logfile none --quiet"
+        Exec(conf_cmd, spawn_info)
+
+        pfs_start = f"./test/benchmark/ares-orangefs-deploy-custom \
+                     {self.INSTALL_PATH}/orangefs.conf {hosts_file_path} \
+                     {hosts_file_path} /mnt/nvme/jmendezbenegassimarq/client"
+        Exec(pfs_start, spawn_info)
+
+        cmd_mkdir = f"pvfs2-mkdir /mnt/nvme/jmendezbenegassimarq/client/gs.bp && " \
+                    f"pvfs2-mkdir /mnt/nvme/jmendezbenegassimarq/client/ckpt.bp && " \
+                    f"pvfs2-mkdir /mnt/nvme/jmendezbenegassimarq/client/pdf.bp"
+        Exec(cmd_mkdir, spawn_info)
+
+        cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
+               {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
+               simulation/settings-files-nvme.json"
+
+        cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
+                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
+                /mnt/nvme/jmendezbenegassimarq/client/gs.bp pdf.bp 100"
+
+        first_host = hostfile[0]
+        ssh_info = ExecInfo(hosts=first_host)
+        simulation = SshExec(cmd_sim, ssh_info)
+        analysis = SshExec(cmd_an, ssh_info)
+
+        pfs_end = f"./test/benchmark/ares-orangefs-terminate \
+                    {self.INSTALL_PATH}/orangefs.conf {hosts_file_path} \
+                    {hosts_file_path} /mnt/nvme/jmendezbenegassimarq/client"
+
+        Exec(pfs_end, spawn_info)
+        os.remove('hosts_file.txt')
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_NVME_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_NVME_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt",f"{self.INSTALL_PATH}/logs/an_bp5_NVME_procs_{num_processes}.txt")
+        slurm.exit()
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
+    def test_gray_scott_analysis_file_bench_HDD(self, num_processes):
+        self.prepare_simulation("file")
+        num_nodes, node_list = self.get_slurm_info(num_processes)
+        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
+        slurm = Slurm(slurm_info=slurm_info)
+        slurm.allocate()
+        hostfile = slurm.get_hostfile()
+        hosts_str = ','.join(hostfile)
+        hosts = "\n".join(hosts_str.split(','))
+        # Write the hosts to a temporary path
+        hosts_file_path = os.path.abspath('hosts_file.txt')
+        with open(hosts_file_path, 'w') as file:
+            file.write(hosts)
+        spawn_info = self.spawn_info(cwd=self.CMAKE_SOURCE_DIR)
+
+        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
+                             --metaservers {hosts_str} --logging none --storage /mnt/hdd/jmendezbenegassimarq/data \
+                             --metadata /mnt/hdd/jmendezbenegassimarq/meta --logfile none --quiet"
+        Exec(conf_cmd, spawn_info)
+
+        pfs_start = f"./test/benchmark/ares-orangefs-deploy-custom \
+                     {self.INSTALL_PATH}/orangefs.conf {hosts_file_path} \
+                     {hosts_file_path} /mnt/hdd/jmendezbenegassimarq/client"
+        Exec(pfs_start, spawn_info)
+
+        cmd_mkdir = f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/gs.bp && " \
+                    f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/ckpt.bp && " \
+                    f"pvfs2-mkdir /mnt/hdd/jmendezbenegassimarq/client/pdf.bp"
+        Exec(cmd_mkdir, spawn_info)
+
+        cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
+               {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
+               simulation/settings-files-hdd.json"
+
+        cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
+                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
+                /mnt/hdd/jmendezbenegassimarq/client/gs.bp pdf.bp 100"
+
+        first_host = hostfile[0]
+        ssh_info = ExecInfo(hosts=first_host)
+        simulation = SshExec(cmd_sim, ssh_info)
+        analysis = SshExec(cmd_an, ssh_info)
+
+        pfs_end = f"./test/benchmark/ares-orangefs-terminate \
+                    {self.INSTALL_PATH}/orangefs.conf {hosts_file_path} \
+                    {hosts_file_path} /mnt/hdd/jmendezbenegassimarq/client"
+
+        Exec(pfs_end, spawn_info)
+        os.remove('hosts_file.txt')
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_HDD_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_HDD_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt",f"{self.INSTALL_PATH}/logs/an_bp5_HDD_procs_{num_processes}.txt")
+        slurm.exit()
+        self.clean_simulation()
+        return simulation.exit_code + analysis.exit_code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -218,37 +344,6 @@ class NativeTestManager(TestManager):
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_hermes_procs_{num_processes}.txt")
         self.clean_simulation()
         return simulation.exit_code
-
-
-    def test_gray_scott_analysis_file_bench(self, num_processes):
-        self.prepare_simulation("file")
-        num_nodes, node_list = self.get_slurm_info(num_processes)
-        slurm_info = SlurmInfo(nnodes=num_nodes, node_list=node_list)
-        slurm = Slurm(slurm_info=slurm_info)
-        slurm.allocate()
-        hostfile = slurm.get_hostfile()
-        hosts_str = ','.join(hostfile)
-
-        cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
-                  f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
-                  f"simulation/settings-files.json"
-
-        cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir" \
-                 f" {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc" \
-                 f" gs.bp pdf.bp 100"
-
-        first_host = hostfile[0]
-        ssh_info = ExecInfo(hosts=first_host)
-        simulation = SshExec(cmd_sim, ssh_info)
-        analysis = SshExec(cmd_an, ssh_info)
-        slurm.exit()
-
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_procs_{num_processes}.txt")
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_procs_{num_processes}.txt")
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt", f"{self.INSTALL_PATH}/logs/an_bp5_procs_{num_processes}.txt")
-
-        self.clean_simulation()
-        return simulation.exit_code + analysis.exit_code
 
 
     def test_gray_scott_analysis_hermes_bench(self, num_processes):
