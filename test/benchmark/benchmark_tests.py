@@ -238,6 +238,7 @@ class NativeTestManager(TestManager):
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_NVME_procs_{num_processes}.txt")
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_NVME_procs_{num_processes}.txt")
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt",f"{self.INSTALL_PATH}/logs/an_bp5_NVME_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/begin_an_logs.txt",f"{self.INSTALL_PATH}/logs/begin_bp5_NVME_procs_{num_processes}.txt")
         slurm.exit()
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
@@ -294,6 +295,7 @@ class NativeTestManager(TestManager):
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_bp5_HDD_procs_{num_processes}.txt")
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/minmax_an_logs.txt", f"{self.INSTALL_PATH}/logs/minmax_bp5_HDD_procs_{num_processes}.txt")
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/total_an_logs.txt",f"{self.INSTALL_PATH}/logs/an_bp5_HDD_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/begin_an_logs.txt",f"{self.INSTALL_PATH}/logs/begin_bp5_HDD_procs_{num_processes}.txt")
         slurm.exit()
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code

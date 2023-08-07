@@ -139,6 +139,7 @@ int main(int argc, char *argv[])
     auto file_sink_inquire = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/inquire_an_logs.txt", true);
     auto file_sink_minmax = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/minmax_an_logs.txt", true);
     auto file_sink_total = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/total_an_logs.txt", true);
+    auto file_sink_begin = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/begin_an_logs.txt", true);
 
     file_sink_inquire->set_level(spdlog::level::trace);
     file_sink_inquire->set_pattern("%v");
@@ -149,13 +150,18 @@ int main(int argc, char *argv[])
     file_sink_total->set_level(spdlog::level::trace);
     file_sink_total->set_pattern("%v");
 
+    file_sink_begin->set_level(spdlog::level::trace);
+    file_sink_begin->set_pattern("%v");
+
     spdlog::logger logger_inquire("inquire_logger", {file_sink_inquire });
     spdlog::logger logger_minmax("minmax_logger", {file_sink_minmax });
     spdlog::logger logger_total("total_logger", {file_sink_total });
+    spdlog::logger logger_begin("beggin_logger", {file_sink_begin });
 
     logger_inquire.set_level(spdlog::level::debug);
     logger_minmax.set_level(spdlog::level::debug);
     logger_total.set_level(spdlog::level::debug);
+    logger_begin.set_level(spdlog::level::debug);
 
     if (argc < 3)
     {
@@ -243,8 +249,13 @@ int main(int argc, char *argv[])
         {
 
             // Begin step
+            auto begin_start_time = std::chrono::high_resolution_clock::now();
             adios2::StepStatus read_status =
                 reader.BeginStep(adios2::StepMode::Read, 10.0f);
+            auto begin_end_time = std::chrono::high_resolution_clock::now();
+            auto begin_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(begin_end_time - begin_start_time);
+            logger_begin.debug("Rank {} - Step {} - ET {} - nanoseconds", rank, stepAnalysis, begin_duration.count());
+
             if (read_status == adios2::StepStatus::NotReady)
             {
                 // std::cout << "Stream not ready yet. Waiting...\n";
