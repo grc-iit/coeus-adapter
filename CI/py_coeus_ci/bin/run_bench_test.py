@@ -32,6 +32,6 @@ if __name__ == '__main__':
     from jarvis_util.util.naming import to_camel_case
     from jarvis_util.util.import_mod import load_class
 
-    test_cls = load_class(f"benchmark_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
+    test_cls = load_class(f"benchmark_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager_bench"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
     tests.call(test_name, num_processes)

@@ -71,7 +71,7 @@ class TestManager(ABC):
                 'HERMES_TRAIT_PATH': self.HERMES_TRAIT_PATH,
             })
             if hostfile:
-                env['HERMES_HOSTFILE'] = hostfile.path
+                env['HERMES_HOSTFILE'] = hostfile.path   #REMOVE PATH
 
         # Get libasan path
         # Assumes GCC for now

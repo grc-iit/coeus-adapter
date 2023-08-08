@@ -1,9 +1,11 @@
+import pathlib
+
 from py_coeus_ci.test_manager_bench import TestManager
 from jarvis_util import *
 from jarvis_util.shell.slurm import SlurmInfo, Slurm
 import time
 
-class NativeTestManager(TestManager):
+class NativeTestManagerBench(TestManager):
     def spawn_all_nodes(self):
         return self.spawn_info()
 
@@ -29,7 +31,7 @@ class NativeTestManager(TestManager):
         if mode == "file":
             Copy(f"{self.GRAY_SCOTT_PATH}/adios2.xml", self.INSTALL_PATH)
         else:
-            Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", f"{self.INSTALL_PATH}/adios2.xml")
+            Copy(f"{self.GRAY_SCOTT_PATH}/adios2-hermes.xml ", self.INSTALL_PATH)
 
         #Mkdir(f"results", spawn_info)
         Mkdir(f"{self.INSTALL_PATH}/results")
@@ -43,6 +45,10 @@ class NativeTestManager(TestManager):
         Copy(f"{self.GRAY_SCOTT_PATH}/visit-sst.session", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/visit-sst.session.gui", self.INSTALL_PATH)
 
+        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files.json", self.INSTALL_PATH)
+        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hermes.json", self.INSTALL_PATH)
+        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-nvme.json", f"{self.INSTALL_PATH}/settings-files-nvme.json")
+        Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files-hdd.json", f"{self.INSTALL_PATH}/settings-files-hdd.json")
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-files.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-staging.json", self.INSTALL_PATH)
         Copy(f"{self.GRAY_SCOTT_PATH}/simulation/settings-inline.json", self.INSTALL_PATH)
@@ -120,7 +126,7 @@ class NativeTestManager(TestManager):
 
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
-               simulation/settings-files-nvme.json"
+               {self.INSTALL_PATH}/settings-files-nvme.json"
 
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
@@ -168,7 +174,7 @@ class NativeTestManager(TestManager):
 
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
-               {self.INSTALL_PATH}/settings-files.json"
+               {self.INSTALL_PATH}/settings-files-hdd.json"
 
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
@@ -218,7 +224,7 @@ class NativeTestManager(TestManager):
 
         cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
-               simulation/settings-files-nvme.json"
+               {self.INSTALL_PATH}/settings-files-nvme.json"
 
         cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                 {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
@@ -275,7 +281,7 @@ class NativeTestManager(TestManager):
 
         cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott \
-               simulation/settings-files-hdd.json"
+               {self.INSTALL_PATH}/settings-files-hdd.json"
 
         cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
                 {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
@@ -314,23 +320,14 @@ class NativeTestManager(TestManager):
         with open(hosts_file_path, 'w') as file:
             file.write(hosts)
 
-        spawn_info = self.spawn_info(nprocs=num_processes, hostfile=hostfile, hermes_conf="hermes_server_pfs",
+        spawn_info = self.spawn_info(ppn=1, nprocs=num_processes, hostfile=hostfile.path, hermes_conf="hermes_server_ares",
                                      hermes_mode="kDefault", api="native", cwd=self.GRAY_SCOTT_PATH)
 
         self.start_daemon(spawn_info)
 
-        #Do we need to do this in oth nvme and hdd?
-
-        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
-                             --metaservers {hosts_str} --logging none --storage /mnt/hdd/jmendezbenegassimarq/data \
-                             --metadata /mnt/hdd/jmendezbenegassimarq/meta --logfile none --quiet"
-
-        Exec(conf_cmd, spawn_info)
-
-
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
               f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
-              f"simulation/settings-files.json"
+              f"{self.INSTALL_PATH}/settings-files-hermes.json"
 
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
@@ -355,18 +352,10 @@ class NativeTestManager(TestManager):
         hostfile = slurm.get_hostfile()
         hosts_str = ','.join(hostfile)
 
-        spawn_info = self.spawn_info(nprocs=num_processes, hostfile=hostfile, hermes_conf="hermes_server_pfs",
+        spawn_info = self.spawn_info(nprocs=num_processes, hostfile=hostfile, hermes_conf="hermes_server_ares",
                                      hermes_mode="kDefault", api="native", cwd=self.GRAY_SCOTT_PATH)
 
         self.start_daemon(spawn_info)
-
-        #Do we need to do this in oth nvme and hdd?
-
-        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
-                             --metaservers {hosts_str} --logging none --storage /mnt/hdd/jmendezbenegassimarq/data \
-                             --metadata /mnt/hdd/jmendezbenegassimarq/meta --logfile none --quiet"
-
-        Exec(conf_cmd, spawn_info)
 
         cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
                   f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
