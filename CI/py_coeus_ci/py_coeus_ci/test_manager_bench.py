@@ -78,7 +78,7 @@ class TestManager(ABC):
         # TODO(llogan): check if ADDRESS_SANITIZER is enabled...
         if 'LD_PRELOAD' in env:
             node = Exec('gcc -print-file-name=libasan.so',
-                        LocalExecInfo(collect_output=True, hide_output=True))
+                        ExecInfo(collect_output=True, hide_output=True))
             env['LD_PRELOAD'] = f"{node.stdout.strip()}:{env['LD_PRELOAD']}"
 
         # Hermes mode
@@ -161,14 +161,14 @@ class TestManager(ABC):
         """
         print("Killing daemon")
         Kill("hermes_daemon",
-             LocalExecInfo(
+             ExecInfo(
                  hostfile=spawn_info.hostfile,
                  collect_output=False))
 
         print("Start daemon")
         #self.daemon = Exec(f"{self.CMAKE_BINARY_DIR}/bin/hermes_daemon",
         self.daemon = Exec("hermes_daemon",
-                           LocalExecInfo(
+                           ExecInfo(
                                hostfile=spawn_info.hostfile,
                                env=spawn_info.basic_env,
                                exec_async=True))
@@ -184,7 +184,7 @@ class TestManager(ABC):
         """
         print("Stop daemon")
         Exec("finalize_hermes",
-             LocalExecInfo(
+             ExecInfo(
                  env=spawn_info.basic_env))
         self.daemon.wait()
         print("Stopped daemon")

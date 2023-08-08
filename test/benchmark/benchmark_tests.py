@@ -300,25 +300,6 @@ class NativeTestManager(TestManager):
         self.clean_simulation()
         return simulation.exit_code + analysis.exit_code
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def test_gray_scott_simulation_hermes_bench(self, num_processes):
         self.prepare_simulation("hermes")
         num_nodes, node_list = self.get_slurm_info(num_processes)
@@ -327,11 +308,24 @@ class NativeTestManager(TestManager):
         slurm.allocate()
         hostfile = slurm.get_hostfile()
         hosts_str = ','.join(hostfile)
+        hosts = "\n".join(hosts_str.split(','))
+        # Write the hosts to a temporary path
+        hosts_file_path = os.path.abspath('hosts_file.txt')
+        with open(hosts_file_path, 'w') as file:
+            file.write(hosts)
 
-        ##################3
-        # llamar al deploy config hostfile hostfile mount/dir/nvme
-        # llamar al deploy config hostfile hostfile mount/dir/hdd
-        ##################3
+        spawn_info = self.spawn_info(nprocs=num_processes, hostfile=hostfile, hermes_conf="hermes_server_pfs",
+                                     hermes_mode="kDefault", api="native", cwd=self.GRAY_SCOTT_PATH)
+
+        self.start_daemon(spawn_info)
+
+        #Do we need to do this in oth nvme and hdd?
+
+        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
+                             --metaservers {hosts_str} --logging none --storage /mnt/hdd/jmendezbenegassimarq/data \
+                             --metadata /mnt/hdd/jmendezbenegassimarq/meta --logfile none --quiet"
+
+        Exec(conf_cmd, spawn_info)
 
 
         cmd = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
@@ -341,9 +335,13 @@ class NativeTestManager(TestManager):
         first_host = hostfile[0]
         ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd, ssh_info)
+
+        self.stop_daemon(spawn_info)
+
         slurm.exit()
 
-        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt", f"{self.INSTALL_PATH}/logs/sim_hermes_procs_{num_processes}.txt")
+        Copy(f"{self.CMAKE_BINARY_DIR}/logs/sim_test.txt",
+             f"{self.INSTALL_PATH}/logs/sim_hermes_procs_{num_processes}.txt")
         self.clean_simulation()
         return simulation.exit_code
 
@@ -357,6 +355,19 @@ class NativeTestManager(TestManager):
         hostfile = slurm.get_hostfile()
         hosts_str = ','.join(hostfile)
 
+        spawn_info = self.spawn_info(nprocs=num_processes, hostfile=hostfile, hermes_conf="hermes_server_pfs",
+                                     hermes_mode="kDefault", api="native", cwd=self.GRAY_SCOTT_PATH)
+
+        self.start_daemon(spawn_info)
+
+        #Do we need to do this in oth nvme and hdd?
+
+        conf_cmd = f"pvfs2-genconfig {self.INSTALL_PATH}/orangefs.conf --protocol tcp --tcpport 3334 --ioservers {hosts_str} \
+                             --metaservers {hosts_str} --logging none --storage /mnt/hdd/jmendezbenegassimarq/data \
+                             --metadata /mnt/hdd/jmendezbenegassimarq/meta --logfile none --quiet"
+
+        Exec(conf_cmd, spawn_info)
+
         cmd_sim = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir " \
                   f"{self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-gray-scott " \
                   f"simulation/settings-files.json"
@@ -369,6 +380,9 @@ class NativeTestManager(TestManager):
         ssh_info = ExecInfo(hosts=first_host)
         simulation = SshExec(cmd_sim, ssh_info)
         analysis = SshExec(cmd_an, ssh_info)
+
+        self.stop_daemon(spawn_info)
+
         slurm.exit()
 
         Copy(f"{self.CMAKE_BINARY_DIR}/logs/inquire_an_logs.txt", f"{self.INSTALL_PATH}/logs/inquire_hermes_procs_{num_processes}.txt")
