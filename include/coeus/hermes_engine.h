@@ -24,21 +24,28 @@
 
 #include <vector>
 
-#include <hermes.h>
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
-
-
 
 #include "coeus/metadata_serializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
+#include <comms/Bucket.h>
+#include <comms/Hermes.h>
+
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
+  std::unique_ptr<coeus::IHermes> Hermes;
   /** Construct the HermesEngine */
-  HermesEngine(adios2::core::IO &adios, //NOLINT
+  HermesEngine(adios2::core::IO &io, //NOLINT
+               const std::string &name,
+               const adios2::Mode mode,
+               adios2::helper::Comm comm);
+
+  HermesEngine(std::unique_ptr<coeus::IHermes> h, //NOLINT
+               adios2::core::IO &io,
                const std::string &name,
                const adios2::Mode mode,
                adios2::helper::Comm comm);
@@ -95,13 +102,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   void DefineVariable(VariableMetadata variableMetadata);
 
-  template<typename T>
-  void HermesPut(const std::string &bucket_name,
-                 const std::string &blob_name, size_t blob_size, T values);
-
-  hermes::Blob HermesGet(const std::string &bucket_name,
-                         const std::string &varName);
-
  protected:
   /** Initialize (wrapper around Init_)*/
   void Init() override { Init_(); }
@@ -109,17 +109,13 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Actual engine initialization */
   void Init_();
 
+  /** Close a particular transport */
+  void DoClose(const int transportIndex = -1) override;
+
   /** Place data in Hermes */
   template<typename T>
   void DoPutSync_(const adios2::core::Variable<T> &variable,
                   const T *values) {engine_logger->info("rank {}", rank);}
-
-  static void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
-                                   void *Element);
-
-  static void InitElementMinMax(adios2::MinMaxStruct &MinMax,
-                                         adios2::DataType Type);
-
 
     /** Place data in Hermes asynchronously */
   template<typename T>
@@ -136,13 +132,12 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void DoGetDeferred_(const adios2::core::Variable<T> &variable,
                       T *values);
 
-  /** Close a particular transport */
-  void DoClose(const int transportIndex = -1) override {
-      engine_logger->info("rank {}", rank);
-      if (m_OpenMode == adios2::Mode::Write) {
-          HermesPut("total_steps", "total_steps_" + m_IO.m_Name, sizeof(int), &currentStep);
-      }
-  }
+  /** Calls to support Adios native queries */
+  static void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
+                                 void *Element);
+
+  static void InitElementMinMax(adios2::MinMaxStruct &MinMax,
+                                adios2::DataType Type);
 
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.
