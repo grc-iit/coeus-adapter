@@ -314,11 +314,6 @@ class NativeTestManagerBench(TestManager):
         slurm.allocate()
         hostfile = slurm.get_hostfile()
         hosts_str = ','.join(hostfile)
-        hosts = "\n".join(hosts_str.split(','))
-        # Write the hosts to a temporary path
-        hosts_file_path = os.path.abspath('hosts_file.txt')
-        with open(hosts_file_path, 'w') as file:
-            file.write(hosts)
 
         spawn_info = self.spawn_info(ppn=1, nprocs=num_processes, hostfile=hostfile.path, hermes_conf="hermes_server_ares",
                                      hermes_mode="kDefault", api="native", cwd=self.GRAY_SCOTT_PATH)
