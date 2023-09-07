@@ -10,7 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 
@@ -45,6 +45,7 @@ int main() {
 
   // Write to file
   adios2::Engine writer = io.Open(file, adios2::Mode::Write);
+  var.m_variable
   writer.Put(var, data.data());
   writer.Close();
 

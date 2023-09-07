@@ -10,8 +10,8 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef INCLUDE_COEUS_METADATA_SERIALIZER_H_
-#define INCLUDE_COEUS_METADATA_SERIALIZER_H_
+#ifndef COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
+#define COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
 
 #include <hermes_types.h>
 
@@ -177,4 +177,4 @@ class MetadataSerializer{
 };
 
 
-#endif  // INCLUDE_COEUS_METADATA_SERIALIZER_H_
+#endif  // COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_

@@ -9,7 +9,7 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/metadata_serializer.h)
+add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
 target_include_directories(hermes_engine PUBLIC
         ../include
@@ -19,7 +19,8 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
         spdlog
-        cereal)
+        cereal
+        rapidjson)
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

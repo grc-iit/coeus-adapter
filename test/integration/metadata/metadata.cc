@@ -12,7 +12,7 @@
 
 #include <adios2/cxx11/ADIOS.h>
 #include <cassert>
-#include "coeus/metadata_serializer.h"
+#include "coeus/MetadataSerializer.h"
 
 namespace hapi = hermes::api;
 
