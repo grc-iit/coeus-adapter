@@ -10,8 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <cassert>
-#include "coeus/hermes_engine.h"
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 
@@ -36,13 +35,10 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    // Define variables for comparison
+    // Define variable
     std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
     std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
     std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
-
-
-    std::vector<double> data_get(6);
 
     const adios2::Dims shape = {2, 3};
     const adios2::Dims start = {0, 0};
@@ -51,27 +47,25 @@ int main() {
     adios2::Variable<double> var = io.DefineVariable<double>(
             "myVar", shape, start, count);
 
-    adios2::Engine reader = io.Open(file, adios2::Mode::Read);
-    std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
+    // Write to file
+    adios2::Engine writer = io.Open(file, adios2::Mode::Write);
+    std::cout << "-- WRITER ENGINE INITIALIZED --" << std::endl;
 
-    reader.BeginStep();
-    reader.Get(var, data_get);
-    assert(data1 == data_get);
-    reader.EndStep();
+    writer.BeginStep();
+    writer.Put(var, data1.data());
+    writer.EndStep();
 
-    reader.BeginStep();
-    reader.Get(var, data_get);
-    assert(data2 == data_get);
-    reader.EndStep();
+    writer.BeginStep();
+    writer.Put(var, data2.data());
+    writer.EndStep();
 
-    reader.BeginStep();
-    reader.Get(var, data_get);
-    assert(data3 == data_get);
-    reader.EndStep();
+    writer.BeginStep();
+    writer.Put(var, data3.data());
+    writer.EndStep();
 
-    reader.Close();
+    writer.Close();
 
-    std::cout << "All data arrays match!" << std::endl;
     std::cout << "Done" << std::endl;
+
     return 0;
 }

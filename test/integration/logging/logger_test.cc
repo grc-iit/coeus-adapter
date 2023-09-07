@@ -12,7 +12,7 @@
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <adios2/cxx11/ADIOS.h>
 #include <cassert>
-#include "coeus/metadata_serializer.h"
+#include "coeus/MetadataSerializer.h"
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"

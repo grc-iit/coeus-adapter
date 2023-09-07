@@ -21,8 +21,6 @@ class NativeTestManager(TestManager):
         self.SPLIT_PUT_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_put"
         self.SPLIT_GET_METADATA_CMD = f"{self.CMAKE_BINARY_DIR}/bin/split_metadata_get"
 
-
-
     def test_basic(self):
             spawn_info = self.spawn_info(nprocs=1,
                                          hermes_conf='hermes_server')

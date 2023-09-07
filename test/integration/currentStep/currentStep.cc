@@ -10,7 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 
@@ -51,7 +51,7 @@ int main() {
   adios2::Variable<double> var = io.DefineVariable<double>(
     "myVar", shape, start, count);
 
-  adios2::Engine writer = io.Open(file, adios2::Mode::Write);
+  adios2::Engine writer = io.Open(file, adios2::Mode::Read);
 
   if(writer) { std::cout << "mEngine is defined" << std::endl; }
   else { std::cout << "mEngine is not defined" << std::endl; }

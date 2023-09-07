@@ -10,7 +10,8 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
+#include <cassert>
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 
@@ -35,48 +36,42 @@ int main() {
     // Any other paramaters to the engine
     io.SetParameters(params);
 
-    // Define variable
-    std::vector<double> data_u1 = {0, 0, 0, 0, 0, 0};
-    std::vector<double> data_v1 = {-3, -2, 1, 0, 2, -1};
+    // Define variables for comparison
+    std::vector<double> data1 = {0, 0, 0, 0, 0, 0};
+    std::vector<double> data2 = {1, 1, 1, 1, 1, 1};
+    std::vector<double> data3 = {2, 2, 2, 2, 2, 2};
 
-    std::vector<double> data_u2 = {1, 1, -3, 1, 3, 1};
-    std::vector<double> data_v2 = {1, 2, 2, 0, -3, 0};
 
-    std::vector<double> data_u3 = {2, 2, 1, 8, 2, 2};
-    std::vector<double> data_v3 = {-2, -2, -7, -1, -2, -2};
+    std::vector<double> data_get(6);
 
     const adios2::Dims shape = {2, 3};
     const adios2::Dims start = {0, 0};
     const adios2::Dims count = {2, 3};
 
-    adios2::Variable<double> var_u = io.DefineVariable<double>(
-            "U", shape, start, count);
+    adios2::Variable<double> var = io.DefineVariable<double>(
+            "myVar", shape, start, count);
 
-    adios2::Variable<double> var_v = io.DefineVariable<double>(
-            "V", shape, start, count);
-    // Write to file
-    adios2::Engine writer = io.Open(file, adios2::Mode::Write);
-    std::cout << "--- WRITER ENGINE INITIALIZED ---" << std::endl;
+    adios2::Engine reader = io.Open(file, adios2::Mode::Read);
+    std::cout << "-- READER ENGINE INITIALIZED --" << std::endl;
 
-    writer.BeginStep();
-    //writer.CurrentStep();
-    writer.Put(var_u, data_u1.data());
-    writer.Put(var_v, data_v1.data());
-    writer.EndStep();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data1 == data_get);
+    reader.EndStep();
 
-    writer.BeginStep();
-    writer.Put(var_u, data_u2.data());
-    writer.Put(var_v, data_v2.data());
-    writer.EndStep();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data2 == data_get);
+    reader.EndStep();
 
-    writer.BeginStep();
-    writer.Put(var_u, data_u3.data());
-    writer.Put(var_v, data_v3.data());
-    writer.EndStep();
+    reader.BeginStep();
+    reader.Get(var, data_get);
+    assert(data3 == data_get);
+    reader.EndStep();
 
-    writer.Close();
+    reader.Close();
 
+    std::cout << "All data arrays match!" << std::endl;
     std::cout << "Done" << std::endl;
-
     return 0;
 }

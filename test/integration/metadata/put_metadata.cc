@@ -10,7 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 

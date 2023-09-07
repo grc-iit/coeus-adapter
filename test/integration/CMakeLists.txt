@@ -1,0 +1,7 @@
+add_subdirectory(basic)
+add_subdirectory(basic_multi_variable)
+add_subdirectory(split_single_variable)
+add_subdirectory(split_multi_variable)
+add_subdirectory(metadata)
+add_subdirectory(logging)
+add_subdirectory(currentStep)

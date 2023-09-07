@@ -96,9 +96,24 @@ find_package(MPI REQUIRED COMPONENTS C CXX)
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
 message(STATUS "Found OpenMP")
 
+find_package(SQLite3 REQUIRED)
+message(STATUS "Found SQLite3")
+
 #spdlog
 add_subdirectory(external_libraries/spdlog)
 add_subdirectory(external_libraries/cereal)
+add_subdirectory(external_libraries/rapidjson)
+
+#Gtest
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        f8d7d77c06936315286eb55f8de22cd23c188571
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
@@ -165,7 +180,8 @@ add_subdirectory(src)
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
 #------------------------------------------------------------------------------
-set(TEST_MAIN ${COEUS_ROOT}/test/unit)
+set(TEST_MAIN ${PROJECT_SOURCE_DIR}/test/unit)
+#set(TEST_MAIN ${CMAKE_SOURCE_DIR}/test/unit)
 enable_testing()
 add_subdirectory(test)
 
