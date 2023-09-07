@@ -10,7 +10,8 @@
             <parameter key="PluginName" value="/tmp/myFile.bp" />
             <parameter key="PluginLibrary" value="hermes_engine" />
             <!-- any parameters needed for your plugin can be added here in the parameter tag -->
-
+            <parameter key="OpFile" value="op.yaml"/>
+            <parameter key="VarFile" value="var.yaml"/>
         </engine>
     </io>
 
