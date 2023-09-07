@@ -10,11 +10,9 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-/*#ifndef COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_
-#define COEUS_ADAPTER_INCLUDE_COEUS_COEUS_H_*/
+#ifndef COEUS_INCLUDE_COEUS_HERMESENGINE_H_
+#define COEUS_INCLUDE_COEUS_HERMESENGINE_H_
 
-#ifndef INCLUDE_COEUS_HERMES_ENGINE_H_
-#define INCLUDE_COEUS_HERMES_ENGINE_H_
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <cstdio>
 #include <cstdlib>
@@ -27,12 +25,17 @@
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 
-#include "coeus/metadata_serializer.h"
+#include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
-
+#include "common/SQlite.h"
+#include <common/JSONParser.h>
+#include <common/ErrorCodes.h>
+#include <common/ClassLoader.h>
+#include <common/ThreadPool.h>
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
+#include <comms/MPI.h>
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -168,4 +171,4 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
 }  // namespace coeus
 
-#endif  // INCLUDE_COEUS_HERMES_ENGINE_H_
+#endif  // COEUS_INCLUDE_COEUS_HERMESENGINE_H_

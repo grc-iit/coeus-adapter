@@ -10,7 +10,7 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include "coeus/hermes_engine.h"
+#include "coeus/HermesEngine.h"
 
 namespace hapi = hermes::api;
 
@@ -34,6 +34,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                       rank, name, adios2::ToString(mode));
 }
 
+//Test initializer
 HermesEngine::HermesEngine(std::unique_ptr<coeus::IHermes> h,
                            adios2::core::IO &io,
                            const std::string &name,
@@ -52,7 +53,12 @@ void HermesEngine::Init_() {
   rank = m_Comm.Rank();
   comm_size = m_Comm.Size();
 
-  Hermes->connect();
+  auto opFile = m_IO.m_Parameters.find("OPFile");
+  auto varFile = m_IO.m_Parameters.find("VarFile");
+
+  if(!Hermes->connect()){
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
 
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::warn);
@@ -289,12 +295,12 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
                       variableMetadata.shape, \
                       variableMetadata.start, \
                       variableMetadata.count, \
-                      variableMetadata.constantShape));                           \
+                      variableMetadata.constantShape));                         \
          variable->m_AvailableStepsCount = 1;                                   \
          variable->m_SingleValue = false;                                       \
          variable->m_Min = std::numeric_limits<T>::max();                       \
-         variable->m_Max = std::numeric_limits<T>::min();                         \
-         variable->m_Engine = this;                                               \
+         variable->m_Max = std::numeric_limits<T>::min();                       \
+         variable->m_Engine = this;                                             \
           }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
