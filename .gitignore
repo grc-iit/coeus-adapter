@@ -16,3 +16,5 @@ Testing
 /build-ares/
 /build-remote/
 /cmake-build-ares-coverage/
+/build-remote/
+/venv/
