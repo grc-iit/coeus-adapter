@@ -9,41 +9,42 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-add_library(hermes_engine ${HERMES_ENGINE_SRCS})
+add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
+add_dependencies(hermes_engine spdlog)
 target_include_directories(hermes_engine PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        ../include
         ${Hermes_INCLUDE_DIR}
-        ${ADIOS2_INCLUDE_DIR}
-        )
-target_link_libraries(hermes_engine
+        ${ADIOS2_INCLUDE_DIR})
+target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
-        ${ADIOS2_LIBRARIES})
-
+        ${ADIOS2_LIBRARIES}
+        spdlog
+        cereal
+        rapidjson)
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
-install(
-  TARGETS
-    hermes_engine
-  EXPORT
-    ${COEUS_EXPORTED_TARGETS}
-  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
-  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
-  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
-)
-
-#-----------------------------------------------------------------------------
-# Add Target(s) to CMake Install for import into other projects
-#-----------------------------------------------------------------------------
-install(
-  EXPORT
-    ${COEUS_EXPORTED_TARGETS}
-  DESTINATION
-    ${COEUS_INSTALL_DATA_DIR}/cmake/COEUS
-  FILE
-    ${COEUS_EXPORTED_TARGETS}.cmake
-)
+#install(
+#  TARGETS
+#    hermes_engine
+#  EXPORT
+#    ${COEUS_EXPORTED_TARGETS}
+#  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
+#  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
+#  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
+#)
+#
+##-----------------------------------------------------------------------------
+## Add Target(s) to CMake Install for import into other projects
+##-----------------------------------------------------------------------------
+#install(
+#  EXPORT
+#    ${COEUS_EXPORTED_TARGETS}
+#  DESTINATION
+#    ${COEUS_INSTALL_DATA_DIR}/cmake/COEUS
+#  FILE
+#    ${COEUS_EXPORTED_TARGETS}.cmake
+#)
 
 #-----------------------------------------------------------------------------
 # Export all exported targets to the build tree for use by parent project

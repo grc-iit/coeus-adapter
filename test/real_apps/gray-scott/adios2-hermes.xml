@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--============================================
+           Configuration for Gray-Scott and GS Plot
+        ============================================-->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="/tmp/myFile.bp" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <!-- any parameters needed for your plugin can be added here in the parameter tag -->
+            <parameter key="OpFile" value="op.yaml"/>
+            <parameter key="VarFile" value="var.yaml"/>
+        </engine>
+    </io>
+
+    <!--===========================================
+           Configuration for PDF calc and PDF Plot
+        ===========================================-->
+
+    <io name="PDFAnalysisOutput">
+        <engine type="Plugin">
+        <parameter key="PluginName" value="/tmp/myFile.bp" />
+        <parameter key="PluginLibrary" value="hermes_engine" />
+        <!-- any parameters needed for your plugin can be added here in the parameter tag -->
+        </engine>
+    </io>
+
+    <!--====================================
+           Configuration for isosurface,
+           find_blobs and render_isosurface
+        ====================================-->
+
+    <io name="IsosurfaceOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="/tmp/myFile.bp" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <!-- any parameters needed for your plugin can be added here in the parameter tag -->
+        </engine>
+    </io>
+
+    <!--================================================
+           Configuration for Gray-Scott (checkpointing)
+        ================================================-->
+
+    <io name="SimulationCheckpoint">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="/tmp/myFile.bp" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <!-- any parameters needed for your plugin can be added here in the parameter tag -->
+        </engine>
+    </io>
+
+
+</adios-config>
+

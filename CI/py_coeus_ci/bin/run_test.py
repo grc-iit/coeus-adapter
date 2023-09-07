@@ -23,13 +23,14 @@ if __name__ == '__main__':
 
     # Unit test file to load
     if test_type == 'native':
-        pkg_dir = f"{COEUS_ROOT}/test/unit"
+        pkg_dir = f"{COEUS_ROOT}/test"
     else:
         raise Exception("Could not find the unit test")
 
     # Load the unit test
     from jarvis_util.util.naming import to_camel_case
     from jarvis_util.util.import_mod import load_class
-    test_cls = load_class(f"tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
+
+    test_cls = load_class(f"native_tests", pkg_dir, to_camel_case(f"{test_type}_test_manager"))
     tests = test_cls(COEUS_ROOT, cmake_binary_dir, address_sanitizer)
     tests.call(test_name)

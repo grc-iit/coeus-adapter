@@ -89,7 +89,7 @@ class TestManager(ABC):
         if hermes_mode == 'kBypass':
             env['HERMES_ADAPTER_MODE'] = 'kBypass'
 
-        env['LD_LIBRARY_PATH'] = f'{self.CMAKE_BINARY_DIR}/bin'
+        env['LD_LIBRARY_PATH'] = f'{self.CMAKE_BINARY_DIR}/bin:{os.getenv("LD_LIBRARY_PATH")}'
 
         return SpawnInfo(nprocs=nprocs,
                          ppn=ppn,
@@ -185,3 +185,41 @@ class TestManager(ABC):
                  env=spawn_info.basic_env))
         self.daemon.wait()
         print("Stopped daemon")
+
+    def start_daemon_mpi(self, spawn_info):
+        """
+        Helper function. Start the Hermes daemon
+
+        :param env: Hermes environment variables
+        :return: None
+        """
+        print("Killing daemon")
+        Kill("hermes_daemon",
+             ExecInfo(
+                 hostfile=spawn_info.hostfile,
+                 collect_output=False))
+
+        print("Start daemon")
+        #self.daemon = Exec(f"{self.CMAKE_BINARY_DIR}/bin/hermes_daemon",
+        self.daemon = Exec("hermes_daemon",
+                           ExecInfo(
+                               hostfile=spawn_info.hostfile,
+                               env=spawn_info.basic_env,
+                               exec_async=True))
+        time.sleep(5)
+        print("Launched")
+
+    def stop_daemon_mpi(self, spawn_info):
+        """
+        Helper function. Stop the Hermes daemon.
+
+        :param env: Hermes environment variables
+        :return: None
+        """
+        print("Stop daemon")
+        Exec("finalize_hermes",
+             ExecInfo(
+                 env=spawn_info.basic_env))
+        self.daemon.wait()
+        print("Stopped daemon")
+

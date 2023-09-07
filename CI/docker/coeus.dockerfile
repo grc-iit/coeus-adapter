@@ -19,6 +19,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo "  - mpich" \
 &&   echo "  - adios2" \
 &&   echo "  - hermes@master" \
+&&   echo "  - sqlite" \
 &&   echo "  concretizer:" \
 &&   echo "    unify: true" \
 &&   echo "  config:" \
@@ -35,7 +36,9 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y pkg-config cmake build-essential environment-modules gfortran git python3 python3-pip gdb
+RUN apt-get install -y pkg-config cmake build-essential environment-modules  \
+    gfortran git python3 python3-pip gdb valgrind linux-tools-common linux-tools-generic linux-tools-`uname -r`
+
 RUN pip install cpplint tabulate pyyaml pandas numpy
 
 RUN apt-get install -y libyaml-cpp-dev

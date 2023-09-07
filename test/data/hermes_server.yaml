@@ -48,7 +48,7 @@ devices:
     borg_capacity_thresh: [0.0, 1.0]
 
   nvme:
-    mount_point: "./"
+    mount_point: "/mnt/nvme/jmendezbenegassimarq/meta"
     capacity: 50MB
     block_size: 4KB
     slab_sizes: [ 4KB, 16KB, 64KB, 1MB ]
@@ -58,7 +58,7 @@ devices:
     borg_capacity_thresh: [ 0.0, 1.0 ]
 
   ssd:
-    mount_point: "./"
+    mount_point: "/mnt/hdd/jmendezbenegassimarq/meta"
     capacity: 50MB
     block_size: 4KB
     slab_sizes: [ 4KB, 16KB, 64KB, 1MB ]
