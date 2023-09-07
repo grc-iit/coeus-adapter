@@ -19,6 +19,7 @@ RUN mkdir /opt/spack-environment \
 &&   echo "  - mpich" \
 &&   echo "  - adios2" \
 &&   echo "  - hermes@master" \
+&&   echo "  - sqlite" \
 &&   echo "  concretizer:" \
 &&   echo "    unify: true" \
 &&   echo "  config:" \
