@@ -1,0 +1,8 @@
+{
+  "U" : {
+    "compress" : {
+      "type" : "boolean",
+      "default" : true
+    }
+  }
+}
