@@ -30,11 +30,12 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_unique<coeus::Hermes>();
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}",
-                      rank, name, adios2::ToString(mode));
+  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
 
-//Test initializer
+/**
+ * Test initializer
+ * */
 HermesEngine::HermesEngine(std::unique_ptr<coeus::IHermes> h,
                            adios2::core::IO &io,
                            const std::string &name,
@@ -43,84 +44,131 @@ HermesEngine::HermesEngine(std::unique_ptr<coeus::IHermes> h,
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::move(h);
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}",
-                      rank, name, adios2::ToString(mode));
+  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
+
 /**
-* Initialize this engine.
+* Initialize the engine.
 * */
 void HermesEngine::Init_() {
-  rank = m_Comm.Rank();
-  comm_size = m_Comm.Size();
-
-  auto opFile = m_IO.m_Parameters.find("OPFile");
-  auto varFile = m_IO.m_Parameters.find("VarFile");
-
-  if(!Hermes->connect()){
-    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-  }
-
+  // Logger setup
+  // Console log
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::warn);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
-  console_sink->set_level(spdlog::level::warn);
-  console_sink->set_pattern("[coeus engine] [%^%!%l%$] %v");
 
+  //File log
   auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/engine_test.txt", true);
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
+  //Merge Log
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
-
   engine_logger = std::make_shared<spdlog::logger>(logger);
+
+  engine_logger->info("rank {}", rank);
+
+  //MPI setup
+  rank = m_Comm.Rank();
+  comm_size = m_Comm.Size();
+
+  //Configuration Setup through the Adios xml configuration
+  auto params = m_IO.m_Parameters;
+  if(params.find("OPFile") != params.end()){
+    std::string opFile = params["OPFile"];
+    try{
+      operationMap = YAMLParser(opFile).parse();
+    }
+    catch (std::exception &e){
+      engine_logger->warn("Could not parse operation file", rank);
+      throw e;
+    }
+  }
+  if(params.find("VarFile") != params.end()){
+    std::string varFile = params["VarFile"];
+    try{
+      variableMap = YAMLParser(varFile).parse();
+    }
+    catch (std::exception &e){
+      engine_logger->warn("Could not parse variable file", rank);
+      throw e;
+    }
+  }
+  //Hermes setup
+  if(!Hermes->connect()){
+    engine_logger->warn("Could not connect to Hermes", rank);
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
+  open = true;
 }
 
+/**
+ * Close the Engine.
+ * */
 void HermesEngine::DoClose(const int transportIndex) {
   engine_logger->info("rank {}", rank);
-  if (m_OpenMode == adios2::Mode::Write) {
-    auto blob_name = "total_steps_" + m_IO.m_Name;
-    auto bkt = Hermes->GetBucket("total_steps");
-    bkt->Put(blob_name, sizeof(int), &currentStep);
+  if(open) {
+    engine_logger->info("rank {}", rank);
+    if (m_OpenMode == adios2::Mode::Write) {
+      if(rank == 0) {
+        auto blob_name = "total_steps_" + m_IO.m_Name;
+        auto bkt = Hermes->GetBucket("total_steps");
+        bkt->Put(blob_name, sizeof(int), &currentStep);
+      }
+    }
+    open = false;
   }
 }
-/**
- * Destruct the HermesEngine.
- * */
+
 HermesEngine::~HermesEngine() {
+  engine_logger->info("rank {}", rank);
+  DoClose();
 }
 
 /**
-  * In ADIOS2, a "step" refers to a unit of data that is written or read.
-  * Each step represents a snapshot of the data at a specific time, and can
-  * be thought of as a frame in a video or a snapshot of a simulation.
-* */
+ * Handle step operations.
+ * */
 
-/**
-  * Define the beginning of a step. A step is typically the offset from
-  * the beginning of a file. It is measured as a size_t. -- Should we compute this every put or get call
-  *
-  * Logically, a "step" represents a snapshot of the data at a specific time,
-  * and can be thought of as a frame in a video or a snapshot of a simulation.
-* */
+adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
+                                           const float timeoutSeconds) {
+  engine_logger->info("rank {}", rank);
+  IncrementCurrentStep();
+  if (m_OpenMode == adios2::Mode::Read) {
+    auto bkt = Hermes->GetBucket("total_steps");
+    hermes::Blob blob = bkt->Get("total_steps_" + m_IO.m_Name);
+    total_steps = *reinterpret_cast<const int *>(blob.data());
+    if (currentStep > total_steps) {
+      return adios2::StepStatus::EndOfStream;
+    }
+    LoadMetadata();
+  }
+  return adios2::StepStatus::OK;
+}
 
 void HermesEngine::IncrementCurrentStep() {
-  if (rank == 0) {
-    currentStep++;
-  }
-  // Broadcast the updated value of currentStep from the
-  // root process to all other processes
-  m_Comm.Bcast(&currentStep, 1, 0);
+  engine_logger->info("rank {}", rank);
+  currentStep++;
 }
 
+size_t HermesEngine::CurrentStep() const {
+  engine_logger->info("rank {}", rank);
+  return currentStep;
+}
+
+void HermesEngine::EndStep() {
+  engine_logger->info("rank {}", rank);
+}
+
+/**
+ * Metadata operations.
+ * */
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
-  std::cout << __func__ << std::endl;
-
   // We initialize the min and max values
-  InitElementMinMax(MinMax, Var.m_Type);
+  MinMax.Init(Var.m_Type);
 
   std::string bucket_name = Var.m_Name + "_step_" + std::to_string(currentStep)
       + "_rank" + std::to_string(rank);
@@ -143,127 +191,71 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   return true;
 }
 
-void HermesEngine::InitElementMinMax(adios2::MinMaxStruct &MinMax,
-                                     adios2::DataType Type) {
-  switch (Type) {
-    case adios2::DataType::None:break;
-    case adios2::DataType::Char:
-    case adios2::DataType::Int8:MinMax.MinUnion.field_int8 = std::numeric_limits<int8_t>::max();
-      MinMax.MaxUnion.field_int8 = std::numeric_limits<int8_t>::min();
-      break;
-    case adios2::DataType::Int16:MinMax.MinUnion.field_int16 = std::numeric_limits<int16_t>::max();
-      MinMax.MaxUnion.field_int16 = std::numeric_limits<int16_t>::min();
-      break;
-    case adios2::DataType::Int32:MinMax.MinUnion.field_int32 = std::numeric_limits<int32_t>::max();
-      MinMax.MaxUnion.field_int32 = std::numeric_limits<int32_t>::min();
-      break;
-    case adios2::DataType::Int64:MinMax.MinUnion.field_int64 = std::numeric_limits<int64_t>::max();
-      MinMax.MaxUnion.field_int64 = std::numeric_limits<int64_t>::min();
-      break;
-    case adios2::DataType::UInt8:MinMax.MinUnion.field_uint8 = std::numeric_limits<uint8_t>::max();
-      MinMax.MaxUnion.field_uint8 = std::numeric_limits<uint8_t>::min();
-      break;
-    case adios2::DataType::UInt16:MinMax.MinUnion.field_uint16 = std::numeric_limits<uint16_t>::max();
-      MinMax.MaxUnion.field_uint16 = std::numeric_limits<uint16_t>::min();
-      break;
-    case adios2::DataType::UInt32:MinMax.MinUnion.field_uint32 = std::numeric_limits<uint32_t>::max();
-      MinMax.MaxUnion.field_uint32 = std::numeric_limits<uint32_t>::min();
-      break;
-    case adios2::DataType::UInt64:MinMax.MinUnion.field_uint64 = std::numeric_limits<uint64_t>::max();
-      MinMax.MaxUnion.field_uint64 = std::numeric_limits<uint64_t>::min();
-      break;
-    case adios2::DataType::Float:MinMax.MinUnion.field_float = std::numeric_limits<float>::max();
-      MinMax.MaxUnion.field_float = std::numeric_limits<float>::min();
-      break;
-    case adios2::DataType::Double:MinMax.MinUnion.field_double = std::numeric_limits<double>::max();
-      MinMax.MaxUnion.field_double = std::numeric_limits<double>::min();
-      break;
-    case adios2::DataType::LongDouble:MinMax.MinUnion.field_ldouble = std::numeric_limits<long double>::max();
-      MinMax.MaxUnion.field_ldouble = std::numeric_limits<long double>::min();
-      break;
-    case adios2::DataType::FloatComplex:
-    case adios2::DataType::DoubleComplex:
-    case adios2::DataType::String:
-    case adios2::DataType::Struct:break;
-  }
-}
-
 void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
                                       adios2::DataType Type, void *Element) {
 
   switch (Type) {
-    case adios2::DataType::None:break;
-    case adios2::DataType::Char:
     case adios2::DataType::Int8:
-      if (*reinterpret_cast<int8_t *>(Element) < MinMax.MinUnion.field_int8)
-        MinMax.MinUnion.field_int8 = *(int8_t *) Element;
-      if (*reinterpret_cast<int8_t *>(Element) > MinMax.MaxUnion.field_int8)
-        MinMax.MaxUnion.field_int8 = *(int8_t *) Element;
+      ElementMinMax<int8_t>(MinMax, Element);
       break;
     case adios2::DataType::Int16:
-      if (*reinterpret_cast<int16_t *>(Element) < MinMax.MinUnion.field_int16)
-        MinMax.MinUnion.field_int16 = *(int16_t *) Element;
-      if (*reinterpret_cast<int16_t *>(Element) > MinMax.MaxUnion.field_int16)
-        MinMax.MaxUnion.field_int16 = *(int16_t *) Element;
+      ElementMinMax<int16_t>(MinMax, Element);
       break;
     case adios2::DataType::Int32:
-      if (*reinterpret_cast<int32_t *>(Element) < MinMax.MinUnion.field_int32)
-        MinMax.MinUnion.field_int32 = *(int32_t *) Element;
-      if (*reinterpret_cast<int32_t *>(Element) > MinMax.MaxUnion.field_int32)
-        MinMax.MaxUnion.field_int32 = *(int32_t *) Element;
+      ElementMinMax<int32_t>(MinMax, Element);
       break;
     case adios2::DataType::Int64:
-      if (*reinterpret_cast<int64_t *>(Element) < MinMax.MinUnion.field_int64)
-        MinMax.MinUnion.field_int64 = *(int64_t *) Element;
-      if (*reinterpret_cast<int64_t *>(Element) > MinMax.MaxUnion.field_int64)
-        MinMax.MaxUnion.field_int64 = *(int64_t *) Element;
+      ElementMinMax<int64_t>(MinMax, Element);
       break;
     case adios2::DataType::UInt8:
-      if (*reinterpret_cast<uint8_t *>(Element) < MinMax.MinUnion.field_uint8)
-        MinMax.MinUnion.field_uint8 = *(uint8_t *) Element;
-      if (*reinterpret_cast<uint8_t *>(Element) > MinMax.MaxUnion.field_uint8)
-        MinMax.MaxUnion.field_uint8 = *(uint8_t *) Element;
+      ElementMinMax<uint8_t>(MinMax, Element);
       break;
     case adios2::DataType::UInt16:
-      if (*reinterpret_cast<uint16_t *>(Element) < MinMax.MinUnion.field_uint16)
-        MinMax.MinUnion.field_uint16 = *(uint16_t *) Element;
-      if (*reinterpret_cast<uint16_t *>(Element) > MinMax.MaxUnion.field_uint16)
-        MinMax.MaxUnion.field_uint16 = *(uint16_t *) Element;
+      ElementMinMax<uint16_t>(MinMax, Element);
       break;
     case adios2::DataType::UInt32:
-      if (*reinterpret_cast<uint32_t *>(Element) < MinMax.MinUnion.field_uint32)
-        MinMax.MinUnion.field_uint32 = *(uint32_t *) Element;
-      if (*reinterpret_cast<uint32_t *>(Element) > MinMax.MaxUnion.field_uint32)
-        MinMax.MaxUnion.field_uint32 = *(uint32_t *) Element;
+      ElementMinMax<uint32_t>(MinMax, Element);
       break;
     case adios2::DataType::UInt64:
-      if (*reinterpret_cast<uint64_t *>(Element) < MinMax.MinUnion.field_uint64)
-        MinMax.MinUnion.field_uint64 = *(uint64_t *) Element;
-      if (*reinterpret_cast<uint64_t *>(Element) > MinMax.MaxUnion.field_uint64)
-        MinMax.MaxUnion.field_uint64 = *(uint64_t *) Element;
+      ElementMinMax<uint64_t>(MinMax, Element);
       break;
     case adios2::DataType::Float:
-      if (*reinterpret_cast<float *>(Element) < MinMax.MinUnion.field_float)
-        MinMax.MinUnion.field_float = *(float *) Element;
-      if (*reinterpret_cast<float *>(Element) < MinMax.MinUnion.field_float)
-        MinMax.MaxUnion.field_float = *(float *) Element;
+      ElementMinMax<float>(MinMax, Element);
       break;
     case adios2::DataType::Double:
-      if (*reinterpret_cast<double *>(Element) < MinMax.MinUnion.field_double)
-        MinMax.MinUnion.field_double = *(double *) Element;
-      if (*reinterpret_cast<double *>(Element) > MinMax.MaxUnion.field_double)
-        MinMax.MaxUnion.field_double = *(double *) Element;
+      ElementMinMax<double>(MinMax, Element);
       break;
     case adios2::DataType::LongDouble:
-      if (*reinterpret_cast<long double *>(Element) < MinMax.MinUnion.field_ldouble)
-        MinMax.MinUnion.field_ldouble = *(long double *) Element;
-      if (*reinterpret_cast<long double *>(Element) > MinMax.MaxUnion.field_ldouble)
-        MinMax.MaxUnion.field_ldouble = *(long double *) Element;
+      ElementMinMax<long double>(MinMax, Element);
       break;
-    case adios2::DataType::FloatComplex:
-    case adios2::DataType::DoubleComplex:
-    case adios2::DataType::String:
-    case adios2::DataType::Struct:break;
+    default:
+      /*
+       *     case adios2::DataType::None
+       *     adios2::DataType::Char
+       *     case adios2::DataType::FloatComplex
+       *     case adios2::DataType::DoubleComplex
+       *     case adios2::DataType::String
+       *     case adios2::DataType::Struct
+       */
+      break;
+  }
+}
+
+template<typename T>
+T* HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
+  return reinterpret_cast<T*>(&u);
+}
+
+template<typename T>
+void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void* element) {
+  T* min = SelectUnion<T>(MinMax.MinUnion);
+  T* max = SelectUnion<T>(MinMax.MaxUnion);
+  T* value = static_cast<T*>(element);
+  if (*value < *min) {
+    min = value;
+  }
+  if (*value > *max) {
+      max = value;
   }
 }
 
@@ -304,32 +296,6 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
           }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
-}
-
-adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
-                                           const float timeoutSeconds) {
-  std::cout << __func__ << std::endl;
-  IncrementCurrentStep();
-  if (m_OpenMode == adios2::Mode::Read) {
-    auto bkt = Hermes->GetBucket("total_steps");
-    hermes::Blob blob = bkt->Get("total_steps_" + m_IO.m_Name);
-    total_steps = *reinterpret_cast<const int *>(blob.data());
-    if (currentStep > total_steps) {
-      return adios2::StepStatus::EndOfStream;
-    }
-    LoadMetadata();
-  }
-  engine_logger->info("rank {} on mode {}", rank, adios2::ToString(mode));
-  return adios2::StepStatus::OK;
-}
-
-size_t HermesEngine::CurrentStep() const {
-  std::cout << __func__ << std::endl;
-  return currentStep;
-}
-
-void HermesEngine::EndStep() {
-  std::cout << __func__ << std::endl;
 }
 
 template<typename T>

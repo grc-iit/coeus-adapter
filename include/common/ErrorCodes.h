@@ -23,5 +23,7 @@ const ErrorCode SUCCESSFUL = {0, "SUCCESSFUL"};
 const ErrorCode HERMES_CONNECT_FAILED = {1000, "Connecting to Hermes failed"};
 const ErrorCode NO_JSON = {2000, "Could not find JSON file with operators"};
 const ErrorCode BAD_JSON = {2001, "Submitted json is badly formatted"};
+const ErrorCode NO_YAML = {3000, "Could not find YAML file with operators"};
+const ErrorCode BAD_YAML = {3001, "Submitted YAML is badly formatted"};
 
 #endif //COEUS_INCLUDE_COMMON_ERRORCODES_H

@@ -29,7 +29,7 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "common/SQlite.h"
-#include <common/JSONParser.h>
+#include "common/YAMLParser.h"
 #include <common/ErrorCodes.h>
 #include <common/ClassLoader.h>
 #include <common/ThreadPool.h>
@@ -85,13 +85,16 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                         adios2::MinMaxStruct &MinMax) override;
 
  private:
-  int currentStep = 0;
+  bool open = false;
 
+  int currentStep = 0;
   int total_steps = 0;
 
   int rank;
-
   int comm_size;
+
+  YAMLMap variableMap;
+  YAMLMap operationMap;
 
   std::vector<std::string> listOfVars;
 
@@ -99,7 +102,11 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   void IncrementCurrentStep();
 
-  void LoadExistingVariables();
+  template<typename T>
+  T* SelectUnion(adios2::PrimitiveStdtypeUnion &u);
+
+  template<typename T>
+  void ElementMinMax(adios2::MinMaxStruct &MinMax, void* element);
 
   void LoadMetadata();
 
@@ -136,11 +143,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                       T *values);
 
   /** Calls to support Adios native queries */
-  static void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
+  void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
                                  void *Element);
-
-  static void InitElementMinMax(adios2::MinMaxStruct &MinMax,
-                                adios2::DataType Type);
 
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.
