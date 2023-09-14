@@ -1,0 +1,7 @@
+variable1:
+  operator1: function1
+  operator2: function2
+  invalid: 123  # Invalid entry, should be a string value
+variable2:
+  operator3: function3
+  operator4: function4

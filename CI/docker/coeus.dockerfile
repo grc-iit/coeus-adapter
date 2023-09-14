@@ -1,6 +1,6 @@
 # Use scs-lab/base:1.0 as base image
 FROM spack/ubuntu-jammy:v0.20.0 as builder
-ENV DOCKER_TAG=0.9
+ENV DOCKER_TAG=0.9.4
 
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y pkg-config
@@ -35,13 +35,10 @@ RUN cd /opt/spack-environment && \
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND="noninteractive"
 
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install -y pkg-config cmake build-essential environment-modules  \
-    gfortran git python3 python3-pip gdb valgrind linux-tools-common linux-tools-generic linux-tools-`uname -r`
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y pkg-config cmake build-essential environment-modules  \
+    gfortran git python3 python3-pip gdb valgrind linux-tools-common linux-tools-generic libyaml-cpp-dev
 
 RUN pip install cpplint tabulate pyyaml pandas numpy
-
-RUN apt-get install -y libyaml-cpp-dev
 
 COPY --from=builder /opt/spack-environment /opt/spack-environment
 COPY --from=builder /opt/software /opt/software

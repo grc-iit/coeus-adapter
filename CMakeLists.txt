@@ -88,9 +88,15 @@ message(STATUS "found Hermes at ${Hermes_DIR}")
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "Found Adios2")
-
+MESSAGE(STATUS "Adios config: ${ADIOS2_CONFIG}")
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
+
+#Yaml-cpp
+find_package(yaml-cpp REQUIRED)
+if(yaml-cpp_FOUND)
+    message(STATUS "found yaml-cpp at ${yaml-cpp_DIR}")
+endif()
 
 # OpenMP
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
