@@ -25,5 +25,6 @@ const ErrorCode NO_JSON = {2000, "Could not find JSON file with operators"};
 const ErrorCode BAD_JSON = {2001, "Submitted json is badly formatted"};
 const ErrorCode NO_YAML = {3000, "Could not find YAML file with operators"};
 const ErrorCode BAD_YAML = {3001, "Submitted YAML is badly formatted"};
+const ErrorCode NOT_FOUND_CLASS = {4000, "Class to load not found"};
 
 #endif //COEUS_INCLUDE_COMMON_ERRORCODES_H

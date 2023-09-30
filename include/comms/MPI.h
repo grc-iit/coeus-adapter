@@ -40,11 +40,14 @@ class MPI : public IMPI {
   }
 
  public:
-  MPI(const adios2::helper::Comm& globalComm)
-      : globalComm(globalComm), nodeId(getNodeID()) {
+  MPI(const adios2::helper::Comm&& comm)
+      :  nodeId(getNodeID()) {
+    globalComm = comm.Duplicate();
     createNodeCommunicator();
     defineNodeMaster();
   }
+
+  MPI() = default;
 
   void createNodeCommunicator() {
     // Split the global communicator based on the node ID

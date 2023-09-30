@@ -12,11 +12,11 @@ namespace coeus {
 
 class MockIBucket : public IBucket {
  public:
-  MOCK_METHOD(hermes::Status, Put, (const std::string &blob_name, size_t blob_size, void *values), (override));
+  MOCK_METHOD(hermes::BlobId, Put, (const std::string &blob_name, size_t blob_size, void *values), (override));
   MOCK_METHOD(hermes::Blob, Get, (const std::string &blob_name), (override));
   MOCK_METHOD(hermes::Blob, Get, (hermes::BlobId blob_id), (override));
   MOCK_METHOD(std::vector<hermes::BlobId>, GetContainedBlobIds, (), (override));
-  MOCK_METHOD(hermes::Status, GetBlobId, (const std::string &blob_name, hermes::BlobId &blob_id), (override));
+  MOCK_METHOD(hermes::BlobId, GetBlobId, (const std::string &blob_name), (override));
   MOCK_METHOD(std::string, GetBlobName, (const hermes::BlobId &blob_id), (override));
 };
 } // namespace coeus

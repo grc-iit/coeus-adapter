@@ -12,9 +12,22 @@
 
 #include "coeus/HermesEngine.h"
 
-namespace hapi = hermes::api;
-
 namespace coeus {
+/*
+ *
+ * class MyProject(){
+ * public:
+ *  hermes = HERMES;
+ *
+ *  MyProject() = default;
+ *
+ *  * class MyProject(){
+ * public:
+ *
+ *  MyProject(hermes h_object)hermes(h_object);
+ *
+ */
+
 
 /**
  * Construct the HermesEngine.
@@ -28,7 +41,8 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  Hermes = std::make_unique<coeus::Hermes>();
+  Hermes = std::make_shared<coeus::Hermes>();
+  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
@@ -36,13 +50,15 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
 /**
  * Test initializer
  * */
-HermesEngine::HermesEngine(std::unique_ptr<coeus::IHermes> h,
+HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
+                           std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io,
                            const std::string &name,
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  Hermes = std::move(h);
+  Hermes = h;
+  mpiComm = mpi;
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
@@ -71,8 +87,8 @@ void HermesEngine::Init_() {
   engine_logger->info("rank {}", rank);
 
   //MPI setup
-  rank = m_Comm.Rank();
-  comm_size = m_Comm.Size();
+  rank = mpiComm->getGlobalRank();
+  comm_size = mpiComm->getGlobalSize();
 
   //Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
@@ -109,17 +125,7 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   engine_logger->info("rank {}", rank);
-  if(open) {
-    engine_logger->info("rank {}", rank);
-    if (m_OpenMode == adios2::Mode::Write) {
-      if(rank == 0) {
-        auto blob_name = "total_steps_" + m_IO.m_Name;
-        auto bkt = Hermes->GetBucket("total_steps");
-        bkt->Put(blob_name, sizeof(int), &currentStep);
-      }
-    }
-    open = false;
-  }
+  open = false;
 }
 
 HermesEngine::~HermesEngine() {
@@ -159,6 +165,13 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
   engine_logger->info("rank {}", rank);
+  if (m_OpenMode == adios2::Mode::Write) {
+    if(rank == 0) {
+      auto blob_name = "total_steps_" + this->m_Name;
+      auto bkt = Hermes->GetBucket("total_steps");
+      bkt->Put(blob_name, sizeof(int), &currentStep);
+    }
+  }
 }
 
 /**
@@ -321,8 +334,7 @@ void HermesEngine::DoPutDeferred_(
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   auto bkt = Hermes->GetBucket(bucket_name);
-  auto status = bkt->Put(variable.variable.m_Name,
-                       variable.SelectionSize() * sizeof(T), values);
+  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
 
   // Check if the value is already in the list
   auto it = std::find(listOfVars.begin(),

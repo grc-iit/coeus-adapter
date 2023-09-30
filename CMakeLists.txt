@@ -4,22 +4,23 @@ project(COEUS)
 set(CMAKE_CXX_STANDARD 17)
 
 #------------------------------------------------------------------------------
-# Global variables
+# Global variable
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-
+MESSAGE(STATUS "CMAKE_PREFIX_PATH: $ENV{CMAKE_PREFIX_PATH}")
 #------------------------------------------------------------------------------
 # Solving some weirdness with CLion docker toolchain
 #------------------------------------------------------------------------------
 if(EXISTS "/.dockerenv")
     # Inside a Docker container
     file(GLOB ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-*/include")
-    file(GLOB Hermes_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
+    file(GLOB Hermes_INCLUDE_DIRS "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
 else()
     # Not inside a Docker container
     set(ADIOS2_INCLUDE_DIR "")
 endif()
 MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
+MESSAGE(STATUS "Hermes_INCLUDE_DIRS: " ${Hermes_INCLUDE_DIRS})
 MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------

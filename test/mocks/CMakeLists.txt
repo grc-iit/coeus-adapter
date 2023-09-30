@@ -6,7 +6,7 @@ add_library(hermes_mocks INTERFACE
 target_include_directories(hermes_mocks INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/include/comms/interfaces
-        ${Hermes_INCLUDE_DIR})
+        ${Hermes_INCLUDE_DIRS})
 
 target_link_libraries(hermes_mocks INTERFACE
         GTest::gtest_main

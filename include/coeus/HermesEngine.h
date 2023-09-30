@@ -24,6 +24,7 @@
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
+#include "ContainerManager.h"
 
 #include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
@@ -40,14 +41,15 @@
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-  std::unique_ptr<coeus::IHermes> Hermes;
+  std::shared_ptr<coeus::IHermes> Hermes;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
                const adios2::Mode mode,
                adios2::helper::Comm comm);
 
-  HermesEngine(std::unique_ptr<coeus::IHermes> h, //NOLINT
+  HermesEngine(std::shared_ptr<coeus::IHermes> h,//NOLINT
+               std::shared_ptr<coeus::MPI> mpi,
                adios2::core::IO &io,
                const std::string &name,
                const adios2::Mode mode,
@@ -90,6 +92,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int currentStep = 0;
   int total_steps = 0;
 
+  std::shared_ptr<coeus::MPI> mpiComm;
   int rank;
   int comm_size;
 

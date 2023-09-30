@@ -12,7 +12,7 @@
 
 #ifndef COEUS_INCLUDE_COMMS_INTERFACES_IHERMES_H_
 #define COEUS_INCLUDE_COMMS_INTERFACES_IHERMES_H_
-#include <hermes.h>
+#include <hermes/hermes.h>
 
 #include "IBucket.h"
 
@@ -24,6 +24,8 @@ class IHermes {
 
   virtual bool connect() = 0;
   virtual std::unique_ptr<IBucket> GetBucket(const std::string &bucket_name) = 0;
+  virtual bool Demote(const std::string &bucket_name, const std::string &blob_name) = 0;
+  virtual bool Prefetch(const std::string &bucket_name, const std::string &blob_name) = 0;
 };
 }
 #endif //COEUS_INCLUDE_COMMS_INTERFACES_IHERMES_H_

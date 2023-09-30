@@ -12,55 +12,15 @@
 #include <utility>
 #include <type_traits>
 #include <filesystem>
+#include "common/MetadataStructs.h"
+#include "comms/Bucket.h"
 
-struct VariableInfo {
-  std::string app_name;
-  bool derived;
-  int num_processes;
-  bool constant_shape;
-  std::string data_type;
-  std::vector<size_t> dimensions;
-};
-
-template <typename T>
 class SQLiteWrapper {
  private:
   sqlite3* db;
   bool open;
   std::string dbName;
   bool deleteOnDestruction;
-
-  static int blobsCallback(void* data, int argc, char** argv, char** azColName) {
-    std::vector<std::string>* blobs = reinterpret_cast<std::vector<std::string>*>(data);
-    for (int i = 0; i < argc; i++) {
-      if (std::string(azColName[i]) == "blob_name") {
-        blobs->push_back(argv[i]);
-      }
-    }
-    return 0;
-  }
-
-  static int minMaxCallback(void* data, int argc, char** argv, char** azColName) {
-    std::pair<T, T>* minMax = reinterpret_cast<std::pair<T, T>*>(data);
-    for (int i = 0; i < argc; i++) {
-      if (std::string(azColName[i]) == "global_min") {
-        minMax->first = static_cast<T>(std::stod(argv[i]));  // Convert to double first, then to T
-      } else if (std::string(azColName[i]) == "global_max") {
-        minMax->second = static_cast<T>(std::stod(argv[i]));
-      }
-    }
-    return 0;
-  }
-
-  std::string getTypeString() {
-    if constexpr (std::is_same_v<T, int>) {
-      return "INTEGER";
-    } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      return "REAL";
-    } else {
-      static_assert("Unsupported type for SQLiteWrapper");
-    }
-  }
 
   bool execute(const std::string& sql, void* data = nullptr, int (*callbackFunc)(void*, int, char**, char**) = nullptr) {
     char* errMsg = 0;
@@ -86,6 +46,9 @@ class SQLiteWrapper {
       open=false;
     }
     open=true;
+    createAppsTable();
+    createBlobLocationsTable();
+    createVariableMetadataTable();
   }
 
   ~SQLiteWrapper() {
@@ -100,219 +63,149 @@ class SQLiteWrapper {
     return open;
   }
 
-  // IO. Data distribution
-  bool createMetadataTable() {
-    std::string createTableSQL = "CREATE TABLE IF NOT EXISTS Metadata("
-                                 "id INTEGER PRIMARY KEY,"
-                                 "start INTEGER NOT NULL,"
-                                 "count INTEGER NOT NULL,"
-                                 "file_name TEXT NOT NULL,"
-                                 "step INTEGER NOT NULL);";  // Added step column
+  /***************************************
+   * Total Steps
+   ****************************************/
+  bool createAppsTable() {
+    const std::string createTableSQL = "CREATE TABLE IF NOT EXISTS Apps ("
+                                       "appName TEXT PRIMARY KEY,"
+                                       "TotalSteps INTEGER);";
     return execute(createTableSQL);
   }
 
-  bool insertMetadata(int start, int count, const std::string& file_name, int step) {
-    const char* insertDataSQL = "INSERT INTO Metadata (start, count, file_name, step) VALUES (?, ?, ?, ?);";
+  void UpdateTotalSteps(const std::string& appName, int step) {
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, insertDataSQL, -1, &stmt, 0);
-    sqlite3_bind_int(stmt, 1, start);
-    sqlite3_bind_int(stmt, 2, count);
-    sqlite3_bind_text(stmt, 3, file_name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 4, step);  // Bind step value
-    int rc = sqlite3_step(stmt);
+    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO Apps (appName, TotalSteps) VALUES (?, ?);";
+    sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, appName.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, step);
+    sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
   }
 
-  std::vector<std::string> queryblobs(int start_position, int end_position) {
-    const char* query = "SELECT blob_name FROM Metadata WHERE "
-                        "(start >= ? AND start < ?) "
-                        "OR (start + count > ? AND start + count <= ?) "
-                        "OR (start <= ? AND start + count >= ?);";
+  int GetTotalSteps(const std::string& appName) {
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    sqlite3_bind_int(stmt, 1, start_position);
-    sqlite3_bind_int(stmt, 2, end_position);
-    sqlite3_bind_int(stmt, 3, start_position);
-    sqlite3_bind_int(stmt, 4, end_position);
-    sqlite3_bind_int(stmt, 5, start_position);
-    sqlite3_bind_int(stmt, 6, end_position);
-    std::vector<std::string> blobs;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      blobs.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
-    }
-    sqlite3_finalize(stmt);
-    return blobs;
-  }
-
-  std::vector<std::pair<std::string, std::pair<int, int>>> queryBlobsWithOffset(int start_position, int end_position) {
-    const char* query = "SELECT file_name, start, count FROM Metadata WHERE "
-                        "(start >= ? AND start < ?) "
-                        "OR (start + count > ? AND start + count <= ?) "
-                        "OR (start <= ? AND start + count >= ?);";
-    sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    sqlite3_bind_int(stmt, 1, start_position);
-    sqlite3_bind_int(stmt, 2, end_position);
-    sqlite3_bind_int(stmt, 3, start_position);
-    sqlite3_bind_int(stmt, 4, end_position);
-    sqlite3_bind_int(stmt, 5, start_position);
-    sqlite3_bind_int(stmt, 6, end_position);
-
-    std::vector<std::pair<std::string, std::pair<int, int>>> results;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      std::string file = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-      int fileStart = sqlite3_column_int(stmt, 1);
-      int fileCount = sqlite3_column_int(stmt, 2);
-
-      int readStart = std::max(start_position - fileStart, 0);
-      int readEnd = std::min(readStart + (end_position - start_position), fileCount);
-
-      results.push_back({file, {readStart, readEnd}});
-      start_position += (readEnd - readStart);
-    }
-    sqlite3_finalize(stmt);
-    return results;
-  }
-
-  //Admin Global Metadata
-  bool createGlobalTable() {
-    std::string createTableSQL = "CREATE TABLE IF NOT EXISTS GlobalTable("
-                                 "id INTEGER PRIMARY KEY,"
-                                 "app_name TEXT NOT NULL,"
-                                 "variable_name TEXT NOT NULL,"
-                                 "derived BOOLEAN NOT NULL,"
-                                 "num_processes INTEGER NOT NULL,"
-                                 "constant_shape BOOLEAN NOT NULL,"
-                                 "data_type TEXT NOT NULL,"
-                                 "dimensions TEXT NOT NULL);";  // Storing dimensions as comma-separated string
-    return execute(createTableSQL);
-  }
-
-  bool insertGlobalData(const std::string& app_name, const std::string& variable_name, bool derived,
-                        int num_processes, bool constant_shape, const std::string& data_type,const std::vector<size_t>& dimensions) {
-    std::string dimensionsStr = "";
-    for (const auto& dim : dimensions) {
-      dimensionsStr += std::to_string(dim) + ",";
-    }
-    dimensionsStr.pop_back();  // Remove the trailing comma
-
-    const char* insertDataSQL = "INSERT INTO GlobalTable (app_name, variable_name, derived, num_processes, constant_shape, data_type, dimensions) VALUES (?, ?, ?, ?, ?, ?);";
-    sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, insertDataSQL, -1, &stmt, 0);
-    sqlite3_bind_text(stmt, 1, app_name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, variable_name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 3, derived);
-    sqlite3_bind_int(stmt, 4, num_processes);
-    sqlite3_bind_int(stmt, 5, constant_shape);
-    sqlite3_bind_text(stmt, 6, data_type.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 7, dimensionsStr.c_str(), -1, SQLITE_STATIC);
-    int rc = sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
-  }
-
-  int queryNumberOfApps() {
-    const char* query = "SELECT COUNT(DISTINCT app_name) FROM GlobalTable;";
-    int count = 0;
-    execute(query, &count, [](void* data, int argc, char** argv, char** azColName) -> int {
-      int* countPtr = reinterpret_cast<int*>(data);
-      if (argc > 0 && argv[0]) {
-        *countPtr = std::stoi(argv[0]);
-      }
-      return 0;
-    });
-    return count;
-  }
-
-  std::vector<std::string> queryVariablesByApp(const std::string& app_name) {
-    const char* query = "SELECT DISTINCT variable_name FROM GlobalTable WHERE app_name = ?;";
-    sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    sqlite3_bind_text(stmt, 1, app_name.c_str(), -1, SQLITE_STATIC);
-    std::vector<std::string> variables;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-      variables.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
-    }
-    sqlite3_finalize(stmt);
-    return variables;
-  }
-
-  VariableInfo queryInfoByVariableName(const std::string& variable_name) {
-    const char* query = "SELECT app_name, derived, num_processes, constant_shape, data_type, dimensions "
-                        "FROM GlobalTable WHERE variable_name = ? LIMIT 1;";
-    sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    sqlite3_bind_text(stmt, 1, variable_name.c_str(), -1, SQLITE_STATIC);
-    VariableInfo info;
+    const std::string selectSQL = "SELECT TotalSteps FROM Apps WHERE appName = ?;";
+    sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_text(stmt, 1, appName.c_str(), -1, SQLITE_STATIC);
+    int totalSteps = -1;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-      info.app_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-      info.derived = sqlite3_column_int(stmt, 1);
-      info.num_processes = sqlite3_column_int(stmt, 2);
-      info.constant_shape = sqlite3_column_int(stmt, 3);
-      info.data_type = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
-      std::string dimensionsStr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
-      std::istringstream iss(dimensionsStr);
-      std::string token;
-      while (std::getline(iss, token, ',')) {
-        info.dimensions.push_back(std::stoull(token));
-      }
+      totalSteps = sqlite3_column_int(stmt, 0);
     }
     sqlite3_finalize(stmt);
-    return info;
+    return totalSteps;
   }
 
-  //Hierarchy: Query blobs by step
-  std::vector<std::string> queryBlobsByStep(int step) {
-    const char* query = "SELECT file_name FROM Metadata WHERE step = ?;";
+  std::vector<std::string> GetAppList() {
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, query, -1, &stmt, 0);
-    sqlite3_bind_int(stmt, 1, step);
-    std::vector<std::string> blobs;
+    const std::string selectSQL = "SELECT appName FROM Apps;";
+    sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
+    std::vector<std::string> appList;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-      blobs.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+      appList.push_back(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
     }
     sqlite3_finalize(stmt);
-    return blobs;
+    return appList;
   }
 
-  //Derived Variables: Previous step
-
-
-  // Experimental: Gloabl Min-Max from local Min-Max
-  bool createSegmentDataTable() {
-    std::string typeStr = getTypeString();
-    std::string createTableSQL = "CREATE TABLE IF NOT EXISTS SegmentData("
-                                 "id INTEGER PRIMARY KEY,"
-                                 "min_value " + typeStr + " NOT NULL,"
-                                                          "max_value " + typeStr + " NOT NULL,"
-                                                                                   "blob_name TEXT NOT NULL);";
+  /***************************************
+ * Data Location
+ ****************************************/
+  bool createBlobLocationsTable() {
+    const std::string createTableSQL = "CREATE TABLE IF NOT EXISTS BlobLocations ("
+                                       "step INTEGER,"
+                                       "mpi_rank INTEGER,"
+                                       "name TEXT,"
+                                       "bucket_name TEXT,"
+                                       "blob_name TEXT,"
+                                       "PRIMARY KEY (step, mpi_rank, name));";
     return execute(createTableSQL);
   }
 
-  bool insertSegmentData(T min_value, T max_value, const std::string& blob_name) {
-    const char* insertDataSQL = "INSERT INTO SegmentData (min_value, max_value, blob_name) VALUES (?, ?, ?);";
+  void InsertBlobLocation(int step, int mpi_rank, const std::string& varName, const BlobInfo& blobInfo) {
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db, insertDataSQL, -1, &stmt, 0);
-    if constexpr (std::is_same_v<T, int>) {
-      sqlite3_bind_int(stmt, 1, min_value);
-      sqlite3_bind_int(stmt, 2, max_value);
-    } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, double>) {
-      sqlite3_bind_double(stmt, 1, min_value);
-      sqlite3_bind_double(stmt, 2, max_value);
-    }
-    sqlite3_bind_text(stmt, 3, blob_name.c_str(), -1, SQLITE_STATIC);
-    int rc = sqlite3_step(stmt);
+    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO BlobLocations (step, mpi_rank, name, bucket_name, blob_name) VALUES (?, ?, ?, ?, ?);";
+    sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+    sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, blobInfo.bucket_name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, blobInfo.blob_name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE;
   }
 
-  std::pair<T, T> queryGlobalMinMax() {
-    const char* query = "SELECT MIN(min_value) AS global_min, MAX(max_value) AS global_max FROM SegmentData;";
-    std::pair<T, T> minMax;
-    execute(query, &minMax, minMaxCallback);
-    return minMax;
+  BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
+    sqlite3_stmt* stmt;
+    const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
+    sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+    sqlite3_bind_text(stmt, 3, name.c_str(), -1, SQLITE_STATIC);
+    BlobInfo blobInfo;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      blobInfo.bucket_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      blobInfo.blob_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+    }
+    sqlite3_finalize(stmt);
+    return blobInfo;
   }
+
+  /***************************************
+* MetaData Location
+****************************************/
+
+  bool createVariableMetadataTable() {
+    const std::string createTableSQL = "CREATE TABLE IF NOT EXISTS VariableMetadataTable ("
+                                       "step INTEGER,"
+                                       "mpi_rank INTEGER,"
+                                       "name TEXT,"
+                                       "shape TEXT,"
+                                       "start TEXT,"
+                                       "count TEXT,"
+                                       "constantShape BOOLEAN,"
+                                       "dataType TEXT,"
+                                       "PRIMARY KEY (step, mpi_rank, name));";
+    return execute(createTableSQL);
+  }
+
+  void InsertVariableMetadata(int step, int mpi_rank, const VariableMetadata& metadata) {
+    sqlite3_stmt* stmt;
+    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+    sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+    sqlite3_bind_text(stmt, 3, metadata.name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, VariableMetadata::serializeVector(metadata.shape).c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, VariableMetadata::serializeVector(metadata.start).c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 6, VariableMetadata::serializeVector(metadata.count).c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 7, metadata.constantShape);
+    sqlite3_bind_text(stmt, 8, metadata.dataType.c_str(), -1, SQLITE_STATIC);
+    sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+  }
+
+  VariableMetadata GetVariableMetadata(int step, int mpi_rank, const std::string& name) {
+    sqlite3_stmt* stmt;
+    const std::string selectSQL = "SELECT shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
+    sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+    sqlite3_bind_text(stmt, 3, name.c_str(), -1, SQLITE_STATIC);
+    VariableMetadata metadata;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+      metadata.name = name;
+      metadata.shape = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)));
+      metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+      metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+      metadata.constantShape = sqlite3_column_int(stmt, 3);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+    }
+    sqlite3_finalize(stmt);
+    return metadata;
+  }
+
+
 };
 
 #endif //COEUS_INCLUDE_COMMON_SQLITE_H_

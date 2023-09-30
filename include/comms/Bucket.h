@@ -12,7 +12,7 @@
 
 #ifndef COEUS_INCLUDE_COMMS_BUCKET_H_
 #define COEUS_INCLUDE_COMMS_BUCKET_H_
-#include <hermes.h>
+#include <hermes/bucket.h>
 #include "interfaces/IBucket.h"
 #include "interfaces/IHermes.h"
 
@@ -25,17 +25,16 @@ class Bucket : public IBucket {
     bkt = h->hermes->GetBucket(bucket_name);
   }
 
-  hermes::Status Put(const std::string &blob_name, size_t blob_size, void* values) override {
+  hermes::BlobId Put(const std::string &blob_name, size_t blob_size, const void* values) override {
     hapi::Context ctx;
     hermes::Blob blob(blob_size);
     hermes::BlobId blob_id;
     memcpy(blob.data(), values, blob_size);
-    bkt.Put(blob_name, blob, blob_id, ctx);
+    return bkt.Put(blob_name, blob, ctx);
   };
 
   hermes::Blob Get(const std::string &blob_name) override {
-    hermes::BlobId blob_id;
-    bkt.GetBlobId(blob_name, blob_id);
+    auto blob_id = bkt.GetBlobId(blob_name);
     return Get(blob_id);
   };
 
@@ -50,8 +49,8 @@ class Bucket : public IBucket {
     return bkt.GetContainedBlobIds();
   }
 
-  hermes::Status GetBlobId(const std::string &blob_name, hermes::BlobId &blob_id) override {
-    return bkt.GetBlobId(blob_name, blob_id);
+  hermes::BlobId GetBlobId(const std::string &blob_name) override {
+    return bkt.GetBlobId(blob_name);
   }
 
   std::string GetBlobName(const hermes::BlobId &blob_id) override {

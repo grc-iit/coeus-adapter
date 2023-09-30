@@ -13,7 +13,8 @@
 #ifndef COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
 #define COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
 
-#include <hermes_types.h>
+#include <hermes/hermes_types.h>
+#include "common/MetadataStructs.h"
 
 #include <vector>
 #include <string>
@@ -24,125 +25,28 @@
 #include <adios2/core/Variable.h>
 #include <adios2/cxx11/Variable.h>
 
-// Define your struct
-struct VariableMetadata {
-  std::string name;
-  std::vector<size_t> shape;
-  std::vector<size_t> start;
-  std::vector<size_t> count;
-  bool constantShape;
-  std::string dataType;
-
-  VariableMetadata() = default;
-
-    template<typename T>
-    explicit VariableMetadata(const adios2::core::Variable<T> &variable) {
-        name = variable.m_Name;
-        shape = variable.Shape();
-
-        // Check if start is empty or null and assign an empty array if so
-        if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-            start = std::vector<size_t>();
-        } else {
-            start = variable.m_Start;
-        }
-
-        count = variable.Count();
-
-        // Check if count is empty or null and assign an empty array if so
-        if (variable.Count().empty() || variable.Count().data() == nullptr) {
-            count = std::vector<size_t>();
-        } else {
-            count = variable.Count();
-        }
-
-        constantShape = variable.IsConstantDims();
-        dataType = adios2::ToString(variable.m_Type);
-    }
-
-    template<typename T>
-    explicit VariableMetadata(const adios2::Variable<T> variable) {
-        name = variable.Name();
-        shape = variable.Shape();
-
-        // Check if start is empty or null and assign an empty array if so
-        if (variable.Start().empty() || variable.Start().data() == nullptr) {
-            start = std::vector<size_t>();
-        } else {
-            start = variable.Start();
-        }
-
-        // Check if count is empty or null and assign an empty array if so
-        if (variable.Count().empty() || variable.Count().data() == nullptr) {
-            count = std::vector<size_t>();
-        } else {
-            count = variable.Count();
-        }
-
-        constantShape = false;
-        /* We need to see if this is correct.
-           Though this is mostly just for the unit test,
-           as the engine will reference the adios::core::variable constructor */
-        dataType = variable.Type();
-    }
-
-
-  adios2::DataType getDataType() {
-    return adios2::helper::GetDataTypeFromString(dataType);
-  }
-
-  bool operator==(const VariableMetadata& other) const {
-    return name == other.name &&
-           shape == other.shape &&
-           start == other.start &&
-           count == other.count &&
-           constantShape == other.constantShape;
-  }
-
-  template<typename T>
-  bool operator==(const adios2::Variable<T>& other) const {
-    return name == other.Name() &&
-        shape == other.Shape() &&
-        start == other.Start() &&
-        count == other.Count() &&
-        !constantShape;
-  }
-
-  template<typename T>
-  bool operator==(const adios2::core::Variable<T>& other) const {
-    return name == other.m_Name &&
-        shape == other.Shape() &&
-        start == other.m_Start &&
-        count == other.Count() &&
-        constantShape == other.IsConstantDims();
-  }
-
-  template <class Archive>
-  void serialize(Archive &ar) {
-      ar(name, shape, start, count, constantShape, dataType);
-  }
-};
-
-std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
-  out << "Name: " << data.name << "\n";
-  out << "Shape: ";
-  for (const auto &s : data.shape) {
-    out << s << " ";
-  }
-  out << "\nStart: ";
-  for (const auto &s : data.start) {
-    out << s << " ";
-  }
-  out << "\nCount: ";
-  for (const auto &c : data.count) {
-    out << c << " ";
-  }
-  out << "\nConstant Shape: " << (data.constantShape ? "True" : "False");
-  return out;
-}
-
 class MetadataSerializer{
  public:
+  static std::string SerializeBlobInfo(BlobInfo blob_info) {
+    std::stringstream ss;
+    {
+      cereal::BinaryOutputArchive oarchive(ss);
+      oarchive(blob_info);
+    }
+    return ss.str();
+  }
+
+  static BlobInfo DeserializeBlobInfo(const hermes::Blob &blob) {
+    BlobInfo blob_info;
+    std::stringstream ss;
+    {
+      ss.write(reinterpret_cast<char*>(blob.data()), blob.size());
+      cereal::BinaryInputArchive iarchive(ss);
+      iarchive(blob_info);
+    }
+    return blob_info;
+  }
+
     static std::string SerializeMetadata(VariableMetadata variableMetadata) {
       std::stringstream ss;
       {
