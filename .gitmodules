@@ -1,3 +1,6 @@
 [submodule "CI/jarvis-util"]
 	path = CI/jarvis-util
 	url = https://github.com/scs-lab/jarvis-util.git
+[submodule "CI/jarvis-cd"]
+	path = CI/jarvis-cd
+	url = https://github.com/scs-lab/jarvis-cd.git
