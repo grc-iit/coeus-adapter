@@ -212,6 +212,8 @@ class Adios2GrayScott(Application):
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
 
+        JsonFile(self.settings_json_path).save(settings_json)
+
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
