@@ -128,13 +128,14 @@ class Adios2GrayScottPost(Application):
         nbins = self.config['nbins']
         write_inputbars = self.config['write_inputvars']
 
+        cwd = os.path.dirname(self.adios2_xml_path)
         # print(self.env['HERMES_CLIENT_CONF'])
         Exec(f'adios2-pdf-calc {in_file} {out_file} {nbins} {write_inputbars}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.env,
-                         cwd=self.adios2_xml_path))
+                         cwd=cwd))
         # cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
         #         {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
         #         /mnt/hdd/jmendezbenegassimarq/client/gs.bp pdf.bp 100"
