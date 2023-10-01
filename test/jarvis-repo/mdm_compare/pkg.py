@@ -8,7 +8,7 @@ from jarvis_util import *
 import pathlib
 
 
-class CoeusMdmCompare(Application):
+class MdmCompare(Application):
     """
     This class provides methods to launch the GrayScott application.
     """

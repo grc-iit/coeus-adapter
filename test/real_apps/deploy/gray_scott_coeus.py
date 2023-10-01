@@ -21,13 +21,13 @@ bench.append('ior')
 proc_counts = [1, 2, 4, 8, 16, 20, 40, 80]
 for nprocs in proc_counts:
     bench.configure('adios2_gray_scott',
-                    nprocs =nprocs,
-                    ppn =20,
-                    steps =100,
-                    out_file = 'mnt/nvme/jcernudagarcia/in.hermes',
-                    engine = 'hermes',
-                    full_run =True,
-                    db_path = '/mnt/nvme/jcernudagarcia/metadata.db',
+                    nprocs=nprocs,
+                    ppn=20,
+                    steps=100,
+                    out_file='mnt/nvme/jcernudagarcia/in.hermes',
+                    engine='hermes',
+                    full_run=True,
+                    db_path='/mnt/nvme/jcernudagarcia/metadata.db',
                     )
     bench.configure('adios2_gray_scott_post',
                     nprocs=nprocs,

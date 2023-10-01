@@ -8,7 +8,7 @@ from jarvis_util import *
 import pathlib
 
 
-class AdiosGrayScottPost(Application):
+class Adios2GrayScottPost(Application):
     """
     This class provides methods to launch the GrayScott application.
     """
