@@ -257,12 +257,10 @@ class Adios2GrayScott(Application):
 
         :return: None
         """
-        if self.config['full_run']:
-            # Dont clean we need the files for the post
-            pass
-        else:
-            output_file = self.config['out_file']
-            checkpoint_output = self.config['checkpoint_output']
-            db_file = self.config['db_path']
-            print(f'Removing {output_file}')
-            Rm([output_file, db_file, checkpoint_output], PsshExecInfo(hostfile=self.jarvis.hostfile))
+        output_file = [self.config['out_file'],
+                       self.config['checkpoint_output'],
+                       self.config['db_path']
+                       ]
+
+        print(f'Removing {output_file}')
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
