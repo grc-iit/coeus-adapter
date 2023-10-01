@@ -16,8 +16,10 @@ class AdiosGrayScottPost(Application):
         """
         Initialize paths
         """
-        self.adios2_xml_path = f'{self.pkg_dir}/config/adios2.xml'
+        self.adios2_xml_path = f'{self.shared_dir}/config/adios2.xml'
         self.settings_json_path = f'{self.shared_dir}/settings-files.json'
+        self.var_json_path = f'{self.shared_dir}/var.json'
+        self.operator_json_path = f'{self.shared_dir}/operator.json'
 
     def _configure_menu(self):
         """
@@ -67,10 +69,16 @@ class AdiosGrayScottPost(Application):
             },
             {
                 'name': 'engine',
-                'msg': 'Engien to be used',
+                'msg': 'Engine to be used',
                 'choices': ['bp5', 'hermes'],
                 'type': str,
                 'default': "bp5",
+            },
+            {
+                'name': 'db_path',
+                'msg': 'Path where the DB will be stored',
+                'type': str,
+                'default': 'benchmark_metadata.db',
             },
         ]
 
@@ -89,15 +97,21 @@ class AdiosGrayScottPost(Application):
             Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
                                           env=self.env))
 
-        output_dir = os.path.dirname(self.config['output'])
-        Mkdir(output_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
+        output_dir = os.path.dirname(self.config['out_file'])
+        db_dir = os.path.dirname(self.config['db_path'])
+        Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
+
         if lower(self.config['engine']) == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
         elif lower(self.config['engine']) == 'hermes':
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path)
+            self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
+                                    self.var_json_path)
+            self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',
+                                    self.operator_json_path)
         else:
             raise Exception('Engine not defined')
 

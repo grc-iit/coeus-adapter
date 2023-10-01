@@ -5,7 +5,7 @@
            Configuration for Gray-Scott and GS Plot
         ============================================-->
 
-    <io name="SimulationOutput">
+    <io name="TestIO">
         <engine type="Plugin">
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />
@@ -20,7 +20,7 @@
            Configuration for PDF calc and PDF Plot
         ===========================================-->
 
-    <io name="PDFAnalysisOutput">
+    <io name="ReadIO">
         <engine type="Plugin">
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />

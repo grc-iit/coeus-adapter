@@ -5,8 +5,8 @@
            Configuration for Gray-Scott and GS Plot
         ============================================-->
 
-    <io name="SimulationOutput">
-        <engine type="FileStream">
+    <io name="TestIO">
+        <engine type="BP5">
             <!-- SST engine parameters -->
             <parameter key="RendezvousReaderCount" value="0"/>
             <parameter key="QueueLimit" value="1"/>
@@ -20,8 +20,8 @@
            Configuration for PDF calc and PDF Plot
         ===========================================-->
 
-    <io name="PDFAnalysisOutput">
-        <engine type="FileStream">
+    <io name="ReadIO">
+        <engine type="BP5">
             <!-- SST engine parameters -->
             <parameter key="RendezvousReaderCount" value="1"/>
             <parameter key="QueueLimit" value="5"/>
