@@ -97,7 +97,7 @@ class Adios2GrayScottPost(Application):
             Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
                                           env=self.env))
 
-        output_dir = os.path.dirname(self.config['out_file'])
+        output_dir = os.path.dirname(self.config['out_filename'])
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
