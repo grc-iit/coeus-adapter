@@ -262,6 +262,7 @@ class Adios2GrayScott(Application):
             pass
         else:
             output_file = self.config['out_file']
+            checkpoint_output = self.config['checkpoint_output']
             db_file = self.config['db_path']
             print(f'Removing {output_file}')
-            Rm([output_file, db_file], PsshExecInfo(hostfile=self.jarvis.hostfile))
+            Rm([output_file, db_file, checkpoint_output], PsshExecInfo(hostfile=self.jarvis.hostfile))
