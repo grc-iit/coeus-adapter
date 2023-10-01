@@ -112,6 +112,13 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
+
+  if(params.find("db_file") != params.end()){
+    std::string db_file = params["db_file"];
+  } else{
+    throw std::invalid_argument("db_file not found in parameters");
+  }
+
   //Hermes setup
   if(!Hermes->connect()){
     engine_logger->warn("Could not connect to Hermes", rank);

@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if (argc < 2) {
+  if (argc < 4) {
     if (rank == 0) {
       std::cerr << "Please provide the number of steps as an argument." << std::endl;
     }
@@ -25,11 +25,13 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  int N = std::stoi(argv[1]);  // Number of steps
+  int N = std::stoi(argv[1]);
+  std::string config_file = argv[2];
+  std::string out_file = argv[3];
 
-  adios2::ADIOS adios("operator_comp.xml", MPI_COMM_WORLD);
+  adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
-  adios2::Engine engine = io.Open("data.bp", adios2::Mode::Write);
+  adios2::Engine engine = io.Open(out_file, adios2::Mode::Write);
 
   double accumulated_time = 0.0;
 

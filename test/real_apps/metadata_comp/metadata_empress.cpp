@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if (argc < 2) {
+  if (argc < 3) {
     if (rank == 0) {
       std::cerr << "Please provide the number of steps as an argument." << std::endl;
     }
@@ -31,13 +31,14 @@ int main(int argc, char* argv[]) {
   }
 
   int N = std::stoi(argv[1]);  // Number of steps
+  std::string db_path = argv[2];  // Number of steps
 
-  adios2::ADIOS adios("operator_comp.xml", MPI_COMM_WORLD);
+  adios2::ADIOS adios(MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
 
   auto var = io.DefineVariable<double>("vector", {3}, {0}, {3}, adios2::ConstantDims);
 
-  SQLiteWrapper db("benchmark_metadata.db");
+  SQLiteWrapper db(db_path);
 
   MPI_Barrier(MPI_COMM_WORLD);
 

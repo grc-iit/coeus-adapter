@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 
   int N = std::stoi(argv[1]);  // Number of steps
 
-  adios2::ADIOS adios("operator_comp.xml", MPI_COMM_WORLD);
+  adios2::ADIOS adios(MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
   auto var = io.DefineVariable<double>("vector", {3}, {0}, {3}, adios2::ConstantDims);
 

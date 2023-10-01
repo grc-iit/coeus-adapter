@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if(argc != 3) {
+  if(argc < 5) {
     if(rank == 0) {
       std::cout << "Usage: " << argv[0] << " <N> <B>" << std::endl;
     }
@@ -27,16 +27,18 @@ int main(int argc, char *argv[]) {
 
   const int N = std::stoi(argv[1]);
   const size_t B = std::stoul(argv[2]);
+  std::string config_path = argv[3];
+  std::string out_file = argv[4];
 
   std::vector<char> data(B, rank);
 
-  adios2::ADIOS adios("io_comp.xml", MPI_COMM_WORLD);
+  adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
   io.SetEngine("BPFile");
 
   auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
 
-  auto engine = io.Open("data.bp", adios2::Mode::Write);
+  auto engine = io.Open(out_file, adios2::Mode::Write);
 
   MPI_Barrier(MPI_COMM_WORLD);
   double localPutTime = 0.0;
@@ -53,7 +55,7 @@ int main(int argc, char *argv[]) {
   engine.Close();
 
   adios2::IO readIO = adios.DeclareIO("ReadIO");
-  auto readEngine = readIO.Open("data.bp", adios2::Mode::Read);
+  auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
   adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
 
   MPI_Barrier(MPI_COMM_WORLD);
