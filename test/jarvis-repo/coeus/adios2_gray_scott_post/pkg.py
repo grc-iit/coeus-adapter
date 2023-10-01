@@ -16,7 +16,7 @@ class Adios2GrayScottPost(Application):
         """
         Initialize paths
         """
-        self.adios2_xml_path = f'{self.shared_dir}/config/adios2.xml'
+        self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
         self.settings_json_path = f'{self.shared_dir}/settings-files.json'
         self.var_json_path = f'{self.shared_dir}/var.json'
         self.operator_json_path = f'{self.shared_dir}/operator.json'
