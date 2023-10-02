@@ -37,9 +37,9 @@ int main(int argc, char* argv[]) {
   adios2::Variable<double> diffVec;
 
   double normValue;
-  double diffValue;
+  std::vector<double> diffValue;
 
-  std::vector<double> current_data(3), previous_data(3);
+  std::vector<double> current_data(3), previous_data(3, 0);
 
   double accumulated_time = 0.0;
   int step = 0;
@@ -60,24 +60,28 @@ int main(int argc, char* argv[]) {
       return -1;
     }
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     if(engine_name == "adios") {
-      engine.Get(var, current_data.data());
-      engine.EndStep();
+      auto start = std::chrono::high_resolution_clock::now();
+      engine.Get(var, current_data);
 
-      double current_norm = norm(current_data);
+      normValue = norm(current_data);
 
-      if (step > 0) {
-        double diff_x = current_data[0] - previous_data[0];
-        double diff_y = current_data[1] - previous_data[1];
-        double diff_z = current_data[2] - previous_data[2];
-      }
+      diffValue[0] = current_data[0] - previous_data[0];
+      diffValue[1] = current_data[1] - previous_data[1];
+      diffValue[2] = current_data[2] - previous_data[2];
+
+      auto stop = std::chrono::high_resolution_clock::now();
+      previous_data = current_data;
+      accumulated_time += std::chrono::duration<double, std::micro>(stop - start).count();
     }
     else if(engine_name == "hermes"){
+      auto start = std::chrono::high_resolution_clock::now();
+
       engine.Get(normVec, normValue);
       engine.Get(diffVec, diffValue);
-      engine.EndStep();
+
+      auto stop = std::chrono::high_resolution_clock::now();
+      accumulated_time += std::chrono::duration<double, std::micro>(stop - start).count();
     }
     else{
       if (rank == 0) {
@@ -86,23 +90,42 @@ int main(int argc, char* argv[]) {
       MPI_Finalize();
       return -1;
     }
+    engine.EndStep();
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    accumulated_time += std::chrono::duration<double, std::micro>(stop - start).count();
-
-    previous_data = current_data;
     step++;
   }
 
   engine.Close();
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0){
+    std::cout << "Total Get time: " << accumulated_time << std::endl;
+  }
 
   double total_time;
   MPI_Reduce(&accumulated_time, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
   MPI_Barrier(MPI_COMM_WORLD);
 
-  if (rank == 0) {
-    std::ofstream outputFile("operator_consumer_results.csv", std::ios_base::app); // Append to the file
+  if(rank == 0) {
+    auto filename = "operator_consumer_results.csv";
+    std::string header = "Size,N,TotalTime\n";
+    bool needHeader = false;
+
+    // Check if the file is empty or doesn't exist
+    std::ifstream checkFile(filename);
+    if (!checkFile.good() || checkFile.peek() == std::ifstream::traits_type::eof()) {
+      needHeader = true;
+    }
+    checkFile.close();
+
+    // Open the file for appending
+    std::ofstream outputFile(filename, std::ios_base::app);
+
+    // Write the header if needed
+    if (needHeader) {
+      outputFile << header;
+    }
+
+    // Append the results
     outputFile << size << "," << step << "," << total_time << std::endl;
     outputFile.close();
   }

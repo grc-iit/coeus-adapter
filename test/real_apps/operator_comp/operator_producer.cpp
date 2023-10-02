@@ -31,13 +31,14 @@ int main(int argc, char* argv[]) {
 
   adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
+  auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(size), 0}, {1, 3});
+
   adios2::Engine engine = io.Open(out_file, adios2::Mode::Write);
 
   double accumulated_time = 0.0;
 
   for (int step = 0; step < N; ++step) {
     std::vector<double> data = produce_vector(step);
-    auto var = io.DefineVariable<double>("vector", {3}, {0}, {3}, adios2::ConstantDims);
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -50,14 +51,36 @@ int main(int argc, char* argv[]) {
   }
 
   engine.Close();
-
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0){
+    std::cout << "\tPut done, time: " << accumulated_time << std::endl;
+  }
   double total_time;
   MPI_Reduce(&accumulated_time, &total_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   MPI_Barrier(MPI_COMM_WORLD);
 
-  if (rank == 0) {
-    std::ofstream outputFile("operator_consumer_results.csv", std::ios_base::app); // Append to the file
+  if(rank == 0) {
+    auto filename = "operator_producer_results.csv";
+    std::string header = "Size,N,TotalTime\n";
+    bool needHeader = false;
+
+    // Check if the file is empty or doesn't exist
+    std::ifstream checkFile(filename);
+    if (!checkFile.good() || checkFile.peek() == std::ifstream::traits_type::eof()) {
+      needHeader = true;
+    }
+    checkFile.close();
+
+    // Open the file for appending
+    std::ofstream outputFile(filename, std::ios_base::app);
+
+    // Write the header if needed
+    if (needHeader) {
+      outputFile << header;
+    }
+
+    // Append the results
     outputFile << size << "," << N << "," << total_time << std::endl;
     outputFile.close();
   }
