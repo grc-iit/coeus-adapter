@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
   if(argc < 5) {
     if(rank == 0) {
-      std::cout << "Usage: " << argv[0] << " <N> <B>" << std::endl;
+      std::cout << "Usage: " << argv[0] << " <N> <B> " << std::endl;
     }
     MPI_Finalize();
     return 1;
@@ -30,11 +30,13 @@ int main(int argc, char *argv[]) {
   std::string config_path = argv[3];
   std::string out_file = argv[4];
 
+  std::cout << "Running I/O comparison with " << N << " steps, " <<
+  B << " bytes per step, and " << size << " processes." << std::endl;
+
   std::vector<char> data(B, rank);
 
   adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
-  io.SetEngine("BPFile");
 
   auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
 
@@ -45,12 +47,13 @@ int main(int argc, char *argv[]) {
   for(int i = 0; i < N; ++i) {
     engine.BeginStep();
     auto startPut = std::chrono::high_resolution_clock::now();
-    engine.Put(variable, data.data());
+    engine.Put<char>(variable, data.data());
     auto endPut = std::chrono::high_resolution_clock::now();
     localPutTime += std::chrono::duration<double>(startPut - endPut).count();
     engine.EndStep();
   }
   MPI_Barrier(MPI_COMM_WORLD);
+  std::cout << "Rank " << rank << " local put time: " << localPutTime << std::endl;
 
   engine.Close();
 
