@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   while(readEngine.BeginStep() == adios2::StepStatus::OK) {
     adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
     auto startGet = std::chrono::high_resolution_clock::now();
-    readEngine.Get(readVariable, data.data());
+    readEngine.Get(readVariable, data);
     readEngine.EndStep();
   }
   auto endGet = std::chrono::high_resolution_clock::now();
