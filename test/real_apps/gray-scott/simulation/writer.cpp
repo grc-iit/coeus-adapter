@@ -117,6 +117,7 @@ void Writer::write(int step, const GrayScott &sim)
         writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
+
         writer.Put<double>(var_v, v.data());
         writer.EndStep();
     }
@@ -138,6 +139,7 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else
     {
+
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
 

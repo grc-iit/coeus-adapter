@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Release
+  
+jobs:
+  container-test-job:
+    runs-on: ubuntu-latest
+    container:
+      image: scslab/coeus:0.9.3
+    steps:
+    - name: Check for dockerenv file
+      run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
+      
+    - name: Get Sources
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.ref }}
+
+    - name: Configure CMake
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: lint
+      run: cd ${{github.workspace}}/build && make lint
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      
+    - name: Test
+      run: cd ${{github.workspace}}/build && ctest --verbose
+

@@ -2,12 +2,26 @@ cmake_minimum_required(VERSION 3.10)
 project(COEUS)
 
 set(CMAKE_CXX_STANDARD 17)
-MESSAGE(STATUS "PATH: ${PATH}")
+
 #------------------------------------------------------------------------------
-# Global variables
+# Global variable
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${COEUS_ROOT}/include)
+MESSAGE(STATUS "CMAKE_PREFIX_PATH: $ENV{CMAKE_PREFIX_PATH}")
+#------------------------------------------------------------------------------
+# Solving some weirdness with CLion docker toolchain
+#------------------------------------------------------------------------------
+if(EXISTS "/.dockerenv")
+    # Inside a Docker container
+    file(GLOB ADIOS2_INCLUDE_DIR "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/adios2-*/include")
+    file(GLOB Hermes_INCLUDE_DIRS "/opt/software/linux-ubuntu22.04-zen2/gcc-11.3.0/hermes-master-*/include")
+else()
+    # Not inside a Docker container
+    set(ADIOS2_INCLUDE_DIR "")
+endif()
+MESSAGE(STATUS "ADIOS2_INCLUDE_DIR: " ${ADIOS2_INCLUDE_DIR})
+MESSAGE(STATUS "Hermes_INCLUDE_DIRS: " ${Hermes_INCLUDE_DIRS})
+MESSAGE(STATUS "Hermes_INCLUDE_DIR: " ${Hermes_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
@@ -52,47 +66,67 @@ endif()
 if(NOT COEUS_INSTALL_DATA_DIR)
     set(COEUS_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
-message("HERE: ${COEUS_INSTALL_BIN_DIR}")
+message(STATUS "Installing in: ${COEUS_INSTALL_BIN_DIR}")
 
 #------------------------------------------------------------------------------
 # Optimization
 #------------------------------------------------------------------------------
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("IN DEBUG MODE")
-    set(CMAKE_CXX_FLAGS "-g -O0")
+    message(WARNING "Building in debug mode")
+    set(CMAKE_CXX_FLAGS "-g -O0 ${CMAKE_CXX_FLAGS}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("IN RELEASE MODE")
-    set(CMAKE_CXX_FLAGS "-g -O3")
+    message(STATUS "Building in release mode")
+    set(CMAKE_CXX_FLAGS "-g -O3 ${CMAKE_CXX_FLAGS}")
 endif()
 
 #------------------------------------------------------------------------------
 # External libraries
 #------------------------------------------------------------------------------
-
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
 
 # COEUS
 find_package(ADIOS2 REQUIRED)
-message(STATUS "ADIOS2_FOUND: ${ADIOS2_FOUND}")
-message(STATUS "ADIOS2_INCLUDES: ${ADIOS2_INCLUDES}")
-message(STATUS "ADIOS2_LIBRARIES: ${ADIOS2_LIBRARIES}")
-
+message(STATUS "Found Adios2")
+MESSAGE(STATUS "Adios config: ${ADIOS2_CONFIG}")
 # MPI
 find_package(MPI REQUIRED COMPONENTS C CXX)
-message(STATUS "found mpi.h at ${MPI_CXX_INCLUDE_DIRS}")
+
+#Yaml-cpp
+find_package(yaml-cpp REQUIRED)
+if(yaml-cpp_FOUND)
+    message(STATUS "found yaml-cpp at ${yaml-cpp_DIR}")
+endif()
 
 # OpenMP
 find_package(OpenMP REQUIRED COMPONENTS C CXX)
-message(STATUS "found omp.h at ${OpenMP_CXX_INCLUDE_DIRS}")
+message(STATUS "Found OpenMP")
 
+find_package(SQLite3 REQUIRED)
+message(STATUS "Found SQLite3")
+
+#spdlog
+add_subdirectory(external_libraries/spdlog)
+add_subdirectory(external_libraries/cereal)
+add_subdirectory(external_libraries/rapidjson)
+
+#Gtest
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        f8d7d77c06936315286eb55f8de22cd23c188571
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
 if(COEUS_ENABLE_COVERAGE)
     set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage" CACHE STRING
-        "Flags to the coverage program to perform coverage inspection")
+            "Flags to the coverage program to perform coverage inspection")
     mark_as_advanced(COVERAGE_FLAGS)
 
     macro(set_coverage_flags target)
@@ -103,6 +137,29 @@ if(COEUS_ENABLE_COVERAGE)
                 )
     endmacro()
 endif()
+
+#------------------------------------------------------------------------------
+# Enable Testing
+#------------------------------------------------------------------------------
+function(pytest test_type test_name)
+    set(script ${CMAKE_SOURCE_DIR}/CI/py_coeus_ci/bin/run_test.py)
+
+    add_test(NAME ${test_name}
+            COMMAND python3 ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR})
+endfunction()
+
+function(pytest_benchmark test_type test_name label)
+    set(script ${CMAKE_SOURCE_DIR}/CI/py_coeus_ci/bin/run_bench_test.py)
+    # Number of processes we want to run
+    set(processes_list 1 2 4 8 16 32)
+    foreach(num_processes ${processes_list})
+        add_test(NAME ${test_name}_${num_processes}
+                COMMAND python3 ${script} ${test_type} ${test_name} ${CMAKE_BINARY_DIR} ${num_processes})
+        set_tests_properties(${test_name}_${num_processes} PROPERTIES LABELS ${label})
+    endforeach ()
+endfunction()
+
+
 
 #------------------------------------------------------------------------------
 # Documentation
@@ -125,16 +182,17 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(src)
-add_custom_target(lint COMMAND bash ${COEUS_ROOT}/scripts/lint.sh ${COEUS_ROOT})
+#add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
 # Build tests + benchmarks
 #------------------------------------------------------------------------------
-set(TEST_MAIN ${COEUS_ROOT}/test/unit)
+set(TEST_MAIN ${PROJECT_SOURCE_DIR}/test/unit)
+#set(TEST_MAIN ${CMAKE_SOURCE_DIR}/test/unit)
 enable_testing()
 add_subdirectory(test)
 
 #------------------------------------------------------------------------------
 # Install COEUS
 #------------------------------------------------------------------------------
-install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
+#install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})

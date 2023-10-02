@@ -16,6 +16,10 @@
 #include <string>
 #include <thread>
 
+#include "../../../../external_libraries/spdlog/include/spdlog/logger.h"
+#include "../../../../external_libraries/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
+#include "../../../../external_libraries/spdlog/include/spdlog/sinks/basic_file_sink.h"
+
 #include "adios2.h"
 
 bool epsilon(double d) { return (d < 1.0e-20); }
@@ -108,11 +112,14 @@ void printUsage()
            "the analysis results\n\n";
 }
 
+
 /*
  * MAIN
  */
 int main(int argc, char *argv[])
 {
+    auto app_start_time = std::chrono::high_resolution_clock::now(); // Record start time of the application
+
     int provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     int rank, comm_size, wrank;
@@ -125,6 +132,36 @@ int main(int argc, char *argv[])
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
+
+    // Create the logger and set up console and file sinks
+    std::string binaryDir = BINARY_DIR;
+
+    auto file_sink_inquire = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/inquire_an_logs.txt", true);
+    auto file_sink_minmax = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/minmax_an_logs.txt", true);
+    auto file_sink_total = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/total_an_logs.txt", true);
+    auto file_sink_begin = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/begin_an_logs.txt", true);
+
+    file_sink_inquire->set_level(spdlog::level::trace);
+    file_sink_inquire->set_pattern("%v");
+
+    file_sink_minmax->set_level(spdlog::level::trace);
+    file_sink_minmax->set_pattern("%v");
+
+    file_sink_total->set_level(spdlog::level::trace);
+    file_sink_total->set_pattern("%v");
+
+    file_sink_begin->set_level(spdlog::level::trace);
+    file_sink_begin->set_pattern("%v");
+
+    spdlog::logger logger_inquire("inquire_logger", {file_sink_inquire });
+    spdlog::logger logger_minmax("minmax_logger", {file_sink_minmax });
+    spdlog::logger logger_total("total_logger", {file_sink_total });
+    spdlog::logger logger_begin("beggin_logger", {file_sink_begin });
+
+    logger_inquire.set_level(spdlog::level::debug);
+    logger_minmax.set_level(spdlog::level::debug);
+    logger_total.set_level(spdlog::level::debug);
+    logger_begin.set_level(spdlog::level::debug);
 
     if (argc < 3)
     {
@@ -207,13 +244,18 @@ int main(int argc, char *argv[])
         bool shouldIWrite = (!rank || reader_io.EngineType() == "HDF5");
 
         // read data per timestep
-        int stepAnalysis = 0;
+        int stepAnalysis = 1;
         while (true)
         {
 
             // Begin step
+            auto begin_start_time = std::chrono::high_resolution_clock::now();
             adios2::StepStatus read_status =
                 reader.BeginStep(adios2::StepMode::Read, 10.0f);
+            auto begin_end_time = std::chrono::high_resolution_clock::now();
+            auto begin_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(begin_end_time - begin_start_time);
+            logger_begin.debug("Rank {} - Step {} - ET {} - nanoseconds", rank, stepAnalysis, begin_duration.count());
+
             if (read_status == adios2::StepStatus::NotReady)
             {
                 // std::cout << "Stream not ready yet. Waiting...\n";
@@ -225,20 +267,31 @@ int main(int argc, char *argv[])
                 break;
             }
 
-            int stepSimOut = reader.CurrentStep();
+            // int stepSimOut = reader.CurrentStep();
+            int stepSimOut = stepAnalysis;
 
             // Inquire variable and set the selection at the first step only
             // This assumes that the variable dimensions do not change across
             // timesteps
 
             // Inquire variable
+            auto inquire_start_time = std::chrono::high_resolution_clock::now();
             var_u_in = reader_io.InquireVariable<double>("U");
             var_v_in = reader_io.InquireVariable<double>("V");
             var_step_in = reader_io.InquireVariable<int>("step");
+            auto inquire_end_time = std::chrono::high_resolution_clock::now();
+            auto inquire_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(inquire_end_time - inquire_start_time);
+            logger_inquire.debug("Rank {} - Step {} - ET {} - nanoseconds", rank, stepAnalysis, inquire_duration.count());
+
+
+            auto minmax_start_time = std::chrono::high_resolution_clock::now();
 
             std::pair<double, double> minmax_u = var_u_in.MinMax();
             std::pair<double, double> minmax_v = var_v_in.MinMax();
 
+            auto minmax_end_time = std::chrono::high_resolution_clock::now();
+            auto minmax_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(minmax_end_time - minmax_start_time);
+            logger_minmax.debug("Rank {} - Step {} - ET {} - nanoseconds", rank, stepAnalysis, minmax_duration.count());
             shape = var_u_in.Shape();
 
             // Calculate global and local sizes of U and V
@@ -255,10 +308,6 @@ int main(int argc, char *argv[])
                 count1 = shape[0] - count1 * (comm_size - 1);
             }
 
-            /*std::cout << "  rank " << rank << " slice start={" <<  start1
-              << ",0,0} count={" << count1  << "," << shape[1] << "," <<
-              shape[2]
-              << "}" << std::endl;*/
 
             // Set selection
             var_u_in.SetSelection(adios2::Box<adios2::Dims>(
@@ -356,6 +405,10 @@ int main(int argc, char *argv[])
         reader.Close();
         writer.Close();
     }
+
+    auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
+    auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
+    logger_total.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
 
     MPI_Barrier(comm);
     MPI_Finalize();
