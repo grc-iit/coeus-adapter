@@ -17,6 +17,19 @@ void print_vector(std::vector<T> vec){
   std::cout << std::endl;
 }
 
+template <typename T>
+void print_meta(int rank, int size, adios2::Variable<T> var){
+  for(int i = 0; i < size; i++){
+    if(i==rank){
+      std::cout << rank << std::endl;
+      std::cout << var.Name() << std::endl;
+      print_vector(var.Shape());
+      print_vector(var.Start());
+      print_vector(var.Count());
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
@@ -60,30 +73,7 @@ int main(int argc, char* argv[]) {
   while (engine.BeginStep() == adios2::StepStatus::OK) {
     if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
-      if(rank==0){
-        std::cout << var.Name() << std::endl;
-        print_vector(var.Shape());
-        print_vector(var.Start());
-        print_vector(var.Count());
-      }
-      if(rank==1){
-        std::cout << var.Name() << std::endl;
-        print_vector(var.Shape());
-        print_vector(var.Start());
-        print_vector(var.Count());
-      }
-      if(rank==2){
-        std::cout << var.Name() << std::endl;
-        print_vector(var.Shape());
-        print_vector(var.Start());
-        print_vector(var.Count());
-      }
-      if(rank==3){
-        std::cout << var.Name() << std::endl;
-        print_vector(var.Shape());
-        print_vector(var.Start());
-        print_vector(var.Count());
-      }
+      print_meta(rank, size, var);
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
