@@ -105,6 +105,7 @@ message(STATUS "Found OpenMP")
 
 find_package(SQLite3 REQUIRED)
 message(STATUS "Found SQLite3")
+include_directories(${SQLite3_INCLUDE_DIRS})
 
 #spdlog
 add_subdirectory(external_libraries/spdlog)
