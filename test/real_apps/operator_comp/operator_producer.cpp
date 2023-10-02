@@ -10,6 +10,14 @@ std::vector<double> produce_vector(int step) {
   return {step * 1.0, step * 2.0, step * 3.0};
 }
 
+template <typename T>
+void print_vector(std::vector<T> vec){
+  for(T obj : vec){
+    std::cout << obj << " ";
+  }
+  std::cout << std::endl;
+}
+
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
@@ -44,6 +52,7 @@ int main(int argc, char* argv[]) {
 
     engine.BeginStep();
     engine.Put(var, data.data());
+    if(rank==0) print_vector(data);
     engine.EndStep();
 
     auto stop = std::chrono::high_resolution_clock::now();

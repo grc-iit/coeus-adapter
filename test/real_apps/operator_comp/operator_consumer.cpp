@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
   adios2::Variable<double> diffVec;
 
   double normValue;
-  std::vector<double> diffValue;
+  std::vector<double> diffValue(3);
 
   std::vector<double> current_data(3), previous_data(3, 0);
 
