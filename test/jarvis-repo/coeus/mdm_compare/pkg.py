@@ -71,9 +71,6 @@ class MdmCompare(Application):
         :return: None
         """
         self.update_config(kwargs, rebuild=False)
-        db_dir = os.path.dirname(self.config['db_path'])
-        Mkdir(db_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                   env=self.env))
 
     def start(self):
         """
