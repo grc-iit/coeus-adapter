@@ -59,13 +59,12 @@ int main(int argc, char *argv[]) {
 
   adios2::IO readIO = adios.DeclareIO("ReadIO");
   auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
-  adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
 
   MPI_Barrier(MPI_COMM_WORLD);
   double localGetTime = 0.0;
   auto startGet = std::chrono::high_resolution_clock::now();
-  for(int i = 0; i < N; ++i) {
-    readEngine.BeginStep();
+  while(readEngine.BeginStep() == adios2::StepStatus::OK) {
+    adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
     auto startGet = std::chrono::high_resolution_clock::now();
     readEngine.Get(readVariable, data.data());
     auto endGet = std::chrono::high_resolution_clock::now();
