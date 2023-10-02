@@ -117,18 +117,19 @@ class Adios2ProducerConsumer(Application):
         :return: None
         """
 
-        num_steps = self.config['N']
         out_file = self.config['out_file']
 
         if self.config['mode'].lower() == 'producer':
             exec = 'operator_comp_producer'
+            steps_or_engine = self.config['N']
         elif self.config['mode'].lower() == 'consumer':
             exec = 'operator_comp_consumer'
+            steps_or_engine = self.config['engine'].lower()
         else:
             raise Exception('Choose either producer or conusmer')
 
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'{exec} {num_steps} {self.adios2_xml_path} {out_file}',
+        Exec(f'{exec} {steps_or_engine} {self.adios2_xml_path} {out_file}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,

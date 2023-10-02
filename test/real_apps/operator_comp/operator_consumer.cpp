@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
   int step = 0;
 
   while (engine.BeginStep() == adios2::StepStatus::OK) {
-    if(engine_name == "adios") {
+    if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
     }
     else if(engine_name == "hermes"){
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
       return -1;
     }
 
-    if(engine_name == "adios") {
+    if(engine_name == "bp5") {
       auto start = std::chrono::high_resolution_clock::now();
       engine.Get(var, current_data);
 
