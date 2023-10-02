@@ -52,7 +52,6 @@ int main(int argc, char* argv[]) {
 
     engine.BeginStep();
     engine.Put(var, data.data());
-    if(rank==0) print_vector(data);
     engine.EndStep();
 
     auto stop = std::chrono::high_resolution_clock::now();

@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   double normValue;
   std::vector<double> diffValue(3);
 
-  std::vector<double> current_data(3), previous_data(3, 0);
+  std::vector<double> current_data(3,1), previous_data(3, 0);
 
   double accumulated_time = 0.0;
   int step = 0;
@@ -75,12 +75,14 @@ int main(int argc, char* argv[]) {
 
     if(engine_name == "bp5") {
       auto start = std::chrono::high_resolution_clock::now();
+      if(rank == 0) std::cout << "data size bef: " << current_data.size() << std::endl;
       engine.Get(var, current_data);
 
       normValue = norm(current_data);
 
       if(rank == 0){
         std::cout << "step: " << step << std::endl;
+        std::cout << "data size aft: " << current_data.size() << std::endl;
         print_vector(current_data);
         print_vector(previous_data);
         std:: cout << "norm: " << normValue << std::endl;
