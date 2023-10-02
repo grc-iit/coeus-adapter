@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     checkFile.close();
 
     // Open the file for appending
-    std::ofstream outputFile("io_comp_results.csv", std::ios_base::app);
+    std::ofstream outputFile("metadata_hermes_results.csv", std::ios_base::app);
 
     // Write the header if needed
     if (needHeader) {
