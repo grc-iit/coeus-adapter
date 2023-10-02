@@ -9,6 +9,14 @@ double norm(const std::vector<double>& vec) {
   return std::sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
 }
 
+template <typename T>
+void print_vector(std::vector<T> vec){
+  for(T obj : vec){
+    std::cout << obj << " ";
+  }
+  std::cout << std::endl;
+}
+
 int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
@@ -52,7 +60,6 @@ int main(int argc, char* argv[]) {
   while (engine.BeginStep() == adios2::StepStatus::OK) {
     if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
-      if(rank==0) std::cout << var.Name() << std::endl;
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
@@ -69,11 +76,15 @@ int main(int argc, char* argv[]) {
     if(engine_name == "bp5") {
       auto start = std::chrono::high_resolution_clock::now();
       engine.Get(var, current_data);
-      if(rank==0) std::cout << current_data[0] << std::endl;
 
       normValue = norm(current_data);
-      if(rank==0) std::cout << normValue << std::endl;
 
+      if(rank == 0){
+        std::cout << "step: " << step << std::endl;
+        print_vector(current_data);
+        print_vector(previous_data);
+        std:: cout << "norm: " << normValue << std::endl;
+      }
 //      if(step > 0) {
 //        diffValue[0] = current_data[0] - previous_data[0];
 //        diffValue[1] = current_data[1] - previous_data[1];
@@ -85,8 +96,6 @@ int main(int argc, char* argv[]) {
       auto stop = std::chrono::high_resolution_clock::now();
       previous_data = current_data;
       accumulated_time += std::chrono::duration<double, std::micro>(stop - start).count();
-      if(rank==0) std::cout << step << std::endl;
-
     }
     else if(engine_name == "hermes"){
       auto start = std::chrono::high_resolution_clock::now();
