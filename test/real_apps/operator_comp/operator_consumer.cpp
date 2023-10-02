@@ -36,13 +36,6 @@ int main(int argc, char* argv[]) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
-  int comm_size, wrank;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
-
-  const unsigned int color = 2;
-  MPI_Comm comm;
-  MPI_Comm_split(MPI_COMM_WORLD, color, wrank, &comm);
 
   if (argc < 4) {
     if (rank == 0) {
@@ -61,7 +54,7 @@ int main(int argc, char* argv[]) {
                config_file << " and reading from " << in_file << std::endl;
   }
 
-  adios2::ADIOS adios(config_file, comm);
+  adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
   adios2::Engine engine = io.Open(in_file, adios2::Mode::Read);
 
@@ -80,7 +73,7 @@ int main(int argc, char* argv[]) {
   while (engine.BeginStep() == adios2::StepStatus::OK) {
     if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
-      print_meta(rank, size, var);
+//      print_meta(rank, size, var);
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
@@ -101,20 +94,13 @@ int main(int argc, char* argv[]) {
 
       normValue = norm(current_data);
 
-      if(rank == 0){
-        std::cout << "step: " << step << std::endl;
-        std::cout << "data size aft: " << current_data.size() << std::endl;
-        print_vector(current_data);
-        print_vector(previous_data);
-        std:: cout << "norm: " << normValue << std::endl;
+      if(step > 0) {
+        diffValue[0] = current_data[0] - previous_data[0];
+        diffValue[1] = current_data[1] - previous_data[1];
+        diffValue[2] = current_data[2] - previous_data[2];
+
+        if(rank==0) std::cout << diffValue[0] << std::endl;
       }
-//      if(step > 0) {
-//        diffValue[0] = current_data[0] - previous_data[0];
-//        diffValue[1] = current_data[1] - previous_data[1];
-//        diffValue[2] = current_data[2] - previous_data[2];
-//
-//        if(rank==0) std::cout << diffValue[0] << std::endl;
-//      }
 
       auto stop = std::chrono::high_resolution_clock::now();
       previous_data = current_data;
