@@ -44,10 +44,12 @@ int main(int argc, char* argv[]) {
 
   double localInsertAppsTime = 0.0, localInsertBlobsTime = 0.0, localInsertMetadataTime = 0.0;
   for (int step = 0; step < N; ++step) {
-    auto startInsertApps = std::chrono::high_resolution_clock::now();
-    db.UpdateTotalSteps("App" + std::to_string(rank), step);
-    auto endInsertApps = std::chrono::high_resolution_clock::now();
-    localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();
+    if(rank%20) {
+      auto startInsertApps = std::chrono::high_resolution_clock::now();
+      db.UpdateTotalSteps("App" + std::to_string(rank), step);
+      auto endInsertApps = std::chrono::high_resolution_clock::now();
+      localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();
+    }
 
     auto startInsertBlobs = std::chrono::high_resolution_clock::now();
     BlobInfo blobInfo("Bucket" + std::to_string(rank), "Blob" + std::to_string(step));
