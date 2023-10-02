@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
 
     if(engine_name == "bp5") {
       auto start = std::chrono::high_resolution_clock::now();
-      if(rank == 0) std::cout << "data size bef: " << current_data.size() << std::endl;
+
       engine.Get(var, current_data);
 
       normValue = norm(current_data);
@@ -98,8 +98,6 @@ int main(int argc, char* argv[]) {
         diffValue[0] = current_data[0] - previous_data[0];
         diffValue[1] = current_data[1] - previous_data[1];
         diffValue[2] = current_data[2] - previous_data[2];
-
-        if(rank==0) std::cout << diffValue[0] << std::endl;
       }
 
       auto stop = std::chrono::high_resolution_clock::now();
