@@ -74,13 +74,13 @@ int main(int argc, char* argv[]) {
       normValue = norm(current_data);
       if(rank==0) std::cout << normValue << std::endl;
 
-      if(step > 0) {
-        diffValue[0] = current_data[0] - previous_data[0];
-        diffValue[1] = current_data[1] - previous_data[1];
-        diffValue[2] = current_data[2] - previous_data[2];
-
-        if(rank==0) std::cout << diffValue[0] << std::endl;
-      }
+//      if(step > 0) {
+//        diffValue[0] = current_data[0] - previous_data[0];
+//        diffValue[1] = current_data[1] - previous_data[1];
+//        diffValue[2] = current_data[2] - previous_data[2];
+//
+//        if(rank==0) std::cout << diffValue[0] << std::endl;
+//      }
 
       auto stop = std::chrono::high_resolution_clock::now();
       previous_data = current_data;
