@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
   adios2::ADIOS adios(MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
 
-  auto var = io.DefineVariable<double>("vector", {3}, {0}, {3}, adios2::ConstantDims);
+  auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(rank), 0}, {1, 3}, adios2::ConstantDims);
 
   SQLiteWrapper db(db_path);
 
