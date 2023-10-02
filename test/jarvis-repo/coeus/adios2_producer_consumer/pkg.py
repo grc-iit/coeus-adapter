@@ -150,9 +150,10 @@ class Adios2ProducerConsumer(Application):
 
         :return: None
         """
-        if lower(self.config['mode']) == 'producer':
+        if self.config['mode'].lower() == 'producer':
             return
-        output_file = self.config['out_file']
-        db_file = self.config['db_path']
-        print(f'Removing {output_dir}')
-        Rm([output_file, db_file], PsshExecInfo(hostfile=self.jarvis.hostfile))
+        output_file = [self.config['out_file'],
+                       self.config['db_path']
+                       ]
+        print(f'Removing {output_file}')
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
