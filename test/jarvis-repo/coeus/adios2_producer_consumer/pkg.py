@@ -120,9 +120,9 @@ class Adios2ProducerConsumer(Application):
         num_steps = self.config['N']
         out_file = self.config['out_file']
 
-        if lower(self.config['mode']) == 'producer':
+        if self.config['mode'].lower() == 'producer':
             exec = 'operator_comp_producer'
-        elif lower(self.config['mode']) == 'consumer':
+        elif self.config['mode'].lower() == 'consumer':
             exec = 'operator_comp_consumer'
         else:
             raise Exception('Choose either producer or conusmer')
