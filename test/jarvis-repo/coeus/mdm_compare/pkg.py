@@ -59,7 +59,9 @@ class MdmCompare(Application):
                 'default': 'benchmark_metadata.db',
             },
         ]
-
+    # ppn=20 metadata_engine=empress db_path=/mnt/nvme/jcernudagarcia/benchmark_metadata.db  nprocs=1
+    # ppn=20 metadata_engine=empress db_path=/mnt/nvme/jcernudagarcia/client/benchmark_metadata.db  nprocs=1
+    # ppn=20 metadata_engine=hermes db_path=db_path=/mnt/nvme/jcernudagarcia/benchmark_metadata.db  nprocs=1
     def configure(self, **kwargs):
         """
         Converts the Jarvis configuration to application-specific configuration.
@@ -68,7 +70,10 @@ class MdmCompare(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        pass
+        self.update_config(kwargs, rebuild=False)
+        db_dir = os.path.dirname(self.config['db_path'])
+        Mkdir(db_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
+                                   env=self.env))
 
     def start(self):
         """
