@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 
   adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
-  auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(size), 0}, {1, 3});
+  auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(rank), 0}, {1, 3});
 
   adios2::Engine engine = io.Open(out_file, adios2::Mode::Write);
 
