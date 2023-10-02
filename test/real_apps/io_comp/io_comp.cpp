@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   localPutTime += std::chrono::duration<double>(endPut - startPut).count();
-  std::cout << "Rank " << rank << " local put time: " << localPutTime << std::endl;
   engine.Close();
 
   adios2::IO readIO = adios.DeclareIO("ReadIO");
@@ -82,9 +81,25 @@ int main(int argc, char *argv[]) {
   MPI_Reduce(&localGetTime, &globalGetTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if(rank == 0) {
-    globalPutTime /= (size*N);  // Calculate average
-    globalGetTime /= (size*N);  // Calculate average
-    std::ofstream outputFile("io_comp_results.csv", std::ios_base::app); // Append to the file
+    std::string header = "Size,B,N,GlobalPutTime,GlobalGetTime\n";
+    bool needHeader = false;
+
+    // Check if the file is empty or doesn't exist
+    std::ifstream checkFile("io_comp_results.csv");
+    if (!checkFile.good() || checkFile.peek() == std::ifstream::traits_type::eof()) {
+      needHeader = true;
+    }
+    checkFile.close();
+
+    // Open the file for appending
+    std::ofstream outputFile("io_comp_results.csv", std::ios_base::app);
+
+    // Write the header if needed
+    if (needHeader) {
+      outputFile << header;
+    }
+
+    // Append the results
     outputFile << size << "," << B << "," << N << "," << globalPutTime << "," << globalGetTime << std::endl;
     outputFile.close();
   }
