@@ -66,6 +66,24 @@ int main(int argc, char* argv[]) {
         print_vector(var.Start());
         print_vector(var.Count());
       }
+      if(rank==1){
+        std::cout << var.Name() << std::endl;
+        print_vector(var.Shape());
+        print_vector(var.Start());
+        print_vector(var.Count());
+      }
+      if(rank==2){
+        std::cout << var.Name() << std::endl;
+        print_vector(var.Shape());
+        print_vector(var.Start());
+        print_vector(var.Count());
+      }
+      if(rank==3){
+        std::cout << var.Name() << std::endl;
+        print_vector(var.Shape());
+        print_vector(var.Start());
+        print_vector(var.Count());
+      }
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
