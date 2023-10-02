@@ -28,6 +28,11 @@ int main(int argc, char* argv[]) {
   std::string config_file = argv[2];
   std::string in_file = argv[3];
 
+  if(rank==0) {
+    std::cout << "Running consumer with " << engine_name << " config, " <<
+               config_file << " and reading from " << in_file << std::endl;
+  }
+
   adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
   adios2::Engine engine = io.Open(in_file, adios2::Mode::Read);
@@ -47,6 +52,7 @@ int main(int argc, char* argv[]) {
   while (engine.BeginStep() == adios2::StepStatus::OK) {
     if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
+      if(rank==0) std::cout << var.Name() << std::endl;
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
@@ -63,12 +69,16 @@ int main(int argc, char* argv[]) {
     if(engine_name == "bp5") {
       auto start = std::chrono::high_resolution_clock::now();
       engine.Get(var, current_data);
+      if(rank==0) std::cout << current_data[0] << std::endl;
 
       normValue = norm(current_data);
+      if(rank==0) std::cout << normValue << std::endl;
 
       diffValue[0] = current_data[0] - previous_data[0];
       diffValue[1] = current_data[1] - previous_data[1];
       diffValue[2] = current_data[2] - previous_data[2];
+
+      if(rank==0) std::cout << diffValue[0] << std::endl;
 
       auto stop = std::chrono::high_resolution_clock::now();
       previous_data = current_data;

@@ -5,9 +5,4 @@
             <!-- You can add engine-specific parameters here -->
         </engine>
     </io>
-    <io name="ReadIO">
-        <engine type="BPFile">
-            <!-- Parameters for reading can go here -->
-        </engine>
-    </io>
 </adios-config>
