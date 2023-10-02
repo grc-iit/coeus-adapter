@@ -60,6 +60,12 @@ int main(int argc, char* argv[]) {
   while (engine.BeginStep() == adios2::StepStatus::OK) {
     if(engine_name == "bp5") {
       var = io.InquireVariable<double>("vector");
+      if(rank==0){
+        std::cout << var.Name() << std::endl;
+        print_vector(var.Shape());
+        print_vector(var.Start());
+        print_vector(var.Count());
+      }
     }
     else if(engine_name == "hermes"){
       normVec = io.InquireVariable<double>("norm");
