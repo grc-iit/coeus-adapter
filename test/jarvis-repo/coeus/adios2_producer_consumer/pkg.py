@@ -118,7 +118,7 @@ class Adios2ProducerConsumer(Application):
         """
 
         num_steps = self.config['N']
-        output_dir = self.config['output_dir']
+        out_file = self.config['out_file']
 
         if lower(self.config['mode']) == 'producer':
             exec = 'operator_comp_producer'
@@ -128,7 +128,7 @@ class Adios2ProducerConsumer(Application):
             raise Exception('Choose either producer or conusmer')
 
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'{exec} {num_steps} {self.adios2_xml_path} {output_dir}',
+        Exec(f'{exec} {num_steps} {self.adios2_xml_path} {out_file}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,

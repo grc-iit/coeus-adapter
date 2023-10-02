@@ -118,9 +118,9 @@ class IoComp(Application):
 
         num_steps = self.config['N']
         size_io = self.config['B']
-        output_dir = self.config['output_dir']
+        out_file = self.config['out_file']
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {output_dir}',
+        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {out_file}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
