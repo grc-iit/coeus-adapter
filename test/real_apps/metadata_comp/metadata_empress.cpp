@@ -106,6 +106,37 @@ int main(int argc, char* argv[]) {
     outFile.close();
   }
 
+  if(rank == 0) {
+    std::string header = "Size,"
+                         "globalInsertAppsTime,globalInsertBlobsTime,globalInsertMetadataTime,"
+                         "globalQueryAppsTime,globalQueryBlobsTime,globalQueryMetadataTime\n";
+    bool needHeader = false;
+
+    // Check if the file is empty or doesn't exist
+    std::ifstream checkFile("metadata_empress_results.csv");
+    if (!checkFile.good() || checkFile.peek() == std::ifstream::traits_type::eof()) {
+      needHeader = true;
+    }
+    checkFile.close();
+
+    // Open the file for appending
+    std::ofstream outputFile("io_comp_results.csv", std::ios_base::app);
+
+    // Write the header if needed
+    if (needHeader) {
+      outputFile << header;
+    }
+
+    // Append the results
+    outputFile << size << ","
+            << globalInsertAppsTime / (size * N) << ","
+            << globalInsertBlobsTime / (size * N) << ","
+            << globalInsertMetadataTime / (size * N) << ","
+            << globalQueryAppsTime / (size * N) << ","
+            << globalQueryBlobsTime / (size * N) << ","
+            << globalQueryMetadataTime / (size * N) << "\n";    outputFile.close();
+  }
+
   MPI_Finalize();
   return 0;
 }
