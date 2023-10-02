@@ -30,8 +30,10 @@ int main(int argc, char *argv[]) {
   std::string config_path = argv[3];
   std::string out_file = argv[4];
 
-  std::cout << "Running I/O comparison with " << N << " steps, " <<
-  B << " bytes per step, and " << size << " processes." << std::endl;
+  if(rank==0) {
+    std::cout << "Running I/O comparison with " << N << " steps, " <<
+              B << " bytes per step, and " << size << " processes." << std::endl;
+  }
 
   std::vector<char> data(B, rank);
 
@@ -51,11 +53,13 @@ int main(int argc, char *argv[]) {
     engine.EndStep();
   }
   auto endPut = std::chrono::high_resolution_clock::now();
-
-  MPI_Barrier(MPI_COMM_WORLD);
-
   localPutTime += std::chrono::duration<double>(endPut - startPut).count();
   engine.Close();
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0){
+    std::cout << "\tPut done, time: " << localPutTime << std::endl;
+  }
 
   adios2::IO readIO = adios.DeclareIO("ReadIO");
   auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
@@ -70,11 +74,13 @@ int main(int argc, char *argv[]) {
     readEngine.EndStep();
   }
   auto endGet = std::chrono::high_resolution_clock::now();
+  localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+  readEngine.Close();
 
   MPI_Barrier(MPI_COMM_WORLD);
-  localGetTime += std::chrono::duration<double>(endGet - startGet).count();
-
-  readEngine.Close();
+  if(rank==0){
+    std::cout << "\tGet done, time: " << localGetTime << std::endl;
+  }
 
   double globalPutTime, globalGetTime;
   MPI_Reduce(&localPutTime, &globalPutTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
