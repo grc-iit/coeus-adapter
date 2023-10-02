@@ -36,6 +36,13 @@ int main(int argc, char* argv[]) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  int comm_size, wrank;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
+
+  const unsigned int color = 2;
+  MPI_Comm comm;
+  MPI_Comm_split(MPI_COMM_WORLD, color, wrank, &comm);
 
   if (argc < 4) {
     if (rank == 0) {
@@ -54,7 +61,7 @@ int main(int argc, char* argv[]) {
                config_file << " and reading from " << in_file << std::endl;
   }
 
-  adios2::ADIOS adios(config_file, MPI_COMM_WORLD);
+  adios2::ADIOS adios(config_file, comm);
   adios2::IO io = adios.DeclareIO("TestIO");
   adios2::Engine engine = io.Open(in_file, adios2::Mode::Read);
 
