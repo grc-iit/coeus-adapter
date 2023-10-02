@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <adios-config>
     <io name="TestIO">
-        <engine type="BPFile"> <!-- Adjust the type based on your needs -->
+        <engine type="BP5"> <!-- Adjust the type based on your needs -->
             <!-- You can add engine-specific parameters here -->
         </engine>
     </io>
