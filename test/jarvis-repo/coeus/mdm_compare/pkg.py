@@ -71,6 +71,7 @@ class MdmCompare(Application):
         :return: None
         """
         self.update_config(kwargs, rebuild=False)
+        return
 
     def start(self):
         """
