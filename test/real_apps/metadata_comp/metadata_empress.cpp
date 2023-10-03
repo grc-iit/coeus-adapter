@@ -40,7 +40,10 @@ int main(int argc, char* argv[]) {
   auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(rank), 0}, {1, 3}, adios2::ConstantDims);
 
   FileLock lock(db_path + ".lock");
+  lock.lock();
   SQLiteWrapper db(db_path);
+  lock.unlock();
+
   MPI_Barrier(MPI_COMM_WORLD);
 
   double localInsertAppsTime = 0.0, localInsertBlobsTime = 0.0, localInsertMetadataTime = 0.0,
