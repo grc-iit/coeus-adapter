@@ -25,8 +25,8 @@
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />
 
-            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/var.json"/>
-            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/operator.json"/>
+            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>
+            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>
             <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>
         </engine>
 
