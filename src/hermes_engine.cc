@@ -283,12 +283,13 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void* element) {
 }
 
 void HermesEngine::LoadMetadata() {
-
   std::string filename = "step_" + std::to_string(currentStep) +
       "_rank_" + std::to_string(rank);
+  std::cout << "Load Metadata: " << filename << std::endl;
 
   auto bkt = Hermes->GetBucket(filename);
   std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
+  std::cout << "blobIds.size(): " << blobIds.size() << std::endl;
   for (const auto &blobId : blobIds) {
     std::cout << "blobId: " << blobId << std::endl;
     hermes::Blob blob = bkt->Get(blobId);
