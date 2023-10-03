@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   if(rank == 0) {
-    std::string header = "Size,"
+    std::string header = "Size,N,"
                          "globalInsertAppsTime,globalInsertBlobsTime,globalInsertMetadataTime,"
                          "globalQueryAppsTime,globalQueryBlobsTime,globalQueryMetadataTime\n";
     bool needHeader = false;
@@ -168,12 +168,13 @@ int main(int argc, char* argv[]) {
 
     // Append the results
     outputFile << size << ","
-               << globalInsertAppsTime / (size * N) << ","
-               << globalInsertBlobsTime / (size * N) << ","
-               << globalInsertMetadataTime / (size * N) << ","
-               << globalQueryAppsTime / (size * N) << ","
-               << globalQueryBlobsTime / (size * N) << ","
-               << globalQueryMetadataTime / (size * N) << "\n";    outputFile.close();
+               << N  << ","
+               << globalInsertAppsTime  << ","
+               << globalInsertBlobsTime  << ","
+               << globalInsertMetadataTime  << ","
+               << globalQueryAppsTime  << ","
+               << globalQueryBlobsTime  << ","
+               << globalQueryMetadataTime  << "\n";    outputFile.close();
   }
 
   MPI_Finalize();
