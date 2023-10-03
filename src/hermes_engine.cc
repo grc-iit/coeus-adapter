@@ -70,7 +70,7 @@ void HermesEngine::Init_() {
   // Logger setup
   // Console log
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::warn);
+  console_sink->set_level(spdlog::level::trace);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
   //File log
@@ -152,8 +152,11 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     auto bkt = Hermes->GetBucket("total_steps");
+    std::cout << "total_steps_" + m_IO.m_Name << std::endl;
     hermes::Blob blob = bkt->Get("total_steps_" + m_IO.m_Name);
     total_steps = *reinterpret_cast<const int *>(blob.data());
+    std::cout << "total_steps: " << total_steps << " Current Step: " << currentStep << std::endl;
+
     if (currentStep > total_steps) {
       return adios2::StepStatus::EndOfStream;
     }
