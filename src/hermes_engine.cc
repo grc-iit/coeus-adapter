@@ -152,10 +152,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     auto bkt = Hermes->GetBucket("total_steps");
-    std::cout << "total_steps_" + this->m_Name << std::endl;
     hermes::Blob blob = bkt->Get("total_steps_" + this->m_Name);
     total_steps = *reinterpret_cast<const int *>(blob.data());
-    std::cout << "total_steps: " << total_steps << " Current Step: " << currentStep << std::endl;
 
     if (currentStep > total_steps) {
       return adios2::StepStatus::EndOfStream;
@@ -292,10 +290,12 @@ void HermesEngine::LoadMetadata() {
   auto bkt = Hermes->GetBucket(filename);
   std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
   for (const auto &blobId : blobIds) {
+    std::cout << "blobId: " << blobId << std::endl;
     hermes::Blob blob = bkt->Get(blobId);
     VariableMetadata variableMetadata =
         MetadataSerializer::DeserializeMetadata(blob);
     listOfVars.push_back(bkt->GetBlobName(blobId));
+    std::cout << "variableMetadata: " << variableMetadata << std::endl;
     DefineVariable(variableMetadata);
   }
 }
