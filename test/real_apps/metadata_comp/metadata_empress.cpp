@@ -48,8 +48,9 @@ int main(int argc, char* argv[]) {
 
   double localInsertAppsTime = 0.0, localInsertBlobsTime = 0.0, localInsertMetadataTime = 0.0,
       localInsertBlobsTimeLocked = 0.0, localInsertMetadataTimeLocked = 0.0;
+
   for (int step = 0; step < N; ++step) {
-    if(rank%20==0) {
+    if (rank % 20 == 0) {
       auto startInsertApps = std::chrono::high_resolution_clock::now();
       lock.lock();
       db.UpdateTotalSteps("App" + std::to_string(rank), step);
@@ -57,7 +58,11 @@ int main(int argc, char* argv[]) {
       auto endInsertApps = std::chrono::high_resolution_clock::now();
       localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();
     }
+  }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  for (int step = 0; step < N; ++step) {
     auto startInsertBlobsLocked = std::chrono::high_resolution_clock::now();
     lock.lock();
     auto startInsertBlobs = std::chrono::high_resolution_clock::now();
