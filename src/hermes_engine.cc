@@ -94,6 +94,7 @@ void HermesEngine::Init_() {
   auto params = m_IO.m_Parameters;
   if(params.find("OPFile") != params.end()){
     std::string opFile = params["OPFile"];
+    if(rank==0)std::cout<< "OPFile: " << opFile << std::endl;
     try{
       operationMap = YAMLParser(opFile).parse();
     }
@@ -104,6 +105,7 @@ void HermesEngine::Init_() {
   }
   if(params.find("VarFile") != params.end()){
     std::string varFile = params["VarFile"];
+    if(rank==0)std::cout<< "varFile: " << varFile << std::endl;
     try{
       variableMap = YAMLParser(varFile).parse();
     }
