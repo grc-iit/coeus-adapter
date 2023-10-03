@@ -40,15 +40,13 @@ int main(int argc, char* argv[]) {
   auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(rank), 0}, {1, 3}, adios2::ConstantDims);
 
   FileLock lock(db_path + ".lock");
-  lock.lock();
   SQLiteWrapper db(db_path);
-  lock.unlock();
   MPI_Barrier(MPI_COMM_WORLD);
 
   double localInsertAppsTime = 0.0, localInsertBlobsTime = 0.0, localInsertMetadataTime = 0.0,
       localInsertBlobsTimeLocked = 0.0, localInsertMetadataTimeLocked = 0.0;
   for (int step = 0; step < N; ++step) {
-    if(rank%20) {
+    if(rank%20==0) {
       auto startInsertApps = std::chrono::high_resolution_clock::now();
       lock.lock();
       db.UpdateTotalSteps("App" + std::to_string(rank), step);
