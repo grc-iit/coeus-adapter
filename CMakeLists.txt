@@ -85,7 +85,10 @@ endif()
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
-add_compile_definitions(HERMES_LOG_VERBOSITY=1)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(HERMES_LOG_VERBOSITY=1)
+endif()
+
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "Found Adios2")
