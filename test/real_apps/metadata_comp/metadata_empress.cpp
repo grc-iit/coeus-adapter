@@ -63,27 +63,42 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   for (int step = 0; step < N; ++step) {
+//    auto startInsertBlobsLocked = std::chrono::high_resolution_clock::now();
+//    lock.lock();
+//    auto startInsertBlobs = std::chrono::high_resolution_clock::now();
+//    BlobInfo blobInfo("Bucket" + std::to_string(rank), "Blob" + std::to_string(step));
+//    db.InsertBlobLocation(step, rank, "Var" + std::to_string(step), blobInfo);
+//    auto endInsertBlobs = std::chrono::high_resolution_clock::now();
+//    localInsertBlobsTime += std::chrono::duration<double>(endInsertBlobs - startInsertBlobs).count();
+//    lock.unlock();
+//    auto endInsertBlobsLocked = std::chrono::high_resolution_clock::now();
+//    localInsertBlobsTimeLocked += std::chrono::duration<double>(endInsertBlobsLocked - startInsertBlobsLocked).count();
+//
+//    auto startInsertMetadataLocked = std::chrono::high_resolution_clock::now();
+    auto startInsertMetadataLocked = 0.0;
+//    lock.lock();
+//    auto startInsertMetadata = std::chrono::high_resolution_clock::now();
+//    VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, "int");
+//    db.InsertVariableMetadata(step, rank, metadata);
+//    auto endInsertMetadata = std::chrono::high_resolution_clock::now();
+//    localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();
+//    lock.unlock();
+//    auto endInsertMetadataLocked = std::chrono::high_resolution_clock::now();
+    auto endInsertMetadataLocked = 0.0;
+    localInsertMetadataTimeLocked += std::chrono::duration<double>(endInsertMetadataLocked - startInsertMetadataLocked).count();
+
+    BlobInfo blobInfo("Bucket" + std::to_string(rank), "Blob" + std::to_string(step));
+    VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, "int");
     auto startInsertBlobsLocked = std::chrono::high_resolution_clock::now();
     lock.lock();
     auto startInsertBlobs = std::chrono::high_resolution_clock::now();
-    BlobInfo blobInfo("Bucket" + std::to_string(rank), "Blob" + std::to_string(step));
+    db.InsertVariableMetadata(step, rank, metadata);
     db.InsertBlobLocation(step, rank, "Var" + std::to_string(step), blobInfo);
     auto endInsertBlobs = std::chrono::high_resolution_clock::now();
     localInsertBlobsTime += std::chrono::duration<double>(endInsertBlobs - startInsertBlobs).count();
     lock.unlock();
     auto endInsertBlobsLocked = std::chrono::high_resolution_clock::now();
     localInsertBlobsTimeLocked += std::chrono::duration<double>(endInsertBlobsLocked - startInsertBlobsLocked).count();
-
-    auto startInsertMetadataLocked = std::chrono::high_resolution_clock::now();
-    lock.lock();
-    auto startInsertMetadata = std::chrono::high_resolution_clock::now();
-    VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, "int");
-    db.InsertVariableMetadata(step, rank, metadata);
-    auto endInsertMetadata = std::chrono::high_resolution_clock::now();
-    localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();
-    lock.unlock();
-    auto endInsertMetadataLocked = std::chrono::high_resolution_clock::now();
-    localInsertMetadataTimeLocked += std::chrono::duration<double>(endInsertMetadataLocked - startInsertMetadataLocked).count();
 
   }
 
