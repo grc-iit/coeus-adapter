@@ -152,9 +152,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     auto bkt = Hermes->GetBucket("total_steps");
-    std::cout << "total_steps_" + m_IO.m_Name << std::endl;
     std::cout << "total_steps_" + this->m_Name << std::endl;
-    hermes::Blob blob = bkt->Get("total_steps_" + m_IO.m_Name);
+    hermes::Blob blob = bkt->Get("total_steps_" + this->m_Name);
     total_steps = *reinterpret_cast<const int *>(blob.data());
     std::cout << "total_steps: " << total_steps << " Current Step: " << currentStep << std::endl;
 

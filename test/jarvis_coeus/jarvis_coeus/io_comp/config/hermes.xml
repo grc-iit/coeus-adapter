@@ -20,7 +20,7 @@
            Configuration for PDF calc and PDF Plot
         ===========================================-->
 
-    <io name="TestIO">
+    <io name="ReadIO">
         <engine type="Plugin">
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />
