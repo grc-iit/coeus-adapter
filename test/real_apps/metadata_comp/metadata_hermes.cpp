@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   for (int step = 0; step < N; ++step) {
     auto startInsertApps = std::chrono::high_resolution_clock::now();
 
-    {
+    if (rank % 20 == 0) {
       int currentStep;
       auto blob_name = "total_steps_" + io.Name();
       auto bkt = Hermes->GetBucket("total_steps");
