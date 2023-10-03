@@ -85,7 +85,8 @@ int main(int argc, char *argv[]) {
     std::cout << "\tPut done, time: " << localPutTime << std::endl;
   }
 
-  adios2::IO readIO = adios.DeclareIO("TestIO");
+  adios2::ADIOS adios2(config_path, MPI_COMM_WORLD);
+  adios2::IO readIO = adios2.DeclareIO("TestIO");
   if(rank==0) std::cout << "Opening file: " << out_file << std::endl;
   auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
   MPI_Barrier(MPI_COMM_WORLD);
