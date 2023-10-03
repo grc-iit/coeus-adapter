@@ -286,8 +286,8 @@ void HermesEngine::LoadMetadata() {
   std::string filename = "step_" + std::to_string(currentStep) +
       "_rank_" + std::to_string(rank);
   std::cout << "Load Metadata: " << filename << std::endl;
-
   auto bkt = Hermes->GetBucket(filename);
+  std::cout << "Get Bucket Metadata: " << filename << std::endl;
   std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
   std::cout << "blobIds.size(): " << blobIds.size() << std::endl;
   for (const auto &blobId : blobIds) {
