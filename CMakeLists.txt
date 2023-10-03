@@ -85,7 +85,7 @@ endif()
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_definitions(HERMES_LOG_VERBOSITY=1)
 endif()
 
