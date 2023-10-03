@@ -86,13 +86,16 @@ int main(int argc, char *argv[]) {
   }
 
   adios2::IO readIO = adios.DeclareIO("ReadIO");
+  if(rank==0) std::cout << "Opening file: " << out_file << std::endl;
   auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
   MPI_Barrier(MPI_COMM_WORLD);
 
   double localGetTime = 0.0;
+  if(rank==0) std::cout << "BeginStep" << std::endl;
 
   while(readEngine.BeginStep() == adios2::StepStatus::OK) {
-    std::cout << "Rank: " << rank << "Step: " << readEngine.CurrentStep() << std::endl;
+//    std::cout << "Rank: " << rank << "Step: " << readEngine.CurrentStep() << std::endl;
+    std::cout << "Rank: " << rank << std::endl;
     adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
     print_meta(rank, size, readVariable);
 
