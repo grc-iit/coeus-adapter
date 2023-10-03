@@ -11,6 +11,28 @@
 #include <mpi.h>
 #include <adios2.h>
 
+template <typename T>
+void print_vector(std::vector<T> vec){
+  for(T obj : vec){
+    std::cout << obj << " ";
+  }
+  std::cout << std::endl;
+}
+
+template <typename T>
+void print_meta(int rank, int size, adios2::Variable<T> var){
+  for(int i = 0; i < size; i++){
+    if(i==rank){
+      std::cout << rank << std::endl;
+      std::cout << var.Name() << std::endl;
+      print_vector(var.Shape());
+      print_vector(var.Start());
+      print_vector(var.Count());
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
+
 int main(int argc, char *argv[]) {
   int rank, size;
   MPI_Init(&argc, &argv);
@@ -46,14 +68,16 @@ int main(int argc, char *argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   double localPutTime = 0.0;
-  auto startPut = std::chrono::high_resolution_clock::now();
   for(int i = 0; i < N; ++i) {
     engine.BeginStep();
+
+    auto startPut = std::chrono::high_resolution_clock::now();
     engine.Put<char>(variable, data.data());
+    auto endPut = std::chrono::high_resolution_clock::now();
+    localPutTime += std::chrono::duration<double>(endPut - startPut).count();
+
     engine.EndStep();
   }
-  auto endPut = std::chrono::high_resolution_clock::now();
-  localPutTime += std::chrono::duration<double>(endPut - startPut).count();
   engine.Close();
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -66,15 +90,19 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   double localGetTime = 0.0;
-  auto startGet = std::chrono::high_resolution_clock::now();
+
   while(readEngine.BeginStep() == adios2::StepStatus::OK) {
+    std::cout << "Rank: " << rank << "Step: " << readEngine.CurrentStep() << std::endl;
     adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
+    print_meta(rank, size, readVariable);
+
     auto startGet = std::chrono::high_resolution_clock::now();
     readEngine.Get(readVariable, data);
+    auto endGet = std::chrono::high_resolution_clock::now();
+    localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+
     readEngine.EndStep();
   }
-  auto endGet = std::chrono::high_resolution_clock::now();
-  localGetTime += std::chrono::duration<double>(endGet - startGet).count();
   readEngine.Close();
 
   MPI_Barrier(MPI_COMM_WORLD);
