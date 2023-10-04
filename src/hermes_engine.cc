@@ -359,7 +359,8 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  std::cout << __func__ << std::endl;
+  std::cout << __func__ << " " << variable.m_Name <<
+  " " << rank << " " <<  variable.SelectionSize() * sizeof(T) << std::endl;
 
   // Create a bucket with the associated step and process rank
   std::string bucket_name = variable.m_Name + "_step_" +
