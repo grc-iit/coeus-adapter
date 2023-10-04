@@ -388,7 +388,7 @@ void HermesEngine::DoGetDeferred_(
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  auto blob = bkt->Get(variable.m_Name);
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if(variable.m_name != "step" && (rank == 0 || variable.SelectionSize() != 1024
+  if(variable.m_name != "step" && (rank == 0
   || variable.m_Count.size() != 3
   || variable.m_Start.size() != 3
   || variable.m_Shape.size() != 3))
@@ -447,7 +447,7 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if(variable.m_name != "step" && (rank == 0 || variable.SelectionSize() != 1024
+  if(variable.m_name != "step" && (rank == 0
   || variable.m_Count.size() != 3
   || variable.m_Start.size() != 3
   || variable.m_Shape.size() != 3))
