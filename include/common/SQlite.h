@@ -171,14 +171,26 @@ class SQLiteWrapper {
 
   void InsertVariableMetadata(int step, int mpi_rank, const VariableMetadata& metadata) {
     sqlite3_stmt* stmt;
-    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+    const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+    auto shape = VariableMetadata::serializeVector(metadata.shape);
+    auto start = VariableMetadata::serializeVector(metadata.start);
+    auto count = VariableMetadata::serializeVector(metadata.count);
+
+    if(mpi_rank == 0) {
+      std::cout << "Inserting metadata for " << metadata.name
+      << " with shape " << shape
+      << " with start " << start
+      << " with count " << count
+      << std::endl;
+    }
+
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
     sqlite3_bind_text(stmt, 3, metadata.name.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, VariableMetadata::serializeVector(metadata.shape).c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 5, VariableMetadata::serializeVector(metadata.start).c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 6, VariableMetadata::serializeVector(metadata.count).c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, shape.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, start.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 6, count.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 7, metadata.constantShape);
     sqlite3_bind_text(stmt, 8, metadata.dataType.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);

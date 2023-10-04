@@ -454,6 +454,8 @@ void HermesEngine::DoPutDeferred_(
               <<std::endl;
   }
   VariableMetadata vm(variable);
+  BlobInfo blobInfo(bucket_name, variable.m_Name);
+
   if(variable.m_Name != "step" && rank == 0)
   {
     std::cout << "Put Metadata rank: " << rank
@@ -464,7 +466,6 @@ void HermesEngine::DoPutDeferred_(
               << " Shape " << concatenateVectorToString(vm.shape)
               <<std::endl;
   }
-  BlobInfo blobInfo(bucket_name, variable.m_Name);
   lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
   db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
