@@ -334,13 +334,14 @@ void HermesEngine::LoadMetadata() {
 //  }
 
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
-  std::cout << "Found " << metadata_vector.size() << " vars at step " <<  currentStep << " for rank " << rank << std::endl;
+  if(metadata_vector.size() != 3) {
+    std::cout << "Found " << metadata_vector.size() << " vars at step " << currentStep << " for rank " << rank
+              << std::endl;
+  }
   for(auto &variableMetadata : metadata_vector) {
-    if(rank == 0 || variableMetadata.start.size() != 3 ||
-    variableMetadata.shape.size() != 3 || variableMetadata.shape.size() != 3 ||
-    SumVector(variableMetadata.start) != 1024 || SumVector(variableMetadata.shape) != 1024 )
+    if(variableMetadata.name != "step" && rank == 0 )
     {
-      std::cout << "Put rank: " << rank
+      std::cout << "Metadata rank: " << rank
                 << " Var Name " << variableMetadata.name
                 << " Count " << concatenateVectorToString(variableMetadata.count)
                 << " Start " << concatenateVectorToString(variableMetadata.start)
@@ -388,10 +389,7 @@ void HermesEngine::DoGetDeferred_(
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  auto blob = bkt->Get(variable.m_Name);
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if(variable.m_Name != "step" && (rank == 0
-  || variable.m_Count.size() != 3
-  || variable.m_Start.size() != 3
-  || variable.m_Shape.size() != 3))
+  if(variable.m_Name != "step" && rank == 0)
   {
     std::cout << "Get rank: " << rank
               << " Slection Size: " << variable.SelectionSize()
@@ -411,8 +409,6 @@ void HermesEngine::DoGetDeferred_(
   fread(values, sizeof(T), 1024, fp);
   fclose(fp);
 //memcpy(values, blob.data(), blob.size());
-
-  std::cout << "Done with Get" << std::endl;
 }
 
 template<typename T>
@@ -447,10 +443,7 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if(variable.m_Name != "step" && (rank == 0
-  || variable.m_Count.size() != 3
-  || variable.m_Start.size() != 3
-  || variable.m_Shape.size() != 3))
+  if(variable.m_Name != "step" && rank == 0)
   {
     std::cout << "Put rank: " << rank
               << " Slection Size: " << variable.SelectionSize()
@@ -461,6 +454,16 @@ void HermesEngine::DoPutDeferred_(
               <<std::endl;
   }
   VariableMetadata vm(variable);
+  if(variable.m_Name != "step" && rank == 0)
+  {
+    std::cout << "Put Metadata rank: " << rank
+              << " Slection Size: " << variable.SelectionSize()
+              << " Var Name " << vm.name
+              << " Count " << concatenateVectorToString(vm.count)
+              << " Start " << concatenateVectorToString(vm.start)
+              << " Shape " << concatenateVectorToString(vm.shape)
+              <<std::endl;
+  }
   BlobInfo blobInfo(bucket_name, variable.m_Name);
   lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
