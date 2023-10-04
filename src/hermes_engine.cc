@@ -360,14 +360,14 @@ template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   std::cout << __func__ << " " << variable.m_Name <<
-  " " << rank << " " <<  variable.SelectionSize() * sizeof(T) << std::endl;
+  " " << rank << " " <<  variable.SelectionSize() << std::endl;
 
   // Create a bucket with the associated step and process rank
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   auto bkt = Hermes->GetBucket(bucket_name);
-  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+  bkt->Put(variable.m_Name, variable.SelectionSize(), values);
 
   std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
       "_rank_" + std::to_string(rank);
