@@ -332,7 +332,8 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-  std::cout << __func__ << std::endl;
+  std::cout << __func__ << " " << variable.m_Name <<
+  " " << rank << " " << variable.m_Count << std::endl;
 
   // Retrieve the value of the variable in the current step
   std::string bucket_name = variable.m_Name + "_step_" +

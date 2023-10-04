@@ -292,10 +292,13 @@ int main(int argc, char *argv[])
     }
 
     // Read adios2 data
+    std::cout << "Get U: " << rank << u.size() << std::endl;
     reader.Get<double>(var_u_in, u);
+    std::cout << "Get V: " << rank << v.size() << std::endl;
     reader.Get<double>(var_v_in, v);
     if (shouldIWrite)
     {
+      std::cout << "Get step: " << rank << std::endl;
       reader.Get<int>(var_step_in, &simStep);
     }
 
