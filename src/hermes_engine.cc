@@ -229,18 +229,18 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   // Obtain the blob from Hermes using the filename and variable name
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  hermes::Blob blob = bkt->Get(Var.m_Name);
-
-#define DEFINE_VARIABLE(T) \
-    if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
-        size_t dataSize = blob.size() / sizeof(T);                               \
-        const T *data = reinterpret_cast<const T *>(blob.data());               \
-        for (size_t i = 0; i < dataSize; ++i) {               \
-                void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
-                ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                   \
-            }              \
-    }
-  ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE
+//
+//#define DEFINE_VARIABLE(T) \
+//    if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
+//        size_t dataSize = blob.size() / sizeof(T);                               \
+//        const T *data = reinterpret_cast<const T *>(blob.data());               \
+//        for (size_t i = 0; i < dataSize; ++i) {               \
+//                void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
+//                ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                   \
+//            }              \
+//    }
+//  ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
+//#undef DEFINE_VARIABLE
   return true;
 }
 
