@@ -334,21 +334,21 @@ int main(int argc, char *argv[])
                 minmax_v.second, pdf_v, bins_v);
 
 //     write U, V, and their norms out
-    writer.BeginStep();
-    writer.Put<double>(var_u_pdf, pdf_u.data());
-    writer.Put<double>(var_v_pdf, pdf_v.data());
-    if (shouldIWrite)
-    {
-      writer.Put<double>(var_u_bins, bins_u.data());
-      writer.Put<double>(var_v_bins, bins_v.data());
-      writer.Put<int>(var_step_out, simStep);
-    }
-    if (write_inputvars)
-    {
-      writer.Put<double>(var_u_out, u.data());
-      writer.Put<double>(var_v_out, v.data());
-    }
-    writer.EndStep();
+//    writer.BeginStep();
+//    writer.Put<double>(var_u_pdf, pdf_u.data());
+//    writer.Put<double>(var_v_pdf, pdf_v.data());
+//    if (shouldIWrite)
+//    {
+//      writer.Put<double>(var_u_bins, bins_u.data());
+//      writer.Put<double>(var_v_bins, bins_v.data());
+//      writer.Put<int>(var_step_out, simStep);
+//    }
+//    if (write_inputvars)
+//    {
+//      writer.Put<double>(var_u_out, u.data());
+//      writer.Put<double>(var_v_out, v.data());
+//    }
+//    writer.EndStep();
     ++stepAnalysis;
   }
 
