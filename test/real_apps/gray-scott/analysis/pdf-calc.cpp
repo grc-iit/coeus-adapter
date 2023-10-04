@@ -20,6 +20,19 @@
 #include "adios2.h"
 #include <mpi.h>
 
+std::string concatenateVectorToString(const std::vector<size_t> &vec) {
+  std::stringstream ss;
+  ss << "( ";
+  for (size_t i = 0; i < vec.size(); ++i) {
+    ss << vec[i];
+    if (i < vec.size() - 1) {
+      ss << ", ";
+    }
+  }
+  ss << " )";
+  return ss.str();
+}
+
 bool epsilon(double d) { return (d < 1.0e-20); }
 bool epsilon(float d) { return (d < 1.0e-20); }
 
@@ -293,8 +306,16 @@ int main(int argc, char *argv[])
 
     // Read adios2 data
     if(rank == 0){
-      std::cout << "Get U: " << rank << " " << u.size() << std::endl;
-      std::cout << "Get V: " << rank << v.size() << std::endl;
+      std::cout << "Get U: " << rank << " size: " << u.size()
+      << " Count: (" << concatenateVectorToString(var_u_in.Count()) << ") "
+      << " Start: (" << concatenateVectorToString(var_u_in.Start()) << ") "
+      << " Shape: (" << concatenateVectorToString(var_u_in.Shape()) << ") "
+      << std::endl;
+      std::cout << "Get V: " << rank << " size: " << v.size()
+      << " Count: (" << concatenateVectorToString(var_v_in.Count()) << ") "
+      << " Start: (" << concatenateVectorToString(var_v_in.Start()) << ") "
+      << " Shape: (" << concatenateVectorToString(var_v_in.Shape()) << ") "
+      << std::endl;
     }
     reader.Get<double>(var_u_in, u);
     reader.Get<double>(var_v_in, v);
