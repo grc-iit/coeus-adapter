@@ -106,8 +106,9 @@ int main(int argc, char *argv[]) {
 
     readEngine.EndStep();
   }
+  std::cout << "close" << std::endl;
   readEngine.Close();
-
+  std::cout << "DONE" << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
   if(rank==0){
     std::cout << "\tGet done, time: " << localGetTime << std::endl;
