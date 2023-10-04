@@ -19,7 +19,7 @@
 namespace coeus {
 class IHermes {
  public:
-  std::unique_ptr<hermes::Hermes> hermes;
+  hermes::Hermes* hermes;
   virtual ~IHermes() = default;
 
   virtual bool connect() = 0;

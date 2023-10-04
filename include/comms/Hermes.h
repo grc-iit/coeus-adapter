@@ -26,7 +26,7 @@ class Hermes : public IHermes {
 
   bool connect() override {
     TRANSPARENT_HERMES();
-    hermes = std::unique_ptr<hermes::Hermes>(HERMES);
+    hermes = HERMES;
     return hermes->IsInitialized();
   };
 
