@@ -56,57 +56,65 @@ int main(int argc, char *argv[]) {
     std::cout << "Running I/O comparison with " << N << " steps, " <<
               B << " bytes per step, and " << size << " processes." << std::endl;
   }
-
-  std::vector<char> data(B, rank);
-
-  adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
-  adios2::IO io = adios.DeclareIO("TestIO");
-
-  auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
-
-  auto engine = io.Open(out_file, adios2::Mode::Write);
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  double localPutTime = 0.0;
-  for(int i = 0; i < N; ++i) {
-    engine.BeginStep();
-
-    auto startPut = std::chrono::high_resolution_clock::now();
-    engine.Put<char>(variable, data.data());
-    auto endPut = std::chrono::high_resolution_clock::now();
-    localPutTime += std::chrono::duration<double>(endPut - startPut).count();
-
-    engine.EndStep();
-  }
-  engine.Close();
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(rank==0){
-    std::cout << "\tPut done, time: " << localPutTime << std::endl;
-  }
-
-  auto readEngine = io.Open(out_file, adios2::Mode::Read);
-  MPI_Barrier(MPI_COMM_WORLD);
-
   double localGetTime = 0.0;
-  if(rank==0) std::cout << "BeginStep" << std::endl;
+  double localPutTime = 0.0;
 
-  while(readEngine.BeginStep() == adios2::StepStatus::OK) {
-    adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
-    print_meta(rank, size, readVariable);
+  {
+    adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
+    adios2::IO io = adios.DeclareIO("TestIO");
 
-    auto startGet = std::chrono::high_resolution_clock::now();
-    readEngine.Get(readVariable, data);
-    auto endGet = std::chrono::high_resolution_clock::now();
-    localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+    std::vector<char> data(B, rank);
+    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
 
-    readEngine.EndStep();
+    auto engine = io.Open(out_file, adios2::Mode::Write);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (int i = 0; i < N; ++i) {
+      engine.BeginStep();
+
+      auto startPut = std::chrono::high_resolution_clock::now();
+      engine.Put<char>(variable, data.data());
+      auto endPut = std::chrono::high_resolution_clock::now();
+      localPutTime += std::chrono::duration<double>(endPut - startPut).count();
+
+      engine.EndStep();
+    }
+    engine.Close();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == 0) {
+      std::cout << "\tPut done, time: " << localPutTime << std::endl;
+    }
   }
-  readEngine.Close();
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(rank==0){
-    std::cout << "\tGet done, time: " << localGetTime << std::endl;
+  {
+    adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
+    adios2::IO io = adios.DeclareIO("TestIO");
+    auto readEngine = io.Open(out_file, adios2::Mode::Read);
+
+    std::vector<char> data(B);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    if (rank == 0) std::cout << "BeginStep" << std::endl;
+
+    while (readEngine.BeginStep() == adios2::StepStatus::OK) {
+      adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
+      print_meta(rank, size, readVariable);
+
+      auto startGet = std::chrono::high_resolution_clock::now();
+      readEngine.Get(readVariable, data);
+      auto endGet = std::chrono::high_resolution_clock::now();
+      localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+
+      readEngine.EndStep();
+    }
+    readEngine.Close();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank == 0) {
+      std::cout << "\tGet done, time: " << localGetTime << std::endl;
+    }
   }
 
   double globalPutTime, globalGetTime;
