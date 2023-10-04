@@ -350,12 +350,15 @@ void HermesEngine::DoGetDeferred_(
   // Retrieve the value of the variable in the current step
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
-  auto bkt = Hermes->GetBucket(bucket_name);
-  auto blob = bkt->Get(variable.m_Name);
-  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-//  std::vector<char> selection_size(variable.SelectionSize() * sizeof(T));
-  memcpy(values, blob.data(), blob.size());
-//  memcpy(values, selection_size.data(), blob.size());
+
+//  auto bkt = Hermes->GetBucket(bucket_name);
+//  auto blob = bkt->Get(variable.m_Name);
+//  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
+
+  auto fp = fopen(bucket_name.c_str(), "r");
+  fread(values, sizeof(T), variable.SelectionSize(), fp);
+  fclose(fp);
+//memcpy(values, blob.data(), blob.size());
 
   std::cout << "Done with Get" << std::endl;
 }
@@ -370,8 +373,12 @@ void HermesEngine::DoPutDeferred_(
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-  auto bkt = Hermes->GetBucket(bucket_name);
-  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+//  auto bkt = Hermes->GetBucket(bucket_name);
+//  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+
+  auto fp = fopen(bucket_name.c_str(), "w");
+  fwrite(values, sizeof(T), variable.SelectionSize(), fp);
+  fclose(fp);
 
   std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
       "_rank_" + std::to_string(rank);
