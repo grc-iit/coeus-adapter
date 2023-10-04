@@ -224,7 +224,8 @@ int main(int argc, char *argv[])
       break;
     }
 
-    int stepSimOut = reader.CurrentStep();
+    // int stepSimOut = reader.CurrentStep();
+    int stepSimOut = stepAnalysis;
 
     // Inquire variable
     var_u_in = reader_io.InquireVariable<double>("U");
