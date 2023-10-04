@@ -335,8 +335,8 @@ int main(int argc, char *argv[])
 
 //     write U, V, and their norms out
     writer.BeginStep();
-//    writer.Put<double>(var_u_pdf, pdf_u.data());
-//    writer.Put<double>(var_v_pdf, pdf_v.data());
+    writer.Put<double>(var_u_pdf, pdf_u.data());
+    writer.Put<double>(var_v_pdf, pdf_v.data());
     if (shouldIWrite)
     {
       writer.Put<double>(var_u_bins, bins_u.data());
