@@ -205,6 +205,32 @@ class SQLiteWrapper {
     return metadata;
   }
 
+  std::vector<VariableMetadata> GetAllVariableMetadata(int step, int mpi_rank) {
+    sqlite3_stmt* stmt;
+    const std::string selectSQL = "SELECT name, shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ?;";
+    sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+
+    std::vector<VariableMetadata> allMetadata;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      VariableMetadata metadata;
+
+      metadata.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      metadata.shape = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
+      metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
+      metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
+      metadata.constantShape = sqlite3_column_int(stmt, 4);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+
+      allMetadata.push_back(metadata);
+    }
+
+    sqlite3_finalize(stmt);
+    return allMetadata;
+  }
+
 
 };
 

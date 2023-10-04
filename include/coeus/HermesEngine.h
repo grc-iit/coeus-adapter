@@ -31,6 +31,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "common/SQlite.h"
 #include "common/YAMLParser.h"
+#include "common/FileLock.h"
 #include <common/ErrorCodes.h>
 #include <common/ClassLoader.h>
 #include <common/ThreadPool.h>
@@ -41,8 +42,10 @@
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-  std::shared_ptr<coeus::IHermes> Hermes;
+//  std::shared_ptr<coeus::IHermes> Hermes;
   std::string uid;
+  SQLiteWrapper* db;
+  FileLock* lock;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
@@ -93,7 +96,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int currentStep = 0;
   int total_steps = 0;
 
-  std::shared_ptr<coeus::MPI> mpiComm;
+//  std::shared_ptr<coeus::MPI> mpiComm;
   int rank;
   int comm_size;
 
