@@ -27,7 +27,18 @@ namespace coeus {
  *  MyProject(hermes h_object)hermes(h_object);
  *
  */
+std::string concatenateVectorToString(const std::vector<size_t>& vec) {
+  std::stringstream ss;
 
+  for (size_t i = 0; i < vec.size(); ++i) {
+    ss << "elem" << vec[i];
+    if (i < vec.size() - 1) {
+      ss << ", ";
+    }
+  }
+
+  return ss.str();
+}
 
 /**
  * Construct the HermesEngine.
@@ -333,13 +344,14 @@ template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   std::cout << __func__ << " " << variable.m_Name <<
-  " " << rank << " " << variable.m_Count << std::endl;
+  " " << rank << " " << concatenateVectorToString(variable.m_Count) << std::endl;
 
   // Retrieve the value of the variable in the current step
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
   auto bkt = Hermes->GetBucket(bucket_name);
   auto blob = bkt->Get(variable.m_Name);
+  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
   memcpy(values, blob.data(), blob.size());
   std::cout << "Done with Get" << std::endl;
 }
