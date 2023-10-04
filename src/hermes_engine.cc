@@ -133,13 +133,14 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
+  std::cout << "Close Inside Enter" << std::endl;
   engine_logger->info("rank {}", rank);
   open = false;
+  std::cout << "Close Inside Finsih" << std::endl;
 }
 
 HermesEngine::~HermesEngine() {
   engine_logger->info("rank {}", rank);
-  DoClose();
 }
 
 /**
