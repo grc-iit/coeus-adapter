@@ -388,10 +388,13 @@ void HermesEngine::DoGetDeferred_(
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  auto blob = bkt->Get(variable.m_Name);
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
-      || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
+  if(variable.m_name != "step" && (rank == 0 || variable.SelectionSize() != 1024
+  || variable.m_Count.size() != 3
+  || variable.m_Start.size() != 3
+  || variable.m_Shape.size() != 3))
   {
-    std::cout << "Put rank: " << rank << variable.SelectionSize()
+    std::cout << "Get rank: " << rank
+              << " Slection Size: " << variable.SelectionSize()
               << " Var Name " << variable.m_Name
               << " Count " << concatenateVectorToString(variable.m_Count)
               << " Start " << concatenateVectorToString(variable.m_Start)
@@ -424,7 +427,7 @@ void HermesEngine::DoPutDeferred_(
 
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << "Opening file: " << bucket_name << std::endl;
+//  std::cout << "Opening file: " << bucket_name << std::endl;
   auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
   auto fp = fopen(file.c_str(), "w");
   if (fp == NULL) {
@@ -444,15 +447,18 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
-  || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
+  if(variable.m_name != "step" && (rank == 0 || variable.SelectionSize() != 1024
+  || variable.m_Count.size() != 3
+  || variable.m_Start.size() != 3
+  || variable.m_Shape.size() != 3))
   {
-    std::cout << "Put rank: " << rank << variable.SelectionSize()
-    << " Var Name " << variable.m_Name
-    << " Count " << concatenateVectorToString(variable.m_Count)
-    << " Start " << concatenateVectorToString(variable.m_Start)
-    << " Shape " << concatenateVectorToString(variable.m_Shape)
-    <<std::endl;
+    std::cout << "Put rank: " << rank
+              << " Slection Size: " << variable.SelectionSize()
+              << " Var Name " << variable.m_Name
+              << " Count " << concatenateVectorToString(variable.m_Count)
+              << " Start " << concatenateVectorToString(variable.m_Start)
+              << " Shape " << concatenateVectorToString(variable.m_Shape)
+              <<std::endl;
   }
   VariableMetadata vm(variable);
   BlobInfo blobInfo(bucket_name, variable.m_Name);
