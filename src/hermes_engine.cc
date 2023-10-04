@@ -357,7 +357,8 @@ void HermesEngine::DoGetDeferred_(
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
 
   std::cout << "Opening file: " << bucket_name << std::endl;
-  auto fp = fopen(bucket_name.c_str(), "r");
+  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
+  auto fp = fopen(file.c_str(), "r");
   if (fp == NULL) {
     std::cout << "Error opening file: " << bucket_name << std::endl;
     exit(1);
@@ -383,7 +384,8 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
   std::cout << "Opening file: " << bucket_name << std::endl;
-  auto fp = fopen(bucket_name.c_str(), "w");
+  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
+  auto fp = fopen(file.c_str(), "w");
   if (fp == NULL) {
     std::cout << "Error opening file" << std::endl;
     exit(1);
