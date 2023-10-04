@@ -44,7 +44,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Hermes = std::make_shared<coeus::Hermes>();
   mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-  if (rank==0) std::cout << name << this->m_Name << this->m_IO.m_Name << std::endl;
+  if (rank==0) std::cout << "NAMING: " << name << " " << this->m_Name << " " << this->m_IO.m_Name << std::endl;
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
 
