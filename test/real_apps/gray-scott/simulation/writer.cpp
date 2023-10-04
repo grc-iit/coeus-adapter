@@ -102,6 +102,7 @@ void Writer::open(const std::string &fname, bool append)
 
 void Writer::write(int step, const GrayScott &sim)
 {
+    if (step == 0) std::cout << "STEP 0 WTF" << std::endl;
     if (!sim.size_x || !sim.size_y || !sim.size_z)
     {
         writer.BeginStep();

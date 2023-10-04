@@ -31,14 +31,18 @@
         </engine>
     </io>
 
-    <io name="SimulationCheckpoint">
-        <engine type="Plugin">
-            <parameter key="PluginName" value="hermes" />
-            <parameter key="PluginLibrary" value="hermes_engine" />
+<!--    <io name="SimulationCheckpoint">-->
+<!--        <engine type="Plugin">-->
+<!--            <parameter key="PluginName" value="hermes" />-->
+<!--            <parameter key="PluginLibrary" value="hermes_engine" />-->
 
-            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>
-            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>
-            <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>
+<!--            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>-->
+<!--            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>-->
+<!--            <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>-->
+<!--        </engine>-->
+<!--    </io>-->
+    <io name="SimulationCheckpoint">
+        <engine type="BP5">
         </engine>
     </io>
 </adios-config>
