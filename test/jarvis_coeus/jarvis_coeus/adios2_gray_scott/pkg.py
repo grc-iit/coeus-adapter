@@ -171,7 +171,7 @@ class Adios2GrayScott(Application):
             },
         ]
 
-    # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file= nprocs=1
+    # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
 
     def configure(self, **kwargs):
         """
@@ -241,7 +241,7 @@ class Adios2GrayScott(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.env))
+                         env=self.mod_env))
 
     def stop(self):
         """
