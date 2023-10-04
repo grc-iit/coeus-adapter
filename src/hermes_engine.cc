@@ -388,14 +388,15 @@ void HermesEngine::DoGetDeferred_(
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  auto blob = bkt->Get(variable.m_Name);
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if(rank == 0 || variable.SelectionSize() != 1024 || variable.SelectionSize().size != 3)
+  if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
+      || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
   {
-    std::cout << "Get rank: " << rank << variable.SelectionSize() << " "
+    std::cout << "Put rank: " << rank << variable.SelectionSize() << " "
               << variable.SelectionSize().size()
-              << " Var Name " << variable.Name
-              << " Count " << concatenateVectorToString(variable.Count())
-              << " Start " << concatenateVectorToString(variable.Start())
-              << " Shape " << concatenateVectorToString(variable.Shape())
+              << " Var Name " << variable.m_Name
+              << " Count " << concatenateVectorToString(variable.m_Count)
+              << " Start " << concatenateVectorToString(variable.m_Start)
+              << " Shape " << concatenateVectorToString(variable.m_Shape)
               <<std::endl;
   }
 //  std::cout << "Opening file: " << bucket_name << std::endl;
@@ -444,14 +445,15 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if(rank == 0 || variable.SelectionSize() != 1024 || variable.SelectionSize().size != 3)
+  if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
+  || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
   {
     std::cout << "Put rank: " << rank << variable.SelectionSize() << " "
     << variable.SelectionSize().size()
-    << " Var Name " << variable.Name
-    << " Count " << concatenateVectorToString(variable.Count())
-    << " Start " << concatenateVectorToString(variable.Start())
-    << " Shape " << concatenateVectorToString(variable.Shape())
+    << " Var Name " << variable.m_Name
+    << " Count " << concatenateVectorToString(variable.m_Count)
+    << " Start " << concatenateVectorToString(variable.m_Start)
+    << " Shape " << concatenateVectorToString(variable.m_Shape)
     <<std::endl;
   }
   VariableMetadata vm(variable);
