@@ -43,7 +43,12 @@ struct VariableMetadata {
   template<typename T>
   explicit VariableMetadata(const adios2::core::Variable<T> &variable) {
     name = variable.m_Name;
-    shape = variable.Shape();
+
+    if (variable.m_Shape.empty() || variable.m_Shape.data() == nullptr) {
+      shape = std::vector<size_t>();
+    } else {
+      shape = variable.m_Shape;
+    }
     // Check if start is empty or null and assign an empty array if so
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
       start = std::vector<size_t>();
@@ -51,13 +56,11 @@ struct VariableMetadata {
       start = variable.m_Start;
     }
 
-    count = variable.Count();
-
     // Check if count is empty or null and assign an empty array if so
     if (variable.Count().empty() || variable.Count().data() == nullptr) {
       count = std::vector<size_t>();
     } else {
-      count = variable.Count();
+      count = variable.m_Count;
     }
 
     constantShape = variable.IsConstantDims();
