@@ -41,8 +41,8 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
-  << m_Name << " " << this->m_IO.m_Name << std::endl;
+//  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
+//  << m_Name << " " << this->m_IO.m_Name << std::endl;
   Hermes = std::make_shared<coeus::Hermes>();
   mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
@@ -91,6 +91,9 @@ void HermesEngine::Init_() {
   //MPI setup
   rank = mpiComm->getGlobalRank();
   comm_size = mpiComm->getGlobalSize();
+
+  //Identifier, should be the file, but we dont get it
+  uid = this->m_IO.m_Name;
 
   //Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
@@ -158,7 +161,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     auto bkt = Hermes->GetBucket("total_steps");
-    hermes::Blob blob = bkt->Get("total_steps_" + this->m_Name);
+    hermes::Blob blob = bkt->Get("total_steps_" + uid);
     total_steps = *reinterpret_cast<const int *>(blob.data());
 
     if (currentStep > total_steps) {
@@ -183,7 +186,7 @@ void HermesEngine::EndStep() {
   engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank == 0) {
-      auto blob_name = "total_steps_" + this->m_Name;
+      auto blob_name = "total_steps_" + uid;
       auto bkt = Hermes->GetBucket("total_steps");
       bkt->Put(blob_name, sizeof(int), &currentStep);
     }

@@ -42,6 +42,7 @@ namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   std::shared_ptr<coeus::IHermes> Hermes;
+  std::string uid;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
