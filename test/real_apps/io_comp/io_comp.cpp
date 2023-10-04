@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "close" << std::endl;
   readEngine.Close();
-  std::cout << readEngine.Name() << std::endl;
+//  std::cout << readEngine.Name() << std::endl;
 
   std::cout << "DONE" << std::endl;
 
