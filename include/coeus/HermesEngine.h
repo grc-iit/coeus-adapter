@@ -42,7 +42,7 @@
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-//  std::shared_ptr<coeus::IHermes> Hermes;
+  std::shared_ptr<coeus::IHermes> Hermes;
   std::string uid;
   SQLiteWrapper* db;
   FileLock* lock;

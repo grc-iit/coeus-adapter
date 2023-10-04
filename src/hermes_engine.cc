@@ -62,7 +62,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
 //  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
 //  << m_Name << " " << this->m_IO.m_Name << std::endl;
-//  Hermes = std::make_shared<coeus::Hermes>();
+  Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
@@ -78,7 +78,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-//  Hermes = h;
+  Hermes = h;
 //  mpiComm = mpi;
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
@@ -150,10 +150,10 @@ void HermesEngine::Init_() {
   }
 
   //Hermes setup
-//  if(!Hermes->connect()){
-//    engine_logger->warn("Could not connect to Hermes", rank);
-//    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-//  }
+  if(!Hermes->connect()){
+    engine_logger->warn("Could not connect to Hermes", rank);
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
   open = true;
 }
 
@@ -386,9 +386,9 @@ void HermesEngine::DoGetDeferred_(
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-//  auto bkt = Hermes->GetBucket(bucket_name);
-//  auto blob = bkt->Get(variable.m_Name);
-//  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
+  auto bkt = Hermes->GetBucket(bucket_name);
+  auto blob = bkt->Get(variable.m_Name);
+  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
   if(variable.m_Name != "step" && rank == 0)
   {
     std::cout << "Get rank: " << rank
@@ -400,14 +400,14 @@ void HermesEngine::DoGetDeferred_(
               <<std::endl;
   }
 //  std::cout << "Opening file: " << bucket_name << std::endl;
-  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
-  auto fp = fopen(file.c_str(), "r");
-  if (fp == NULL) {
-    std::cout << "Error opening file: " << bucket_name << std::endl;
-    exit(1);
-  }
-  fread(values, sizeof(T), 1024, fp);
-  fclose(fp);
+//  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
+//  auto fp = fopen(file.c_str(), "r");
+//  if (fp == NULL) {
+//    std::cout << "Error opening file: " << bucket_name << std::endl;
+//    exit(1);
+//  }
+//  fread(values, sizeof(T), 1024, fp);
+//  fclose(fp);
 //memcpy(values, blob.data(), blob.size());
 }
 
@@ -421,18 +421,18 @@ void HermesEngine::DoPutDeferred_(
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-//  auto bkt = Hermes->GetBucket(bucket_name);
-//  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-//  std::cout << "Opening file: " << bucket_name << std::endl;
-  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
-  auto fp = fopen(file.c_str(), "w");
-  if (fp == NULL) {
-    std::cout << "Error opening file" << std::endl;
-    exit(1);
-  }
-
-  fwrite(values, sizeof(T), variable.SelectionSize(), fp);
-  fclose(fp);
+  auto bkt = Hermes->GetBucket(bucket_name);
+  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+  std::cout << "Opening file: " << bucket_name << std::endl;
+//  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
+//  auto fp = fopen(file.c_str(), "w");
+//  if (fp == NULL) {
+//    std::cout << "Error opening file" << std::endl;
+//    exit(1);
+//  }
+//
+//  fwrite(values, sizeof(T), variable.SelectionSize(), fp);
+//  fclose(fp);
 
 //  std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
 //      "_rank_" + std::to_string(rank);
