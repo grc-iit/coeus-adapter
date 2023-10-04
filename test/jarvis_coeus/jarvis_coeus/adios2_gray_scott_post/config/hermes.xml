@@ -22,7 +22,7 @@
 
     <io name="PDFAnalysisOutput">
         <engine type="Plugin">
-            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginName" value="hermes_out" />
             <parameter key="PluginLibrary" value="hermes_engine" />
 
             <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>
