@@ -94,7 +94,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   bool open = false;
 
   int currentStep = 0;
-  int total_steps = 0;
+  int total_steps = -1;
 
 //  std::shared_ptr<coeus::MPI> mpiComm;
   int rank;

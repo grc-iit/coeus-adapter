@@ -170,7 +170,7 @@ int main(int argc, char **argv)
                           << it / settings.plotgap << std::endl;
             }
 
-            writer_main.write(it, sim);
+            writer_main.write(it, sim, rank);
         }
 
         if (settings.checkpoint && (it % settings.checkpoint_freq) == 0)
