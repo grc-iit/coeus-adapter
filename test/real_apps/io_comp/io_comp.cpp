@@ -94,8 +94,6 @@ int main(int argc, char *argv[]) {
   if(rank==0) std::cout << "BeginStep" << std::endl;
 
   while(readEngine.BeginStep() == adios2::StepStatus::OK) {
-//    std::cout << "Rank: " << rank << "Step: " << readEngine.CurrentStep() << std::endl;
-    std::cout << "Rank: " << rank << std::endl;
     adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
     print_meta(rank, size, readVariable);
 
@@ -106,11 +104,7 @@ int main(int argc, char *argv[]) {
 
     readEngine.EndStep();
   }
-  std::cout << "close" << std::endl;
   readEngine.Close();
-//  std::cout << readEngine.Name() << std::endl;
-
-  std::cout << "DONE" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
   if(rank==0){
