@@ -81,6 +81,7 @@ class Adios2GrayScottPost(Application):
                 'default': 'benchmark_metadata.db',
             },
         ]
+    # jarvis pkg config adios2_gray_scott_post ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db in_filename=gs.bp out_filename=post.bp nprocs=1
 
     def configure(self, **kwargs):
         """
