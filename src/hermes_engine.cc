@@ -142,10 +142,10 @@ void HermesEngine::Init_() {
   }
 
   //Hermes setup
-  if(!Hermes->connect()){
-    engine_logger->warn("Could not connect to Hermes", rank);
-    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-  }
+//  if(!Hermes->connect()){
+//    engine_logger->warn("Could not connect to Hermes", rank);
+//    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+//  }
   open = true;
 }
 
@@ -207,9 +207,9 @@ void HermesEngine::EndStep() {
       db->UpdateTotalSteps(uid, currentStep);
       lock->unlock();
 
-      auto blob_name = "total_steps_" + uid;
-      auto bkt = Hermes->GetBucket("total_steps");
-      bkt->Put(blob_name, sizeof(int), &currentStep);
+//      auto blob_name = "total_steps_" + uid;
+//      auto bkt = Hermes->GetBucket("total_steps");
+//      bkt->Put(blob_name, sizeof(int), &currentStep);
     }
   }
 }
@@ -227,8 +227,8 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
       + "_rank" + std::to_string(rank);
 
   // Obtain the blob from Hermes using the filename and variable name
-  auto bkt = Hermes->GetBucket(bucket_name);
-  hermes::Blob blob = bkt->Get(Var.m_Name);
+//  auto bkt = Hermes->GetBucket(bucket_name);
+//  hermes::Blob blob = bkt->Get(Var.m_Name);
 
 #define DEFINE_VARIABLE(T) \
     if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
