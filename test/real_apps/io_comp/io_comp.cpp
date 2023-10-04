@@ -85,16 +85,14 @@ int main(int argc, char *argv[]) {
     std::cout << "\tPut done, time: " << localPutTime << std::endl;
   }
 
-  adios2::IO readIO = adios.DeclareIO("ReadIO");
-  if(rank==0) std::cout << "Opening file: " << out_file << std::endl;
-  auto readEngine = readIO.Open(out_file, adios2::Mode::Read);
+  auto readEngine = io.Open(out_file, adios2::Mode::Read);
   MPI_Barrier(MPI_COMM_WORLD);
 
   double localGetTime = 0.0;
   if(rank==0) std::cout << "BeginStep" << std::endl;
 
   while(readEngine.BeginStep() == adios2::StepStatus::OK) {
-    adios2::Variable<char> readVariable = readIO.InquireVariable<char>("data");
+    adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
     print_meta(rank, size, readVariable);
 
     auto startGet = std::chrono::high_resolution_clock::now();
