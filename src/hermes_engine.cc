@@ -138,17 +138,15 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-  std::cout << "Close Inside Enter" << std::endl;
+  std::cout << "Close" << std::endl;
   engine_logger->info("rank {}", rank);
   open = false;
   mpiComm->free();
-  std::cout << "Close Inside Finsih" << std::endl;
 }
 
 HermesEngine::~HermesEngine() {
-  std::cout << "Close des Enter" << std::endl;
+  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
-  std::cout << "Close des Finsih" << std::endl;
 }
 
 /**
@@ -294,18 +292,16 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void* element) {
 void HermesEngine::LoadMetadata() {
   std::string filename = "step_" + std::to_string(currentStep) +
       "_rank_" + std::to_string(rank);
-  std::cout << "Load Metadata: " << filename << std::endl;
   auto bkt = Hermes->GetBucket(filename);
-  std::cout << "Get Bucket Metadata: " << filename << std::endl;
+
   std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
-  std::cout << "blobIds.size(): " << blobIds.size() << std::endl;
+  if(rank==0) std::cout << "blobIds.size(): " << blobIds.size() << std::endl;
   for (const auto &blobId : blobIds) {
-    std::cout << "blobId: " << blobId << std::endl;
     hermes::Blob blob = bkt->Get(blobId);
     VariableMetadata variableMetadata =
         MetadataSerializer::DeserializeMetadata(blob);
     listOfVars.push_back(bkt->GetBlobName(blobId));
-    std::cout << "variableMetadata: " << variableMetadata << std::endl;
+    if(rank==0) std::cout << "variableMetadata: " << variableMetadata << std::endl;
     DefineVariable(variableMetadata);
   }
 }
