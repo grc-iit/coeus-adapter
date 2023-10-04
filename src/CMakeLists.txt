@@ -14,13 +14,15 @@ add_dependencies(hermes_engine spdlog)
 target_include_directories(hermes_engine PUBLIC
         ../include
         ${Hermes_INCLUDE_DIR}
-        ${ADIOS2_INCLUDE_DIR})
+        ${ADIOS2_INCLUDE_DIR}
+        ${SQLite3_INCLUDE_DIRS})
 target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
         spdlog
         cereal
-        rapidjson)
+        rapidjson
+        ${SQLite3_LIBRARIES})
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
