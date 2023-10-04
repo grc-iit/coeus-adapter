@@ -136,11 +136,14 @@ void HermesEngine::DoClose(const int transportIndex) {
   std::cout << "Close Inside Enter" << std::endl;
   engine_logger->info("rank {}", rank);
   open = false;
+  mpiComm->free();
   std::cout << "Close Inside Finsih" << std::endl;
 }
 
 HermesEngine::~HermesEngine() {
+  std::cout << "Close des Enter" << std::endl;
   engine_logger->info("rank {}", rank);
+  std::cout << "Close des Finsih" << std::endl;
 }
 
 /**
