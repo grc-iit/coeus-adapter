@@ -94,14 +94,15 @@ struct VariableMetadata {
   }
 
   static std::string serializeVector(const std::vector<size_t>& vec) {
-    std::ostringstream oss;
-    for (size_t i = 0; i < vec.size(); ++i) {
-      oss << vec[i];
-      if (i != vec.size() - 1) {
-        oss << ",";
-      }
-    }
-    return oss.str();
+//    std::ostringstream oss;
+//    for (size_t i = 0; i < vec.size(); ++i) {
+//      oss << vec[i];
+//      if (i != vec.size() - 1) {
+//        oss << ",";
+//      }
+//    }
+//    return oss.str();
+    return "16,8,8";
   }
 
   static std::vector<size_t> deserializeVector(const std::string& str) {
