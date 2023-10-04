@@ -388,7 +388,9 @@ void HermesEngine::DoGetDeferred_(
 
   auto bkt = Hermes->GetBucket(bucket_name);
   auto blob = bkt->Get(variable.m_Name);
-  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
+  memcpy(values, blob.data(), blob.size());
+
+//  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
   if(variable.m_Name != "step" && rank == 0)
   {
     std::cout << "Get rank: " << rank
@@ -408,7 +410,6 @@ void HermesEngine::DoGetDeferred_(
 //  }
 //  fread(values, sizeof(T), 1024, fp);
 //  fclose(fp);
-//memcpy(values, blob.data(), blob.size());
 }
 
 template<typename T>
@@ -423,7 +424,7 @@ void HermesEngine::DoPutDeferred_(
 
   auto bkt = Hermes->GetBucket(bucket_name);
   bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << "Opening file: " << bucket_name << std::endl;
+//  std::cout << "Opening file: " << bucket_name << std::endl;
 //  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
 //  auto fp = fopen(file.c_str(), "w");
 //  if (fp == NULL) {
