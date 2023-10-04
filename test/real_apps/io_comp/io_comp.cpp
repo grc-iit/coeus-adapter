@@ -108,9 +108,9 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "close" << std::endl;
   readEngine.Close();
-  std::cout << "DONE" << std::endl;
-
   std::cout << readEngine.Name() << std::endl;
+
+  std::cout << "DONE" << std::endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
   if(rank==0){
