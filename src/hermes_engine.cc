@@ -391,7 +391,7 @@ void HermesEngine::DoGetDeferred_(
   if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
       || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
   {
-    std::cout << "Put rank: " << rank << variable.SelectionSize() <<
+    std::cout << "Put rank: " << rank << variable.SelectionSize()
               << " Var Name " << variable.m_Name
               << " Count " << concatenateVectorToString(variable.m_Count)
               << " Start " << concatenateVectorToString(variable.m_Start)
@@ -447,7 +447,7 @@ void HermesEngine::DoPutDeferred_(
   if(rank == 0 || variable.SelectionSize() != 1024 || variable.m_Count.size() != 3
   || variable.m_Start.size() != 3 || variable.m_Shape.size() != 3)
   {
-    std::cout << "Put rank: " << rank << variable.SelectionSize() <<
+    std::cout << "Put rank: " << rank << variable.SelectionSize()
     << " Var Name " << variable.m_Name
     << " Count " << concatenateVectorToString(variable.m_Count)
     << " Start " << concatenateVectorToString(variable.m_Start)
