@@ -352,7 +352,7 @@ void HermesEngine::DoGetDeferred_(
   auto bkt = Hermes->GetBucket(bucket_name);
   auto blob = bkt->Get(variable.m_Name);
   std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-//  memcpy(values, blob.data(), blob.size());
+  memcpy(values, blob.data(), blob.size());
   std::cout << "Done with Get" << std::endl;
 }
 
