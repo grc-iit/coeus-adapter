@@ -350,6 +350,7 @@ void HermesEngine::DoGetDeferred_(
   // Retrieve the value of the variable in the current step
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
+  if(currentStep == 0) std::cout << "WHAAAAAAAAAAAAAAAAAT TF" << std::endl;
 
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  auto blob = bkt->Get(variable.m_Name);
@@ -358,7 +359,7 @@ void HermesEngine::DoGetDeferred_(
   std::cout << "Opening file: " << bucket_name << std::endl;
   auto fp = fopen(bucket_name.c_str(), "r");
   if (fp == NULL) {
-    std::cout << "Error opening file" << std::endl;
+    std::cout << "Error opening file: " << bucket_name << std::endl;
     exit(1);
   }
   fread(values, sizeof(T), 1024, fp);
@@ -378,6 +379,7 @@ void HermesEngine::DoPutDeferred_(
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
+  if(currentStep == 0) std::cout << "WHAAAAAAAAAAAAAAAAAT TF" << std::endl;
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
   std::cout << "Opening file: " << bucket_name << std::endl;
