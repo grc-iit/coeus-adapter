@@ -111,10 +111,14 @@ void Writer::write(int step, const GrayScott &sim)
 
     if (settings.adios_memory_selection)
     {
+      std::cout << "mem_selection" <<std::endl;
         const std::vector<double> &u = sim.u_ghost();
         const std::vector<double> &v = sim.v_ghost();
 
-        writer.BeginStep();
+      std::cout << u.size() << " " << v.size() <<std::endl;
+      std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
+
+      writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
 
@@ -123,6 +127,7 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else if (settings.adios_span)
     {
+      std::cout << "span" <<std::endl;
         writer.BeginStep();
 
         writer.Put<int>(var_step, &step);
@@ -139,9 +144,12 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else
     {
-
+        std::cout << "else" <<std::endl;
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
+
+        std::cout << u.size() << " " << v.size() <<std::endl;
+        std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
 
         writer.BeginStep();
         writer.Put<int>(var_step, &step);
