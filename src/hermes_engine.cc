@@ -355,12 +355,13 @@ void HermesEngine::DoGetDeferred_(
 //  auto blob = bkt->Get(variable.m_Name);
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
 
+  std::cout << "Opening file: " << bucket_name << std::endl;
   auto fp = fopen(bucket_name.c_str(), "r");
   if (fp == NULL) {
     std::cout << "Error opening file" << std::endl;
     exit(1);
   }
-  fread(values, sizeof(T), variable.SelectionSize(), fp);
+  fread(values, sizeof(T), 1024, fp);
   fclose(fp);
 //memcpy(values, blob.data(), blob.size());
 
@@ -379,12 +380,13 @@ void HermesEngine::DoPutDeferred_(
 
 //  auto bkt = Hermes->GetBucket(bucket_name);
 //  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-
+  std::cout << "Opening file: " << bucket_name << std::endl;
   auto fp = fopen(bucket_name.c_str(), "w");
   if (fp == NULL) {
     std::cout << "Error opening file" << std::endl;
     exit(1);
   }
+
   fwrite(values, sizeof(T), variable.SelectionSize(), fp);
   fclose(fp);
 
