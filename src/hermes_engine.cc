@@ -27,7 +27,7 @@ namespace coeus {
  *  MyProject(hermes h_object)hermes(h_object);
  *
  */
-std::string concatenateVectorToString(const std::vector<size_t>& vec) {
+std::string concatenateVectorToString(const std::vector<size_t> &vec) {
   std::stringstream ss;
   ss << "( ";
   for (size_t i = 0; i < vec.size(); ++i) {
@@ -40,7 +40,7 @@ std::string concatenateVectorToString(const std::vector<size_t>& vec) {
   return ss.str();
 }
 
-int SumVector(const std::vector<size_t>& vec) {
+int SumVector(const std::vector<size_t> &vec) {
   int total = 0;
   for (size_t i = 0; i < vec.size(); ++i) {
     total += vec[i];
@@ -116,41 +116,41 @@ void HermesEngine::Init_() {
 
   //Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
-  if(params.find("OPFile") != params.end()){
+  if (params.find("OPFile") != params.end()) {
     std::string opFile = params["OPFile"];
-    if(rank==0)std::cout<< "OPFile: " << opFile << std::endl;
-    try{
+    if (rank == 0)std::cout << "OPFile: " << opFile << std::endl;
+    try {
       operationMap = YAMLParser(opFile).parse();
     }
-    catch (std::exception &e){
+    catch (std::exception &e) {
       engine_logger->warn("Could not parse operation file", rank);
       throw e;
     }
   }
-  if(params.find("VarFile") != params.end()){
+  if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
-    if(rank==0)std::cout<< "varFile: " << varFile << std::endl;
-    try{
+    if (rank == 0)std::cout << "varFile: " << varFile << std::endl;
+    try {
       variableMap = YAMLParser(varFile).parse();
     }
-    catch (std::exception &e){
+    catch (std::exception &e) {
       engine_logger->warn("Could not parse variable file", rank);
       throw e;
     }
   }
 
-  if(params.find("db_file") != params.end()){
+  if (params.find("db_file") != params.end()) {
     std::string db_file = params["db_file"];
     lock = new FileLock(db_file + ".lock");
     lock->lock();
     db = new SQLiteWrapper(db_file);
     lock->unlock();
-  } else{
+  } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
 
   //Hermes setup
-  if(!Hermes->connect()){
+  if (!Hermes->connect()) {
     engine_logger->warn("Could not connect to Hermes", rank);
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
@@ -183,7 +183,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   engine_logger->info("rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
-    if(total_steps == -1) total_steps = db->GetTotalSteps(uid);
+    if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
 
     if (currentStep > total_steps) {
       std::cout << rank << " End of stream" << std::endl;
@@ -207,7 +207,7 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
   engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
-    if(rank%20 == 0) { //TODO: use the mpi node master
+    if (rank % 20 == 0) { //TODO: use the mpi node master
       lock->lock();
       db->UpdateTotalSteps(uid, currentStep);
       lock->unlock();
@@ -232,20 +232,20 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
       + "_rank" + std::to_string(rank);
 
   // Obtain the blob from Hermes using the filename and variable name
-//  auto bkt = Hermes->GetBucket(bucket_name);
-//  hermes::Blob blob = bkt->Get(Var.m_Name);
-//
-//#define DEFINE_VARIABLE(T) \
-//    if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
-//        size_t dataSize = blob.size() / sizeof(T);                               \
-//        const T *data = reinterpret_cast<const T *>(blob.data());               \
-//        for (size_t i = 0; i < dataSize; ++i) {               \
-//                void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
-//                ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                   \
-//            }              \
-//    }
-//  ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-//#undef DEFINE_VARIABLE
+  auto bkt = Hermes->GetBucket(bucket_name);
+  hermes::Blob blob = bkt->Get(Var.m_Name);
+
+#define DEFINE_VARIABLE(T) \
+      if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
+          size_t dataSize = blob.size() / sizeof(T);                               \
+          const T *data = reinterpret_cast<const T *>(blob.data());               \
+          for (size_t i = 0; i < dataSize; ++i) {               \
+                  void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
+                  ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                   \
+              }              \
+      }
+  ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
+#undef DEFINE_VARIABLE
   return true;
 }
 
@@ -253,38 +253,27 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
                                       adios2::DataType Type, void *Element) {
 
   switch (Type) {
-    case adios2::DataType::Int8:
-      ElementMinMax<int8_t>(MinMax, Element);
+    case adios2::DataType::Int8:ElementMinMax<int8_t>(MinMax, Element);
       break;
-    case adios2::DataType::Int16:
-      ElementMinMax<int16_t>(MinMax, Element);
+    case adios2::DataType::Int16:ElementMinMax<int16_t>(MinMax, Element);
       break;
-    case adios2::DataType::Int32:
-      ElementMinMax<int32_t>(MinMax, Element);
+    case adios2::DataType::Int32:ElementMinMax<int32_t>(MinMax, Element);
       break;
-    case adios2::DataType::Int64:
-      ElementMinMax<int64_t>(MinMax, Element);
+    case adios2::DataType::Int64:ElementMinMax<int64_t>(MinMax, Element);
       break;
-    case adios2::DataType::UInt8:
-      ElementMinMax<uint8_t>(MinMax, Element);
+    case adios2::DataType::UInt8:ElementMinMax<uint8_t>(MinMax, Element);
       break;
-    case adios2::DataType::UInt16:
-      ElementMinMax<uint16_t>(MinMax, Element);
+    case adios2::DataType::UInt16:ElementMinMax<uint16_t>(MinMax, Element);
       break;
-    case adios2::DataType::UInt32:
-      ElementMinMax<uint32_t>(MinMax, Element);
+    case adios2::DataType::UInt32:ElementMinMax<uint32_t>(MinMax, Element);
       break;
-    case adios2::DataType::UInt64:
-      ElementMinMax<uint64_t>(MinMax, Element);
+    case adios2::DataType::UInt64:ElementMinMax<uint64_t>(MinMax, Element);
       break;
-    case adios2::DataType::Float:
-      ElementMinMax<float>(MinMax, Element);
+    case adios2::DataType::Float:ElementMinMax<float>(MinMax, Element);
       break;
-    case adios2::DataType::Double:
-      ElementMinMax<double>(MinMax, Element);
+    case adios2::DataType::Double:ElementMinMax<double>(MinMax, Element);
       break;
-    case adios2::DataType::LongDouble:
-      ElementMinMax<long double>(MinMax, Element);
+    case adios2::DataType::LongDouble:ElementMinMax<long double>(MinMax, Element);
       break;
     default:
       /*
@@ -300,20 +289,20 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
 }
 
 template<typename T>
-T* HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
-  return reinterpret_cast<T*>(&u);
+T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
+  return reinterpret_cast<T *>(&u);
 }
 
 template<typename T>
-void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void* element) {
-  T* min = SelectUnion<T>(MinMax.MinUnion);
-  T* max = SelectUnion<T>(MinMax.MaxUnion);
-  T* value = static_cast<T*>(element);
+void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
+  T *min = SelectUnion<T>(MinMax.MinUnion);
+  T *max = SelectUnion<T>(MinMax.MaxUnion);
+  T *value = static_cast<T *>(element);
   if (*value < *min) {
     min = value;
   }
   if (*value > *max) {
-      max = value;
+    max = value;
   }
 }
 
@@ -334,19 +323,18 @@ void HermesEngine::LoadMetadata() {
 //  }
 
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
-  if(metadata_vector.size() != 3) {
+  if (metadata_vector.size() != 3) {
     std::cout << "Found " << metadata_vector.size() << " vars at step " << currentStep << " for rank " << rank
               << std::endl;
   }
-  for(auto &variableMetadata : metadata_vector) {
-    if(variableMetadata.name != "step" && rank == 0 )
-    {
+  for (auto &variableMetadata : metadata_vector) {
+    if (variableMetadata.name != "step" && rank == 0) {
       std::cout << "Metadata rank: " << rank
                 << " Var Name " << variableMetadata.name
                 << " Count " << concatenateVectorToString(variableMetadata.count)
                 << " Start " << concatenateVectorToString(variableMetadata.start)
                 << " Shape " << concatenateVectorToString(variableMetadata.shape)
-                <<std::endl;
+                << std::endl;
     }
     DefineVariable(variableMetadata);
   }
@@ -391,15 +379,14 @@ void HermesEngine::DoGetDeferred_(
   memcpy(values, blob.data(), blob.size());
 
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if(variable.m_Name != "step" && rank == 0)
-  {
+  if (variable.m_Name != "step" && rank == 0) {
     std::cout << "Get rank: " << rank
               << " Slection Size: " << variable.SelectionSize()
               << " Var Name " << variable.m_Name
               << " Count " << concatenateVectorToString(variable.m_Count)
               << " Start " << concatenateVectorToString(variable.m_Start)
               << " Shape " << concatenateVectorToString(variable.m_Shape)
-              <<std::endl;
+              << std::endl;
   }
 //  std::cout << "Opening file: " << bucket_name << std::endl;
 //  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
@@ -444,28 +431,26 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if(variable.m_Name != "step" && rank == 0)
-  {
+  if (variable.m_Name != "step" && rank == 0) {
     std::cout << "Put rank: " << rank
               << " Slection Size: " << variable.SelectionSize()
               << " Var Name " << variable.m_Name
               << " Count " << concatenateVectorToString(variable.m_Count)
               << " Start " << concatenateVectorToString(variable.m_Start)
               << " Shape " << concatenateVectorToString(variable.m_Shape)
-              <<std::endl;
+              << std::endl;
   }
   VariableMetadata vm(variable);
   BlobInfo blobInfo(bucket_name, variable.m_Name);
 
-  if(variable.m_Name != "step" && rank == 0)
-  {
+  if (variable.m_Name != "step" && rank == 0) {
     std::cout << "Put Metadata rank: " << rank
               << " Slection Size: " << variable.SelectionSize()
               << " Var Name " << vm.name
               << " Count " << concatenateVectorToString(vm.count)
               << " Start " << concatenateVectorToString(vm.start)
               << " Shape " << concatenateVectorToString(vm.shape)
-              <<std::endl;
+              << std::endl;
   }
   lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
