@@ -29,14 +29,14 @@ namespace coeus {
  */
 std::string concatenateVectorToString(const std::vector<size_t>& vec) {
   std::stringstream ss;
-
+  ss << "( ";
   for (size_t i = 0; i < vec.size(); ++i) {
-    ss << "elem" << vec[i];
+    ss << vec[i];
     if (i < vec.size() - 1) {
       ss << ", ";
     }
   }
-
+  ss << " )";
   return ss.str();
 }
 
