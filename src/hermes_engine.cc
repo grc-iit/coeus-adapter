@@ -359,23 +359,14 @@ void HermesEngine::DoPutDeferred_(
   auto bkt = Hermes->GetBucket(bucket_name);
   bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
 
-  // Check if the value is already in the list
-  auto it = std::find(listOfVars.begin(),
-                      listOfVars.end(),
-                      variable.m_Name);
+  std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
+      "_rank_" + std::to_string(rank);
 
-  // Update the metadata bucket in hermes with the new variable
-  if (it == listOfVars.end()) {
-    std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
-        "_rank_" + std::to_string(rank);
-    listOfVars.push_back(variable.m_Name);
+  std::string serializedMetadata =
+      MetadataSerializer::SerializeMetadata<T>(variable);
 
-    std::string serializedMetadata =
-        MetadataSerializer::SerializeMetadata<T>(variable);
-
-    auto bkt = Hermes->GetBucket(bucket_name_metadata);
-    auto status = bkt->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
-  }
+  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
+  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 }
 
 }  // namespace coeus
