@@ -30,10 +30,9 @@ class Hermes : public IHermes {
     return hermes->IsInitialized();
   };
 
-  std::unique_ptr<IBucket> GetBucket(const std::string &bucket_name) override {
-    Bucket* bkt = new coeus::Bucket(bucket_name, this);
-    std::unique_ptr<IBucket> bucketPtr(bkt);
-    return bucketPtr;
+    bool GetBucket(const std::string &bucket_name) override {
+    bkt = (IBucket*) new coeus::Bucket(bucket_name, this);
+    return true;
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {

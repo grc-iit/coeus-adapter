@@ -197,6 +197,10 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     }
     LoadMetadata();
   }
+  std::string bucket_name = "step_" + std::to_string(currentStep)
+      + "_rank" + std::to_string(rank);
+
+  Hermes->GetBucket(bucket_name);
   return adios2::StepStatus::OK;
 }
 
@@ -223,6 +227,7 @@ void HermesEngine::EndStep() {
 //      bkt->Put(blob_name, sizeof(int), &currentStep);
     }
   }
+  delete Hermes->bkt;
 }
 
 /**
@@ -238,8 +243,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
       + "_rank" + std::to_string(rank);
 
   // Obtain the blob from Hermes using the filename and variable name
-  auto bkt = Hermes->GetBucket(bucket_name);
-  hermes::Blob blob = bkt->Get(Var.m_Name);
+  hermes::Blob blob = hermes->bkt->Get(Var.m_Name);
 
 #define DEFINE_VARIABLE(T) \
       if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
@@ -380,8 +384,7 @@ void HermesEngine::DoGetDeferred_(
   std::string bucket_name = variable.m_Name + "_step_" +
       std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-  auto bkt = Hermes->GetBucket(bucket_name);
-  auto blob = bkt->Get(variable.m_Name);
+  auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
 
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
@@ -412,11 +415,8 @@ void HermesEngine::DoPutDeferred_(
 //  " " << rank << " " <<  variable.SelectionSize() << std::endl;
 
   // Create a bucket with the associated step and process rank
-  std::string bucket_name = variable.m_Name + "_step_" +
-      std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-  auto bkt = Hermes->GetBucket(bucket_name);
-  bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+  Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
 //  std::cout << "Opening file: " << bucket_name << std::endl;
 //  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
 //  auto fp = fopen(file.c_str(), "w");
@@ -447,7 +447,7 @@ void HermesEngine::DoPutDeferred_(
 //              << std::endl;
 //  }
   VariableMetadata vm(variable);
-  BlobInfo blobInfo(bucket_name, variable.m_Name);
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
 //  if (variable.m_Name != "step" && rank == 0) {
 //    std::cout << "Put Metadata rank: " << rank

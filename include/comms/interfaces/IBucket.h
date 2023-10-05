@@ -17,6 +17,7 @@
 namespace coeus {
 class IBucket {
  public:
+  std::string name;
   virtual ~IBucket() = default;
 
   virtual hermes::BlobId Put(const std::string &blob_name, size_t blob_size, const void *values) = 0;
