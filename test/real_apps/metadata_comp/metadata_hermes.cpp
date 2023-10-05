@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0) std::cout << "Rank " << rank << " finished writting" << std::endl;
+
   double localQueryAppsTime = 0.0, localQueryBlobsTime = 0.0, localQueryMetadataTime = 0.0;
   for (int step = 0; step < N; ++step) {
     auto startQueryApps = std::chrono::high_resolution_clock::now();
@@ -132,6 +134,7 @@ int main(int argc, char* argv[]) {
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0) std::cout << "Rank " << rank << " finished reading" << std::endl;
 
   double globalInsertAppsTime = 0.0, globalInsertBlobsTime = 0.0, globalInsertMetadataTime = 0.0;
   double globalQueryAppsTime = 0.0, globalQueryBlobsTime = 0.0, globalQueryMetadataTime = 0.0;
