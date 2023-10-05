@@ -44,7 +44,7 @@ for nprocs in proc_counts:
                             engine='bp5',
                             db_path='/mnt/nvme/jcernudagarcia/metadata.db'
                             )
-            print(f'Executing with {nprocs}/{ppn} executing {N} operations of size {B} processed over {device} in {outfile}')
+            print(f'Executing with {nprocs}/{ppn} executing {N} operations of size {io_size} processed over {device} in {outfile}')
             start = time.time()
             bench.run()
             stop = time.time()
