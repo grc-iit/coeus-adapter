@@ -95,10 +95,9 @@ int main(int argc, char *argv[]) {
 
       auto startPut = std::chrono::high_resolution_clock::now();
       engine.Put<char>(variable, data.data());
+      engine.EndStep();
       auto endPut = std::chrono::high_resolution_clock::now();
       localPutTime += std::chrono::duration<double>(endPut - startPut).count();
-
-      engine.EndStep();
     }
     engine.Close();
 
