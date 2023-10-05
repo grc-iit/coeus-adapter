@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     std::string header = "Size,B,N,GlobalPutTime,GlobalGetTime\n";
     bool needHeader = false;
 
-    auto filename = "io_comp_results_" + engine_name + ".csv";
+    auto filename = "io_comp_results.csv";
     std::cout << "Writing results to " << filename << std::endl;
     // Check if the file is empty or doesn't exist
     std::ifstream checkFile(filename);
