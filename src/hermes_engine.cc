@@ -148,9 +148,9 @@ void HermesEngine::Init_() {
   if (params.find("db_file") != params.end()) {
     std::string db_file = params["db_file"];
     lock = new FileLock(db_file + ".lock");
-    lock->lock();
-    db = new SQLiteWrapper(db_file);
-    lock->unlock();
+//    lock->lock();
+    db = new SQLiteWrapper(db_file+std::to_string(rank));
+//    lock->unlock();
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
@@ -217,15 +217,17 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
 //  engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
-    if (rank % ppn == 0) { //TODO: use the mpi node master
-      lock->lock();
-      db->UpdateTotalSteps(uid, currentStep);
-      lock->unlock();
+    db->UpdateTotalSteps(uid, currentStep);
+
+//    if (rank % ppn == 0) { //TODO: use the mpi node master
+//      lock->lock();
+//      db->UpdateTotalSteps(uid, currentStep);
+//      lock->unlock();
 
 //      auto blob_name = "total_steps_" + uid;
 //      auto bkt = Hermes->GetBucket("total_steps");
 //      bkt->Put(blob_name, sizeof(int), &currentStep);
-    }
+//    }
   }
   delete Hermes->bkt;
 }
@@ -458,10 +460,10 @@ void HermesEngine::DoPutDeferred_(
 //              << " Shape " << concatenateVectorToString(vm.shape)
 //              << std::endl;
 //  }
-  lock->lock();
+//  lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
 //  db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
-  lock->unlock();
+//  lock->unlock();
 }
 
 }  // namespace coeus
