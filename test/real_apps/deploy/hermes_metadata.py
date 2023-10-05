@@ -15,7 +15,7 @@ bench = Pipeline().load(name)
 # will not erase env.yaml
 bench.clear()
 # append packages to pipeline
-bench.append('hermes_run', sleep=5)
+bench.append('hermes_run', sleep=5, ram='16G')
 bench.append('mdm_compare')
 
 # Scale the pipeline
