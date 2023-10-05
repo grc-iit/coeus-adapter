@@ -7,7 +7,6 @@ import time
 import sys
 
 # Create baseline pipeline
-name = sys.argv[1]
 bench = Pipeline().load(name)
 # will clear all packages from pipeline
 # will not erase env.yaml
