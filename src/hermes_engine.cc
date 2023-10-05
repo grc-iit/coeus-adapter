@@ -243,7 +243,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
       + "_rank" + std::to_string(rank);
 
   // Obtain the blob from Hermes using the filename and variable name
-  hermes::Blob blob = hermes->bkt->Get(Var.m_Name);
+  hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
 
 #define DEFINE_VARIABLE(T) \
       if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
