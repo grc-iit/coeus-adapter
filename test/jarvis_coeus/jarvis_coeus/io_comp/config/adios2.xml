@@ -3,6 +3,9 @@
     <io name="TestIO">
         <engine type="BP5">
             <parameter key="DirectIO" value="true"/>
+            <transport type="File" library="POSIX">
+                <parameter key="IOMode" value="Sync"/>
+            </transport>
         </engine>
     </io>
 </adios-config>
