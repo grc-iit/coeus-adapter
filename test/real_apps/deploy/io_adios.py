@@ -20,7 +20,7 @@ bench = Pipeline().load(name)
 # will not erase env.yaml
 bench.clear()
 # append packages to pipeline
-benc.append('orangefs', ares=True)
+bench.append('orangefs', ares=True)
 bench.append('io_comp')
 
 # Scale the pipeline
