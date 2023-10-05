@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     adios2::IO io = adios.DeclareIO("TestIO");
     auto readEngine = io.Open(out_file, adios2::Mode::Read);
 
-    std::vector<char> data;
+    std::vector<char> data(B, rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
