@@ -8,6 +8,8 @@ import sys
 
 # Create baseline pipeline
 name = sys.argv[1]
+N = int(sys.argv[2])
+
 Pipeline().load(name).destroy()
 bench = Pipeline().load(name)
 # will clear all packages from pipeline
@@ -23,7 +25,7 @@ for nprocs in proc_counts:
     bench.configure('mdm_compare',
                     nprocs=nprocs,
                     ppn=20,
-                    N=10000,
+                    N=N,
                     metadata_engine='hermes',
                     db_path='/mnt/nvme/jcernudagarcia/metadata.db',)
     start = time.time()
