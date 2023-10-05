@@ -10,6 +10,7 @@
 #include <sstream>
 #include <mpi.h>
 #include <adios2.h>
+#include <random>
 
 //template <typename T>
 //void print_vector(std::vector<T> vec){
@@ -32,6 +33,21 @@
 //    MPI_Barrier(MPI_COMM_WORLD);
 //  }
 //}
+
+std::vector<char> generateRandomVector(std::size_t size) {
+  // Use the current time as seed for random number generation
+  std::mt19937 gen(static_cast<unsigned long>(std::time(nullptr)));
+  // Define range for the char data type
+  std::uniform_int_distribution<> dist(0, 255);
+
+  std::vector<char> result(size);
+
+  for(std::size_t i = 0; i < size; ++i) {
+    result[i] = static_cast<char>(dist(gen));
+  }
+
+  return result;
+}
 
 int main(int argc, char *argv[]) {
   int rank, size;
@@ -63,13 +79,15 @@ int main(int argc, char *argv[]) {
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
 
-    std::vector<char> data(B, rank);
+//    std::vector<char> data(B, rank);
     auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < N; ++i) {
+      auto data = generateRandomVector(B);
+
       engine.BeginStep();
 
       auto startPut = std::chrono::high_resolution_clock::now();
