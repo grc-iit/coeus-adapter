@@ -42,7 +42,8 @@ class Bucket : public IBucket {
   hermes::Blob Get(const std::string &blob_name) override {
     hapi::Context ctx;
     hermes::Blob blob;
-    return bkt.Get(blob_name, blob, ctx);
+    bkt.Get(blob_name, blob, ctx);
+    return blob;
   };
 
   hermes::Blob Get(hermes::BlobId blob_id) override {
