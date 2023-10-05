@@ -447,7 +447,7 @@ void HermesEngine::DoPutDeferred_(
 //              << std::endl;
 //  }
   VariableMetadata vm(variable);
-  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+//  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
 //  if (variable.m_Name != "step" && rank == 0) {
 //    std::cout << "Put Metadata rank: " << rank
