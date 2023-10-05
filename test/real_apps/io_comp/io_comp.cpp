@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
     adios2::IO io = adios.DeclareIO("TestIO");
 
     std::vector<char> data(B, rank);
-//    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
-    auto variable = io.DefineVariable<char>("data");
+    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
+//    auto variable = io.DefineVariable<char>("data");
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
