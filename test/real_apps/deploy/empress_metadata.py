@@ -10,7 +10,7 @@ import sys
 name = sys.argv[1]
 N = int(sys.argv[2])
 scale = False
-if --scale in sys.argv:
+if "--scale" in sys.argv:
     scale = True
     print("Running on high scale")
 else:
