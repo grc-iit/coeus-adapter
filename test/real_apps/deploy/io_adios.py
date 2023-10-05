@@ -24,7 +24,7 @@ bench.append('orangefs', ares=True)
 bench.append('io_comp')
 
 # Scale the pipeline
-devices = ['hdd']
+devices = ['nvme', 'hdd']
 io_sizes = [256, 65536, 1048576]
 if not reduced:
     proc_counts = [1, 2, 4, 8, 16, 20, 40, 80, 160, 320]
