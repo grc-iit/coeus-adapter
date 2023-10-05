@@ -81,13 +81,14 @@ int main(int argc, char *argv[]) {
 
     std::vector<char> data(B, rank);
 //    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
-    auto variable = io.DefineVariable<char>("data");
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < N; ++i) {
 //      auto data = generateRandomVector(B);
+      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
+      auto variable = io.DefineVariable<char>(var_name);
 
       engine.BeginStep();
 
@@ -116,8 +117,9 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (rank == 0) std::cout << "BeginStep" << std::endl;
-
+    int i = 0;
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
+      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
       adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
 
       auto startGet = std::chrono::high_resolution_clock::now();
@@ -126,6 +128,7 @@ int main(int argc, char *argv[]) {
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
 
       readEngine.EndStep();
+      i++;
     }
     readEngine.Close();
 
