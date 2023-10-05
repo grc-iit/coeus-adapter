@@ -29,6 +29,7 @@ if not scale:
     proc_counts = [1, 2, 4, 8, 16, 20, 40, 80]
 else:
     proc_counts = [160, 320]
+
 for nprocs in proc_counts:
     bench.configure('mdm_compare',
                     nprocs=nprocs,
