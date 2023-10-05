@@ -72,6 +72,12 @@ class IoComp(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'role',
+                'msg': 'producer (0) consumer (1)',
+                'type': int,
+                'default': 0,
+            }
         ]
 
     def configure(self, **kwargs):
@@ -119,8 +125,9 @@ class IoComp(Application):
         num_steps = self.config['N']
         size_io = self.config['B']
         out_file = self.config['out_file']
+        role = self.config['role']
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {out_file}',
+        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
