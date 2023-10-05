@@ -460,7 +460,7 @@ void HermesEngine::DoPutDeferred_(
 //  }
   lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
-  db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
+//  db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
   lock->unlock();
 }
 
