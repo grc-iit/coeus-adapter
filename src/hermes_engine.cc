@@ -381,8 +381,8 @@ void HermesEngine::DoGetDeferred_(
 //  "" << variable.SelectionSize() << std::endl;
 
   // Retrieve the value of the variable in the current step
-  std::string bucket_name = variable.m_Name + "_step_" +
-      std::to_string(currentStep) + "_rank" + std::to_string(rank);
+//  std::string bucket_name = variable.m_Name + "_step_" +
+//      std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
