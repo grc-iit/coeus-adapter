@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
 
       readEngine.EndStep();
+      if(rank==0) std::cout << "Data: " << data[0] << std::endl;
     }
     readEngine.Close();
 
