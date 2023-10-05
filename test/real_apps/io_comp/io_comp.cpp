@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   MPI_Reduce(&localGetTime, &globalGetTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if(rank == 0) {
-    std::string header = "Size,B,N,GlobalPutTime,GlobalGetTime\n";
+    std::string header = "Size,B,N,GlobalPutTime,GlobalGetTimem rank0Put, rank0Get\n";
     bool needHeader = false;
 
     auto filename = "io_comp_results.csv";
@@ -142,7 +142,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Append the results
-    outputFile << size << "," << B << "," << N << "," << globalPutTime << "," << globalGetTime << std::endl;
+    outputFile << size << "," << B << "," << N << ","
+    << globalPutTime << "," << globalGetTime << ","
+    << localPutTime << "," << localGetTime << std::endl;
     outputFile.close();
   }
 
