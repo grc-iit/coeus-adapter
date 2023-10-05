@@ -94,12 +94,12 @@ class IoComp(Application):
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
-
+        ppn = self.config['ppn']
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
         elif self.config['engine'].lower() == 'hermes':
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes_{ppn}.xml',
                                     self.adios2_xml_path)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)

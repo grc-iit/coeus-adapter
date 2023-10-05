@@ -127,6 +127,12 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
+
+  if (params.find("ppn") != params.end()) {
+    ppn = stoi(params["ppn"]);
+    if (rank == 0) std::cout << "PPN: " << ppn << std::endl;
+  }
+
   if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
     if (rank == 0)std::cout << "varFile: " << varFile << std::endl;
@@ -207,7 +213,7 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
   engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
-    if (rank % 20 == 0) { //TODO: use the mpi node master
+    if (rank % ppn == 0) { //TODO: use the mpi node master
       lock->lock();
       db->UpdateTotalSteps(uid, currentStep);
       lock->unlock();

@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
 
   const int N = std::stoi(argv[1]);
   const size_t B = std::stoul(argv[2]);
-    B - B/8;
   std::string config_path = argv[3];
   std::string out_file = argv[4];
 
@@ -59,22 +58,22 @@ int main(int argc, char *argv[]) {
   }
   double localGetTime = 0.0;
   double localPutTime = 0.0;
-
+  std::string engine_name;
   {
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
 
-    std::vector<double> data(B, rank);
-    auto variable = io.DefineVariable<double>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
+    std::vector<char> data(B, rank);
+    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
-
+    engine_name = engine.Name();
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < N; ++i) {
       engine.BeginStep();
 
       auto startPut = std::chrono::high_resolution_clock::now();
-      engine.Put<double>(variable, data.data());
+      engine.Put<char>(variable, data.data());
       auto endPut = std::chrono::high_resolution_clock::now();
       localPutTime += std::chrono::duration<double>(endPut - startPut).count();
 
@@ -93,18 +92,18 @@ int main(int argc, char *argv[]) {
     adios2::IO io = adios.DeclareIO("TestIO");
     auto readEngine = io.Open(out_file, adios2::Mode::Read);
 
-    std::vector<double> data;
+    std::vector<char> data;
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (rank == 0) std::cout << "BeginStep" << std::endl;
 
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
-      adios2::Variable<double> readVariable = io.InquireVariable<double>("data");
+      adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
       print_meta(rank, size, readVariable);
 
       auto startGet = std::chrono::high_resolution_clock::now();
-      readEngine.Get<double>(readVariable, data);
+      readEngine.Get<char>(readVariable, data);
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
 
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]) {
     bool needHeader = false;
 
     // Check if the file is empty or doesn't exist
-    std::ifstream checkFile("io_comp_results.csv");
+    std::ifstream checkFile("io_comp_results_" + engine_name + ".csv");
     if (!checkFile.good() || checkFile.peek() == std::ifstream::traits_type::eof()) {
       needHeader = true;
     }
