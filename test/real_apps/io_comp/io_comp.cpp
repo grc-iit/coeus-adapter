@@ -124,11 +124,12 @@ int main(int argc, char *argv[]) {
       adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
 
       auto startGet = std::chrono::high_resolution_clock::now();
-      readEngine.Get<char>(readVariable, data);
-
-      readEngine.EndStep();
+      readEngine.Get<char>(readVariable, data, adios2::Mode::Sync);
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+
+      readEngine.EndStep();
+
 
       i++;
     }
