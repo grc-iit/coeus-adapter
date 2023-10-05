@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if(argc < 5) {
+  if(argc < 6) {
     if(rank == 0) {
       std::cout << "Usage: " << argv[0] << " <N> <B> " << std::endl;
     }
@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
   const size_t B = std::stoul(argv[2]);
   std::string config_path = argv[3];
   std::string out_file = argv[4];
+  int role = std::stoi(argv[5]);
 
   if(rank==0) {
     std::cout << "Running I/O comparison with " << N << " steps, " <<
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
     int i = 0;
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
       std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
-      adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
+      adios2::Variable<char> readVariable = io.InquireVariable<char>(var_name);
 
       auto startGet = std::chrono::high_resolution_clock::now();
       readEngine.Get<char>(readVariable, data);
