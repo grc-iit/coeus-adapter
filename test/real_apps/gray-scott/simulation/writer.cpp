@@ -160,19 +160,19 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
 
-        if(rank == 0 || u.size() != 1024 || v.size() != 1024 ||
-        var_u.SelectionSize() != 1024 || var_v.SelectionSize() != 1024)
-        {
-          std::cout << "App rank: " << rank << u.size() << " " << v.size()
-          << var_u.SelectionSize() << " " << var_v.SelectionSize()
-          << " Count Var U " << concatenateVectorToString(var_u.Count())
-          << " Count Var V " << concatenateVectorToString(var_v.Count())
-          << " Start Var U " << concatenateVectorToString(var_u.Start())
-          << " Start Var V " << concatenateVectorToString(var_v.Start())
-          << " Shape Var U " << concatenateVectorToString(var_u.Shape())
-          << " Shape Var V " << concatenateVectorToString(var_v.Shape())
-         <<std::endl;
-        }
+//        if(rank == 0 || u.size() != 1024 || v.size() != 1024 ||
+//        var_u.SelectionSize() != 1024 || var_v.SelectionSize() != 1024)
+//        {
+//          std::cout << "App rank: " << rank << u.size() << " " << v.size()
+//          << var_u.SelectionSize() << " " << var_v.SelectionSize()
+//          << " Count Var U " << concatenateVectorToString(var_u.Count())
+//          << " Count Var V " << concatenateVectorToString(var_v.Count())
+//          << " Start Var U " << concatenateVectorToString(var_u.Start())
+//          << " Start Var V " << concatenateVectorToString(var_v.Start())
+//          << " Shape Var U " << concatenateVectorToString(var_u.Shape())
+//          << " Shape Var V " << concatenateVectorToString(var_v.Shape())
+//         <<std::endl;
+//        }
 
         writer.BeginStep();
         writer.Put<int>(var_step, &step);

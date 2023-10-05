@@ -79,14 +79,15 @@ int main(int argc, char *argv[]) {
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
 
-//    std::vector<char> data(B, rank);
-    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
+    std::vector<char> data(B, rank);
+//    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B});
+    auto variable = io.DefineVariable<char>("data");
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < N; ++i) {
-      auto data = generateRandomVector(B);
+//      auto data = generateRandomVector(B);
 
       engine.BeginStep();
 
