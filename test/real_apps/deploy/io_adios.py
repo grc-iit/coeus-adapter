@@ -37,6 +37,7 @@ for nprocs in proc_counts:
     for io_size in io_sizes:
         for device in devices:
             mount = f'/mnt/{device}/jcernudagarcia/client/'
+            outfile = mount+"io.bp"
             bench.configure('orangefs',
                             dev_type=device,
                             mount=mount,
@@ -46,7 +47,7 @@ for nprocs in proc_counts:
                             ppn=ppn,
                             N=N,
                             B=io_size,
-                            out_file=mount+"io.bp",
+                            out_file=outfile,
                             engine='bp5',
                             db_path='/mnt/nvme/jcernudagarcia/metadata.db'
                             )
