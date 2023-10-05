@@ -29,5 +29,5 @@ for nprocs in proc_counts:
     bench.run()
     stop = time.time()
     print('Time: {} sec', stop - start)
+    bench.stop()
     bench.clean()
-
