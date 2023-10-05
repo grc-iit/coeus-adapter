@@ -8,6 +8,8 @@ import sys
 
 # Create baseline pipeline
 name = sys.argv[1]
+N = int(sys.argv[2])
+
 bench = Pipeline().load(name)
 # will clear all packages from pipeline
 # will not erase env.yaml
@@ -21,7 +23,7 @@ for nprocs in proc_counts:
     bench.configure('mdm_compare',
                     nprocs=nprocs,
                     ppn=20,
-                    N=100,
+                    N=N,
                     metadata_engine='empress',
                     db_path='/mnt/nvme/jcernudagarcia/metadata.db'
                     )

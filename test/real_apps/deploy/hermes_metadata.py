@@ -10,7 +10,6 @@ import sys
 name = sys.argv[1]
 N = int(sys.argv[2])
 
-Pipeline().load(name).destroy()
 bench = Pipeline().load(name)
 # will clear all packages from pipeline
 # will not erase env.yaml
