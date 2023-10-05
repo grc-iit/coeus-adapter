@@ -125,10 +125,11 @@ int main(int argc, char *argv[]) {
 
       auto startGet = std::chrono::high_resolution_clock::now();
       readEngine.Get<char>(readVariable, data);
+
+      readEngine.EndStep();
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
 
-      readEngine.EndStep();
       i++;
     }
     readEngine.Close();
