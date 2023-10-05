@@ -22,7 +22,7 @@ for nprocs in proc_counts:
     bench.configure('mdm_compare',
                     nprocs=nprocs,
                     ppn=20,
-                    N=100,
+                    N=10000,
                     metadata_engine='hermes',
                     db_path='/mnt/nvme/jcernudagarcia/metadata.db',)
     start = time.time()
