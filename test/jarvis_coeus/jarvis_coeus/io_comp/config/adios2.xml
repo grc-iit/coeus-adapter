@@ -2,6 +2,7 @@
 <adios-config>
     <io name="TestIO">
         <engine type="BP5">
+            <parameter key="DirectIO" value="true"/>
             <!-- SST engine parameters -->
             <parameter key="RendezvousReaderCount" value="0"/>
             <parameter key="QueueLimit" value="1"/>
