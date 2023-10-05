@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if (argc < 3) {
+  if (argc < 4) {
     if (rank == 0) {
       std::cerr << "Please provide the number of steps as an argument." << std::endl;
     }
@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
 
   int N = std::stoi(argv[1]);  // Number of steps
   std::string db_path = argv[2];  // Number of steps
+  int ppn = std::stoi(argv[3]);
 
   adios2::ADIOS adios(MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
       localInsertBlobsTimeLocked = 0.0, localInsertMetadataTimeLocked = 0.0;
 
   for (int step = 0; step < N; ++step) {
-    if (rank % 20 == 0) {
+    if (rank % ppn == 0) {
       auto startInsertApps = std::chrono::high_resolution_clock::now();
       lock.lock();
       db.UpdateTotalSteps("App" + std::to_string(rank), step);
