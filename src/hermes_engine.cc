@@ -167,14 +167,14 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-  std::cout << "Close" << std::endl;
-  engine_logger->info("rank {}", rank);
+//  std::cout << "Close" << std::endl;
+//  engine_logger->info("rank {}", rank);
   open = false;
 //  mpiComm->free();
 }
 
 HermesEngine::~HermesEngine() {
-  std::cout << "Close des" << std::endl;
+//  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   delete lock;
   delete db;
@@ -186,13 +186,13 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-  engine_logger->info("rank {}", rank);
+//  engine_logger->info("rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
 
     if (currentStep > total_steps) {
-      std::cout << rank << " End of stream" << std::endl;
+//      std::cout << rank << " End of stream" << std::endl;
       return adios2::StepStatus::EndOfStream;
     }
     LoadMetadata();
@@ -201,17 +201,17 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 }
 
 void HermesEngine::IncrementCurrentStep() {
-  engine_logger->info("rank {}", rank);
+//  engine_logger->info("rank {}", rank);
   currentStep++;
 }
 
 size_t HermesEngine::CurrentStep() const {
-  engine_logger->info("rank {}", rank);
+//  engine_logger->info("rank {}", rank);
   return currentStep;
 }
 
 void HermesEngine::EndStep() {
-  engine_logger->info("rank {}", rank);
+//  engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) { //TODO: use the mpi node master
       lock->lock();
@@ -329,19 +329,19 @@ void HermesEngine::LoadMetadata() {
 //  }
 
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
-  if (metadata_vector.size() != 3) {
-    std::cout << "Found " << metadata_vector.size() << " vars at step " << currentStep << " for rank " << rank
-              << std::endl;
-  }
+//  if (metadata_vector.size() != 3) {
+//    std::cout << "Found " << metadata_vector.size() << " vars at step " << currentStep << " for rank " << rank
+//              << std::endl;
+//  }
   for (auto &variableMetadata : metadata_vector) {
-    if (variableMetadata.name != "step" && rank == 0) {
-      std::cout << "Metadata rank: " << rank
-                << " Var Name " << variableMetadata.name
-                << " Count " << concatenateVectorToString(variableMetadata.count)
-                << " Start " << concatenateVectorToString(variableMetadata.start)
-                << " Shape " << concatenateVectorToString(variableMetadata.shape)
-                << std::endl;
-    }
+//    if (variableMetadata.name != "step" && rank == 0) {
+//      std::cout << "Metadata rank: " << rank
+//                << " Var Name " << variableMetadata.name
+//                << " Count " << concatenateVectorToString(variableMetadata.count)
+//                << " Start " << concatenateVectorToString(variableMetadata.start)
+//                << " Shape " << concatenateVectorToString(variableMetadata.shape)
+//                << std::endl;
+//    }
     DefineVariable(variableMetadata);
   }
 }
@@ -385,15 +385,15 @@ void HermesEngine::DoGetDeferred_(
   memcpy(values, blob.data(), blob.size());
 
 //  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-  if (variable.m_Name != "step" && rank == 0) {
-    std::cout << "Get rank: " << rank
-              << " Slection Size: " << variable.SelectionSize()
-              << " Var Name " << variable.m_Name
-              << " Count " << concatenateVectorToString(variable.m_Count)
-              << " Start " << concatenateVectorToString(variable.m_Start)
-              << " Shape " << concatenateVectorToString(variable.m_Shape)
-              << std::endl;
-  }
+//  if (variable.m_Name != "step" && rank == 0) {
+//    std::cout << "Get rank: " << rank
+//              << " Slection Size: " << variable.SelectionSize()
+//              << " Var Name " << variable.m_Name
+//              << " Count " << concatenateVectorToString(variable.m_Count)
+//              << " Start " << concatenateVectorToString(variable.m_Start)
+//              << " Shape " << concatenateVectorToString(variable.m_Shape)
+//              << std::endl;
+//  }
 //  std::cout << "Opening file: " << bucket_name << std::endl;
 //  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
 //  auto fp = fopen(file.c_str(), "r");
@@ -437,27 +437,27 @@ void HermesEngine::DoPutDeferred_(
 //  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
 //  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
 
-  if (variable.m_Name != "step" && rank == 0) {
-    std::cout << "Put rank: " << rank
-              << " Slection Size: " << variable.SelectionSize()
-              << " Var Name " << variable.m_Name
-              << " Count " << concatenateVectorToString(variable.m_Count)
-              << " Start " << concatenateVectorToString(variable.m_Start)
-              << " Shape " << concatenateVectorToString(variable.m_Shape)
-              << std::endl;
-  }
+//  if (variable.m_Name != "step" && rank == 0) {
+//    std::cout << "Put rank: " << rank
+//              << " Slection Size: " << variable.SelectionSize()
+//              << " Var Name " << variable.m_Name
+//              << " Count " << concatenateVectorToString(variable.m_Count)
+//              << " Start " << concatenateVectorToString(variable.m_Start)
+//              << " Shape " << concatenateVectorToString(variable.m_Shape)
+//              << std::endl;
+//  }
   VariableMetadata vm(variable);
   BlobInfo blobInfo(bucket_name, variable.m_Name);
 
-  if (variable.m_Name != "step" && rank == 0) {
-    std::cout << "Put Metadata rank: " << rank
-              << " Slection Size: " << variable.SelectionSize()
-              << " Var Name " << vm.name
-              << " Count " << concatenateVectorToString(vm.count)
-              << " Start " << concatenateVectorToString(vm.start)
-              << " Shape " << concatenateVectorToString(vm.shape)
-              << std::endl;
-  }
+//  if (variable.m_Name != "step" && rank == 0) {
+//    std::cout << "Put Metadata rank: " << rank
+//              << " Slection Size: " << variable.SelectionSize()
+//              << " Var Name " << vm.name
+//              << " Count " << concatenateVectorToString(vm.count)
+//              << " Start " << concatenateVectorToString(vm.start)
+//              << " Shape " << concatenateVectorToString(vm.shape)
+//              << std::endl;
+//  }
   lock->lock();
   db->InsertVariableMetadata(currentStep, rank, vm);
   db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
