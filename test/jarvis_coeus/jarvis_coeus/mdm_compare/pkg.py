@@ -83,6 +83,7 @@ class MdmCompare(Application):
         """
         num_steps = self.config['N']
         db_path = self.config['db_path']
+        ppn = self.config['ppn']
         if self.config['metadata_engine'].lower() == 'empress':
             Exec(f'metadata_empress {num_steps} {db_path}',
                  MpiExecInfo(nprocs=self.config['nprocs'],
@@ -90,7 +91,7 @@ class MdmCompare(Application):
                              hostfile=self.jarvis.hostfile,
                              env=self.env))
         elif self.config['metadata_engine'].lower() == 'hermes':
-            Exec(f'metadata_hermes {num_steps}',
+            Exec(f'metadata_hermes {num_steps} {ppn}',
                  MpiExecInfo(nprocs=self.config['nprocs'],
                              ppn=self.config['ppn'],
                              hostfile=self.jarvis.hostfile,
