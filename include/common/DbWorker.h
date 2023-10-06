@@ -31,9 +31,7 @@ class DbQueueWorker {
       while (!queue.empty()) {
         auto operation = queue.front();
         queue.pop();
-        lock.unlock();  // Release the lock while processing the operation.
         processOperation(operation);
-        lock.lock();    // Re-acquire the lock for the next iteration.
       }
       file_lock->unlock();
     }
