@@ -150,7 +150,8 @@ class IoComp(Application):
         :return: None
         """
         output_file = [self.config['out_file'],
-                       self.config['db_path']
+                       self.config['db_path'],
+                       self.config['db_path'] + ".lock"
                        ]
         print(f'Removing {output_file}')
         Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
