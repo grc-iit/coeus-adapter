@@ -27,6 +27,7 @@ class DbQueueWorker {
       std::unique_lock<std::mutex> lock(mtx);
       cv.wait(lock, [this]() { return !queue.empty() || !running; });
 
+      file_lock->lock();
       while (!queue.empty()) {
         auto operation = queue.front();
         queue.pop();
@@ -34,18 +35,17 @@ class DbQueueWorker {
         processOperation(operation);
         lock.lock();    // Re-acquire the lock for the next iteration.
       }
+      file_lock->unlock();
     }
   }
 
   void processOperation(const DbOperation& op) {
-    file_lock->lock();
     if (op.type == OperationType::InsertData) {
       db->InsertVariableMetadata(op.step, op.rank, op.metadata);
       db->InsertBlobLocation(op.step, op.rank, op.name, op.blobInfo);
     } else if (op.type == OperationType::UpdateSteps) {
       db->UpdateTotalSteps(op.uid, op.currentStep);
     }
-    file_lock->unlock();
   }
 
  public:

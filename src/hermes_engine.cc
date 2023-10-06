@@ -212,10 +212,7 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
-      std::cout<< "To queue step " << rank << std::endl;
       db_worker->enqueue(DbOperation(uid, currentStep));
-      std::cout<< "Done queueu step" << std::endl;
-
     }
   }
   delete Hermes->bkt;
@@ -229,9 +226,6 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   adios2::MinMaxStruct &MinMax) {
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
-
-  std::string bucket_name = Var.m_Name + "_step_" + std::to_string(currentStep)
-      + "_rank" + std::to_string(rank);
 
   // Obtain the blob from Hermes using the filename and variable name
   hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
