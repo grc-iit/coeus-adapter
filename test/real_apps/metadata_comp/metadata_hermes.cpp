@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
       std::string serializedBlobInfo = MetadataSerializer::SerializeBlobInfo(blob_info);
 
       Hermes->GetBucket(bucket_name);
-      auto status = Hermes->bkt->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
+      Hermes->bkt->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
 
     }
     auto endInsertBlobs = std::chrono::high_resolution_clock::now();
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
       std::string serializedMetadata = MetadataSerializer::SerializeMetadata(metadata);
 
       Hermes->GetBucket(bucket_name_metadata);
-      auto status = Hermes->bkt->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
+      Hermes->bkt->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
     }
     auto endInsertMetadata = std::chrono::high_resolution_clock::now();
     localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();

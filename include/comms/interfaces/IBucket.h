@@ -20,7 +20,7 @@ class IBucket {
   std::string name;
   virtual ~IBucket() = default;
 
-  virtual hermes::BlobId Put(const std::string &blob_name, size_t blob_size, const void *values) = 0;
+  virtual void Put(const std::string &blob_name, size_t blob_size, const void *values) = 0;
   virtual hermes::Blob Get(const std::string &blob_name) = 0;
   virtual hermes::Blob Get(hermes::BlobId blob_id) = 0;
   virtual std::vector<hermes::BlobId> GetContainedBlobIds() = 0;

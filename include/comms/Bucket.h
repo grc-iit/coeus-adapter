@@ -31,12 +31,12 @@ class Bucket : public IBucket {
 //    bkt.Put<std::string>(blob_name, data, ctx);
 //  }
 
-  hermes::BlobId Put(const std::string &blob_name, size_t blob_size, const void* values) override {
+  void Put(const std::string &blob_name, size_t blob_size, const void* values) override {
     hapi::Context ctx;
     hermes::Blob blob(blob_size);
     hermes::BlobId blob_id;
     memcpy(blob.data(), values, blob_size);
-    return bkt.Put(blob_name, blob, ctx);
+    bkt.AsyncPut(blob_name, blob, ctx);
   };
 
   hermes::Blob Get(const std::string &blob_name) override {
