@@ -27,13 +27,13 @@ class DbQueueWorker {
       std::unique_lock<std::mutex> lock(mtx);
       cv.wait(lock, [this]() { return !queue.empty() || !running; });
 
-      file_lock->lock();
       while (!queue.empty()) {
+        file_lock->lock();
         auto operation = queue.front();
         queue.pop();
         processOperation(operation);
+        file_lock->unlock();
       }
-      file_lock->unlock();
     }
   }
 
