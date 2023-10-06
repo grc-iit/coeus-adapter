@@ -177,6 +177,7 @@ void HermesEngine::DoClose(const int transportIndex) {
 HermesEngine::~HermesEngine() {
 //  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
+  delete db_worker;
   delete lock;
   delete db;
 }
