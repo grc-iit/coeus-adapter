@@ -65,13 +65,9 @@ class DbQueueWorker {
 
   void enqueue(const DbOperation& op) {
     {
-      std::cout << "QUEUE1" <<std::endl;
       std::lock_guard<std::mutex> lock(mtx);
-      std::cout << "Locked" <<std::endl;
       queue.push(op);
-      std::cout << "PUSHED" <<std::endl;
     }
-    std::cout << "QUEUE2" <<std::endl;
     cv.notify_one();
   }
 };

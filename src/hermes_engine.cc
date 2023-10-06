@@ -147,7 +147,7 @@ void HermesEngine::Init_() {
     lock = new FileLock(db_file + ".lock");
     lock->lock();
     db = new SQLiteWrapper(db_file);
-    DbQueueWorker *dbQueueWorker = new DbQueueWorker(db, lock);
+    db_worker = new DbQueueWorker(db, lock);
     lock->unlock();
   } else {
     throw std::invalid_argument("db_file not found in parameters");
@@ -355,11 +355,8 @@ void HermesEngine::DoPutDeferred_(
   VariableMetadata vm(variable);
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
-  std::cout<< "To queue" << std::endl;
   DbOperation op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  std::cout << "OP" <<std::endl;
   db_worker->enqueue(op);
-  std::cout<< "Done Queuue" << std::endl;
 
 }
 
