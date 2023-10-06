@@ -114,6 +114,7 @@ void HermesEngine::Init_() {
   //Identifier, should be the file, but we dont get it
   uid = this->m_IO.m_Name;
 
+  MPI_Barrier(MPI_COMM_WORLD);
   //Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
   if (params.find("OPFile") != params.end()) {
@@ -127,12 +128,12 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-
+  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("ppn") != params.end()) {
     ppn = stoi(params["ppn"]);
     if (rank == 0) std::cout << "PPN: " << ppn << std::endl;
   }
-
+  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
     if (rank == 0)std::cout << "varFile: " << varFile << std::endl;
@@ -144,14 +145,14 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-
+  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("db_file") != params.end()) {
     std::string db_file = params["db_file"];
     lock = new FileLock(db_file + ".lock");
     lock->lock();
     db = new SQLiteWrapper(db_file);
-    lock->unlock();
     DbQueueWorker *dbQueueWorker = new DbQueueWorker(db, lock);
+    lock->unlock();
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
