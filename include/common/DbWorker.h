@@ -28,7 +28,6 @@ class DbQueueWorker {
       cv.wait(lock, [this]() { return !queue.empty() || !running; });
 
       while (!queue.empty()) {
-        std::cout << "DEQUEUE" <<std::endl;
         auto operation = queue.front();
         queue.pop();
         lock.unlock();  // Release the lock while processing the operation.
