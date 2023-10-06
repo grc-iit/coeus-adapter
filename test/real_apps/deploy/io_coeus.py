@@ -9,6 +9,7 @@ import sys
 # Create baseline pipeline
 name = sys.argv[1]
 N = int(sys.argv[2])
+role = int(sys.argv[3])
 if "--reduced" in sys.argv:
     reduced=True
     print("reduced process for hermes")
@@ -41,7 +42,8 @@ for nprocs in proc_counts:
                         B=io_size,
                         out_file='/mnt/nvme/jcernudagarcia/io.hermes',
                         engine='hermes',
-                        db_path='/mnt/nvme/jcernudagarcia/metadata.db'
+                        db_path='/mnt/nvme/jcernudagarcia/metadata.db',
+                        role=role
                         )
         start = time.time()
         bench.run()

@@ -76,7 +76,7 @@ class IoComp(Application):
                 'name': 'role',
                 'msg': 'producer (0) consumer (1)',
                 'type': int,
-                'default': 0,
+                'default': -1,
             }
         ]
 

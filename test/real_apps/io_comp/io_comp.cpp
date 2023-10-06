@@ -70,13 +70,15 @@ int main(int argc, char *argv[]) {
   int role = std::stoi(argv[5]);
 
   if(rank==0) {
-    std::cout << "Running I/O comparison with " << N << " steps, " <<
-              B << " bytes per step, and " << size << " processes." << std::endl;
+    std::cout << "Running I/O comparison with " << N << " steps, "
+              << B << " bytes per step, and " << size << " processes."
+              << " with role as " << role << std::endl;
   }
   double localGetTime = 0.0;
   double localPutTime = 0.0;
   std::string engine_name;
-  {
+
+  if(role == 0 || role == -1){
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
 
@@ -107,7 +109,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  {
+  if(role == 1 || role == -1){
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
     auto readEngine = io.Open(out_file, adios2::Mode::Read);

@@ -26,7 +26,7 @@ class DbOperation {
   // Constructor for InsertData type
   DbOperation(int _step, int _rank, VariableMetadata _metadata, const std::string& _name, BlobInfo _blobInfo)
       : type(OperationType::InsertData), step(_step), rank(_rank), metadata(std::move(_metadata)),
-      name(std::move(_name)), blobInfo(std::move(_blobInfo)) {}
+      name(_name), blobInfo(std::move(_blobInfo)) {}
 
   // Constructor for UpdateSteps type
   DbOperation(const std::string& _uid, int _currentStep)
