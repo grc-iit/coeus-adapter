@@ -357,6 +357,7 @@ void HermesEngine::DoPutDeferred_(
 
   std::cout<< "To queue" << std::endl;
   DbOperation op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  std::cout << "OP" <<std::endl;
   db_worker->enqueue(op);
   std::cout<< "Done Queuue" << std::endl;
 
