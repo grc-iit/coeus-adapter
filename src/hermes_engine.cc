@@ -114,7 +114,6 @@ void HermesEngine::Init_() {
   //Identifier, should be the file, but we dont get it
   uid = this->m_IO.m_Name;
 
-  MPI_Barrier(MPI_COMM_WORLD);
   //Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
   if (params.find("OPFile") != params.end()) {
@@ -128,12 +127,10 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("ppn") != params.end()) {
     ppn = stoi(params["ppn"]);
     if (rank == 0) std::cout << "PPN: " << ppn << std::endl;
   }
-  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
     if (rank == 0)std::cout << "varFile: " << varFile << std::endl;
@@ -145,7 +142,6 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-  MPI_Barrier(MPI_COMM_WORLD);
   if (params.find("db_file") != params.end()) {
     std::string db_file = params["db_file"];
     lock = new FileLock(db_file + ".lock");
@@ -215,7 +211,12 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
   if (m_OpenMode == adios2::Mode::Write) {
-    if(rank % ppn == 0)db_worker->enqueue(DbOperation(uid, currentStep));
+    if(rank % ppn == 0) {
+      std::cout<< "To queue step " << rank << std::endl;
+      db_worker->enqueue(DbOperation(uid, currentStep));
+      std::cout<< "Done queueu step" << std::endl;
+
+    }
   }
   delete Hermes->bkt;
 }
@@ -352,8 +353,10 @@ void HermesEngine::DoPutDeferred_(
 
   VariableMetadata vm(variable);
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
-
+  std::cout<< "To queue" << std::endl;
   db_worker->enqueue(DbOperation(currentStep, rank, vm, variable.m_Name, blobInfo));
+  std::cout<< "Done Queuue" << std::endl;
+
 }
 
 }  // namespace coeus
