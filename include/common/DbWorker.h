@@ -28,6 +28,7 @@ class DbQueueWorker {
       cv.wait(lock, [this]() { return !queue.empty() || !running; });
 
       while (!queue.empty()) {
+        std::cout << "DEQUEUE" <<std::endl;
         auto operation = queue.front();
         queue.pop();
         lock.unlock();  // Release the lock while processing the operation.
@@ -62,11 +63,12 @@ class DbQueueWorker {
     workerThread.join();
   }
 
-  void enqueue(const DbOperation& op) {
+  void enqueue(DbOperation op) {
     {
       std::lock_guard<std::mutex> lock(mtx);
       queue.push(op);
     }
+    std::cout << "QUEUE" <<std::endl;
     cv.notify_one();
   }
 };
