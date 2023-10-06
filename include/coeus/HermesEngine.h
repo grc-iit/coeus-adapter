@@ -33,11 +33,11 @@
 #include "common/YAMLParser.h"
 #include "common/FileLock.h"
 #include <common/ErrorCodes.h>
-#include <common/ClassLoader.h>
-#include <common/ThreadPool.h>
+#include <common/DbWorker.h>
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
 #include <comms/MPI.h>
+
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -46,6 +46,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string uid;
   SQLiteWrapper* db;
   FileLock* lock;
+  DbQueueWorker* db_worker;
   int ppn;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT

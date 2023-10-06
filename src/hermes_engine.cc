@@ -148,9 +148,10 @@ void HermesEngine::Init_() {
   if (params.find("db_file") != params.end()) {
     std::string db_file = params["db_file"];
     lock = new FileLock(db_file + ".lock");
-//    lock->lock();
-    db = new SQLiteWrapper(db_file+std::to_string(rank));
-//    lock->unlock();
+    lock->lock();
+    db = new SQLiteWrapper(db_file);
+    lock->unlock();
+    DbQueueWorker *dbQueueWorker = new DbQueueWorker(db, lock);
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
@@ -186,13 +187,11 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-//  engine_logger->info("rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
 
     if (currentStep > total_steps) {
-//      std::cout << rank << " End of stream" << std::endl;
       return adios2::StepStatus::EndOfStream;
     }
     LoadMetadata();
@@ -205,29 +204,16 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 }
 
 void HermesEngine::IncrementCurrentStep() {
-//  engine_logger->info("rank {}", rank);
   currentStep++;
 }
 
 size_t HermesEngine::CurrentStep() const {
-//  engine_logger->info("rank {}", rank);
   return currentStep;
 }
 
 void HermesEngine::EndStep() {
-//  engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
-    db->UpdateTotalSteps(uid, currentStep);
-
-//    if (rank % ppn == 0) { //TODO: use the mpi node master
-//      lock->lock();
-//      db->UpdateTotalSteps(uid, currentStep);
-//      lock->unlock();
-
-//      auto blob_name = "total_steps_" + uid;
-//      auto bkt = Hermes->GetBucket("total_steps");
-//      bkt->Put(blob_name, sizeof(int), &currentStep);
-//    }
+    if(rank % ppn == 0)db_worker->enqueue(DbOperation(uid, currentStep));
   }
   delete Hermes->bkt;
 }
@@ -319,35 +305,10 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-//  std::string filename = "step_" + std::to_string(currentStep) +
-//      "_rank_" + std::to_string(rank);
-//  auto bkt = Hermes->GetBucket(filename);
-//
-//  std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
-//  if(rank==0) std::cout << "blobIds.size(): " << blobIds.size() << std::endl;
-//  for (const auto &blobId : blobIds) {
-//    hermes::Blob blob = bkt->Get(blobId);
-//    VariableMetadata variableMetadata =
-//        MetadataSerializer::DeserializeMetadata(blob);
-//    listOfVars.push_back(bkt->GetBlobName(blobId));
-//    if(rank==0) std::cout << "variableMetadata: " << variableMetadata << std::endl;
-//    DefineVariable(variableMetadata);
-//  }
 
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
-//  if (metadata_vector.size() != 3) {
-//    std::cout << "Found " << metadata_vector.size() << " vars at step " << currentStep << " for rank " << rank
-//              << std::endl;
-//  }
   for (auto &variableMetadata : metadata_vector) {
-//    if (variableMetadata.name != "step" && rank == 0) {
-//      std::cout << "Metadata rank: " << rank
-//                << " Var Name " << variableMetadata.name
-//                << " Count " << concatenateVectorToString(variableMetadata.count)
-//                << " Start " << concatenateVectorToString(variableMetadata.start)
-//                << " Shape " << concatenateVectorToString(variableMetadata.shape)
-//                << std::endl;
-//    }
+
     DefineVariable(variableMetadata);
   }
 }
@@ -378,92 +339,19 @@ void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-//  std::cout << __func__ << " " << variable.m_Name <<
-//  " " << rank << " " << concatenateVectorToString(variable.m_Count) <<
-//  "" << variable.SelectionSize() << std::endl;
-
-  // Retrieve the value of the variable in the current step
-//  std::string bucket_name = variable.m_Name + "_step_" +
-//      std::to_string(currentStep) + "_rank" + std::to_string(rank);
-
   auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
-
-//  std::cout << rank << " " << variable.m_Name << " blob.size(): " << blob.size() << std::endl;
-//  if (variable.m_Name != "step" && rank == 0) {
-//    std::cout << "Get rank: " << rank
-//              << " Slection Size: " << variable.SelectionSize()
-//              << " Var Name " << variable.m_Name
-//              << " Count " << concatenateVectorToString(variable.m_Count)
-//              << " Start " << concatenateVectorToString(variable.m_Start)
-//              << " Shape " << concatenateVectorToString(variable.m_Shape)
-//              << std::endl;
-//  }
-//  std::cout << "Opening file: " << bucket_name << std::endl;
-//  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
-//  auto fp = fopen(file.c_str(), "r");
-//  if (fp == NULL) {
-//    std::cout << "Error opening file: " << bucket_name << std::endl;
-//    exit(1);
-//  }
-//  fread(values, sizeof(T), 1024, fp);
-//  fclose(fp);
 }
 
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-//  std::cout << __func__ << " " << variable.m_Name <<
-//  " " << rank << " " <<  variable.SelectionSize() << std::endl;
-
-  // Create a bucket with the associated step and process rank
-
   Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-//  std::cout << "Opening file: " << bucket_name << std::endl;
-//  auto file = "/mnt/nvme/jcernudagarcia/" + bucket_name;
-//  auto fp = fopen(file.c_str(), "w");
-//  if (fp == NULL) {
-//    std::cout << "Error opening file" << std::endl;
-//    exit(1);
-//  }
-//
-//  fwrite(values, sizeof(T), variable.SelectionSize(), fp);
-//  fclose(fp);
 
-//  std::string bucket_name_metadata = "step_" + std::to_string(currentStep) +
-//      "_rank_" + std::to_string(rank);
-//
-//  std::string serializedMetadata =
-//      MetadataSerializer::SerializeMetadata<T>(variable);
-//
-//  auto bkt_metadata = Hermes->GetBucket(bucket_name_metadata);
-//  auto status = bkt_metadata->Put(variable.m_Name, serializedMetadata.size(), serializedMetadata.data());
-
-//  if (variable.m_Name != "step" && rank == 0) {
-//    std::cout << "Put rank: " << rank
-//              << " Slection Size: " << variable.SelectionSize()
-//              << " Var Name " << variable.m_Name
-//              << " Count " << concatenateVectorToString(variable.m_Count)
-//              << " Start " << concatenateVectorToString(variable.m_Start)
-//              << " Shape " << concatenateVectorToString(variable.m_Shape)
-//              << std::endl;
-//  }
   VariableMetadata vm(variable);
-//  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
-//  if (variable.m_Name != "step" && rank == 0) {
-//    std::cout << "Put Metadata rank: " << rank
-//              << " Slection Size: " << variable.SelectionSize()
-//              << " Var Name " << vm.name
-//              << " Count " << concatenateVectorToString(vm.count)
-//              << " Start " << concatenateVectorToString(vm.start)
-//              << " Shape " << concatenateVectorToString(vm.shape)
-//              << std::endl;
-//  }
-//  lock->lock();
-  db->InsertVariableMetadata(currentStep, rank, vm);
-//  db->InsertBlobLocation(currentStep, rank, variable.m_Name, blobInfo);
-//  lock->unlock();
+  db_worker->enqueue(DbOperation(currentStep, rank, vm, variable.m_Name, blobInfo));
 }
 
 }  // namespace coeus
