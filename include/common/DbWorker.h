@@ -9,31 +9,28 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <labstor/network/local_serialize.h>
 #include "common/DbOperation.h"
 #include "common/SQlite.h"
+#include "hermes_shm/data_structures/ipc/mpsc_ptr_queue.h"
 
 class DbQueueWorker {
  private:
   SQLiteWrapper* db;
   FileLock* file_lock;
-  std::queue<DbOperation> queue;
   std::thread workerThread;
-  std::mutex mtx;
-  std::condition_variable cv;
   bool running = true;
+  hipc::uptr<hipc::mpsc_ptr_queue<DbOperation>> queue_;
 
   void worker() {
     while (running) {
-      std::unique_lock<std::mutex> lock(mtx);
-      cv.wait(lock, [this]() { return !queue.empty() || !running; });
-
-      while (!queue.empty()) {
+      DbOperation operation;
+      while (!queue_->pop(operation).IsNull()) {
         file_lock->lock();
-        auto operation = queue.front();
-        queue.pop();
         processOperation(operation);
         file_lock->unlock();
       }
+      usleep(20);
     }
   }
 
@@ -49,23 +46,16 @@ class DbQueueWorker {
  public:
   DbQueueWorker(SQLiteWrapper* _db, FileLock* _lock) : db(_db), file_lock(_lock) {
     workerThread = std::thread(&DbQueueWorker::worker, this);
+    queue_ = hipc::make_uptr<hipc::mpsc_queue<DbOperation>>(LABSTOR_CLIENT->main_alloc_);
   }
 
   ~DbQueueWorker() {
-    {
-      std::lock_guard<std::mutex> lock(mtx);
-      running = false;
-    }
-    cv.notify_one();
+    running = false;
     workerThread.join();
   }
 
   void enqueue(const DbOperation& op) {
-    {
-      std::lock_guard<std::mutex> lock(mtx);
-      queue.push(op);
-    }
-    cv.notify_one();
+    queue_->emplace(op);
   }
 };
 
