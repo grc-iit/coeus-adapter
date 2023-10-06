@@ -24,12 +24,12 @@ class DbOperation {
 
  public:
   // Constructor for InsertData type
-  DbOperation(int _step, int _rank, VariableMetadata _metadata, std::string _name, BlobInfo _blobInfo)
+  DbOperation(int _step, int _rank, VariableMetadata _metadata, const std::string& _name, BlobInfo _blobInfo)
       : type(OperationType::InsertData), step(_step), rank(_rank), metadata(std::move(_metadata)),
       name(std::move(_name)), blobInfo(std::move(_blobInfo)) {}
 
   // Constructor for UpdateSteps type
-  DbOperation(std::string _uid, int _currentStep)
+  DbOperation(const std::string& _uid, int _currentStep)
       : type(OperationType::UpdateSteps), uid(std::move(_uid)), currentStep(_currentStep) {}
 
   friend class DbQueueWorker;  // so that DbQueueWorker can access private members of DbOperation
