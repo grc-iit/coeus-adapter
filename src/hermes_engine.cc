@@ -343,15 +343,14 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-//  std::string name = variable.m_Name;
-  Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+  std::string name = variable.m_Name;
+  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
   VariableMetadata vm(variable);
-  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+  BlobInfo blobInfo(Hermes->bkt->name, name);
 
   DbOperation op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   db_worker->enqueue(op);
-
 }
 
 }  // namespace coeus
