@@ -124,6 +124,7 @@ void HermesEngine::Init_() {
     engine_logger->warn("Could not connect to Hermes", rank);
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
+  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
   open = true;
 }
 
