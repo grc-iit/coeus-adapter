@@ -107,8 +107,8 @@ class IoComp(Application):
         elif self.config['engine'].lower() == 'hermes':
             replacements = [
                 ('PPN', f'{ppn}'),
-                ('VARFILE', f'{self.pkg_dir}/config/var.yaml'),
-                ('OPFILE', f'{self.pkg_dir}/config/operator.yaml'),
+                ('VARFILE', self.var_json_path),
+                ('OPFILE', self.operator_json_path),
                 ('DBFILE', self.config['db_path']),
             ]
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
