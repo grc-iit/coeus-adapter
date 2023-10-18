@@ -107,7 +107,6 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-
   //Hermes setup
   if (!Hermes->connect()) {
     engine_logger->warn("Could not connect to Hermes", rank);
@@ -135,14 +134,13 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-//  std::cout << "Close" << std::endl;
-//  engine_logger->info("rank {}", rank);
+  engine_logger->info("rank {}", rank);
   open = false;
 //  mpiComm->free();
 }
 
 HermesEngine::~HermesEngine() {
-//  std::cout << "Close des" << std::endl;
+  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   delete db;
 }
