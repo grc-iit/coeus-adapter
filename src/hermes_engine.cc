@@ -115,6 +115,7 @@ void HermesEngine::Init_() {
       std::cout << "DB_FILE: " << db_file << std::endl;
     }
     client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
+    if (rank == 0) std::cout << "Done with root" << std::endl;
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
