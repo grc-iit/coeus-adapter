@@ -110,7 +110,10 @@ void HermesEngine::Init_() {
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    if(rank % ppn == 0) db->createTables();
+    if(rank % ppn == 0) {
+      db->createTables();
+      std::cout << "DB_FILE: " << db_file << std::endl;
+    }
     client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
   } else {
     throw std::invalid_argument("db_file not found in parameters");
