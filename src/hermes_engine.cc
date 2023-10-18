@@ -107,6 +107,14 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
+
+  //Hermes setup
+  if (!Hermes->connect()) {
+    engine_logger->warn("Could not connect to Hermes", rank);
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
+  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
@@ -120,13 +128,6 @@ void HermesEngine::Init_() {
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
-
-  //Hermes setup
-  if (!Hermes->connect()) {
-    engine_logger->warn("Could not connect to Hermes", rank);
-    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-  }
-  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
   open = true;
 }
 
