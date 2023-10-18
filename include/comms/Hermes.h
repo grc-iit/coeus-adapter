@@ -25,11 +25,13 @@ class Hermes : public IHermes {
   Hermes() = default;
 
   bool connect() override {
+    std::cout << "Entering connect" << std::endl;
     TRANSPARENT_HERMES();
+    std::cout << "transparent done" << std::endl;
     hermes = HERMES;
-    std::cout << "registring task" << std::endl;
+    std::cout << "hermes assigment" << std::endl;
     HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
-    std::cout << "DONE registring task" << std::endl;
+    std::cout << "Registered task" << std::endl;
     return hermes->IsInitialized();
   };
 
