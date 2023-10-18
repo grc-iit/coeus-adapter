@@ -106,7 +106,7 @@ class IoComp(Application):
                                 self.adios2_xml_path)
         elif self.config['engine'].lower() == 'hermes':
             replacements = [
-                ('PPN', ppn),
+                ('PPN', f'{ppn}'),
                 ('VARFILE', f'{self.pkg_dir}/config/var.yaml'),
                 ('OPFILE', f'{self.pkg_dir}/config/operator.yaml'),
                 ('DBFILE', self.config['db_path']),
