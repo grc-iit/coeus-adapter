@@ -114,6 +114,7 @@ void HermesEngine::Init_() {
       db->createTables();
       std::cout << "DB_FILE: " << db_file << std::endl;
     }
+    TRANSPARENT_HERMES();
     client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
     if (rank == 0) std::cout << "Done with root" << std::endl;
   } else {
