@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 MESSAGE(STATUS "CMAKE_PREFIX_PATH: $ENV{CMAKE_PREFIX_PATH}")
+MESSAGE(STATUS "MODULEPATH: $ENV{MODULEPATH}")
 #------------------------------------------------------------------------------
 # Solving some weirdness with CLion docker toolchain
 #------------------------------------------------------------------------------
@@ -185,8 +186,8 @@ endif()
 #------------------------------------------------------------------------------
 # Build COEUS
 #------------------------------------------------------------------------------
-add_subdirectory(src)
 add_subdirectory(tasks)
+add_subdirectory(src)
 #add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
