@@ -27,6 +27,7 @@ class Hermes : public IHermes {
   bool connect() override {
     TRANSPARENT_HERMES();
     hermes = HERMES;
+    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
     return hermes->IsInitialized();
   };
 
