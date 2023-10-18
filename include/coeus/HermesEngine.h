@@ -31,7 +31,6 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "common/SQlite.h"
 #include "common/YAMLParser.h"
-#include "common/FileLock.h"
 #include <common/ErrorCodes.h>
 #include "common/DbOperation.h"
 #include "coeus_mdm/coeus_mdm.h"
