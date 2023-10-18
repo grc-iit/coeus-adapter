@@ -56,7 +56,7 @@ void HermesEngine::Init_() {
   // Logger setup
   // Console log
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::warn);
+  console_sink->set_level(spdlog::level::info);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
   //File log
