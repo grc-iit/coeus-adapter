@@ -105,8 +105,14 @@ class IoComp(Application):
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
         elif self.config['engine'].lower() == 'hermes':
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes_{ppn}.xml',
-                                    self.adios2_xml_path)
+            replacements = [
+                ('PPN', ppn),
+                ('VARFILE', f'{self.pkg_dir}/config/var.yaml'),
+                ('OPFILE', f'{self.pkg_dir}/config/operator.yaml'),
+                ('DBFILE', self.config['db_path']),
+            ]
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                    self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',
