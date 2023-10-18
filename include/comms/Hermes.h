@@ -26,6 +26,7 @@ class Hermes : public IHermes {
 
   bool connect() override {
     std::cout << "Entering connect" << std::endl;
+    std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
     TRANSPARENT_HERMES();
     std::cout << "transparent done" << std::endl;
     hermes = HERMES;
