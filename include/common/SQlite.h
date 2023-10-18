@@ -12,8 +12,8 @@
 #include <utility>
 #include <type_traits>
 #include <filesystem>
+
 #include "common/MetadataStructs.h"
-#include "comms/Bucket.h"
 
 class SQLiteWrapper {
  private:
@@ -46,6 +46,9 @@ class SQLiteWrapper {
       open=false;
     }
     open=true;
+  }
+
+  void createTables(){
     createAppsTable();
     createBlobLocationsTable();
     createVariableMetadataTable();

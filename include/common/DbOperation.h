@@ -1,3 +1,4 @@
+
 //
 // Created by jaime on 10/5/2023.
 //
@@ -5,6 +6,9 @@
 #ifndef COEUS_INCLUDE_COMMON_DBOPERATION_H_
 #define COEUS_INCLUDE_COMMON_DBOPERATION_H_
 
+#include <common/MetadataStructs.h>
+
+#include <utility>
 
 enum class OperationType {
   InsertData,
@@ -12,7 +16,7 @@ enum class OperationType {
 };
 
 class DbOperation {
- private:
+ public:
   OperationType type;
   int step;
   int rank;
@@ -22,17 +26,21 @@ class DbOperation {
   std::string uid;
   int currentStep;
 
- public:
+  DbOperation() = default;
+
   // Constructor for InsertData type
-  DbOperation(int _step, int _rank, VariableMetadata _metadata, const std::string& _name, BlobInfo _blobInfo)
+  DbOperation(int _step, int _rank, VariableMetadata _metadata, std::string  _name, BlobInfo _blobInfo)
       : type(OperationType::InsertData), step(_step), rank(_rank), metadata(std::move(_metadata)),
-      name(_name), blobInfo(std::move(_blobInfo)) {}
+      name(std::move(_name)), blobInfo(std::move(_blobInfo)) {}
 
   // Constructor for UpdateSteps type
   DbOperation(const std::string& _uid, int _currentStep)
       : type(OperationType::UpdateSteps), uid(std::move(_uid)), currentStep(_currentStep) {}
 
-  friend class DbQueueWorker;  // so that DbQueueWorker can access private members of DbOperation
+  template <class Archive>
+  void serialize(Archive &ar) {
+    ar(type, step, rank, metadata, name, blobInfo, uid, currentStep);
+  }
 };
 
 

@@ -13,41 +13,6 @@
 #include "coeus/HermesEngine.h"
 
 namespace coeus {
-/*
- *
- * class MyProject(){
- * public:
- *  hermes = HERMES;
- *
- *  MyProject() = default;
- *
- *  * class MyProject(){
- * public:
- *
- *  MyProject(hermes h_object)hermes(h_object);
- *
- */
-std::string concatenateVectorToString(const std::vector<size_t> &vec) {
-  std::stringstream ss;
-  ss << "( ";
-  for (size_t i = 0; i < vec.size(); ++i) {
-    ss << vec[i];
-    if (i < vec.size() - 1) {
-      ss << ", ";
-    }
-  }
-  ss << " )";
-  return ss.str();
-}
-
-int SumVector(const std::vector<size_t> &vec) {
-  int total = 0;
-  for (size_t i = 0; i < vec.size(); ++i) {
-    total += vec[i];
-  }
-  return total;
-}
-
 /**
  * Construct the HermesEngine.
  *
@@ -143,12 +108,10 @@ void HermesEngine::Init_() {
     }
   }
   if (params.find("db_file") != params.end()) {
-    std::string db_file = params["db_file"];
-    lock = new FileLock(db_file + ".lock");
-    lock->lock();
+    db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    db_worker = new DbQueueWorker(db, lock);
-    lock->unlock();
+    if(rank % ppn == 0) db->createTables();
+    client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
@@ -174,8 +137,6 @@ void HermesEngine::DoClose(const int transportIndex) {
 HermesEngine::~HermesEngine() {
 //  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
-  delete db_worker;
-  delete lock;
   delete db;
 }
 
@@ -212,7 +173,8 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
-      db_worker->enqueue(DbOperation(uid, currentStep));
+      DbOperation db_op(uid, currentStep);
+      client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
     }
   }
   delete Hermes->bkt;
@@ -310,13 +272,14 @@ void HermesEngine::LoadMetadata() {
   }
 }
 
-void HermesEngine::DefineVariable(VariableMetadata variableMetadata) {
+void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
   if (currentStep != 1) {
     // If the metadata is defined delete current value to update it
     m_IO.RemoveVariable(variableMetadata.name);
   }
+
 #define DEFINE_VARIABLE(T) \
-    if (adios2::helper::GetDataType<T>() == variableMetadata.getDataType()) { \
+    if (adios2::helper::GetDataType<T>() == adios2::helper::GetDataTypeFromString(variableMetadata.dataType)) { \
          adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>( \
                       variableMetadata.name, \
                       variableMetadata.shape, \
@@ -346,11 +309,13 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
-  VariableMetadata vm(variable);
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                      variable.m_Count, variable.IsConstantDims(),
+                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
 
-  DbOperation op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  db_worker->enqueue(op);
+  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 }
 
 }  // namespace coeus

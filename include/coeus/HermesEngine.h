@@ -33,7 +33,9 @@
 #include "common/YAMLParser.h"
 #include "common/FileLock.h"
 #include <common/ErrorCodes.h>
-#include <common/DbWorker.h>
+#include "common/DbOperation.h"
+#include "coeus_mdm/coeus_mdm.h"
+
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
 #include <comms/MPI.h>
@@ -45,8 +47,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::shared_ptr<coeus::IHermes> Hermes;
   std::string uid;
   SQLiteWrapper* db;
-  FileLock* lock;
-  DbQueueWorker* db_worker;
+  std::string db_file;
+  hrun::coeus_mdm::Client client;
+//  FileLock* lock;
+//  DbQueueWorker* db_worker;
   int ppn;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
@@ -119,7 +123,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   void LoadMetadata();
 
-  void DefineVariable(VariableMetadata variableMetadata);
+  void DefineVariable(const VariableMetadata& variableMetadata);
 
  protected:
   /** Initialize (wrapper around Init_)*/
