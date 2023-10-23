@@ -25,8 +25,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-//  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
-//  << m_Name << " " << this->m_IO.m_Name << std::endl;
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
@@ -140,7 +138,6 @@ void HermesEngine::DoClose(const int transportIndex) {
 }
 
 HermesEngine::~HermesEngine() {
-  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   delete db;
 }
@@ -151,6 +148,7 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
+  engine_logger->info("rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
@@ -176,6 +174,7 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
+  engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
@@ -278,6 +277,7 @@ void HermesEngine::LoadMetadata() {
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
+  engine_logger->info("rank {}", rank);
   if (currentStep != 1) {
     // If the metadata is defined delete current value to update it
     m_IO.RemoveVariable(variableMetadata.name);
@@ -304,6 +304,7 @@ void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
+  engine_logger->info("rank {}", rank);
   auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
 }
@@ -311,6 +312,7 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
+  engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
