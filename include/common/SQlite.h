@@ -167,6 +167,7 @@ class SQLiteWrapper {
                                        "start TEXT,"
                                        "count TEXT,"
                                        "constantShape BOOLEAN,"
+                                       "derived BOOLEAN,"
                                        "dataType TEXT,"
                                        "PRIMARY KEY (step, mpi_rank, name));";
     return execute(createTableSQL);
@@ -174,7 +175,7 @@ class SQLiteWrapper {
 
   void InsertVariableMetadata(int step, int mpi_rank, const VariableMetadata& metadata) {
     sqlite3_stmt* stmt;
-    const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+    const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, derived, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
     auto shape = VariableMetadata::serializeVector(metadata.shape);
     auto start = VariableMetadata::serializeVector(metadata.start);
     auto count = VariableMetadata::serializeVector(metadata.count);
@@ -195,14 +196,15 @@ class SQLiteWrapper {
     sqlite3_bind_text(stmt, 5, start.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 6, count.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 7, metadata.constantShape);
-    sqlite3_bind_text(stmt, 8, metadata.dataType.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 8, metadata.derived);
+    sqlite3_bind_text(stmt, 9, metadata.dataType.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
   }
 
   VariableMetadata GetVariableMetadata(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
+    const std::string selectSQL = "SELECT shape, start, count, constantShape, derived, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
@@ -214,7 +216,8 @@ class SQLiteWrapper {
       metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
       metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
       metadata.constantShape = sqlite3_column_int(stmt, 3);
-      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+      metadata.derived = sqlite3_column_int(stmt, 4);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
     }
     sqlite3_finalize(stmt);
     return metadata;
@@ -222,7 +225,7 @@ class SQLiteWrapper {
 
   std::vector<VariableMetadata> GetAllVariableMetadata(int step, int mpi_rank) {
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT name, shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ?;";
+    const std::string selectSQL = "SELECT name, shape, start, count, constantShape, derived, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
@@ -237,7 +240,8 @@ class SQLiteWrapper {
       metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
       metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
       metadata.constantShape = sqlite3_column_int(stmt, 4);
-      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+      metadata.derived = sqlite3_column_int(stmt, 5);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
 
       allMetadata.push_back(metadata);
     }

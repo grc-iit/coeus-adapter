@@ -26,16 +26,17 @@ struct VariableMetadata {
   std::vector<size_t> shape;
   std::vector<size_t> start;
   std::vector<size_t> count;
+  bool derived;
   bool constantShape;
   std::string dataType;
 
   VariableMetadata() = default;
   VariableMetadata(const std::string &name, const std::vector<size_t> &shape,
                    const std::vector<size_t> &start,
-                   const std::vector<size_t> &count, bool constantShape,
+                   const std::vector<size_t> &count, bool constantShape, bool derived,
                    const std::string &dataType)
       : name(name), shape(shape), start(start), count(count),
-        constantShape(constantShape), dataType(dataType) {}
+        constantShape(constantShape), derived(derived), dataType(dataType) {}
 
   static std::string serializeVector(const std::vector<size_t>& vec) {
     std::ostringstream oss;
@@ -69,7 +70,7 @@ struct VariableMetadata {
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(name, shape, start, count, constantShape, dataType);
+    ar(name, shape, start, count, constantShape, derived, dataType);
   }
 };
 
