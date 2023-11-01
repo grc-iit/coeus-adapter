@@ -123,7 +123,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void LoadMetadata();
 
   void DefineVariable(const VariableMetadata& variableMetadata);
-
+//adios.defineVariable()
+//adios.put(variable) -> PutDefereed()
+//adios.put( variable, "U+V") -> CalculateDerivedQuantity() -> Put(varaible)
  protected:
   /** Initialize (wrapper around Init_)*/
   void Init() override { Init_(); }
@@ -143,6 +145,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   template<typename T>
   void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values);
+
+  template<typename T>
+  void HermesEngine::PutDerived(const adios2::core::DefinedVariable<T> &variable, const T *values);
 
   /** Get data from Hermes (sync) */
   template<typename T>
