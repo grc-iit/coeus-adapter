@@ -10,9 +10,10 @@
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />
 
-            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>
-            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>
-            <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
         </engine>
     </io>
 
@@ -25,9 +26,10 @@
             <parameter key="PluginName" value="hermes" />
             <parameter key="PluginLibrary" value="hermes_engine" />
 
-            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>
-            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>
-            <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
         </engine>
     </io>
 

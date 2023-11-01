@@ -1,6 +1,4 @@
-variable1:
-  operator1: function1
-  operator2: function2
-variable2:
-  operator3: function3
-  operator4: function4
+'U':
+  weight: 0.5
+'V':
+  weight: 0.5
