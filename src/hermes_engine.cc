@@ -20,11 +20,15 @@ namespace coeus {
  * initialization of the engine. The PluginEngineInterface will store
  * the "io" variable in the "m_IO" variable.
  * */
+
+
 HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const std::string &name,
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
+//  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
+//  << m_Name << " " << this->m_IO.m_Name << std::endl;
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
@@ -74,7 +78,7 @@ void HermesEngine::Init_() {
   rank = m_Comm.Rank();
   comm_size = m_Comm.Size();
 
-  //Identifier, should be the file, but we dont get it
+  //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
   //Configuration Setup through the Adios xml configuration
@@ -138,6 +142,7 @@ void HermesEngine::DoClose(const int transportIndex) {
 }
 
 HermesEngine::~HermesEngine() {
+  std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   delete db;
 }
@@ -148,7 +153,6 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-  engine_logger->info("rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
@@ -174,7 +178,6 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
-  engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
@@ -277,7 +280,6 @@ void HermesEngine::LoadMetadata() {
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
-  engine_logger->info("rank {}", rank);
   if (currentStep != 1) {
     // If the metadata is defined delete current value to update it
     m_IO.RemoveVariable(variableMetadata.name);
@@ -304,18 +306,43 @@ void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-  engine_logger->info("rank {}", rank);
   auto blob = Hermes->bkt->Get(variable.m_Name);
+    //_____________Hua______________________
+    // add spdlog method to extract the variable metadata
+    //auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+     //       "logs/engine_test_hua.txt", true);
+    //file_sink3->set_level(spdlog::level::trace);
+    auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_get.txt");
+    logger->set_level(spdlog::level::info);
+    metaInfo metaInfo(variable, "Get");
+    std::stringstream ss;
+    ss << metaInfo;
+    logger->info("Meta Information: {}", ss.str());
+    //auto logger = std::make_shared<spdlog::logger>("my_logger", file_sink3);
+    //logger->trace("{}", metaInfo);
+    //______________Hua________________
   memcpy(values, blob.data(), blob.size());
 }
 
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-
+  //_____________Hua______________________
+  // add spdlog method to extract the variable metadata
+   // auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+    //        "logs/engine_test_hua.txt", true);
+   // file_sink2->set_level(spdlog::level::trace);
+    auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_put.txt");
+    logger->set_level(spdlog::level::info);
+  metaInfo metaInfo(variable, "Put");
+    std::stringstream ss;
+    ss << metaInfo;
+    logger->info("Meta Information: {}", ss.str());
+    //auto logger = std::make_shared<spdlog::logger>("my_logger", file_sink2);
+  //logger->trace("{}", metaInfo);
+  //______________Hua________________
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
