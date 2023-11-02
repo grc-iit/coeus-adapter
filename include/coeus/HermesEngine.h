@@ -111,7 +111,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::vector<std::string> listOfVars;
 
   std::shared_ptr<spdlog::logger> engine_logger;
-
+  std::shared_ptr<spdlog::logger> meta_logger_put;
+  std::shared_ptr<spdlog::logger> meta_logger_get;
   void IncrementCurrentStep();
 
   template<typename T>
