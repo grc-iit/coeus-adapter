@@ -228,7 +228,10 @@ void HermesEngine::ComputeDerivedVariables()
 
         for (auto derivedBlock : DerivedBlockData)
         {
-            // TODO DoPutDerived(*(*it).second.get(), std::get<0>(derivedBlock), true /* sync */);
+#define DEFINE_VARIABLE_PUT(T) \
+            PutDerived(derivedVar, static_cast<T *>(std::get<0>(derivedBlock));
+  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
+#undef DEFINE_VARIABLE_PUT
             free(std::get<0>(derivedBlock));
 
         }
@@ -390,7 +393,7 @@ void HermesEngine::DoPutDeferred_(
 
 template<typename T>
 void HermesEngine::PutDerived(
-    const adios2::core::DefinedVariable<T> &variable, const T *values) {
+    const adios2::core::VariableDerived &variable, const T *values) {
   engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
