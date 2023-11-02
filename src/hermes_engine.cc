@@ -67,6 +67,22 @@ void HermesEngine::Init_() {
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
+  // File log for metadata collection
+  auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+          "logs/metadataCollect_get.txt", true);
+  file_sink2->set_level(spdlog::level::trace);
+  spdlog::logger logger2("metadata_logger_get", {file_sink2});
+  logger2.set_level(spdlog::level::trace);
+  meta_logger_get = std::make_shared<spdlog::logger>(logger2);
+
+  auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+          "logs/metadataCollect_put.txt", true);
+  file_sink3->set_level(spdlog::level::trace);
+  spdlog::logger logger3("metadata_logger_put", {file_sink3});
+  logger3.set_level(spdlog::level::trace);
+  meta_logger_put = std::make_shared<spdlog::logger>(logger3);
+
+
   //Merge Log
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
@@ -307,20 +323,12 @@ template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   auto blob = Hermes->bkt->Get(variable.m_Name);
-    //_____________Hua______________________
     // add spdlog method to extract the variable metadata
-    //auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-     //       "logs/engine_test_hua.txt", true);
-    //file_sink3->set_level(spdlog::level::trace);
-    auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_get.txt");
-    logger->set_level(spdlog::level::trace);
     metaInfo metaInfo(variable, adiosOpType::get);
     std::stringstream ss;
     ss << metaInfo;
-    logger->info("Meta Information: {}", ss.str());
-    //auto logger = std::make_shared<spdlog::logger>("my_logger", file_sink3);
-    //logger->trace("{}", metaInfo);
-    //______________Hua________________
+    meta_logger_get->info("Meta Information: {}", ss.str());
+    //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 }
 
@@ -329,25 +337,15 @@ void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  //_____________Hua______________________
   // add spdlog method to extract the variable metadata
-   // auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-    //        "logs/engine_test_hua.txt", true);
-   // file_sink2->set_level(spdlog::level::trace);
-    auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_put.txt");
-    logger->set_level(spdlog::level::info);
   metaInfo metaInfo(variable, adiosOpType::put);
-    std::stringstream ss;
-    ss << metaInfo;
-    logger->info("Meta Information: {}", ss.str());
-    //auto logger = std::make_shared<spdlog::logger>("my_logger", file_sink2);
-  //logger->trace("{}", metaInfo);
-  //______________Hua________________
+  std::stringstream ss;
+  ss << metaInfo;
+  meta_logger_put->info("Meta Information: {}", ss.str());
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
-
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 }
