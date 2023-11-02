@@ -393,7 +393,7 @@ void HermesEngine::DoPutDeferred_(
 
 template<typename T>
 void HermesEngine::PutDerived(
-    const adios2::core::VariableDerived &variable, const T *values) {
+  const adios2::core::VariableDerived &variable, const T *values) {
   engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);

@@ -24,6 +24,8 @@
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
+#include <adios2/core/VariableDerived.h>
+
 #include "ContainerManager.h"
 
 #include "coeus/MetadataSerializer.h"
@@ -147,7 +149,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                       const T *values);
 
   template<typename T>
-  void HermesEngine::PutDerived(const adios2::core::DefinedVariable<T> &variable, const T *values);
+  void HermesEngine::PutDerived(const adios2::core::VariableDerived<T> &variable, const T *values);
 
   /** Get data from Hermes (sync) */
   template<typename T>
