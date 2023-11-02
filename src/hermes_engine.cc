@@ -313,8 +313,8 @@ void HermesEngine::DoGetDeferred_(
      //       "logs/engine_test_hua.txt", true);
     //file_sink3->set_level(spdlog::level::trace);
     auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_get.txt");
-    logger->set_level(spdlog::level::info);
-    metaInfo metaInfo(variable, "Get");
+    logger->set_level(spdlog::level::trace);
+    metaInfo metaInfo(variable, adiosOpType::get);
     std::stringstream ss;
     ss << metaInfo;
     logger->info("Meta Information: {}", ss.str());
@@ -336,7 +336,7 @@ void HermesEngine::DoPutDeferred_(
    // file_sink2->set_level(spdlog::level::trace);
     auto logger = spdlog::basic_logger_mt("metaInfo_logger", "metaInfo_log_put.txt");
     logger->set_level(spdlog::level::info);
-  metaInfo metaInfo(variable, "Put");
+  metaInfo metaInfo(variable, adiosOpType::put);
     std::stringstream ss;
     ss << metaInfo;
     logger->info("Meta Information: {}", ss.str());
