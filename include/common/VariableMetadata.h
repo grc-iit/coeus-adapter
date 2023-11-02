@@ -41,10 +41,14 @@ struct metaInfo {
     size_t blockID;
     int order;
 
-    metaInfo() = default;
+    enum OperationType {
+        get = 0,
+        put = 1
+    };
+
 
     template<typename T>
-    explicit metaInfo(const adios2::core::Variable<T> &variable, std::string operationType) {
+    metaInfo(const adios2::core::Variable<T> &variable, OperationType operationType) {
         name = variable.m_Name;
         operation = operationType;
         std::time_t currentTime = std::time(nullptr);
@@ -57,12 +61,12 @@ struct metaInfo {
         stepStart = variable.m_AvailableStepsStart;
         blockID = variable.m_BlockID;
         steps = variable.m_AvailableStepsCount;
-        if(operationType == "Put"){
+        if(operationType == put){
             order = PutCount;
             PutCount++;
             PutMap[name].push_back(PutCount);
         }
-        if(operationType == "Get"){
+        if(operationType == get){
             order = GetCount;
             GetCount++;
             GetMap[name].push_back(GetCount);
@@ -88,7 +92,7 @@ struct metaInfo {
     }
 
     template<typename T>
-    explicit metaInfo(const adios2::Variable<T> variable, std::string operationType) {
+    explicit metaInfo(const adios2::Variable<T> variable, OperationType operationType) {
         name = variable.Name();
         shape = variable.Shape();
         operation = operationType;
@@ -102,12 +106,12 @@ struct metaInfo {
         stepStart = variable.StepStart();
         blockID = variable.BlockID();
         steps = variable.Steps();
-        if(operationType == "Put"){
+        if(operationType == 1){
             order = PutCount;
             PutCount++;
              PutMap[name].push_back(PutCount);
         }
-        if(operationType == "Get"){
+        if(operationType == 0){
             order = GetCount;
             GetCount++;
             GetMap[name].push_back(GetCount);
@@ -139,35 +143,7 @@ struct metaInfo {
         return adios2::helper::GetDataTypeFromString(dataType);
     }
 
-    bool operator==(const metaInfo& other) const {
-        return name == other.name &&
-               shape == other.shape &&
-               start == other.start &&
-               count == other.count &&
-               operation == other.operation &&
-               selectionSize == other.selectionSize &&
-                sizeofVariable == other.sizeofVariable &&
-                               shapeID == other.shapeID  &&
-                               steps == other.steps &&
-                               stepStart == other.stepStart &&
-                               blockID == other.blockID &&
-                               constantShape == other.constantShape;
-    }
 
-    template<typename T>
-    bool operator==(const adios2::Variable<T>& other) const {
-        return name == other.Name() &&
-               shape == other.Shape() &&
-               start == other.Start() &&
-               count == other.Count() &&
-               selectionSize == other.SelectionSize() &&
-                sizeofVariable == other.Sizeof() &&
-               shapeID == other.ShapeID()  &&
-               steps == other.Steps() &&
-               stepStart == other.StepStart() &&
-               blockID == other.BlockID() &&
-               !constantShape;
-    }
     // TODO
     template<typename T>
     bool operator==(const adios2::core::Variable<T>& other) const {
