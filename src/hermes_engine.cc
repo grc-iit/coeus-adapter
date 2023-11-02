@@ -173,7 +173,70 @@ size_t HermesEngine::CurrentStep() const {
   return currentStep;
 }
 
+void HermesEngine::ComputeDerivedVariables()
+{
+    auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
+    auto const &m_Variables = m_IO.GetVariables();
+    // parse all derived variables
+    std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables" << std::endl;
+    for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end(); it++)
+    {
+        // identify the variables used in the derived variable
+        auto derivedVar = dynamic_cast<core::VariableDerived *>((*it).second.get());
+        std::vector<std::string> varList = derivedVar->VariableNameList();
+        // to create a mapping between variable name and the varInfo (dim and data pointer)
+        std::map<std::string, MinVarInfo *> nameToVarInfo;
+        for (auto varName : varList)
+        {
+            auto itVariable = m_Variables.find(varName);
+            if (itVariable == m_Variables.end())
+                helper::Throw<std::invalid_argument>("Core", "IO", "DefineDerivedVariable",
+                                                     "using undefine variable " + varName +
+                                                         " in defining the derived variable " +
+                                                         (*it).second->m_Name);
+            // extract the dimensions and data for each variable
+            VariableBase *varBase = itVariable->second.get();
+            // get a pointer to the data
+            auto blob = Hermes->bkt->Get(varName);
+            MinBlockInfo blk(
+                    {0, 0, itVariable->second.get().m_Start.data(),
+                     itVariable->second.get().m_Count.data(), MinMaxStruct(), blob.data()});
+
+            // if this is the first block for the variable
+            auto entry = nameToVarInfo.find(varName);
+            if (entry == nameToVarInfo.end())
+            {
+                // create an mvi structure and add the new block to it
+                int varDim = itVariable->second.get().m_Shape.size();
+                MinVarInfo mvi(varDim, itVariable->second.get().m_Shape.data());
+                mvi.BlocksInfo.push_back(blk);
+                nameToVarInfo.insert({varName, mvi});
+            }
+            else
+            {
+                // otherwise add the current block to the existing mvi
+                entry->second.BlocksInfo.push_back(blk);
+            }
+        }
+
+        // compute the values for the derived variables that are not type ExpressionString
+        std::vector<std::tuple<void *, Dims, Dims>> DerivedBlockData;
+        if (derivedVar->GetDerivedType() != DerivedVarType::ExpressionString)
+        {
+            DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
+        }
+
+        for (auto derivedBlock : DerivedBlockData)
+        {
+            // TODO DoPutDerived(*(*it).second.get(), std::get<0>(derivedBlock), true /* sync */);
+            free(std::get<0>(derivedBlock));
+
+        }
+    }
+}
+
 void HermesEngine::EndStep() {
+  ComputeDerivedVariables();
   engine_logger->info("rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
