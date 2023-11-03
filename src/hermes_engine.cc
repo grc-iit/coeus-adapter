@@ -229,7 +229,7 @@ void HermesEngine::ComputeDerivedVariables()
         for (auto derivedBlock : DerivedBlockData)
         {
 #define DEFINE_VARIABLE_PUT(T) \
-            PutDerived(derivedVar, static_cast<T *>(std::get<0>(derivedBlock));
+            PutDerived(derivedVar, static_cast<T *>(std::get<0>(derivedBlock)));
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
 #undef DEFINE_VARIABLE_PUT
             free(std::get<0>(derivedBlock));
