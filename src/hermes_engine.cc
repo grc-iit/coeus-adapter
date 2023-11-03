@@ -150,7 +150,7 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("BeginStep rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
@@ -163,8 +163,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   }
   std::string bucket_name =
       "step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-
+  std::cout << "getting bucket" <<std::endl ;
   Hermes->GetBucket(bucket_name);
+  std::cout << "done getting bucket" <<std::endl ;
   return adios2::StepStatus::OK;
 }
 
@@ -252,7 +253,7 @@ void HermesEngine::ComputeDerivedVariables() {
 
 void HermesEngine::EndStep() {
   ComputeDerivedVariables();
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("EndStep rank {}", rank);
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
