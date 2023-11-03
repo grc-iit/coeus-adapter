@@ -424,6 +424,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     total_count *= count;
   }
 
+  std::cout << "derived has " << total_count " elements with size " sizeof(T) << std::endl;
   Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
