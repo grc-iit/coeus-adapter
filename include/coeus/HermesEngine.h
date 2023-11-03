@@ -38,7 +38,7 @@
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
 #include <comms/MPI.h>
-
+#include "common/globalVariable.h"
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -51,6 +51,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
   int ppn;
+  GlobalVariable globalData;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
