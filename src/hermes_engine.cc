@@ -200,7 +200,7 @@ void HermesEngine::ComputeDerivedVariables()
             auto blob = Hermes->bkt->Get(varName);
             adios2::MinBlockInfo blk(
                     {0, 0, itVariable->second.get()->m_Start.data(),
-                     itVariable->second.get()->m_Count.data(), MinMaxStruct(), blob.data()});
+                     itVariable->second.get()->m_Count.data(), adios2::MinMaxStruct(), blob.data()});
 
             // if this is the first block for the variable
             auto entry = nameToVarInfo.find(varName);
