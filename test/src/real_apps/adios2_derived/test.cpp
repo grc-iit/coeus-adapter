@@ -117,6 +117,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (rank == 0) std::cout << "Sleeping" << std::endl;
+  sleep(10);
+  if (rank == 0) std::cout << "Done Sleeping" << std::endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+
   if(role == 1 || role == -1){
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
