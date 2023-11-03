@@ -110,7 +110,7 @@ class IoComp(Application):
         ]
 
 
-        if self.config['engine'].lower() == 'bp5':
+        if self.config['engine'].lower() in  ['bp5', 'bp5_derived'] :
             replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path, replacements)
@@ -139,7 +139,12 @@ class IoComp(Application):
         out_file = self.config['out_file']
         role = self.config['role']
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
+        if self.config['engine'].lower() == 'bp5_derived':
+            cmd = "adios_derived"
+        else:
+            cmd = "io_comp"
+
+        Exec(f'{cmd} {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
