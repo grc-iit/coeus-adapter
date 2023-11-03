@@ -16,18 +16,16 @@ add_executable(adios2-gray-scott
   simulation/writer.cpp
   simulation/restart.cpp
 )
-target_link_libraries(adios2-gray-scott adios2::adios2 hermes_engine MPI::MPI_C)
+target_link_libraries(adios2-gray-scott adios2::adios2 hermes_engine MPI::MPI_C spdlog)
 target_include_directories(adios2-gray-scott PRIVATE
-        ${Hermes_INCLUDE_DIRS}
         ${ADIOS2_INCLUDE_DIR}
         )
 install(TARGETS adios2-gray-scott 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(adios2-pdf-calc analysis/pdf-calc.cpp)
-target_link_libraries(adios2-pdf-calc adios2::adios2 hermes_engine MPI::MPI_C)
+target_link_libraries(adios2-pdf-calc adios2::adios2 hermes_engine MPI::MPI_C spdlog)
 target_include_directories(adios2-pdf-calc PRIVATE
-        ${Hermes_INCLUDE_DIRS}
         ${ADIOS2_INCLUDE_DIR}
         )
 install(TARGETS adios2-pdf-calc 

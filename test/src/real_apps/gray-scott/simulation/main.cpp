@@ -7,9 +7,9 @@
 #include <adios2.h>
 #include <mpi.h>
 
-#include "../../../../external_libraries/spdlog/include/spdlog/logger.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/basic_file_sink.h"
+#include "spdlog/logger.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 #include "../../gray-scott/common/timer.hpp"
 #include "../../gray-scott/simulation/gray-scott.h"
