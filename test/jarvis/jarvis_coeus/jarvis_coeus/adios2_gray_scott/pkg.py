@@ -16,10 +16,10 @@ class Adios2GrayScott(Application):
         """
         Initialize paths
         """
-        self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
         self.settings_json_path = f'{self.shared_dir}/settings-files.json'
-        self.var_json_path = f'{self.shared_dir}/var.json'
-        self.operator_json_path = f'{self.shared_dir}/operator.json'
+        self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
+        self.var_json_path = f'{self.shared_dir}/var.yaml'
+        self.operator_json_path = f'{self.shared_dir}/operator.yaml'
 
     def _configure_menu(self):
         """
@@ -40,7 +40,7 @@ class Adios2GrayScott(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'L',
@@ -173,7 +173,7 @@ class Adios2GrayScott(Application):
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
 
-    def configure(self, **kwargs):
+    def _configure(self, **kwargs):
         """
         Converts the Jarvis configuration to application-specific configuration.
         E.g., OrangeFS produces an orangefs.xml file.
@@ -181,7 +181,6 @@ class Adios2GrayScott(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        self.update_config(kwargs, rebuild=False)
         if self.config['out_file'] is None:
             adios_dir = os.path.join(self.shared_dir, 'gray-scott-output')
             self.config['out_file'] = os.path.join(adios_dir,
@@ -216,12 +215,23 @@ class Adios2GrayScott(Application):
 
         JsonFile(self.settings_json_path).save(settings_json)
 
+        ppn = self.config['ppn']
+        replacements = [
+            ('PPN', f'{ppn}'),
+            ('VARFILE', self.var_json_path),
+            ('OPFILE', self.operator_json_path),
+            ('DBFILE', self.config['db_path']),
+        ]
+
         if self.config['engine'].lower() == 'bp5':
+            replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path)
+                                    self.adios2_xml_path, replacements)
+
         elif self.config['engine'].lower() == 'hermes':
+            replacements.append(('ENGINE', 'plugin'))
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    self.adios2_xml_path)
+                                    self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',

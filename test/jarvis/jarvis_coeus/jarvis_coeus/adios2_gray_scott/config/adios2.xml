@@ -6,13 +6,14 @@
         ============================================-->
 
     <io name="SimulationOutput">
-        <engine type="BP5">
-            <!-- SST engine parameters -->
-            <parameter key="RendezvousReaderCount" value="0"/>
-            <parameter key="QueueLimit" value="1"/>
-            <parameter key="QueueFullPolicy" value="Discard"/>
-            <!-- BP4/SST engine parameters -->
-            <parameter key="OpenTimeoutSecs" value="10.0"/>
+        <engine type="##ENGINE##">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
         </engine>
     </io>
 
@@ -21,13 +22,14 @@
         ===========================================-->
 
     <io name="PDFAnalysisOutput">
-        <engine type="BP5">
-            <!-- SST engine parameters -->
-            <parameter key="RendezvousReaderCount" value="1"/>
-            <parameter key="QueueLimit" value="5"/>
-            <parameter key="QueueFullPolicy" value="Block"/>
-            <!-- BP4/SST engine parameters -->
-            <parameter key="OpenTimeoutSecs" value="10.0"/>
+        <engine type="##ENGINE##">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
         </engine>
     </io>
 

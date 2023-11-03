@@ -39,7 +39,7 @@ class IoComp(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'N',
@@ -62,7 +62,7 @@ class IoComp(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp5', 'hermes', 'bp5_derived'],
                 'type': str,
                 'default': 'bp5',
             },
@@ -77,10 +77,10 @@ class IoComp(Application):
                 'msg': 'producer (0) consumer (1)',
                 'type': int,
                 'default': -1,
-            }
+            },
         ]
 
-    def configure(self, **kwargs):
+    def _configure(self, **kwargs):
         """
         Converts the Jarvis configuration to application-specific configuration.
         E.g., OrangeFS produces an orangefs.xml file.
@@ -88,7 +88,7 @@ class IoComp(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        self.update_config(kwargs, rebuild=False)
+        # self.update_config(kwargs, rebuild=False)
         if self.config['out_file'] is None:
             adios_dir = os.path.join(self.shared_dir, 'io-comp')
             self.config['out_file'] = os.path.join(adios_dir,
@@ -100,17 +100,23 @@ class IoComp(Application):
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
+
         ppn = self.config['ppn']
+        replacements = [
+            ('PPN', f'{ppn}'),
+            ('VARFILE', self.var_json_path),
+            ('OPFILE', self.operator_json_path),
+            ('DBFILE', self.config['db_path']),
+        ]
+
+
         if self.config['engine'].lower() == 'bp5':
+            replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path)
+                                self.adios2_xml_path, replacements)
+
         elif self.config['engine'].lower() == 'hermes':
-            replacements = [
-                ('PPN', f'{ppn}'),
-                ('VARFILE', self.var_json_path),
-                ('OPFILE', self.operator_json_path),
-                ('DBFILE', self.config['db_path']),
-            ]
+            replacements.append(('ENGINE', 'plugin'))
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
