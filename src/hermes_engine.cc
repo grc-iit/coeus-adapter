@@ -258,7 +258,7 @@ void HermesEngine::EndStep() {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
       std::cout << "writing step" << std::endl;
-      client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
       std::cout << "Done writing step" << std::endl;
     }
   }
@@ -415,7 +415,7 @@ void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
 
   DbOperation db_op(currentStep, rank, std::move(vm), name,
                     std::move(blobInfo));
-  client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+  client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 }
 
 template <typename T>
@@ -438,7 +438,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
   DbOperation db_op(currentStep, rank, std::move(vm), name,
                     std::move(blobInfo));
-  client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+  client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 }
 
 } // namespace coeus
