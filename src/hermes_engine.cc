@@ -189,19 +189,20 @@ void HermesEngine::ComputeDerivedVariables() {
     std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
     for (auto varName : varList) {
       auto itVariable = m_Variables.find(varName);
-      //            if (itVariable == m_Variables.end())
-      //                helper::Throw<std::invalid_argument>("Core", "IO",
-      //                "DefineDerivedVariable",
-      //                                                       "using undefine
-      //                                                       variable " +
-      //                                                       varName +
-      //                                                           " in defining
-      //                                                           the derived
-      //                                                           variable " +
-      //                                                           (*it).second->m_Name);
+          if (itVariable == m_Variables.end())
+              adios2::helper::Throw<std::invalid_argument>("Core", "IO",
+              "DefineDerivedVariable",
+                                                     "using undefine
+                                                     variable " +
+                                                     varName +
+                                                         " in defining
+                                                         the derived
+                                                         variable " +
+                                                         (*it).second->m_Name);
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
       // get a pointer to the data
+      std::cout << "getting the data " << varName << std::endl;
       auto blob = Hermes->bkt->Get(varName);
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
@@ -222,6 +223,7 @@ void HermesEngine::ComputeDerivedVariables() {
       }
     }
 
+    std::cout << "data processed" << std::endl;
     // compute the values for the derived variables that are not type
     // ExpressionString
     std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
@@ -230,6 +232,8 @@ void HermesEngine::ComputeDerivedVariables() {
         adios2::DerivedVarType::ExpressionString) {
       DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
     }
+
+    std::cout << "Calculations" << std::endl;
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
