@@ -252,8 +252,8 @@ void HermesEngine::ComputeDerivedVariables() {
 }
 
 void HermesEngine::EndStep() {
-  ComputeDerivedVariables();
   engine_logger->info("EndStep rank {}", rank);
+  ComputeDerivedVariables();
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
