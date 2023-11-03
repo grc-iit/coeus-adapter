@@ -78,6 +78,7 @@ class SQLiteWrapper {
 
   void UpdateTotalSteps(const std::string& appName, int step) {
     sqlite3_stmt* stmt;
+    std::cout << "Updating total steps for " << appName << " to " << step << std::endl;
     const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO Apps (appName, TotalSteps) VALUES (?, ?);";
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_text(stmt, 1, appName.c_str(), -1, SQLITE_STATIC);
