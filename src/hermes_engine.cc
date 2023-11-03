@@ -358,8 +358,9 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-
+  engine_logger->info("LoadMetadata rank {}", rank);
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
+  std::cout << "metadata_vector size " << metadata_vector.size() << std::endl;
   for (auto &variableMetadata : metadata_vector) {
 
     DefineVariable(variableMetadata);
