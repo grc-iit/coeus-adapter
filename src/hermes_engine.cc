@@ -185,20 +185,20 @@ void HermesEngine::ComputeDerivedVariables()
         auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
         std::vector<std::string> varList = derivedVar->VariableNameList();
         // to create a mapping between variable name and the varInfo (dim and data pointer)
-        std::map<std::string, MinVarInfo *> nameToVarInfo;
+        std::map<std::string, adios2::MinVarInfo *> nameToVarInfo;
         for (auto varName : varList)
         {
             auto itVariable = m_Variables.find(varName);
-            if (itVariable == m_Variables.end())
-                helper::Throw<std::invalid_argument>("Core", "IO", "DefineDerivedVariable",
-                                                     "using undefine variable " + varName +
-                                                         " in defining the derived variable " +
-                                                         (*it).second->m_Name);
+//            if (itVariable == m_Variables.end())
+//                helper::Throw<std::invalid_argument>("Core", "IO", "DefineDerivedVariable",
+//                                                       "using undefine variable " + varName +
+//                                                           " in defining the derived variable " +
+//                                                           (*it).second->m_Name);
             // extract the dimensions and data for each variable
-            VariableBase *varBase = itVariable->second.get();
+            adios2::core::VariableBase *varBase = itVariable->second.get();
             // get a pointer to the data
             auto blob = Hermes->bkt->Get(varName);
-            MinBlockInfo blk(
+            adios2::MinBlockInfo blk(
                     {0, 0, itVariable->second.get().m_Start.data(),
                      itVariable->second.get().m_Count.data(), MinMaxStruct(), blob.data()});
 
@@ -208,7 +208,7 @@ void HermesEngine::ComputeDerivedVariables()
             {
                 // create an mvi structure and add the new block to it
                 int varDim = itVariable->second.get().m_Shape.size();
-                MinVarInfo mvi(varDim, itVariable->second.get().m_Shape.data());
+                adios2::MinVarInfo mvi(varDim, itVariable->second.get().m_Shape.data());
                 mvi.BlocksInfo.push_back(blk);
                 nameToVarInfo.insert({varName, mvi});
             }
@@ -221,7 +221,7 @@ void HermesEngine::ComputeDerivedVariables()
 
         // compute the values for the derived variables that are not type ExpressionString
         std::vector<std::tuple<void *, Dims, Dims>> DerivedBlockData;
-        if (derivedVar->GetDerivedType() != DerivedVarType::ExpressionString)
+        if (derivedVar->GetDerivedType() != adios2::DerivedVarType::ExpressionString)
         {
             DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
         }
