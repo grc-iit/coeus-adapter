@@ -62,7 +62,7 @@ class IoComp(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes', 'bp5_derived'],
+                'choices': ['bp5', 'hermes', 'bp5_derived', 'hermes_derived'],
                 'type': str,
                 'default': 'bp5',
             },
@@ -115,7 +115,7 @@ class IoComp(Application):
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path, replacements)
 
-        elif self.config['engine'].lower() == 'hermes':
+        elif self.config['engine'].lower() == ['hermes', 'hermes_derived']:
             replacements.append(('ENGINE', 'plugin'))
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path, replacements)
@@ -139,10 +139,13 @@ class IoComp(Application):
         out_file = self.config['out_file']
         role = self.config['role']
         # print(self.env['HERMES_CLIENT_CONF'])
-        if self.config['engine'].lower() == 'bp5_derived':
+        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
             cmd = "adios_derived"
+            print("Running adios_derived")
         else:
             cmd = "io_comp"
+            print("Running io_comp")
+
 
         Exec(f'{cmd} {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
              MpiExecInfo(nprocs=self.config['nprocs'],
