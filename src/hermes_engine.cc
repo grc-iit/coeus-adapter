@@ -396,7 +396,12 @@ void HermesEngine::PutDerived(
   const adios2::core::VariableDerived &variable, const T *values) {
   engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  int total_count = 0;
+  for(auto count: variable.m_Count) {
+    total_count += count;
+  }
+
+  Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
