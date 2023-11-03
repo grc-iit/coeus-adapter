@@ -21,6 +21,7 @@
 #include <string>
 
 #include <vector>
+#include <map>
 
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
