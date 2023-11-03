@@ -182,7 +182,7 @@ void HermesEngine::ComputeDerivedVariables()
     for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end(); it++)
     {
         // identify the variables used in the derived variable
-        auto derivedVar = dynamic_cast<core::VariableDerived *>((*it).second.get());
+        auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
         std::vector<std::string> varList = derivedVar->VariableNameList();
         // to create a mapping between variable name and the varInfo (dim and data pointer)
         std::map<std::string, MinVarInfo *> nameToVarInfo;
