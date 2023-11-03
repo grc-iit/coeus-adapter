@@ -190,15 +190,16 @@ void HermesEngine::ComputeDerivedVariables() {
     for (auto varName : varList) {
       auto itVariable = m_Variables.find(varName);
           if (itVariable == m_Variables.end())
-              adios2::helper::Throw<std::invalid_argument>("Core", "IO",
-              "DefineDerivedVariable",
-                                                     "using undefine
-                                                     variable " +
-                                                     varName +
-                                                         " in defining
-                                                         the derived
-                                                         variable " +
-                                                         (*it).second->m_Name);
+            std::cout <<"throw error commented" <<std::endl;
+//              adios2::helper::Throw<std::invalid_argument>("Core", "IO",
+//              "DefineDerivedVariable",
+//                                                     "using undefine
+//                                                     variable " +
+//                                                     varName +
+//                                                         " in defining
+//                                                         the derived
+//                                                         variable " +
+//                                                         (*it).second->m_Name);
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
       // get a pointer to the data
