@@ -256,7 +256,9 @@ void HermesEngine::EndStep() {
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
+      std::cout << "writing step" << std::endl;
       client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+      std::cout << "Done writing step" << std::endl;
     }
   }
   delete Hermes->bkt;
