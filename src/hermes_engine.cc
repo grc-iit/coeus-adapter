@@ -323,11 +323,13 @@ template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   auto blob = Hermes->bkt->Get(variable.m_Name);
+   #ifdef Meta_enabled
     // add spdlog method to extract the variable metadata
     metaInfo metaInfo(variable, adiosOpType::get);
     std::stringstream ss;
     ss << metaInfo;
     meta_logger_get->info("Meta Information: {}", ss.str());
+   #endif
     //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 }
@@ -338,10 +340,12 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
   // add spdlog method to extract the variable metadata
+#ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   std::stringstream ss;
   ss << metaInfo;
   meta_logger_put->info("Meta Information: {}", ss.str());
+#endif
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
