@@ -148,6 +148,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values);
 
+  void HermesEngine::ComputeDerivedVariables();
+
   template<typename T>
   void HermesEngine::PutDerived(const adios2::core::VariableDerived &variable, const T *values);
 
