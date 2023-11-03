@@ -88,7 +88,10 @@ int main(int argc, char *argv[]) {
 
     std::vector<float> data(B);
     auto variable = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
-    auto data_mag = io.DefineDerivedVariable("data_mag", "x:data", "magnitude(x)", adios2::DerivedVarType::StoreData);
+    auto data_mag = io.DefineDerivedVariable("data_mag",
+                                             "x:data \n"
+                                             "magnitude(x)",
+                                             adios2::DerivedVarType::StoreData);
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
