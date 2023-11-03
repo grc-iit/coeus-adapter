@@ -209,13 +209,13 @@ void HermesEngine::ComputeDerivedVariables()
                 // create an mvi structure and add the new block to it
                 int varDim = itVariable->second.get()->m_Shape.size();
                 adios2::MinVarInfo mvi(varDim, itVariable->second.get()->m_Shape.data());
-                mvi.BlocksInfo.push_back(blk);
+                mvi->BlocksInfo.push_back(blk);
                 nameToVarInfo.insert({varName, mvi});
             }
             else
             {
                 // otherwise add the current block to the existing mvi
-                entry->second.BlocksInfo.push_back(blk);
+                entry->second->BlocksInfo.push_back(blk);
             }
         }
 
