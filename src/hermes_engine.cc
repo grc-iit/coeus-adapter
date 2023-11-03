@@ -220,7 +220,7 @@ void HermesEngine::ComputeDerivedVariables()
         }
 
         // compute the values for the derived variables that are not type ExpressionString
-        std::vector<std::tuple<void *, Dims, Dims>> DerivedBlockData;
+        std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>> DerivedBlockData;
         if (derivedVar->GetDerivedType() != adios2::DerivedVarType::ExpressionString)
         {
             DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
