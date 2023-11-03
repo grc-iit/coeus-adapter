@@ -199,16 +199,16 @@ void HermesEngine::ComputeDerivedVariables()
             // get a pointer to the data
             auto blob = Hermes->bkt->Get(varName);
             adios2::MinBlockInfo blk(
-                    {0, 0, itVariable->second.get().m_Start.data(),
-                     itVariable->second.get().m_Count.data(), MinMaxStruct(), blob.data()});
+                    {0, 0, itVariable->second.get()->m_Start.data(),
+                     itVariable->second.get()->m_Count.data(), MinMaxStruct(), blob.data()});
 
             // if this is the first block for the variable
             auto entry = nameToVarInfo.find(varName);
             if (entry == nameToVarInfo.end())
             {
                 // create an mvi structure and add the new block to it
-                int varDim = itVariable->second.get().m_Shape.size();
-                adios2::MinVarInfo mvi(varDim, itVariable->second.get().m_Shape.data());
+                int varDim = itVariable->second.get()->m_Shape.size();
+                adios2::MinVarInfo mvi(varDim, itVariable->second.get()->m_Shape.data());
                 mvi.BlocksInfo.push_back(blk);
                 nameToVarInfo.insert({varName, mvi});
             }
