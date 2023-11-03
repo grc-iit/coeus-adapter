@@ -40,6 +40,7 @@ class SQLiteWrapper {
  public:
   SQLiteWrapper(const std::string& dbName, bool deleteOnDestruction = false)
       : dbName(dbName), deleteOnDestruction(deleteOnDestruction) {
+    std::cout << "Opening database " << dbName << std::endl;
     if (sqlite3_open(dbName.c_str(), &db)) {
       std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
       sqlite3_close(db);
