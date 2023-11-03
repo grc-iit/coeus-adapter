@@ -45,6 +45,18 @@ struct ConstructTask : public CreateTaskStateTask {
                             "coeus_mdm", id, queue_info) {
     // Custom params
     HSHM_MAKE_AR(db_path_, alloc, db_path);
+    std::stringstream ss;
+    cereal::BinaryOutputArchive ar(ss);
+    ar(db_path_);
+    std::string data = ss.str();
+    *custom_ = data;
+  }
+
+  void Deserialize() {
+    std::string data = custom_->str();
+    std::stringstream ss(data);
+    cereal::BinaryInputArchive ar(ss);
+    ar(db_path_);
   }
 
   HSHM_ALWAYS_INLINE
