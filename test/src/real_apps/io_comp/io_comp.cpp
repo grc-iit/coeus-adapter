@@ -68,6 +68,7 @@ int main(int argc, char *argv[]) {
   std::string config_path = argv[3];
   std::string out_file = argv[4];
   int role = std::stoi(argv[5]);
+  int derived = std::stoi(argv[6]);
 
   if(rank==0) {
     std::cout << "Running I/O comparison with " << N << " steps, "

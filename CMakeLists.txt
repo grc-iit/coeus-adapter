@@ -38,6 +38,7 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
 option(COEUS_ENABLE_COVERAGE "Enable coverage calaculation" OFF)
 option(COEUS_ENABLE_DOXYGEN "Enable documentation" OFF)
+option(COEUS_ENABLE_JARVIS "Enable use of jarvis" ON)
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
@@ -194,8 +195,14 @@ add_subdirectory(src)
 # Build tests + benchmarks
 #------------------------------------------------------------------------------
 set(TEST_MAIN ${PROJECT_SOURCE_DIR}/test/unit)
-#set(TEST_MAIN ${CMAKE_SOURCE_DIR}/test/unit)
+set(JARVIS_PIPELINES PATH="${CMAKE_SOURCE_DIR}/test/unit/pipelines")
+
 enable_testing()
+function(jarvis_test test_type test_name)
+    add_test(NAME ${test_name}
+            COMMAND jarvis pipeline run yaml "${JARVIS_PIPELINES}/${test_type}/${test_name}.yaml")
+endfunction()
+
 add_subdirectory(test)
 
 #------------------------------------------------------------------------------
