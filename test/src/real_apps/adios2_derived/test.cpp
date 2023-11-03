@@ -1,4 +1,8 @@
 //
+// Created by jaime on 11/2/2023.
+//
+
+//
 // Created by jaime on 9/27/2023.
 //
 
@@ -34,16 +38,16 @@
 //  }
 //}
 
-std::vector<char> generateRandomVector(std::size_t size) {
+std::vector<float> generateRandomVector(std::size_t size) {
   // Use the current time as seed for random number generation
   std::mt19937 gen(static_cast<unsigned long>(std::time(nullptr)));
-  // Define range for the char data type
-  std::uniform_int_distribution<> dist(0, 255);
+  // Define range for float data type between 1 and 100
+  std::uniform_real_distribution<float> dist(0.0f, 100.0f);
 
-  std::vector<char> result(size);
+  std::vector<float> result(size);
 
   for(std::size_t i = 0; i < size; ++i) {
-    result[i] = static_cast<char>(dist(gen));
+    result[i] = dist(gen);
   }
 
   return result;
@@ -82,23 +86,22 @@ int main(int argc, char *argv[]) {
     adios2::ADIOS adios(config_path, MPI_COMM_WORLD);
     adios2::IO io = adios.DeclareIO("TestIO");
 
-    std::vector<char> data(B, rank);
-    auto variable = io.DefineVariable<char>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
+    std::vector<float> data(B);
+    auto variable = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
+    auto data_mag = io.DefineDerivedVariable("data_mag", "x:data", "magnitude(x)", adios2::DerivedVarType::StoreData);
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < N; ++i) {
-//      auto data = generateRandomVector(B);
-//      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
-//      auto variable = io.DefineVariable<char>(var_name);
-
+      data = generateRandomVector(B);
       engine.BeginStep();
 
       auto startPut = std::chrono::high_resolution_clock::now();
-      engine.Put<char>(variable, data.data());
+      engine.Put<float>(variable, data.data());
       engine.EndStep();
       auto endPut = std::chrono::high_resolution_clock::now();
+
       localPutTime += std::chrono::duration<double>(endPut - startPut).count();
     }
     engine.Close();
@@ -114,7 +117,8 @@ int main(int argc, char *argv[]) {
     adios2::IO io = adios.DeclareIO("TestIO");
     auto readEngine = io.Open(out_file, adios2::Mode::Read);
 
-    std::vector<char> data(B, rank);
+    std::vector<float> data;
+    std::vector<float> derivedData;
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -122,10 +126,12 @@ int main(int argc, char *argv[]) {
     int i = 0;
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
 //      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
-      adios2::Variable<char> readVariable = io.InquireVariable<char>("data");
+      adios2::Variable<float> readVariable = io.InquireVariable<float>("data");
+      adios2::Variable<float> derVariable = io.InquireVariable<float>("data_mag");
 
       auto startGet = std::chrono::high_resolution_clock::now();
-      readEngine.Get<char>(readVariable, data);
+      readEngine.Get<float>(readVariable, data);
+      readEngine.Get<float>(derVariable, data);
       readEngine.EndStep();
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
@@ -166,8 +172,8 @@ int main(int argc, char *argv[]) {
 
     // Append the results
     outputFile << size << "," << B << "," << N << ","
-    << globalPutTime << "," << globalGetTime << ","
-    << localPutTime << "," << localGetTime << std::endl;
+               << globalPutTime << "," << globalGetTime << ","
+               << localPutTime << "," << localGetTime << std::endl;
     outputFile.close();
   }
 
