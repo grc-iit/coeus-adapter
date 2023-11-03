@@ -206,7 +206,7 @@ endfunction()
 #        jarvis_repo
 #        COMMAND jarvis repo add
 #)
-#add_subdirectory(test)
+add_subdirectory(test)
 
 #------------------------------------------------------------------------------
 # Install COEUS
