@@ -392,7 +392,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
 template <typename T>
 void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
                                   T *values) {
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("Get rank {}", rank);
   auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
 }
@@ -400,7 +400,7 @@ void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
 template <typename T>
 void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
                                   const T *values) {
-  engine_logger->info("Put rank {}", rank);
+  engine_logger->info("Put rank: {}, name: {}", rank, variable.m_Name);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
@@ -417,7 +417,7 @@ void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
 template <typename T>
 void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                               T *values) {
-  engine_logger->info("Put derived rank {}", rank);
+  engine_logger->info("Put derived rank: {}, name: {}", rank, variable.m_Name);
   std::string name = variable.m_Name;
   int total_count = 1;
   for (auto count : variable.m_Count) {
