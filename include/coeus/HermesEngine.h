@@ -50,8 +50,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   SQLiteWrapper* db;
   std::string db_file;
   hrun::coeus_mdm::Client client;
-//  FileLock* lock;
-//  DbQueueWorker* db_worker;
+
   int ppn;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
@@ -148,10 +147,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values);
 
-  void HermesEngine::ComputeDerivedVariables();
+  void ComputeDerivedVariables();
 
   template<typename T>
-  void HermesEngine::PutDerived(const adios2::core::VariableDerived &variable, const T *values);
+  void PutDerived(const adios2::core::VariableDerived &variable, const T *values);
 
   /** Get data from Hermes (sync) */
   template<typename T>
