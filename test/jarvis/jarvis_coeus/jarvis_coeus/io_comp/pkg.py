@@ -117,7 +117,7 @@ class IoComp(Application):
 
         elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             replacements.append(('ENGINE', 'plugin'))
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
