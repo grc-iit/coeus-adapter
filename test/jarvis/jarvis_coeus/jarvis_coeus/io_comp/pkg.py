@@ -109,8 +109,8 @@ class IoComp(Application):
             ('DBFILE', self.config['db_path']),
         ]
 
-
-        if self.config['engine'].lower() in  ['bp5', 'bp5_derived'] :
+        print(f"Using engine {self.config['engine']}")
+        if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
             replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path, replacements)
