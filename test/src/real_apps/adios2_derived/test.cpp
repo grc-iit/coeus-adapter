@@ -141,13 +141,13 @@ int main(int argc, char *argv[]) {
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
       if(rank == 0) {
-        std::cout << "Derived: " <<
+        std::cout << "Derived: ";
         for (auto v : derivedData) {
           std::cout << v << " ";
         }
         std::cout << std::endl;
 
-        std::cout << "Base: " <<
+        std::cout << "Base: ";
         for (auto v : data) {
           std::cout << v << " ";
         }
