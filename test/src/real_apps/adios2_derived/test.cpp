@@ -136,10 +136,24 @@ int main(int argc, char *argv[]) {
 
       auto startGet = std::chrono::high_resolution_clock::now();
       readEngine.Get<float>(readVariable, data);
-      readEngine.Get<float>(derVariable, data);
+      readEngine.Get<float>(derVariable, derivedData);
       readEngine.EndStep();
       auto endGet = std::chrono::high_resolution_clock::now();
       localGetTime += std::chrono::duration<double>(endGet - startGet).count();
+      if(rank == 0) {
+        std::cout << "Derived: " <<
+        for (auto v : derivedData) {
+          std::cout << v << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Base: " <<
+        for (auto v : data) {
+          std::cout << v << " ";
+        }
+        std::cout << std::endl;
+      }
+
       i++;
     }
     readEngine.Close();
