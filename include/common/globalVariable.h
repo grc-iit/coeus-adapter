@@ -19,15 +19,46 @@
 
 
 
-class GlobalVariables {
+class GlobalVariable {
 public:
     int PutCount;
     int GetCount;
     std::unordered_map<std::string, std::vector<int>> PutMap;
     std::unordered_map<std::string, std::vector<int>> GetMap;
 
-    GlobalVariables() : PutCount(0), GetCount(0) {
+    GlobalVariable() : PutCount(0), GetCount(0) {
         // You can initialize the maps or other variables here if needed.
+    }
+    void insertPut (std::string str) {
+        PutMap[str].push_back(PutCount);
+        PutCount++;
+    }
+    void insertGet (std::string str) {
+        GetMap[str].push_back(GetCount);
+        GetCount++;
+    }
+    std::string PutMapToString() {
+        std::stringstream result;
+        for (const auto& entry : PutMap) {
+            result << "Key: " << entry.first << " Order: ";
+            for (int order : entry.second) {
+                result << order << ' ';
+            }
+            result << '\n';
+        }
+        return result.str();
+    }
+
+    std::string GetMapToString() {
+        std::stringstream result;
+        for (const auto& entry : GetMap) {
+            result << "Key: " << entry.first << " Order: ";
+            for (int order : entry.second) {
+                result << order << ' ';
+            }
+            result << '\n';
+        }
+        return result.str();
     }
 
     // You can add member functions to manipulate or access the data if necessary.

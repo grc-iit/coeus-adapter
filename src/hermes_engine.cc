@@ -323,12 +323,18 @@ template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   auto blob = Hermes->bkt->Get(variable.m_Name);
+    std::string name = variable.m_Name;
    #ifdef Meta_enabled
     // add spdlog method to extract the variable metadata
     metaInfo metaInfo(variable, adiosOpType::get);
     std::stringstream ss;
     ss << metaInfo;
     meta_logger_get->info("Meta Information: {}", ss.str());
+    globalData.insertGet(name);
+    auto file_sink4 = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs/PutMap.txt", true);
+    file_sink4->set_level(spdlog::level::trace);
+    auto file_logger4 = std::make_shared<spdlog::logger>("file_logger2", file_sink4);
+    file_logger4->info("{}", globalData.GetMapToString());
    #endif
     //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
@@ -345,6 +351,7 @@ void HermesEngine::DoPutDeferred_(
   std::stringstream ss;
   ss << metaInfo;
   meta_logger_put->info("Meta Information: {}", ss.str());
+  globalData.insertPut(name);
 #endif
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
