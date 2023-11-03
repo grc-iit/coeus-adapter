@@ -205,6 +205,8 @@ void HermesEngine::ComputeDerivedVariables() {
       // get a pointer to the data
       std::cout << "getting the data " << varName << std::endl;
       auto blob = Hermes->bkt->Get(varName);
+      std::cout << "Done getting the data " << varName << std::endl;
+
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
                                 adios2::MinMaxStruct(), blob.data()});
@@ -398,7 +400,7 @@ void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
 template <typename T>
 void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
                                   const T *values) {
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("Put rank {}", rank);
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
@@ -415,7 +417,7 @@ void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
 template <typename T>
 void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                               T *values) {
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("Put derived rank {}", rank);
   std::string name = variable.m_Name;
   int total_count = 1;
   for (auto count : variable.m_Count) {
