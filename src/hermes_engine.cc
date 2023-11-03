@@ -186,7 +186,7 @@ void HermesEngine::ComputeDerivedVariables() {
     std::vector<std::string> varList = derivedVar->VariableNameList();
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
-    std::map<std::string, adios2::MinVarInfo *> nameToVarInfo;
+    std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
     for (auto varName : varList) {
       auto itVariable = m_Variables.find(varName);
       //            if (itVariable == m_Variables.end())
@@ -230,11 +230,11 @@ void HermesEngine::ComputeDerivedVariables() {
         adios2::DerivedVarType::ExpressionString) {
       DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
     }
-
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
-  if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) {              \
-    PutDerived(derivedVar, static_cast<T *>(std::get<0>(derivedBlock)));    \
+  if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
+    T* data = static_cast<T *>(std::get<0>(derivedBlock));\
+    PutDerived(*derivedVar, data);    \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
 #undef DEFINE_VARIABLE_PUT
@@ -408,8 +408,8 @@ void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
 }
 
 template <typename T>
-void HermesEngine::PutDerived(const adios2::core::VariableDerived &variable,
-                              const T *values) {
+void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
+                              T *values) {
   engine_logger->info("rank {}", rank);
   std::string name = variable.m_Name;
   int total_count = 1;

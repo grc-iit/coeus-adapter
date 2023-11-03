@@ -151,7 +151,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void ComputeDerivedVariables();
 
   template<typename T>
-  void PutDerived(const adios2::core::VariableDerived &variable, const T *values);
+  void PutDerived(adios2::core::VariableDerived variable, T *values);
 
   /** Get data from Hermes (sync) */
   template<typename T>
