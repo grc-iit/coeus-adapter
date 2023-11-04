@@ -45,12 +45,14 @@ private:
     DbOperation db_op = task->GetDbOp();
 
     if (db_op.type == OperationType::InsertData) {
+      std::cout << "Inserting data" << std::endl;
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
     } else if (db_op.type == OperationType::UpdateSteps) {
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
     }
     else if (db_op.type == OperationType::InsertDerivedData){
+      std::cout << "Inserting derived data" << std::endl;
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);\
       db->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, db_op.derived_semantics.operation,

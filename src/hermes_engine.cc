@@ -454,9 +454,11 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 
   derivedSemantics derived_semantics;
   if(variable.m_Name.find("_min") != std::string::npos) {
+    std::cout << "MIN generates metadata" << std::endl;
     derived_semantics = derivedSemantics(semantics::MIN, generate_derived(rank, currentStep, semantics::MIN));
   }
   else if(variable.m_Name.find("_max") != std::string::npos) {
+    std::cout << "MAX generates metadata" << std::endl;
     derived_semantics = derivedSemantics(semantics::MAX, generate_derived(rank, currentStep, semantics::MAX));
   }
   else {
@@ -479,7 +481,6 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
   Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
   DbOperation db_op = generateMetadata(variable);
-
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 }
 
