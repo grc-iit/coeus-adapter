@@ -453,10 +453,10 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
   derivedSemantics derived_semantics;
-  if(variable.m_Name.find("_min")) {
+  if(variable.m_Name.find("_min") != std::string::npos) {
     derived_semantics = derivedSemantics(semantics::MIN, generate_derived(rank, currentStep, semantics::MIN));
   }
-  else if(variable.m_Name.find("_max")) {
+  else if(variable.m_Name.find("_max") != std::string::npos) {
     derived_semantics = derivedSemantics(semantics::MAX, generate_derived(rank, currentStep, semantics::MAX));
   }
   else {
