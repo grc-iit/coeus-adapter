@@ -456,7 +456,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   if(variable.m_Name.find("_min")) {
     derived_semantics = derivedSemantics(semantics::MIN, generate_derived(rank, currentStep, semantics::MIN));
   }
-  else if(variable.m_Name.find("_min")) {
+  else if(variable.m_Name.find("_max")) {
     derived_semantics = derivedSemantics(semantics::MAX, generate_derived(rank, currentStep, semantics::MAX));
   }
   else {
