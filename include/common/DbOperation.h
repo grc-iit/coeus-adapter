@@ -12,7 +12,8 @@
 
 enum class OperationType {
   InsertData,
-  UpdateSteps
+  UpdateSteps,
+  InsertDerivedData
 };
 
 class DbOperation {
@@ -25,13 +26,20 @@ class DbOperation {
   BlobInfo blobInfo;  // Assuming BlobInfo is a defined structure
   std::string uid;
   int currentStep;
+  derivedSemantics derived_semantics;
 
   DbOperation() = default;
 
   // Constructor for InsertData type
-  DbOperation(int _step, int _rank, VariableMetadata _metadata, std::string  _name, BlobInfo _blobInfo)
+  DbOperation(int _step, int _rank, VariableMetadata _metadata, std::string  _name,
+              BlobInfo _blobInfo, derivedSemantics _derived_semantics)
+      : type(OperationType::InsertDerivedData), step(_step), rank(_rank), metadata(std::move(_metadata)),
+      name(std::move(_name)), blobInfo(std::move(_blobInfo)), derived_semantics(std::move(_derived_semantics)) {}
+
+  DbOperation(int _step, int _rank, VariableMetadata _metadata, std::string  _name,
+              BlobInfo _blobInfo)
       : type(OperationType::InsertData), step(_step), rank(_rank), metadata(std::move(_metadata)),
-      name(std::move(_name)), blobInfo(std::move(_blobInfo)) {}
+        name(std::move(_name)), blobInfo(std::move(_blobInfo)) {}
 
   // Constructor for UpdateSteps type
   DbOperation(const std::string& _uid, int _currentStep)
@@ -39,7 +47,7 @@ class DbOperation {
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(type, step, rank, metadata, name, blobInfo, uid, currentStep);
+    ar(type, step, rank, metadata, name, blobInfo, uid, currentStep, derived_semantics);
   }
 };
 

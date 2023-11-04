@@ -151,6 +151,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void ComputeDerivedVariables();
 
   template<typename T>
+  DbOperation generateMetadata(adios2::core::Variable<T> variable);
+  DbOperation generateMetadata(adios2::core::VariableDerived variable);
+
+  template<typename T>
   void PutDerived(adios2::core::VariableDerived variable, T *values);
 
   /** Get data from Hermes (sync) */

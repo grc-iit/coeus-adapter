@@ -50,7 +50,16 @@ private:
     } else if (db_op.type == OperationType::UpdateSteps) {
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
     }
-
+    else if (db_op.type == OperationType::InsertDerivedData){
+      db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
+      db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);\
+      db->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, db_op.derived_semantics.operation,
+                                        db_op.blobInfo.blob_name, db_op.blobInfo.bucket_name,
+                                        db_op.derived_semantics.value);
+    }
+//int step, const std::string& variable,
+//                                     const std::string& operation, const std::string& blob_name,
+//                                     const std::string& bucket_name, float value
     task->SetModuleComplete();
   }
 

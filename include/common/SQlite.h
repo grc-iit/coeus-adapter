@@ -53,6 +53,7 @@ class SQLiteWrapper {
     createAppsTable();
     createBlobLocationsTable();
     createVariableMetadataTable();
+    CreateDerivedTargetsTable();
   }
 
   ~SQLiteWrapper() {
@@ -252,6 +253,54 @@ class SQLiteWrapper {
     return allMetadata;
   }
 
+
+  bool CreateDerivedTargetsTable() {
+    const std::string sqlCreateTable = "CREATE TABLE IF NOT EXISTS derived_targets ("
+                                       "step INTEGER,"
+                                       "variable TEXT,"
+                                       "operation TEXT,"
+                                       "blob_name TEXT,"
+                                       "bucket_name TEXT,"
+                                       "value REAL,"
+                                       "PRIMARY KEY (step, variable, operation));";
+
+    return execute(sqlCreateTable);
+  }
+
+  void insertOrUpdateDerivedQuantity(int step, const std::string& variable,
+                                     const std::string& operation, const std::string& blob_name,
+                                     const std::string& bucket_name, float value) {
+    sqlite3_stmt* stmt;
+    std::string sqlInsertOrUpdate = R"(
+        INSERT INTO records (step, variable, operation, blob_name, bucket_name, value)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(step, variable, operation) DO UPDATE SET
+            blob_name = excluded.blob_name,
+            bucket_name = excluded.bucket_name,
+            value = CASE
+                WHEN operation = 'min' AND excluded.value < value THEN excluded.value
+                WHEN operation = 'max' AND excluded.value > value THEN excluded.value
+                ELSE value
+            END;
+    )";
+
+    if (sqlite3_prepare_v2(db, sqlInsertOrUpdate.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+      sqlite3_bind_int(stmt, 1, step);
+      sqlite3_bind_text(stmt, 2, variable.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 3, operation.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 4, blob_name.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 5, bucket_name.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_double(stmt, 6, static_cast<double>(value));
+
+      if (sqlite3_step(stmt) != SQLITE_DONE) {
+        // Handle error: You can use sqlite3_errmsg(db) to get the text of the error message
+      }
+
+      sqlite3_finalize(stmt);
+    } else {
+      // Handle error: You can use sqlite3_errmsg(db) to get the text of the error message
+    }
+  }
 
 };
 

@@ -5,6 +5,34 @@
 #ifndef COEUS_INCLUDE_COMMON_METADATASTRUCTS_H_
 #define COEUS_INCLUDE_COMMON_METADATASTRUCTS_H_
 
+enum semantics{
+  MIN,
+  MAX
+};
+
+constexpr std::string_view semantics_to_string(semantics s) {
+  switch (s) {
+    case semantics::MIN: return "min";
+    case semantics::MAX: return "max";
+      // handle more enum values as needed
+    default: return "unknown";
+  }
+}
+
+struct derivedSemantics {
+  std::string operation;
+  float value;
+
+ public:
+  derivedSemantics(semantics s, float v) : operation(semantics_to_string(s)), value(v) { }
+  derivedSemantics() = default;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(operation, value);
+    }
+};
+
 struct BlobInfo {
   std::string bucket_name;
   std::string blob_name;

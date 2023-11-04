@@ -11,6 +11,31 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/HermesEngine.h"
+#include <random>
+#include <functional>
+
+float generate_derived(int rank, int step, semantics value) {
+  // Hash combine function within the scope of generate_derived
+  auto hash_combine = [](std::size_t lhs, std::size_t rhs) {
+    lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
+    return lhs;
+  };
+
+  // Combine the rank, step, and enum value into a single seed value
+  std::size_t seed_value = hash_combine(
+      hash_combine(static_cast<std::size_t>(rank), static_cast<std::size_t>(step)),
+      static_cast<std::size_t>(value)
+  );
+
+  // Use the seed to seed the random number generator
+  std::mt19937 generator(seed_value);
+
+  // Create a distribution for floats between 0 and 1
+  std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+  // Generate and return the random float
+  return distribution(generator);
+}
 
 namespace coeus {
 /**
@@ -408,14 +433,36 @@ void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
-  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(), false,
-                      adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
-
-  DbOperation db_op(currentStep, rank, std::move(vm), name,
-                    std::move(blobInfo));
+  DbOperation db_op = generateMetadata(variable);
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+}
+
+template<typename T>
+DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                      variable.m_Count, variable.IsConstantDims(), true,
+                      adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+}
+
+DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variable) {
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                     variable.m_Count, variable.IsConstantDims(), true,
+                     adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+
+  derivedSemantics derived_semantics;
+  if(variable.m_Name.find("_min")) {
+    derived_semantics = derivedSemantics(semantics::MIN, generate_derived(rank, currentStep, semantics::MIN));
+  }
+  else if(variable.m_Name.find("_min")) {
+    derived_semantics = derivedSemantics(semantics::MAX, generate_derived(rank, currentStep, semantics::MAX));
+  }
+  else {
+    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+  }
+  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
 }
 
 template <typename T>
@@ -431,13 +478,8 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
   std::cout << "derived has " << total_count << " elements with size " << sizeof(T) << std::endl;
   Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
-  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(), true,
-                      adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
+  DbOperation db_op = generateMetadata(variable);
 
-  DbOperation db_op(currentStep, rank, std::move(vm), name,
-                    std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 }
 
