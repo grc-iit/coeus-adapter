@@ -272,7 +272,7 @@ class SQLiteWrapper {
                                      const std::string& bucket_name, float value) {
     sqlite3_stmt* stmt;
     std::string sqlInsertOrUpdate = R"(
-        INSERT INTO records (step, variable, operation, blob_name, bucket_name, value)
+        INSERT INTO derived_targets (step, variable, operation, blob_name, bucket_name, value)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(step, variable, operation) DO UPDATE SET
             blob_name = excluded.blob_name,
