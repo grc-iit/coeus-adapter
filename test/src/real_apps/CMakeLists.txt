@@ -3,6 +3,7 @@ add_subdirectory(io_comp)
 add_subdirectory(operator_comp)
 #add_subdirectory(metadata_comp)
 add_subdirectory(adios2_derived)
+add_subdirectory(derived_debug)
 
 #bootstraping
 #jarvis_cmake()

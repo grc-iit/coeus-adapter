@@ -11,31 +11,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/HermesEngine.h"
-#include <random>
-#include <functional>
-
-float generate_derived(int rank, int step, semantics value) {
-  // Hash combine function within the scope of generate_derived
-  auto hash_combine = [](std::size_t lhs, std::size_t rhs) {
-    lhs ^= rhs + 0x9e3779b9 + (lhs << 6) + (lhs >> 2);
-    return lhs;
-  };
-
-  // Combine the rank, step, and enum value into a single seed value
-  std::size_t seed_value = hash_combine(
-      hash_combine(static_cast<std::size_t>(rank), static_cast<std::size_t>(step)),
-      static_cast<std::size_t>(value)
-  );
-
-  // Use the seed to seed the random number generator
-  std::mt19937 generator(seed_value);
-
-  // Create a distribution for floats between 0 and 1
-  std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-  // Generate and return the random float
-  return distribution(generator);
-}
 
 namespace coeus {
 /**
@@ -430,8 +405,8 @@ template <typename T>
 void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
                                   const T *values) {
   engine_logger->info("Put rank: {}, name: {}", rank, variable.m_Name);
-  std::string name = variable.m_Name;
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+
+  Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
 
   DbOperation db_op = generateMetadata(variable);
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
