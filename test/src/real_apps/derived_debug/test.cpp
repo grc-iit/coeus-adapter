@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   std::string out_file = argv[4];
   int role = std::stoi(argv[5]);
 
-  mpi_sleep(15, rank, "start");
+  mpi_sleep(5, rank, "start");
 
   if(role == 0 || role == -1){
     MPI_Barrier(MPI_COMM_WORLD);
@@ -71,12 +71,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < N; ++i) {
       data = generateRandomVector(B);
       engine.BeginStep();
-      MPI_Barrier(MPI_COMM_WORLD);
       engine.Put<float>(var_data, data.data());
-      MPI_Barrier(MPI_COMM_WORLD);
-      mpi_sleep(5, rank, "write");
       engine.EndStep();
-      mpi_sleep(5, rank, "endstep");
+      mpi_sleep(3, rank, "endstep");
     }
     engine.Close();
 
@@ -97,11 +94,9 @@ int main(int argc, char *argv[]) {
 
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
       adios2::Variable<float> readVariable = io.InquireVariable<float>("data");
-      MPI_Barrier(MPI_COMM_WORLD);
       adios2::Variable<float> derVariable = io.InquireVariable<float>("data_mag");
 
       readEngine.Get<float>(readVariable, data);
-      MPI_Barrier(MPI_COMM_WORLD);
       readEngine.Get<float>(derVariable, derivedData);
       mpi_sleep(3, rank, "read");
       readEngine.EndStep();
