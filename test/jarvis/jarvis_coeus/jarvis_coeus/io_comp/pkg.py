@@ -139,7 +139,9 @@ class IoComp(Application):
         out_file = self.config['out_file']
         role = self.config['role']
         # print(self.env['HERMES_CLIENT_CONF'])
-        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+        if self.config['do_gdb']:
+            cmd = "derived_debug"
+        elif self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
             cmd = "adios_derived"
             print("Running adios_derived")
         else:
@@ -151,7 +153,10 @@ class IoComp(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.env))
+                         env=self.env,
+                         do_dbg=self.config['do_dbg'],
+                         dbg_port=self.config['dbg_port']
+                         ))
 
     def stop(self):
         """
