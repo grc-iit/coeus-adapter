@@ -65,6 +65,10 @@ int main(int argc, char *argv[]) {
                                              "x:data \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
+    auto data_mag2 = io.DefineDerivedVariable("data_mag2",
+                                             "x:data \n"
+                                             "magnitude(x)",
+                                             adios2::DerivedVarType::StoreData);
 
     MPI_Barrier(MPI_COMM_WORLD);
     auto engine = io.Open(out_file, adios2::Mode::Write);
