@@ -252,7 +252,10 @@ class Adios2GrayScott(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env))
+                         env=self.mod_env,
+                         do_dbg=self.config['do_dbg'],
+                         dbg_port=self.config['dbg_port']
+                         ))
 
         time.sleep(self.config['sleep'])
         print('Done sleeping')

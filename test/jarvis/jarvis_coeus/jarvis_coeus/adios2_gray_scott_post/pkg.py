@@ -146,7 +146,10 @@ class Adios2GrayScottPost(Application):
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=cwd))
+                         cwd=cwd,
+                         do_dbg=self.config['do_dbg'],
+                         dbg_port=self.config['dbg_port']
+                         ))
         # cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
         #         {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
         #         /mnt/hdd/jmendezbenegassimarq/client/gs.bp pdf.bp 100"
