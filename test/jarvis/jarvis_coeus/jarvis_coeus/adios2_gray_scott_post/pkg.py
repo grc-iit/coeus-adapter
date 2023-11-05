@@ -69,7 +69,7 @@ class Adios2GrayScottPost(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp5', 'hermes', 'bp5_derived', 'hermes_derived'],
                 'type': str,
                 'default': "bp5",
             },
@@ -109,14 +109,15 @@ class Adios2GrayScottPost(Application):
             ('DBFILE', self.config['db_path']),
         ]
 
-        if self.config['engine'].lower() == 'bp5':
+        print(f"Using engine {self.config['engine']}")
+        if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
             replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    self.adios2_xml_path, replacements)
+                                self.adios2_xml_path, replacements)
 
-        elif self.config['engine'].lower() == 'hermes':
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             replacements.append(('ENGINE', 'plugin'))
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
