@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   std::string out_file = argv[4];
   int role = std::stoi(argv[5]);
 
-  mpi_sleep(60, rank, "start");
+  mpi_sleep(15, rank, "start");
 
   if(role == 0 || role == -1){
     MPI_Barrier(MPI_COMM_WORLD);
@@ -74,8 +74,9 @@ int main(int argc, char *argv[]) {
       MPI_Barrier(MPI_COMM_WORLD);
       engine.Put<float>(var_data, data.data());
       MPI_Barrier(MPI_COMM_WORLD);
-      mpi_sleep(15, rank, "write");
+      mpi_sleep(5, rank, "write");
       engine.EndStep();
+      mpi_sleep(5, rank, "endstep");
     }
     engine.Close();
 
