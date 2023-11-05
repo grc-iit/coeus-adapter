@@ -154,9 +154,10 @@ class IoComp(Application):
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.env,
-                         do_dbg=self.config['do_dbg'],
+                         # do_dbg=self.config['do_dbg'],
                          dbg_port=self.config['dbg_port']
-                         ))
+                         )
+             )
 
     def stop(self):
         """

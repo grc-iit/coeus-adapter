@@ -9,6 +9,13 @@
 #include <random>
 #include <unistd.h>
 
+void mpi_sleep(int time, int rank, std::string reason){
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(rank == 0) std::cout << reason << std::endl;
+  sleep(time);
+  if(rank == 0) std::cout << "Done " << reason << std::endl;
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 std::vector<float> generateRandomVector(std::size_t size) {
   // Use the current time as seed for random number generation
   std::mt19937 gen(static_cast<unsigned long>(std::time(nullptr)));
@@ -43,6 +50,7 @@ int main(int argc, char *argv[]) {
   std::string out_file = argv[4];
   int role = std::stoi(argv[5]);
 
+  mpi_sleep(60, rank, "start");
 
   if(role == 0 || role == -1){
     MPI_Barrier(MPI_COMM_WORLD);
@@ -58,7 +66,6 @@ int main(int argc, char *argv[]) {
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
 
-
     MPI_Barrier(MPI_COMM_WORLD);
     auto engine = io.Open(out_file, adios2::Mode::Write);
     for (int i = 0; i < N; ++i) {
@@ -67,6 +74,7 @@ int main(int argc, char *argv[]) {
       MPI_Barrier(MPI_COMM_WORLD);
       engine.Put<float>(var_data, data.data());
       MPI_Barrier(MPI_COMM_WORLD);
+      mpi_sleep(15, rank, "write");
       engine.EndStep();
     }
     engine.Close();
@@ -94,6 +102,7 @@ int main(int argc, char *argv[]) {
       readEngine.Get<float>(readVariable, data);
       MPI_Barrier(MPI_COMM_WORLD);
       readEngine.Get<float>(derVariable, derivedData);
+      mpi_sleep(3, rank, "read");
       readEngine.EndStep();
     }
     readEngine.Close();
