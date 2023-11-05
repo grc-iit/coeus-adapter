@@ -93,14 +93,6 @@ int main(int argc, char *argv[]) {
                                              "x:data \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
-    auto data_min = io.DefineDerivedVariable("data_min",
-                                             "x:data \n"
-                                             "magnitude(x)",
-                                             adios2::DerivedVarType::StoreData);
-    auto data_max = io.DefineDerivedVariable("data_max",
-                                             "x:data \n"
-                                             "magnitude(x)",
-                                             adios2::DerivedVarType::StoreData);
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();

@@ -243,6 +243,8 @@ int main(int argc, char *argv[])
     // Inquire variable
     var_u_in = reader_io.InquireVariable<double>("U");
     var_v_in = reader_io.InquireVariable<double>("V");
+    var_u_pdf = reader_io.InquireVariable<double>("derive/pdfU");
+    var_v_pdf = reader_io.InquireVariable<double>("derive/pdfV");
     var_step_in = reader_io.InquireVariable<int>("step");
 
     // Set the selection at the first step only, assuming that
@@ -343,27 +345,20 @@ int main(int argc, char *argv[])
     auto mmv = std::minmax_element(v.begin(), v.end());
     minmax_v = std::make_pair(*mmv.first, *mmv.second);
 
-    // Compute PDF
-    std::vector<double> pdf_u;
-    std::vector<double> bins_u;
-    compute_pdf(u, shape, start1, count1, nbins, minmax_u.first,
-                minmax_u.second, pdf_u, bins_u);
+//    // Compute PDF
+//    std::vector<double> pdf_u;
+//    std::vector<double> bins_u;
+//    compute_pdf(u, shape, start1, count1, nbins, minmax_u.first,
+//                minmax_u.second, pdf_u, bins_u);
+//
+//    std::vector<double> pdf_v;
+//    std::vector<double> bins_v;
+//    compute_pdf(v, shape, start1, count1, nbins, minmax_v.first,
+//                minmax_v.second, pdf_v, bins_v);
 
-    std::vector<double> pdf_v;
-    std::vector<double> bins_v;
-    compute_pdf(v, shape, start1, count1, nbins, minmax_v.first,
-                minmax_v.second, pdf_v, bins_v);
+    reader.Get<double>(var_u_pdf, pdf_u);
+    reader.Get<double>(var_v_pdf, pdf_v);
 
-//     write U, V, and their norms out
-    writer.BeginStep();
-    writer.Put<double>(var_u_pdf, pdf_u.data());
-    writer.Put<double>(var_v_pdf, pdf_v.data());
-    if (shouldIWrite)
-    {
-      writer.Put<double>(var_u_bins, bins_u.data());
-      writer.Put<double>(var_v_bins, bins_v.data());
-      writer.Put<int>(var_step_out, simStep);
-    }
     if (write_inputvars)
     {
       writer.Put<double>(var_u_out, u.data());
