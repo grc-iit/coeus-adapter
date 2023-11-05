@@ -20,16 +20,16 @@ constexpr std::string_view semantics_to_string(semantics s) {
 }
 
 struct derivedSemantics {
-  std::string operation;
-  float value;
+  float min_value;
+  float max_value;
 
  public:
-  derivedSemantics(semantics s, float v) : operation(semantics_to_string(s)), value(v) { }
+  derivedSemantics(float min, float max) : min_value(min), max_value(max) { }
   derivedSemantics() = default;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(operation, value);
+        ar(min_value, max_value);
     }
 };
 
