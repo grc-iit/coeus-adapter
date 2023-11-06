@@ -187,6 +187,11 @@ std::ostream& operator<<(std::ostream &out, const metaInfo &data) {
     return out;
 }
 
+std::string metaInfoToString(metaInfo variableMetadata) {
+    std::stringstream ss;
+    ss << variableMetadata;
+    return ss.str();
+}
 
 class VariableMetadataSerializer{
 public:
