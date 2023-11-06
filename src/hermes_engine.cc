@@ -428,14 +428,14 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
-  if(total_count == 0) {
+  if(total_count < 1>) {
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
   }
 
   float min = std::numeric_limits<T>::max();
   float max = std::numeric_limits<T>::lowest();
 
-  for (size_t i = 0; i < total_count; ++i) {
+  for (size_t i = 0; i < total_count; i++) {
     // Calculate the address of the current element
     char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
     // Cast the element to the correct type
