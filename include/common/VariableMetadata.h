@@ -183,7 +183,7 @@ std::ostream& operator<<(std::ostream &out, const metaInfo &data) {
     out << "," << (data.constantShape ? "True" : "False");
     out << "," << data.time << "," << data.selectionSize <<
         "," << data.sizeofVariable << "," << data.shapeID << "," << data.steps <<
-                                    "," << data.stepStart << "," << data.blockID << "," << std::endl;
+                                    "," << data.stepStart << "," << data.blockID ;
     return out;
 }
 

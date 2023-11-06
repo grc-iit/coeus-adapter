@@ -71,6 +71,7 @@ void HermesEngine::Init_() {
   auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
           "logs/metadataCollect_get.txt", true);
   file_sink2->set_level(spdlog::level::trace);
+  file_sink2->set_pattern("%v");
   spdlog::logger logger2("metadata_logger_get", {file_sink2});
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
@@ -78,6 +79,7 @@ void HermesEngine::Init_() {
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
           "logs/metadataCollect_put.txt", true);
   file_sink3->set_level(spdlog::level::trace);
+  file_sink3->set_pattern("%v");
   spdlog::logger logger3("metadata_logger_put", {file_sink3});
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
@@ -327,9 +329,9 @@ void HermesEngine::DoGetDeferred_(
    #ifdef Meta_enabled
     // add spdlog method to extract the variable metadata
     metaInfo metaInfo(variable, adiosOpType::get);
-    meta_logger_get->info("{Metadata}", metaInfoToString(metaInfo));
+    meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
     globalData.insertGet(name);
-    meta_logger_get->info("{Order}", globalData.GetMapToString());
+    meta_logger_get->info("order: {}", globalData.GetMapToString());
    #endif
     //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
@@ -343,9 +345,9 @@ void HermesEngine::DoPutDeferred_(
   // add spdlog method to extract the variable metadata
   #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("{Metadata}", metaInfoToString(metaInfo));
+  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
   globalData.insertPut(name);
-  meta_logger_put->info("{Order}", globalData.PutMapToString());
+  meta_logger_put->info("order: {}", globalData.PutMapToString());
   #endif
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),

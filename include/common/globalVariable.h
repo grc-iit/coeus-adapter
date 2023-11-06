@@ -44,7 +44,7 @@ public:
             for (int order : entry.second) {
                 result << order << ' ';
             }
-            result << '\n';
+            result << ',';
         }
         return result.str();
     }
@@ -56,7 +56,7 @@ public:
             for (int order : entry.second) {
                 result << order << ' ';
             }
-            result << '\n';
+            result << ',';
         }
         return result.str();
     }
