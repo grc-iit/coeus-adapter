@@ -428,6 +428,10 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
+  if(total_count == 0) {
+    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+  }
+
   float min = std::numeric_limits<T>::max();
   float max = std::numeric_limits<T>::lowest();
 
