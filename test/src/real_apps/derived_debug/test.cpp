@@ -16,15 +16,16 @@ void mpi_sleep(int time, int rank, std::string reason){
   if(rank == 0) std::cout << "Done " << reason << std::endl;
   MPI_Barrier(MPI_COMM_WORLD);
 }
-std::vector<float> generateRandomVector(std::size_t size) {
-  // Use the current time as seed for random number generation
-  std::mt19937 gen(static_cast<unsigned long>(std::time(nullptr)));
-  // Define range for float data type between 1 and 100
-  std::uniform_real_distribution<float> dist(0.0f, 100.0f);
+
+std::vector<float> generateRandomVector(std::size_t size, int rank) {
+  // Use a combination of current time and the process rank as seed
 
   std::vector<float> result(size);
 
   for(std::size_t i = 0; i < size; ++i) {
+    unsigned long seed = static_cast<unsigned long>(std::time(nullptr)) + rank;
+    std::mt19937 gen(seed);  // Define range for float data type between 1 and 100
+    std::uniform_real_distribution<float> dist(0.0f, 100.0f);
     result[i] = dist(gen);
   }
 
