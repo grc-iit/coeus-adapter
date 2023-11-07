@@ -428,7 +428,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
-  if(total_count < 1>) {
+  if(total_count < 1) {
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
   }
 
