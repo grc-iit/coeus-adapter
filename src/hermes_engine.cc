@@ -439,8 +439,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 }
 
-template <typename T>
-DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variable, T *values, int total_count) {
+DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variable, float *values, int total_count) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                      variable.m_Count, variable.IsConstantDims(), true,
                      adios2::ToString(variable.m_Type));
@@ -450,20 +449,20 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
   }
 
-  float min = std::numeric_limits<T>::max();
-  float max = std::numeric_limits<T>::lowest();
+  float min = std::numeric_limits<float>::max();
+  float max = std::numeric_limits<float>::lowest();
 
   for (size_t i = 0; i < total_count; i++) {
     // Calculate the address of the current element
     char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
     // Cast the element to the correct type
-    T element = *reinterpret_cast<T*>(elementPtr);
+    float element = *reinterpret_cast<float*>(elementPtr);
 
     // Update min and max
     if (element < min) min = element;
     if (element > max) max = element;
   }
-  if (min == std::numeric_limits<T>::max() || max == std::numeric_limits<T>::lowest()) {
+  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
     std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
               << " total count " << total_count << std::endl;
   }
@@ -486,7 +485,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
   std::cout << "derived has " << total_count << " elements with size " << sizeof(T) << std::endl;
   Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
-  DbOperation db_op = generateMetadata<T>(variable, values, total_count);
+  DbOperation db_op = generateMetadata(variable, values, total_count);
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 }
 
