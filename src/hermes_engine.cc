@@ -178,9 +178,11 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   std::cout << "done getting bucket" <<std::endl ;
 
   if(m_OpenMode == adios2::Mode::Read){
-    auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
-    for(const auto& location: var_locations) {
-      Hermes->Prefetch(location.bucket_name, location.blob_name);
+    if(currentStep + lookahead < total_steps) {
+      auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
+      for (const auto &location : var_locations) {
+        Hermes->Prefetch(location.bucket_name, location.blob_name);
+      }
     }
   }
   if(m_OpenMode == adios2::Mode::Write){
