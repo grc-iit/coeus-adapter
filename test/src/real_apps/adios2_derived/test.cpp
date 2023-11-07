@@ -87,12 +87,18 @@ int main(int argc, char *argv[]) {
     adios2::IO io = adios.DeclareIO("TestIO");
 
     std::vector<float> data(B);
-    auto variable = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
-    auto variable2 = io.DefineVariable<float>("data2", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
-    auto data_mag = io.DefineDerivedVariable("data_mag",
-                                             "x:data \n"
+    auto var_data = io.DefineVariable<float>("U", {size_t(size), B}, {size_t(rank), 0},
+                                             {1, B}, adios2::ConstantDims);
+    auto var_data2 = io.DefineVariable<float>("V", {size_t(size), B}, {size_t(rank), 0},
+                                              {1, B}, adios2::ConstantDims);
+    auto data_mag = io.DefineDerivedVariable("pdfU",
+                                             "x:U \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
+    auto data_mag2 = io.DefineDerivedVariable("pdfV",
+                                              "x:V \n"
+                                              "magnitude(x)",
+                                              adios2::DerivedVarType::StoreData);
 
     auto engine = io.Open(out_file, adios2::Mode::Write);
     engine_name = engine.Name();
@@ -102,8 +108,8 @@ int main(int argc, char *argv[]) {
       engine.BeginStep();
 
       auto startPut = std::chrono::high_resolution_clock::now();
-      engine.Put<float>(variable, data.data());
-      engine.Put<float>(variable2, data.data());
+      engine.Put<float>(var_data, data.data());
+      engine.Put<float>(var_data2, data.data());
       engine.EndStep();
       auto endPut = std::chrono::high_resolution_clock::now();
 

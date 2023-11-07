@@ -60,14 +60,16 @@ int main(int argc, char *argv[]) {
     std::vector<float> data(B);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    auto var_data = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0},
+    auto var_data = io.DefineVariable<float>("U", {size_t(size), B}, {size_t(rank), 0},
                                              {1, B}, adios2::ConstantDims);
-    auto data_mag = io.DefineDerivedVariable("data_mag",
-                                             "x:data \n"
+    auto var_data2 = io.DefineVariable<float>("V", {size_t(size), B}, {size_t(rank), 0},
+                                             {1, B}, adios2::ConstantDims);
+    auto data_mag = io.DefineDerivedVariable("pdfU",
+                                             "x:U \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
-    auto data_mag2 = io.DefineDerivedVariable("data_mag2",
-                                             "x:data \n"
+    auto data_mag2 = io.DefineDerivedVariable("pdfV",
+                                             "x:V \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
 
@@ -78,6 +80,7 @@ int main(int argc, char *argv[]) {
       engine.BeginStep();
       mpi_sleep(5, rank, "beginstep");
       engine.Put<float>(var_data, data.data());
+      engine.Put<float>(var_data2, data.data());
       mpi_sleep(5, rank, "put");
       engine.EndStep();
       mpi_sleep(5, rank, "endstep");
