@@ -94,6 +94,16 @@ void HermesEngine::Init_() {
     if (rank == 0)
       std::cout << "PPN: " << ppn << std::endl;
   }
+
+  if (params.find("lookahead") != params.end()) {
+    lookahead = stoi(params["lookahead"]);
+    if (rank == 0)
+      std::cout << "lookahead: " << lookahead << std::endl;
+  }
+  else{
+    lookahead = 2;
+  }
+
   if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
     if (rank == 0)
@@ -166,6 +176,19 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   std::cout << "getting bucket" <<std::endl ;
   Hermes->GetBucket(bucket_name);
   std::cout << "done getting bucket" <<std::endl ;
+
+  auto var_locations = db->getAllBlobs(currentStep - lookahead, rank);
+  if(m_OpenMode == adios2::Mode::Read){
+    for(const auto& location: var_locations) {
+      Hermes->Prefetch(location.bucket_name, location.blob_name);
+    }
+  }
+  if(m_OpenMode == adios2::Mode::Read){
+    for(const auto& location: var_locations) {
+      Hermes->Demote(location.bucket_name, location.blob_name);
+    }
+  }
+
   return adios2::StepStatus::OK;
 }
 

@@ -44,12 +44,14 @@
 
 
 namespace coeus {
+
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   std::shared_ptr<coeus::IHermes> Hermes;
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;
+  int lookahead;
   hrun::coeus_mdm::Client client;
 
   int ppn;

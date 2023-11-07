@@ -42,23 +42,25 @@ class Hermes : public IHermes {
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
-    hapi::Context ctx;
-    auto bkt = hermes->GetBucket(bucket_name);
-
-    hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
-    float blob_score = bkt.GetBlobScore(blob_id);
-
-    bkt.ReorganizeBlob(blob_id, blob_score + demote_weight, 0, ctx);
+      std::cout << "Demoting " << blob_name << " from " << bucket_name << std::endl;
+//    hapi::Context ctx;
+//    auto bkt = hermes->GetBucket(bucket_name);
+//
+//    hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
+//    float blob_score = bkt.GetBlobScore(blob_id);
+//
+//    bkt.ReorganizeBlob(blob_id, blob_score + demote_weight, 0, ctx);
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
-    hapi::Context ctx;
-    auto bkt = hermes->GetBucket(bucket_name);
-
-    hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
-    float blob_score = bkt.GetBlobScore(blob_id);
-
-    bkt.ReorganizeBlob(blob_id, blob_score + promote_weight, 0, ctx);
+      std::cout << "Prefetching " << bucket_name << " " << blob_name << std::endl;
+//    hapi::Context ctx;
+//    auto bkt = hermes->GetBucket(bucket_name);
+//
+//    hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
+//    float blob_score = bkt.GetBlobScore(blob_id);
+//
+//    bkt.ReorganizeBlob(blob_id, blob_score + promote_weight, 0, ctx);
   }
 };
 

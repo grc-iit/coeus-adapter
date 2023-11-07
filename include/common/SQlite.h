@@ -157,6 +157,33 @@ class SQLiteWrapper {
     return blobInfo;
   }
 
+  std::vector<BlobInfo> getAllBlobs(int step, int mpi_rank) {
+    if (step < 0) {
+      return {}; // Return an empty vector if step is invalid
+    }
+
+    std::vector<BlobInfo> allBlobInfos;
+    sqlite3_stmt* stmt;
+    const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ?;";
+
+    if (sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+      // Handle error...
+    }
+
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      BlobInfo blobInfo;
+      blobInfo.bucket_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      blobInfo.blob_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+      allBlobInfos.push_back(blobInfo);
+    }
+
+    sqlite3_finalize(stmt);
+    return allBlobInfos;
+  }
+
   /***************************************
 * MetaData Location
 ****************************************/
@@ -182,14 +209,6 @@ class SQLiteWrapper {
     auto shape = VariableMetadata::serializeVector(metadata.shape);
     auto start = VariableMetadata::serializeVector(metadata.start);
     auto count = VariableMetadata::serializeVector(metadata.count);
-
-//    if(mpi_rank == 0) {
-//      std::cout << "Inserting metadata for " << metadata.name
-//      << " with shape " << shape
-//      << " with start " << start
-//      << " with count " << count
-//      << std::endl;
-//    }
 
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
