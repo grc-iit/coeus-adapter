@@ -183,7 +183,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
       Hermes->Prefetch(location.bucket_name, location.blob_name);
     }
   }
-  if(m_OpenMode == adios2::Mode::Read){
+  if(m_OpenMode == adios2::Mode::Write){
     for(const auto& location: var_locations) {
       Hermes->Demote(location.bucket_name, location.blob_name);
     }
