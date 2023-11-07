@@ -446,6 +446,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
     if (element > max) max = element;
   }
 
+  std::cout << "Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max << " total count " << total_count << std::endl;
   derivedSemantics derived_semantics(min, max);
 
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
