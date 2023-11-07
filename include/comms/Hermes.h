@@ -49,7 +49,7 @@ class Hermes : public IHermes {
     hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
     float blob_score = bkt.GetBlobScore(blob_id);
 
-    bkt.ReorganizeBlob(blob_id, 0, 0, ctx);
+    bkt.ReorganizeBlob(blob_id, blob_score + demote_weight, blob_score, ctx);
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
@@ -60,7 +60,7 @@ class Hermes : public IHermes {
     hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
     float blob_score = bkt.GetBlobScore(blob_id);
 
-    bkt.ReorganizeBlob(blob_id, 1, 0, ctx);
+    bkt.ReorganizeBlob(blob_id, 1, blob_score + promote_weight, ctx);
   }
 };
 
