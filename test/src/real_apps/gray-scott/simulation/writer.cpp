@@ -140,11 +140,10 @@ void Writer::write(int step, const GrayScott &sim, int rank)
       std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
 
       writer.BeginStep();
-        writer.Put<int>(var_step, &step);
-        writer.Put<double>(var_u, u.data());
-
-        writer.Put<double>(var_v, v.data());
-        writer.EndStep();
+      writer.Put<int>(var_step, &step);
+      writer.Put<double>(var_u, u.data());
+      writer.Put<double>(var_v, v.data());
+      writer.EndStep();
     }
     else if (settings.adios_span)
     {

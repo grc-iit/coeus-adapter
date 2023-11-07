@@ -229,10 +229,7 @@ void HermesEngine::ComputeDerivedVariables() {
 //                                                         (*it).second->m_Name);
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
-      // get a pointer to the data
-      std::cout << "getting the data " << varName << std::endl;
       auto blob = Hermes->bkt->Get(varName);
-      std::cout << "Done getting the data " << varName << std::endl;
 
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
@@ -278,14 +275,11 @@ void HermesEngine::ComputeDerivedVariables() {
 }
 
 void HermesEngine::EndStep() {
-  engine_logger->info("EndStep rank {}", rank);
   ComputeDerivedVariables();
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
-      std::cout << "writing step" << std::endl;
       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-      std::cout << "Done writing step" << std::endl;
     }
   }
   delete Hermes->bkt;
@@ -430,8 +424,6 @@ void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
 template <typename T>
 void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
                                   const T *values) {
-  engine_logger->info("Put rank: {}, name: {}", rank, variable.m_Name);
-
   Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
 
   DbOperation db_op = generateMetadata(variable);
@@ -477,6 +469,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   }
   derivedSemantics derived_semantics(min, max);
 
+  std::cout << "Rank " << rank << " derived min " << min << " max " << max << std::endl;
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
 }
 
