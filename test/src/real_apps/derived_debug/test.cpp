@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     auto engine = io.Open(out_file, adios2::Mode::Write);
     for (int i = 0; i < N; ++i) {
-      data = generateRandomVector(B);
+      data = generateRandomVector(B, rank);
       engine.BeginStep();
       mpi_sleep(5, rank, "beginstep");
       engine.Put<float>(var_data, data.data());
