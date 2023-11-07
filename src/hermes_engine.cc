@@ -469,7 +469,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   }
   derivedSemantics derived_semantics(min, max);
 
-  std::cout << "Rank " << rank << " derived min " << min << " max " << max << std::endl;
+  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
 }
 
