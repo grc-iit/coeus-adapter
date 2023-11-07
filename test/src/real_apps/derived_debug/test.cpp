@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
     std::vector<float> data(B);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    auto var_data = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0}, {1, B}, adios2::ConstantDims);
+    auto var_data = io.DefineVariable<float>("data", {size_t(size), B}, {size_t(rank), 0},
+                                             {1, B}, adios2::ConstantDims);
     auto data_mag = io.DefineDerivedVariable("data_mag",
                                              "x:data \n"
                                              "magnitude(x)",
@@ -75,9 +76,11 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < N; ++i) {
       data = generateRandomVector(B);
       engine.BeginStep();
+      mpi_sleep(5, rank, "beginstep");
       engine.Put<float>(var_data, data.data());
+      mpi_sleep(5, rank, "put");
       engine.EndStep();
-      mpi_sleep(3, rank, "endstep");
+      mpi_sleep(5, rank, "endstep");
     }
     engine.Close();
 
@@ -97,6 +100,7 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
+      mpi_sleep(5, rank, "beginstep");
       adios2::Variable<float> readVariable = io.InquireVariable<float>("data");
       adios2::Variable<float> derVariable = io.InquireVariable<float>("data_mag");
 
@@ -104,6 +108,7 @@ int main(int argc, char *argv[]) {
       readEngine.Get<float>(derVariable, derivedData);
       mpi_sleep(3, rank, "read");
       readEngine.EndStep();
+      mpi_sleep(5, rank, "endstep");
     }
     readEngine.Close();
 
