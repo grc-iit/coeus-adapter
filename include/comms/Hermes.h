@@ -19,20 +19,15 @@
 namespace coeus {
 class Hermes : public IHermes {
  public:
-  float promote_weight = 0.5;
-  float demote_weight = -0.5;
+  float promote_weight = 0.25;
+  float demote_weight = -0.25;
 
   Hermes() = default;
 
   bool connect() override {
-    std::cout << "Entering connect" << std::endl;
-    std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
     TRANSPARENT_HERMES();
-    std::cout << "transparent done" << std::endl;
     hermes = HERMES;
-    std::cout << "hermes assigment" << std::endl;
     HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
-    std::cout << "Registered task" << std::endl;
     return hermes->IsInitialized();
   };
 

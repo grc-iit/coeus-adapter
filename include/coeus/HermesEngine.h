@@ -53,6 +53,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string db_file;
   int lookahead;
   hrun::coeus_mdm::Client client;
+  int num_layers = 3;
 
   int ppn;
   /** Construct the HermesEngine */
@@ -174,6 +175,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
                                  void *Element);
 
+    bool Demote(int step);
+    bool Promote(int step);
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.
    * ADIOS2_FOREACH_STDTYPE_1ARG is a macro which iterates over every

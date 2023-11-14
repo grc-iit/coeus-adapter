@@ -158,6 +158,28 @@ HermesEngine::~HermesEngine() {
  * Handle step operations.
  * */
 
+bool HermesEngine::Promote(int step){
+    bool success = true;
+    if(step < total_steps) {
+        auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
+        for (const auto &location : var_locations) {
+            success &= Hermes->Prefetch(location.bucket_name, location.blob_name);
+        }
+    }
+    return success;
+}
+
+bool HermesEngine::Demote(int step){
+    bool success = true;
+    if (step > 0) {
+        auto var_locations = db->getAllBlobs(step, rank);
+        for (const auto &location: var_locations) {
+            success &= Hermes->Demote(location.bucket_name, location.blob_name);
+        }
+    }
+    return success;
+}
+
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   engine_logger->info("BeginStep rank {}", rank);
@@ -173,23 +195,17 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   }
   std::string bucket_name =
       "step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-  std::cout << "getting bucket" <<std::endl ;
   Hermes->GetBucket(bucket_name);
-  std::cout << "done getting bucket" <<std::endl ;
 
   if(m_OpenMode == adios2::Mode::Read){
-    if(currentStep + lookahead < total_steps) {
-      auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
-      for (const auto &location : var_locations) {
-        Hermes->Prefetch(location.bucket_name, location.blob_name);
+      for(int i = 0; i < num_layers; i++) {
+          Promote(currentStep + lookahead + i);
       }
-    }
   }
   if(m_OpenMode == adios2::Mode::Write){
-    auto var_locations = db->getAllBlobs(currentStep - lookahead, rank);
-    for(const auto& location: var_locations) {
-      Hermes->Demote(location.bucket_name, location.blob_name);
-    }
+      for(int i = 0; i < num_layers; i++) {
+          Demote(currentStep - lookahead - i);
+      }
   }
 
   return adios2::StepStatus::OK;
