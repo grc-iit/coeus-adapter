@@ -53,7 +53,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string db_file;
   int lookahead;
   hrun::coeus_mdm::Client client;
-  int num_layers = 3;
+  int num_layers = 4;
 
   int ppn;
   /** Construct the HermesEngine */
