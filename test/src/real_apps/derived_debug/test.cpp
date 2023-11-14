@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
 
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
       mpi_sleep(5, rank, "beginstep");
-      adios2::Variable<float> readVariable = io.InquireVariable<float>("data");
-      adios2::Variable<float> derVariable = io.InquireVariable<float>("data_mag");
+      adios2::Variable<float> readVariable = io.InquireVariable<float>("v");
+      adios2::Variable<float> derVariable = io.InquireVariable<float>("pdfV");
 
       readEngine.Get<float>(readVariable, data);
       readEngine.Get<float>(derVariable, derivedData);

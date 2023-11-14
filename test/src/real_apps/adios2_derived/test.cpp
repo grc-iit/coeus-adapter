@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
     int i = 0;
     while (readEngine.BeginStep() == adios2::StepStatus::OK) {
 //      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
-      adios2::Variable<float> readVariable = io.InquireVariable<float>("data");
-      adios2::Variable<float> derVariable = io.InquireVariable<float>("data_mag");
+      adios2::Variable<float> readVariable = io.InquireVariable<float>("V");
+      adios2::Variable<float> derVariable = io.InquireVariable<float>("pdfV");
 
       auto startGet = std::chrono::high_resolution_clock::now();
       readEngine.Get<float>(readVariable, data);
