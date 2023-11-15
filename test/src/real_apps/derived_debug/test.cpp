@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
         while (readEngine.BeginStep() == adios2::StepStatus::OK) {
             mpi_sleep(5, rank, "BeginStep");
 //      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
-            adios2::Variable<float> readVariable = io.InquireVariable<float>("V");
+            adios2::Variable<float> readVariable = io.InquireVariable<float>("pdfU");
             adios2::Variable<float> derVariable = io.InquireVariable<float>("pdfV");
 
             auto startGet = std::chrono::high_resolution_clock::now();
@@ -136,20 +136,6 @@ int main(int argc, char *argv[]) {
             mpi_sleep(5, rank, "Gets");
             auto endGet = std::chrono::high_resolution_clock::now();
             localGetTime += std::chrono::duration<double>(endGet - startGet).count();
-            if(rank == 0) {
-                std::cout << "Derived: ";
-                for (auto v : derivedData) {
-                    std::cout << v << " ";
-                }
-                std::cout << std::endl;
-
-                std::cout << "Base: ";
-                for (auto v : data) {
-                    std::cout << v << " ";
-                }
-                std::cout << std::endl;
-            }
-
             i++;
         }
         readEngine.Close();
