@@ -85,13 +85,13 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < N; ++i) {
             data = generateRandomVector(B);
             engine.BeginStep();
-            mpi_sleep(10, rank, "BeginStep");
+            mpi_sleep(5, rank, "BeginStep");
             auto startPut = std::chrono::high_resolution_clock::now();
             engine.Put<float>(var_data, data.data());
             engine.Put<float>(var_data2, data.data());
-            mpi_sleep(10, rank, "Put");
+            mpi_sleep(5, rank, "Put");
             engine.EndStep();
-            mpi_sleep(10, rank, "EndStep");
+            mpi_sleep(5 , rank, "EndStep");
             auto endPut = std::chrono::high_resolution_clock::now();
 
             localPutTime += std::chrono::duration<double>(endPut - startPut).count();
@@ -122,9 +122,9 @@ int main(int argc, char *argv[]) {
 
         if (rank == 0) std::cout << "BeginStep" << std::endl;
         int i = 0;
-        mpi_sleep(10, rank, "Read_INIT");
+        mpi_sleep(5, rank, "Read_INIT");
         while (readEngine.BeginStep() == adios2::StepStatus::OK) {
-            mpi_sleep(10, rank, "BeginStep");
+            mpi_sleep(5, rank, "BeginStep");
 //      std::string var_name = "data_" + std::to_string(i) + "_" + std::to_string(rank);
             adios2::Variable<float> readVariable = io.InquireVariable<float>("V");
             adios2::Variable<float> derVariable = io.InquireVariable<float>("pdfV");
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
             readEngine.Get<float>(readVariable, data);
             readEngine.Get<float>(derVariable, derivedData);
             readEngine.EndStep();
-            mpi_sleep(10, rank, "Gets");
+            mpi_sleep(5, rank, "Gets");
             auto endGet = std::chrono::high_resolution_clock::now();
             localGetTime += std::chrono::duration<double>(endGet - startGet).count();
             if(rank == 0) {
