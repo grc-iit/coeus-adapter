@@ -461,31 +461,33 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
 
-  if(total_count < 1) {
+//  if(total_count < 1) {
+//    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+//  }
+//
+//  float min = std::numeric_limits<float>::max();
+//  float max = std::numeric_limits<float>::lowest();
+//
+//  for (size_t i = 0; i < total_count; i++) {
+//    // Calculate the address of the current element
+//    char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
+//    // Cast the element to the correct type
+//    float element = *reinterpret_cast<float*>(elementPtr);
+//
+//    // Update min and max
+//    if (element < min) min = element;
+//    if (element > max) max = element;
+//  }
+//  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
+//    std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
+//              << " total count " << total_count << std::endl;
+//  }
+//  derivedSemantics derived_semantics(min, max);
+//
+//  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
+//  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
-  }
 
-  float min = std::numeric_limits<float>::max();
-  float max = std::numeric_limits<float>::lowest();
-
-  for (size_t i = 0; i < total_count; i++) {
-    // Calculate the address of the current element
-    char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
-    // Cast the element to the correct type
-    float element = *reinterpret_cast<float*>(elementPtr);
-
-    // Update min and max
-    if (element < min) min = element;
-    if (element > max) max = element;
-  }
-  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
-    std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
-              << " total count " << total_count << std::endl;
-  }
-  derivedSemantics derived_semantics(min, max);
-
-  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
-  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
 }
 
 template <typename T>
