@@ -91,7 +91,6 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
     if(derived == 1) {
-        if (rank == 0) std::cout << "defining Derived" << std::endl;
         auto PDFU = io.DefineDerivedVariable("derive/pdfU",
                                              "x:U \n"
                                              "curl(10, x)",
