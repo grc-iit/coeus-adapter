@@ -55,9 +55,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   hrun::coeus_mdm::Client client;
   int num_layers = 4;
   int ppn;
-  int limit = 0
+  int limit = 0;
 
-  int ppn;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
