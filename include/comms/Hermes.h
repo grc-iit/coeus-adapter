@@ -37,7 +37,7 @@ class Hermes : public IHermes {
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
-    std::cout << "Demoting " << blob_name << " from " << bucket_name << std::endl;
+//    std::cout << "Demoting " << blob_name << " from " << bucket_name << std::endl;
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
@@ -48,7 +48,7 @@ class Hermes : public IHermes {
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
-    std::cout << "Prefetching " << bucket_name << " " << blob_name << std::endl;
+//    std::cout << "Prefetching " << bucket_name << " " << blob_name << std::endl;
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
