@@ -19,6 +19,11 @@
 
 #include "adios2.h"
 #include <mpi.h>
+#include <chrono>
+
+#include "spdlog/logger.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 std::string concatenateVectorToString(const std::vector<size_t> &vec) {
   std::stringstream ss;
@@ -172,8 +177,18 @@ int main(int argc, char *argv[])
         write_inputvars = true;
     }
     derived = atoi(argv[5]);
-    std::cout << "Derived Variables Status: " << derived << std::endl;
   }
+
+    auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    console_sink->set_level(spdlog::level::debug);
+    console_sink->set_pattern("%v");
+
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(binaryDir + "/logs/anal_test.txt", true);
+    file_sink->set_level(spdlog::level::trace);
+    file_sink->set_pattern("%v");
+
+    spdlog::logger logger("debug_logger", { console_sink, file_sink });
+    logger.set_level(spdlog::level::debug);
 
   std::size_t u_global_size, v_global_size;
   std::size_t u_local_size, v_local_size;
@@ -217,7 +232,8 @@ int main(int argc, char *argv[])
       reader_io.Open(in_filename, adios2::Mode::Read, comm);
 
   // read data step-by-step
-  int stepAnalysis = 0;
+    auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
+    int stepAnalysis = 0;
   while (true)
   {
     // Begin read step
@@ -317,6 +333,11 @@ int main(int argc, char *argv[])
   reader.Close();
 
   MPI_Barrier(comm);
+    auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
+    auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
+    logger.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
+    MPI_Finalize();
+
   MPI_Finalize();
   return 0;
 }

@@ -26,7 +26,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io, // NOLINT
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_shared<coeus::Hermes>();
   Init_();
-//  comm.Barrier();
+//  m_Comm.Barrier();
 }
 
 /**
@@ -62,7 +62,7 @@ void HermesEngine::Init_() {
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-  engine_logger->info("rank {}", rank);
+//  engine_logger->info("rank {}", rank);
 
   // MPI setup
   rank = m_Comm.Rank();
