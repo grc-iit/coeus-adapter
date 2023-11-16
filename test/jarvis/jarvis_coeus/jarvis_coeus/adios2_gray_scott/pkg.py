@@ -170,12 +170,6 @@ class Adios2GrayScott(Application):
                 'default': 'benchmark_metadata.db',
             },
             {
-                'name': 'derived',
-                'msg': 'Should it calculate derive quantities',
-                'type': bool,
-                'default': 'false',
-            },
-            {
                 'name': 'limit',
                 'msg': 'Limit the value of data to track',
                 'type': int,
@@ -261,7 +255,13 @@ class Adios2GrayScott(Application):
         :return: None
         """
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'adios2-gray-scott {self.settings_json_path}',
+        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+            derived = 1
+        elif self.config['engine'].lower() in ['hermes', 'bp5']:
+            derived = 0
+        else:
+            raise Exception('Engine not defined')
+        Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,

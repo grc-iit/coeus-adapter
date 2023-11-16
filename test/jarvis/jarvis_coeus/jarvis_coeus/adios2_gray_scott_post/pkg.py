@@ -80,12 +80,6 @@ class Adios2GrayScottPost(Application):
                 'default': 'benchmark_metadata.db',
             },
             {
-                'name': 'derived',
-                'msg': 'Should it calculate derive quantities',
-                'type': bool,
-                'default': 'false',
-            },
-            {
                 'name': 'limit',
                 'msg': 'Limit the value of data to track',
                 'type': int,
@@ -153,8 +147,14 @@ class Adios2GrayScottPost(Application):
         write_inputbars = self.config['write_inputvars']
 
         cwd = os.path.dirname(self.adios2_xml_path)
+        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+            derived = 1
+        elif self.config['engine'].lower() in ['hermes', 'bp5']:
+            derived = 0
+        else:
+            raise Exception('Engine not defined')
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'adios2-pdf-calc {in_file} {out_file} {nbins} {write_inputbars}',
+        Exec(f'adios2-pdf-calc {in_file} {out_file} {nbins} {write_inputbars} {derived}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
