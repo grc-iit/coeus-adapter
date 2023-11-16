@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   in_filename = argv[1];
   out_filename = argv[2];
   bool derived;
-  
+
   if (argc >= 4)
   {
     int value = std::stoi(argv[3]);
@@ -206,20 +206,15 @@ int main(int argc, char *argv[])
 
   // IO objects for reading and writing
   adios2::IO reader_io = ad.DeclareIO("SimulationOutput");
-  adios2::IO writer_io = ad.DeclareIO("PDFAnalysisOutput");
   if (!rank)
   {
     std::cout << "PDF analysis reads from Simulation using engine type:  "
               << reader_io.EngineType() << std::endl;
-    std::cout << "PDF analysis writes using engine type:                 "
-              << writer_io.EngineType() << std::endl;
   }
 
   // Engines for reading and writing
   adios2::Engine reader =
       reader_io.Open(in_filename, adios2::Mode::Read, comm);
-  adios2::Engine writer =
-      writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
   // read data step-by-step
   int stepAnalysis = 0;
@@ -274,11 +269,6 @@ int main(int argc, char *argv[])
       var_v_in.SetSelection(adios2::Box<adios2::Dims>(
           {start1, 0, 0}, {count1, shape[1], shape[2]}));
 
-      // Declare variables to output
-      var_u_pdf = writer_io.DefineVariable<double>(
-          "U/pdf", {shape[0], nbins}, {start1, 0}, {count1, nbins});
-      var_v_pdf = writer_io.DefineVariable<double>(
-          "V/pdf", {shape[0], nbins}, {start1, 0}, {count1, nbins});
       firstStep = false;
     }
 
@@ -321,13 +311,11 @@ int main(int argc, char *argv[])
                     minmax_v.second, pdf_v, bins_v);
     }
 
-    writer.EndStep();
     ++stepAnalysis;
   }
 
   // cleanup (close reader and writer)
   reader.Close();
-  writer.Close();
 
   MPI_Barrier(comm);
   MPI_Finalize();
