@@ -25,11 +25,8 @@ HermesEngine::HermesEngine(adios2::core::IO &io, // NOLINT
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_shared<coeus::Hermes>();
-  //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
   comm.Barrier();
-  engine_logger->info("rank {} with name {} and mode {}", rank, name,
-                      adios2::ToString(mode));
 }
 
 /**
@@ -41,10 +38,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = h;
-  //  mpiComm = mpi;
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}", rank, name,
-                      adios2::ToString(mode));
 }
 
 /**
@@ -151,13 +145,10 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-  engine_logger->info("rank {}", rank);
   open = false;
-  //  mpiComm->free();
 }
 
 HermesEngine::~HermesEngine() {
-  engine_logger->info("rank {}", rank);
   delete db;
 }
 
@@ -189,7 +180,6 @@ bool HermesEngine::Demote(int step){
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-  engine_logger->info("BeginStep rank {}", rank);
   IncrementCurrentStep();
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
@@ -226,8 +216,10 @@ void HermesEngine::ComputeDerivedVariables() {
   auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
   auto const &m_Variables = m_IO.GetVariables();
   // parse all derived variables
-  std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
-            << std::endl;
+  if(rank == 0) {
+      std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
+                << std::endl;
+  }
   for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
        it++) {
     // identify the variables used in the derived variable
@@ -273,7 +265,6 @@ void HermesEngine::ComputeDerivedVariables() {
       }
     }
 
-    std::cout << "data processed" << std::endl;
     // compute the values for the derived variables that are not type
     // ExpressionString
     std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
@@ -283,7 +274,6 @@ void HermesEngine::ComputeDerivedVariables() {
       DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo);
     }
 
-    std::cout << "Calculations" << std::endl;
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
@@ -404,9 +394,7 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-  engine_logger->info("LoadMetadata rank {}", rank);
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
-  std::cout << "metadata_vector size " << metadata_vector.size() << std::endl;
   for (auto &variableMetadata : metadata_vector) {
 
     DefineVariable(variableMetadata);
@@ -414,7 +402,6 @@ void HermesEngine::LoadMetadata() {
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
-  engine_logger->info("rank {}", rank);
   if (currentStep != 1) {
     // If the metadata is defined delete current value to update it
     m_IO.RemoveVariable(variableMetadata.name);
@@ -439,7 +426,6 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
 template <typename T>
 void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
                                   T *values) {
-  engine_logger->info("Get rank {}", rank);
   auto blob = Hermes->bkt->Get(variable.m_Name);
   memcpy(values, blob.data(), blob.size());
 }
@@ -500,14 +486,12 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 template <typename T>
 void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                               T *values) {
-  engine_logger->info("Put derived rank: {}, name: {}", rank, variable.m_Name);
   std::string name = variable.m_Name;
   int total_count = 1;
   for (auto count : variable.m_Count) {
     total_count *= count;
   }
 
-  std::cout << "derived has " << total_count << " elements with size " << sizeof(T) << std::endl;
   Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
   DbOperation db_op = generateMetadata(variable, (float*) values, total_count);

@@ -40,7 +40,6 @@ class SQLiteWrapper {
  public:
   SQLiteWrapper(const std::string& dbName, bool deleteOnDestruction = false)
       : dbName(dbName), deleteOnDestruction(deleteOnDestruction) {
-    std::cout << "Opening database " << dbName << std::endl;
     if (sqlite3_open(dbName.c_str(), &db)) {
       std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
       sqlite3_close(db);
@@ -80,7 +79,6 @@ class SQLiteWrapper {
 
   void UpdateTotalSteps(const std::string& appName, int step) {
     sqlite3_stmt* stmt;
-    std::cout << "Updating total steps for " << appName << " to " << step << std::endl;
     const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO Apps (appName, TotalSteps) VALUES (?, ?);";
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_text(stmt, 1, appName.c_str(), -1, SQLITE_STATIC);
