@@ -182,8 +182,11 @@ int main(int argc, char *argv[])
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink->set_level(spdlog::level::debug);
     console_sink->set_pattern("%v");
+    spdlog::logger logger("debug_logger", { console_sink });
+    logger.set_level(spdlog::level::debug);
 
-  std::size_t u_global_size, v_global_size;
+
+    std::size_t u_global_size, v_global_size;
   std::size_t u_local_size, v_local_size;
 
   bool firstStep = true;
@@ -328,7 +331,7 @@ int main(int argc, char *argv[])
   MPI_Barrier(comm);
     auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
-    console_sink->info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
+    logger.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
     MPI_Finalize();
 
   MPI_Finalize();
