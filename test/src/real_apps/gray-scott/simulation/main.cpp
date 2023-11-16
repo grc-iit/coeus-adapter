@@ -103,6 +103,7 @@ int main(int argc, char **argv)
     }
 
     Settings settings = Settings::from_json(argv[1]);
+    bool derived = atoi(argv[2]);
 
     GrayScott sim(settings, comm);
     sim.init();
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
                              std::to_string(restart_step / settings.plotgap));
     }
 
-    Writer writer_main(settings, sim, io_main);
+    Writer writer_main(settings, sim, io_main, derived);
     writer_main.open(settings.output, (restart_step > 0));
 
     if (rank == 0)

@@ -169,6 +169,18 @@ class Adios2GrayScott(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'derived',
+                'msg': 'Should it calculate derive quantities',
+                'type': bool,
+                'default': 'false',
+            },
+            {
+                'name': 'limit',
+                'msg': 'Limit the value of data to track',
+                'type': int,
+                'default': 0,
+            }
         ]
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
@@ -221,6 +233,7 @@ class Adios2GrayScott(Application):
             ('VARFILE', self.var_json_path),
             ('OPFILE', self.operator_json_path),
             ('DBFILE', self.config['db_path']),
+            ('LIMIT', self.config['limit']),
         ]
 
         print(f"Using engine {self.config['engine']}")

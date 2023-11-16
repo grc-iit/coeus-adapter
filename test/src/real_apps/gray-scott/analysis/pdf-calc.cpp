@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
   std::string in_filename;
   std::string out_filename;
-  size_t nbins = 1000;
+  size_t nbins = 100;
   bool write_inputvars = false;
   in_filename = argv[1];
   out_filename = argv[2];
@@ -167,8 +167,11 @@ int main(int argc, char *argv[])
   {
     std::string value = argv[4];
     std::transform(value.begin(), value.end(), value.begin(), ::tolower);
-    if (value == "yes")
-      write_inputvars = true;
+    if (value == "yes") {
+        write_inputvars = true;
+    }
+    bool derived = atoi(argv[5]);
+    std::cout << "Derived Variables Status: " << derived << std::endl;
   }
 
   std::size_t u_global_size, v_global_size;
@@ -217,8 +220,6 @@ int main(int argc, char *argv[])
   adios2::Engine writer =
       writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
-  bool shouldIWrite = (!rank || reader_io.EngineType() == "HDF5");
-
   // read data step-by-step
   int stepAnalysis = 0;
   while (true)
@@ -249,8 +250,7 @@ int main(int argc, char *argv[])
 
     // Set the selection at the first step only, assuming that
     // the variable dimensions do not change across timesteps
-    if (firstStep)
-    {
+    if (firstStep){
       shape = var_u_in.Shape();
 
       // Calculate global and local sizes of U and V
@@ -262,16 +262,10 @@ int main(int argc, char *argv[])
       // 1D decomposition
       count1 = shape[0] / comm_size;
       start1 = count1 * rank;
-      if (rank == comm_size - 1)
-      {
+      if (rank == comm_size - 1){
         // last process need to read all the rest of slices
         count1 = shape[0] - count1 * (comm_size - 1);
       }
-
-      /*std::cout << "  rank " << rank << " slice start={" <<  start1
-        << ",0,0} count={" << count1  << "," << shape[1] << "," <<
-        shape[2]
-        << "}" << std::endl;*/
 
       // Set selection
       var_u_in.SetSelection(adios2::Box<adios2::Dims>(
@@ -284,86 +278,48 @@ int main(int argc, char *argv[])
           "U/pdf", {shape[0], nbins}, {start1, 0}, {count1, nbins});
       var_v_pdf = writer_io.DefineVariable<double>(
           "V/pdf", {shape[0], nbins}, {start1, 0}, {count1, nbins});
-
-      if (shouldIWrite)
-      {
-        var_u_bins = writer_io.DefineVariable<double>("U/bins", {nbins},
-                                                      {0}, {nbins});
-        var_v_bins = writer_io.DefineVariable<double>("V/bins", {nbins},
-                                                      {0}, {nbins});
-        var_step_out = writer_io.DefineVariable<int>("step");
-      }
-
-      if (write_inputvars)
-      {
-        var_u_out = writer_io.DefineVariable<double>(
-            "U", {shape[0], shape[1], shape[2]}, {start1, 0, 0},
-            {count1, shape[1], shape[2]});
-        var_v_out = writer_io.DefineVariable<double>(
-            "V", {shape[0], shape[1], shape[2]}, {start1, 0, 0},
-            {count1, shape[1], shape[2]});
-      }
       firstStep = false;
     }
 
-    // Read adios2 data
-    if(rank == 0){
-      std::cout << "Get U: " << rank << " size: " << u.size()
-      << " Count: (" << concatenateVectorToString(var_u_in.Count()) << ") "
-      << " Start: (" << concatenateVectorToString(var_u_in.Start()) << ") "
-      << " Shape: (" << concatenateVectorToString(var_u_in.Shape()) << ") "
-      << std::endl;
-      std::cout << "Get V: " << rank << " size: " << v.size()
-      << " Count: (" << concatenateVectorToString(var_v_in.Count()) << ") "
-      << " Start: (" << concatenateVectorToString(var_v_in.Start()) << ") "
-      << " Shape: (" << concatenateVectorToString(var_v_in.Shape()) << ") "
-      << std::endl;
+    if(derived == 0) {
+        reader.Get<double>(var_u_in, u);
+        reader.Get<double>(var_v_in, v);
     }
-    reader.Get<double>(var_u_in, u);
-    reader.Get<double>(var_v_in, v);
-    if (shouldIWrite)
-    {
-      std::cout << "Get step: " << rank << std::endl;
-      reader.Get<int>(var_step_in, &simStep);
+    if(derived == 1) {
+      reader.Get<double>(var_u_pdf, pdf_u);
+      reader.Get<double>(var_v_pdf, pdf_v);
     }
 
     // End read step (let resources about step go)
     reader.EndStep();
 
-    if (!rank)
-    {
+    if (!rank){
       std::cout << "PDF Analysis step " << stepAnalysis
                 << " processing sim output step " << stepSimOut
                 << " sim compute step " << simStep << std::endl;
     }
 
-    // Calculate min/max of arrays
-    std::pair<double, double> minmax_u;
-    std::pair<double, double> minmax_v;
-    auto mmu = std::minmax_element(u.begin(), u.end());
-    minmax_u = std::make_pair(*mmu.first, *mmu.second);
-    auto mmv = std::minmax_element(v.begin(), v.end());
-    minmax_v = std::make_pair(*mmv.first, *mmv.second);
+    std::vector<double> pdf_u;
+    std::vector<double> bins_u;
+    std::vector<double> pdf_v;
+    std::vector<double> bins_v;
 
-//    // Compute PDF
-//    std::vector<double> pdf_u;
-//    std::vector<double> bins_u;
-//    compute_pdf(u, shape, start1, count1, nbins, minmax_u.first,
-//                minmax_u.second, pdf_u, bins_u);
-//
-//    std::vector<double> pdf_v;
-//    std::vector<double> bins_v;
-//    compute_pdf(v, shape, start1, count1, nbins, minmax_v.first,
-//                minmax_v.second, pdf_v, bins_v);
+    if(derived == 0) {
+        // Calculate min/max of arrays
+        std::pair<double, double> minmax_u;
+        std::pair<double, double> minmax_v;
+        auto mmu = std::minmax_element(u.begin(), u.end());
+        minmax_u = std::make_pair(*mmu.first, *mmu.second);
+        auto mmv = std::minmax_element(v.begin(), v.end());
+        minmax_v = std::make_pair(*mmv.first, *mmv.second);
 
-    reader.Get<double>(var_u_pdf, pdf_u);
-    reader.Get<double>(var_v_pdf, pdf_v);
-
-    if (write_inputvars)
-    {
-      writer.Put<double>(var_u_out, u.data());
-      writer.Put<double>(var_v_out, v.data());
+        // Compute PDF
+        compute_pdf(u, shape, start1, count1, nbins, minmax_u.first,
+                    minmax_u.second, pdf_u, bins_u);
+        compute_pdf(v, shape, start1, count1, nbins, minmax_v.first,
+                    minmax_v.second, pdf_v, bins_v);
     }
+
     writer.EndStep();
     ++stepAnalysis;
   }

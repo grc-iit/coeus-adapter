@@ -54,7 +54,7 @@ void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
     // TODO extend to other formats e.g. structured
 }
 
-Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
+Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bool derived)
 : settings(settings), io(io)
 {
     io.DefineAttribute<double>("F", settings.F);
@@ -86,19 +86,21 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
         io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
-    auto PDFU = io.DefineDerivedVariable("derive/pdfU",
-                                           "x:U \n"
-                                           "curl(10, x)",
-                                           adios2::DerivedVarType::StoreData);
     var_v =
         io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
-
-    auto PDFV = io.DefineDerivedVariable("derive/pdfV",
-                                         "x:V \n"
-                                         "curl(10, x)",
-                                         adios2::DerivedVarType::StoreData);
+    if(derived == 1) {
+        std::cout << "USING DERIVED QUANTITIES" << std::endl;
+        auto PDFU = io.DefineDerivedVariable("derive/pdfU",
+                                             "x:U \n"
+                                             "curl(10, x)",
+                                             adios2::DerivedVarType::StoreData);
+        auto PDFV = io.DefineDerivedVariable("derive/pdfV",
+                                             "x:V \n"
+                                             "curl(10, x)",
+                                             adios2::DerivedVarType::StoreData);
+    }
 
     if (settings.adios_memory_selection)
     {

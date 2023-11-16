@@ -79,6 +79,18 @@ class Adios2GrayScottPost(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'derived',
+                'msg': 'Should it calculate derive quantities',
+                'type': bool,
+                'default': 'false',
+            },
+            {
+                'name': 'limit',
+                'msg': 'Limit the value of data to track',
+                'type': int,
+                'default': 5,
+            }
         ]
     # jarvis pkg config adios2_gray_scott_post ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db in_filename=gs.bp out_filename=post.bp nprocs=1
 
@@ -107,6 +119,7 @@ class Adios2GrayScottPost(Application):
             ('VARFILE', self.var_json_path),
             ('OPFILE', self.operator_json_path),
             ('DBFILE', self.config['db_path']),
+            ('LIMIT', self.config['limit']),
         ]
 
         print(f"Using engine {self.config['engine']}")
