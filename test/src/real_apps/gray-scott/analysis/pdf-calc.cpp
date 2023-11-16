@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
   MPI_Barrier(comm);
     auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
-    console_sink.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
+    console_sink->info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
     MPI_Finalize();
 
   MPI_Finalize();
