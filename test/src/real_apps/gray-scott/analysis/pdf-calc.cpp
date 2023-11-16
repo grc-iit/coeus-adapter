@@ -155,7 +155,8 @@ int main(int argc, char *argv[])
   bool write_inputvars = false;
   in_filename = argv[1];
   out_filename = argv[2];
-
+  bool derived;
+  
   if (argc >= 4)
   {
     int value = std::stoi(argv[3]);
@@ -170,7 +171,7 @@ int main(int argc, char *argv[])
     if (value == "yes") {
         write_inputvars = true;
     }
-    bool derived = atoi(argv[5]);
+    derived = atoi(argv[5]);
     std::cout << "Derived Variables Status: " << derived << std::endl;
   }
 
