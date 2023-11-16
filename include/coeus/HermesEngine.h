@@ -54,6 +54,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int lookahead;
   hrun::coeus_mdm::Client client;
   int num_layers = 4;
+  int limit = 0
 
   int ppn;
   /** Construct the HermesEngine */

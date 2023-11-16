@@ -27,6 +27,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io, // NOLINT
   Hermes = std::make_shared<coeus::Hermes>();
   //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
+  comm.Barrier();
   engine_logger->info("rank {} with name {} and mode {}", rank, name,
                       adios2::ToString(mode));
 }
@@ -94,6 +95,12 @@ void HermesEngine::Init_() {
     if (rank == 0)
       std::cout << "PPN: " << ppn << std::endl;
   }
+
+    if (params.find("limit") != params.end()) {
+        limit = stoi(params["limit"]);
+        if (rank == 0)
+            std::cout << "limit: " << limit << std::endl;
+    }
 
   if (params.find("lookahead") != params.end()) {
     lookahead = stoi(params["lookahead"]);
