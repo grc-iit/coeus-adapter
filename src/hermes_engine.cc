@@ -26,7 +26,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io, // NOLINT
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_shared<coeus::Hermes>();
   Init_();
-  comm.Barrier();
+//  comm.Barrier();
 }
 
 /**
