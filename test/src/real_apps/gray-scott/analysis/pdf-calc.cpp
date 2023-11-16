@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 
   std::vector<double> u;
   std::vector<double> v;
-  int simStep = -5;
+  int simStep = 0;
 
   std::vector<double> pdf_u;
   std::vector<double> pdf_v;
@@ -286,8 +286,7 @@ int main(int argc, char *argv[])
 
     if (!rank){
       std::cout << "PDF Analysis step " << stepAnalysis
-                << " processing sim output step " << stepSimOut
-                << " sim compute step " << simStep << std::endl;
+                << " processing sim output step " << stepSimOut << std::endl;
     }
 
     std::vector<double> pdf_u;
