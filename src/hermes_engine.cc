@@ -340,15 +340,40 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  std::string name = variable.m_Name;
+  // 1. hermes engine
+#ifdef hermes_as_engine
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  // add spdlog method to extract the variable metadata
-  #ifdef Meta_enabled
+#endif
+
+// 2. POSIX engine
+#ifdef POSIX_as_engine
+std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
+const char* filename = c_filename.c_str();
+ int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+  if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+   size_t dataSize = variable.SelectionSize() * sizeof(T);
+    ssize_t bytesWritten = write(fd, values, dataSize);
+    if (bytesWritten == -1) {
+        perror("write");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    if (close(fd) == -1) {
+        perror("close");
+        exit(EXIT_FAILURE);
+    }
+#endif
+
+// metadata extraction
+
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
-  globalData.insertPut(name);
-  meta_logger_put->info("order: {}", globalData.PutMapToString());
-  #endif
+  
+
+// database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
