@@ -33,6 +33,8 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+  // debug model
+  engine_logger->info("Debug: initial done");
 }
 
 /**
@@ -49,6 +51,8 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
 //  mpiComm = mpi;
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+  // debug model
+  engine_logger->info("Debug: initial done 2");
 }
 
 /**
@@ -148,6 +152,8 @@ void HermesEngine::Init_() {
     throw std::invalid_argument("db_file not found in parameters");
   }
   open = true;
+  // debug mode
+  engine_logger->info("initial Done 3");
 }
 
 /**
@@ -157,12 +163,18 @@ void HermesEngine::DoClose(const int transportIndex) {
   engine_logger->info("rank {}", rank);
   open = false;
 //  mpiComm->free();
+ 
+ // debug mode
+ engine_logger->info("DoClose done");
 }
 
 HermesEngine::~HermesEngine() {
   std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   delete db;
+
+  // debug mode
+  engine_logger->info("deconstrctor Done");
 }
 
 /**
@@ -172,6 +184,10 @@ HermesEngine::~HermesEngine() {
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   IncrementCurrentStep();
+  // debug mode
+  engine_logger->info("finish IncrementCurrentStep");
+
+
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
 
@@ -184,6 +200,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
       + "_rank" + std::to_string(rank);
 
   Hermes->GetBucket(bucket_name);
+
+  engine_logger->info("finish BeginStep and Hermes getBucket");
   return adios2::StepStatus::OK;
 }
 
@@ -202,7 +220,10 @@ void HermesEngine::EndStep() {
       client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
     }
   }
+  // debug Mode
+  engine_logger->info("Finish EndStep");
   delete Hermes->bkt;
+  engine_logger->info("Finish EndStep and delete Hermes->bkt");
 }
 
 /**
@@ -216,7 +237,8 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
 
   // Obtain the blob from Hermes using the filename and variable name
   hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
-
+  // debug Mode
+  engine_logger->info("finish VariableMinMax.");
 #define DEFINE_VARIABLE(T) \
       if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
           size_t dataSize = blob.size() / sizeof(T);                               \
@@ -273,6 +295,8 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
 template<typename T>
 T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
   return reinterpret_cast<T *>(&u);
+  // debug Mode
+  engine_logger->info("SelectUnion Done");
 }
 
 template<typename T>
@@ -286,6 +310,8 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
   if (*value > *max) {
     max = value;
   }
+  // debug mode
+  engine_logger->info("ElementMinMax Done");
 }
 
 void HermesEngine::LoadMetadata() {
@@ -295,6 +321,10 @@ void HermesEngine::LoadMetadata() {
 
     DefineVariable(variableMetadata);
   }
+
+
+  // debug mode
+  engine_logger->info("LoadMetadata Done");
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
@@ -335,20 +365,19 @@ void HermesEngine::DoGetDeferred_(
    #endif
     //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
+
+  // debug mode
+  engine_logger->info("Get Done");
 }
 
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  // 1. hermes engine
-#ifdef hermes_as_engine
+  std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-#endif
-
-// 2. POSIX engine
-#ifdef POSIX_as_engine
-std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
-const char* filename = c_filename.c_str();
+  // 2. POSIX engine
+  std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
+  const char* filename = c_filename.c_str();
  int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
   if (fd == -1) {
         perror("open");
@@ -365,21 +394,23 @@ const char* filename = c_filename.c_str();
         perror("close");
         exit(EXIT_FAILURE);
     }
-#endif
 
-// metadata extraction
+   // metadata extraction
 
-  metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+   metaInfo metaInfo(variable, adiosOpType::put);
+   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
   
 
-// database
+  // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+
+  // debug mode
+  engine_logger->info("Put Done");
 }
 
 }  // namespace coeus
