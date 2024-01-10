@@ -378,7 +378,7 @@ void HermesEngine::DoPutDeferred_(
   // 2. POSIX engine
   std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
   const char* filename = c_filename.c_str();
- int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+/* int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
   if (fd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
@@ -394,7 +394,7 @@ void HermesEngine::DoPutDeferred_(
         perror("close");
         exit(EXIT_FAILURE);
     }
-
+*/
    // metadata extraction
 
    metaInfo metaInfo(variable, adiosOpType::put);
