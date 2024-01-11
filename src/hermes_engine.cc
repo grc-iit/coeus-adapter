@@ -352,6 +352,27 @@ void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
 }
 
 template<typename T>
+void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
+                                  T *values) {
+    auto blob = Hermes->bkt->Get(variable.m_Name);
+    std::string name = variable.m_Name;
+#ifdef Meta_enabled
+    // add spdlog method to extract the variable metadata
+    metaInfo metaInfo(variable, adiosOpType::get);
+    meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
+    globalData.insertGet(name);
+    meta_logger_get->info("order: {}", globalData.GetMapToString());
+#endif
+    //finish metadata extraction
+    memcpy(values, blob.data(), blob.size());
+
+    // debug mode
+    engine_logger->info("Get Done");
+}
+
+
+
+template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
   auto blob = Hermes->bkt->Get(variable.m_Name);
@@ -371,14 +392,59 @@ void HermesEngine::DoGetDeferred_(
 }
 
 template<typename T>
+void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
+                    const T *values) {
+    std::string name = variable.m_Name;
+    Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+    /* 2. POSIX engine
+    std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
+    const char* filename = c_filename.c_str();
+    int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+          perror("open");
+          exit(EXIT_FAILURE);
+      }
+     size_t dataSize = variable.SelectionSize() * sizeof(T);
+      ssize_t bytesWritten = write(fd, values, dataSize);
+      if (bytesWritten == -1) {
+          perror("write");
+          close(fd);
+          exit(EXIT_FAILURE);
+      }
+      if (close(fd) == -1) {
+          perror("close");
+          exit(EXIT_FAILURE);
+      }
+  */
+    // metadata extraction
+
+    metaInfo metaInfo(variable, adiosOpType::put);
+    meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+
+
+    // database
+    VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                        variable.m_Count, variable.IsConstantDims(),
+                        adios2::ToString(variable.m_Type));
+    BlobInfo blobInfo(Hermes->bkt->name, name);
+    DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+    client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+
+    // debug mode
+    engine_logger->info("Put Done");
+
+}
+
+
+template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  // 2. POSIX engine
+  /* 2. POSIX engine
   std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
   const char* filename = c_filename.c_str();
-/* int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+  int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
   if (fd == -1) {
         perror("open");
         exit(EXIT_FAILURE);
@@ -412,6 +478,10 @@ void HermesEngine::DoPutDeferred_(
   // debug mode
   engine_logger->info("Put Done");
 }
+
+
+
+
 
 }  // namespace coeus
 /**
