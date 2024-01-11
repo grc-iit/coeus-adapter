@@ -39,6 +39,7 @@
 #include <comms/Hermes.h>
 #include <comms/MPI.h>
 #include "common/globalVariable.h"
+#include "common/Tracer.h"
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
