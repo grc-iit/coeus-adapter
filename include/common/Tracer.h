@@ -89,7 +89,7 @@ private:
                                + ", \"tid\": " + threadID
                                + "";
 
-          std::cout << logEntry << std::endl;
+          //std::cout << logEntry << std::endl;
          auto my_logger = spdlog::get("trace_logger");
 
         if (my_logger) {
@@ -100,8 +100,9 @@ private:
           spdlog::warn("Logger not found, unable to log the message");
          }
 
-        
-        log->info(logEntry);
+
+        my_logger->flush();
+
     }
 };
 

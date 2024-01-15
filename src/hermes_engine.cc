@@ -34,7 +34,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
   // debug model
-  engine_logger->info("Debug: initial done");
+  engine_logger->info("Debug: initial done rank: {}", rank);
 }
 
 /**
@@ -52,7 +52,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
   Init_();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
   // debug model
-  engine_logger->info("Debug: initial done 2");
+  engine_logger->info("Debug: initial done 2 rank: {}", rank);
 }
 
 /**
@@ -97,11 +97,13 @@ void HermesEngine::Init_() {
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-  engine_logger->info("rank {}", rank);
+
 
   //MPI setup
   rank = m_Comm.Rank();
   comm_size = m_Comm.Size();
+
+  engine_logger->info("rank {}", rank);
 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
@@ -156,7 +158,8 @@ void HermesEngine::Init_() {
   }
   open = true;
   // debug mode
-  engine_logger->info("initial Done 3");
+  engine_logger->info("initial Done 3, rank {}", rank);
+        engine_logger->flush();
 }
 
 /**
@@ -164,12 +167,11 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
         TRACE_FUNC();
-  engine_logger->info("rank {}", rank);
+  engine_logger->info("Do close rank {}", rank);
   open = false;
 //  mpiComm->free();
- 
- // debug mode
- engine_logger->info("DoClose done");
+
+   engine_logger->flush();
 }
 
 HermesEngine::~HermesEngine() {
@@ -179,7 +181,8 @@ HermesEngine::~HermesEngine() {
   delete db;
 
   // debug mode
-  engine_logger->info("deconstrctor Done");
+  engine_logger->info("deconstrctor Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 /**
@@ -191,7 +194,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
         TRACE_FUNC();
   IncrementCurrentStep();
   // debug mode
-  engine_logger->info("finish IncrementCurrentStep");
+  engine_logger->info("finish IncrementCurrentStep, rank {}", rank);
 
 
   if (m_OpenMode == adios2::Mode::Read) {
@@ -207,7 +210,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
   Hermes->GetBucket(bucket_name);
 
-  engine_logger->info("finish BeginStep and Hermes getBucket");
+  engine_logger->info("finish BeginStep and Hermes getBucket, rank {}", rank);
+        engine_logger->flush();
   return adios2::StepStatus::OK;
 }
 
@@ -230,9 +234,10 @@ void HermesEngine::EndStep() {
     }
   }
   // debug Mode
-  engine_logger->info("Finish EndStep");
+  engine_logger->info("Finish EndStep, rank {}", rank);
   delete Hermes->bkt;
-  engine_logger->info("Finish EndStep and delete Hermes->bkt");
+  engine_logger->info("Finish EndStep and delete Hermes->bkt, rank {}", rank);
+    engine_logger->flush();
 }
 
 /**
@@ -248,7 +253,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   // Obtain the blob from Hermes using the filename and variable name
   hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
   // debug Mode
-  engine_logger->info("finish VariableMinMax.");
+  engine_logger->info("finish VariableMinMax, rank {}", rank);
 #define DEFINE_VARIABLE(T) \
       if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
           size_t dataSize = blob.size() / sizeof(T);                               \
@@ -323,7 +328,8 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
     max = value;
   }
   // debug mode
-  engine_logger->info("ElementMinMax Done");
+  engine_logger->info("ElementMinMax Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 void HermesEngine::LoadMetadata() {
@@ -336,7 +342,8 @@ void HermesEngine::LoadMetadata() {
 
 
   // debug mode
-  engine_logger->info("LoadMetadata Done");
+  engine_logger->info("LoadMetadata Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata& variableMetadata) {
@@ -380,7 +387,8 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
     memcpy(values, blob.data(), blob.size());
 
     // debug mode
-    engine_logger->info("Get Done");
+    engine_logger->info("Get Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 
@@ -402,7 +410,8 @@ void HermesEngine::DoGetDeferred_(
   memcpy(values, blob.data(), blob.size());
 
   // debug mode
-  engine_logger->info("Get Done");
+  engine_logger->info("Get Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 template<typename T>
@@ -446,7 +455,8 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
     client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 
     // debug mode
-    engine_logger->info("Put Done");
+    engine_logger->info("Put Done, rank {}", rank);
+    engine_logger->flush();
 
 }
 
@@ -492,7 +502,8 @@ void HermesEngine::DoPutDeferred_(
   client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 
   // debug mode
-  engine_logger->info("Put Done");
+  engine_logger->info("Put Done, rank {}", rank);
+    engine_logger->flush();
 }
 
 
