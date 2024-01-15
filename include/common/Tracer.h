@@ -44,13 +44,14 @@ public:
         log->info("");
         log->set_pattern(jsonPattern);
     }
-
+/*
     ~TraceManager() {
         auto log = spdlog::get("trace_logger");
         log->set_pattern(exitPattern);
         log->info("");
         spdlog::drop("trace_logger");
     }
+    */
 
 private:
     std::string entryPattern = {"["};
@@ -88,7 +89,18 @@ private:
                                + ", \"tid\": " + threadID
                                + "";
 
-        auto log = spdlog::get("trace_logger");
+          std::cout << logEntry << std::endl;
+         auto my_logger = spdlog::get("trace_logger");
+
+        if (my_logger) {
+          // Logger exists, safe to use it for logging
+         my_logger->info(logEntry);
+         } else {
+         // Logger not found
+          spdlog::warn("Logger not found, unable to log the message");
+         }
+
+        
         log->info(logEntry);
     }
 };
