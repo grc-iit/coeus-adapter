@@ -15,6 +15,7 @@
 
 #include "interfaces/IHermes.h"
 #include "Bucket.h"
+#include "common/Tracer.h"
 
 namespace coeus {
 class Hermes : public IHermes {
@@ -25,6 +26,7 @@ class Hermes : public IHermes {
   Hermes() = default;
 
   bool connect() override {
+      TRACE_FUNC();
     std::cout << "Entering connect" << std::endl;
     std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
     TRANSPARENT_HERMES();
@@ -37,11 +39,13 @@ class Hermes : public IHermes {
   };
 
     bool GetBucket(const std::string &bucket_name) override {
+        TRACE_FUNC();
     bkt = (IBucket*) new coeus::Bucket(bucket_name, this);
     return true;
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
+      TRACE_FUNC();
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
@@ -52,6 +56,7 @@ class Hermes : public IHermes {
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
+      TRACE_FUNC();
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 

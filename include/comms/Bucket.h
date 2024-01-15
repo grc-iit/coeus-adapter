@@ -23,6 +23,7 @@ class Bucket : public IBucket {
   hapi::Bucket bkt;
 
   Bucket(const std::string &bucket_name, coeus::IHermes *h) {
+      TRACE_FUNC();
     name = bucket_name;
     bkt = h->hermes->GetBucket(bucket_name);
   }

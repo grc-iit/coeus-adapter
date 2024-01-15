@@ -36,6 +36,7 @@
 class TraceManager {
 public:
     explicit TraceManager(int rank){
+        rank = getpid();
         std::string fileName = "trace_" + std::to_string(rank) + ".json";
         spdlog::basic_logger_mt("trace_logger", fileName);
 
@@ -81,11 +82,12 @@ private:
         std::stringstream ss;
         ss << std::this_thread::get_id();
         std::string threadID = ss.str();
-
+        pid_t pid = getpid();
+        std::string pid_str = std::to_string(pid);
         std::string logEntry = "\"name\": \"" + functionName_
                                + "\", \"ph\": \"" + phase
                                + "\", \"ts\": " + std::to_string(microseconds)
-                               + ", \"pid\": " + std::to_string(rank_)
+                               + ", \"pid\": " + pid_str
                                + ", \"tid\": " + threadID
                                + "";
 

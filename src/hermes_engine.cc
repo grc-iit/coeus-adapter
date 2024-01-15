@@ -32,6 +32,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
+  TRACE_FUNC();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
   // debug model
   engine_logger->info("Debug: initial done rank: {}", rank);
@@ -50,6 +51,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
   Hermes = h;
 //  mpiComm = mpi;
   Init_();
+  TRACE_FUNC();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
   // debug model
   engine_logger->info("Debug: initial done 2 rank: {}", rank);
@@ -102,9 +104,11 @@ void HermesEngine::Init_() {
   //MPI setup
   rank = m_Comm.Rank();
   comm_size = m_Comm.Size();
+  pid_t processId = getpid();
 
   engine_logger->info("rank {}", rank);
-
+  engine_logger->info("comm size {}", comm_size);
+  engine_logger->info("Process Id {}", processId);
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
@@ -157,9 +161,28 @@ void HermesEngine::Init_() {
     throw std::invalid_argument("db_file not found in parameters");
   }
   open = true;
+
+
+
+        
   // debug mode
   engine_logger->info("initial Done 3, rank {}", rank);
-        engine_logger->flush();
+        const size_t bufferSize = 1024;  // Define the buffer size
+        char buffer[bufferSize];         // Create a buffer to hold the hostname
+
+// Get the hostname
+        if (gethostname(buffer, bufferSize) == 0) {
+            std::cout << "Hostname: " << buffer << std::endl;
+            engine_logger->info("Hostname: {}", buffer);
+        }
+
+            char processor_name[MPI_MAX_PROCESSOR_NAME];
+            int name_len;
+            MPI_Get_processor_name(processor_name, &name_len);
+
+            std::cout << "Process " << processId << "rank " << rank << " is running on " << processor_name << std::endl;
+           engine_logger->info("rank: {} Process: {} is running on {} ", rank, processId, processor_name);
+            engine_logger->flush();
 }
 
 /**
