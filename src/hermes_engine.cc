@@ -67,7 +67,7 @@ namespace coeus {
         // Console log
 
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        console_sink->set_level(spdlog::level::info);
+        console_sink->set_level(spdlog::level::trace);
         console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
         //File log
@@ -149,19 +149,19 @@ namespace coeus {
         }
         if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
 
-        if (params.find("db_file") != params.end()) {
-            db_file = params["db_file"];
-            db = new SQLiteWrapper(db_file);
-            if (rank % ppn == 0) {
-                db->createTables();
-                std::cout << "DB_FILE: " << db_file << std::endl;
-            }
-            TRANSPARENT_HERMES();
-            client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
-            if (rank == 0) std::cout << "Done with root" << std::endl;
-        } else {
-            throw std::invalid_argument("db_file not found in parameters");
-        }
+//        if (params.find("db_file") != params.end()) {
+//            db_file = params["db_file"];
+//            db = new SQLiteWrapper(db_file);
+//            if (rank % ppn == 0) {
+//                db->createTables();
+//                std::cout << "DB_FILE: " << db_file << std::endl;
+//            }
+//            TRANSPARENT_HERMES();
+//            client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
+//            if (rank == 0) std::cout << "Done with root" << std::endl;
+//        } else {
+//            throw std::invalid_argument("db_file not found in parameters");
+//        }
         open = true;
 
 
@@ -455,6 +455,8 @@ namespace coeus {
         TRACE_FUNC();
         std::string name = variable.m_Name;
         Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+        std::cout << "SyncPut variable info: " <<  " ranks: " << rank << " variable Name: " << variable.m_Name;
+        std::cout << " sizeof: " << sizeof(T) << " selectionSize: " <<  variable.SelectionSize() << std::endl;
         /* 2. POSIX engine
         std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
         const char* filename = c_filename.c_str();
@@ -482,12 +484,12 @@ namespace coeus {
 
 
         // database
-        VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                            variable.m_Count, variable.IsConstantDims(),
-                            adios2::ToString(variable.m_Type));
-        BlobInfo blobInfo(Hermes->bkt->name, name);
-        DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+//        VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+//                            variable.m_Count, variable.IsConstantDims(),
+//                            adios2::ToString(variable.m_Type));
+//        BlobInfo blobInfo(Hermes->bkt->name, name);
+//        DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+//        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 
         // debug mode
         engine_logger->info("Put Done, rank {}", rank);
@@ -502,7 +504,7 @@ namespace coeus {
         TRACE_FUNC();
         std::string name = variable.m_Name;
         Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-        std::cout << "DoPutDeferred variable info: " <<  " ranks: " << rank << " variable Name: " << variable.m_Name;
+        std::cout << "DeferredPut variable info: " <<  " ranks: " << rank << " variable Name: " << variable.m_Name;
         std::cout << " sizeof: " << sizeof(T) << " selectionSize: " <<  variable.SelectionSize() << std::endl;
                 /* 2. POSIX engine
                 std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
@@ -532,12 +534,12 @@ namespace coeus {
 
 
         // database
-        VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                            variable.m_Count, variable.IsConstantDims(),
-                            adios2::ToString(variable.m_Type));
-        BlobInfo blobInfo(Hermes->bkt->name, name);
-        DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+//        VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+//                            variable.m_Count, variable.IsConstantDims(),
+//                            adios2::ToString(variable.m_Type));
+//        BlobInfo blobInfo(Hermes->bkt->name, name);
+//        DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+//        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
 
         // debug mode
         engine_logger->info("Put Done, rank {}", rank);
