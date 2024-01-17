@@ -203,7 +203,7 @@ namespace coeus {
         TRACE_FUNC();
         std::cout << "Close des" << std::endl;
         engine_logger->info("rank {}", rank);
-        delete db;
+        //delete db;
 
         // debug mode
         engine_logger->info("deconstrctor Done, rank {}", rank);
