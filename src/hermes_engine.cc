@@ -502,8 +502,8 @@ namespace coeus {
         TRACE_FUNC();
         std::string name = variable.m_Name;
         Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-        std::cout << "DoPutDeferred variable info: " <<  "ranks: " << rank << "variable Name: " << variable.m_Name;
-        std::cout << "sizeof: " << sizeof(T) << "selectionSize: " <<  variable.SelectionSize() << std::endl;
+        std::cout << "DoPutDeferred variable info: " <<  " ranks: " << rank << " variable Name: " << variable.m_Name;
+        std::cout << " sizeof: " << sizeof(T) << " selectionSize: " <<  variable.SelectionSize() << std::endl;
                 /* 2. POSIX engine
                 std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
                 const char* filename = c_filename.c_str();
