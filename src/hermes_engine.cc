@@ -104,7 +104,7 @@ namespace coeus {
 
 
         //MPI setup
-        rank = m_Comm.Rank();
+        rank = getpid();
         comm_size = m_Comm.Size();
         pid_t processId = getpid();
 
