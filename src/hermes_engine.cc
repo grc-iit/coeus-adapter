@@ -178,15 +178,7 @@ namespace coeus {
 
 
         // debug mode
-        engine_logger->info("initial Done 3, rank {}", rank);
-        const size_t bufferSize = 1024;  // Define the buffer size
-        char buffer[bufferSize];         // Create a buffer to hold the hostname
-
-// Get the hostname
-        if (gethostname(buffer, bufferSize) == 0) {
-            std::cout << "Hostname: " << buffer << std::endl;
-            engine_logger->info("Hostname: {}", buffer);
-        }
+        
 
         char processor_name[MPI_MAX_PROCESSOR_NAME];
         int name_len;
