@@ -67,7 +67,7 @@ class Client : public TaskLibClient {
   uint GetRankRoot(const DomainId &domain_id) {
     LPointer<hrunpq::TypedPushTask<GetRankTask>> get_task = AsyncGetRankRoot(domain_id);
 
-//    get_task.ptr_->Wait();
+//    get_task.ptr_->Wa it();
     get_task->Wait();
 
     GetRankTask *task = get_task->get();
