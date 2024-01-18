@@ -64,9 +64,17 @@ class Client : public TaskLibClient {
         task, task_node, domain_id, id_);
   }
   HSHM_ALWAYS_INLINE
-  void GetRankRoot(const DomainId &domain_id) {
-    LPointer<hrunpq::TypedPushTask<GetRankTask>> task = AsyncGetRankRoot(domain_id);
-    task.ptr_->Wait();
+  uint GetRankRoot(const DomainId &domain_id) {
+    LPointer<hrunpq::TypedPushTask<GetRankTask>> get_task = AsyncGetRankRoot(domain_id);
+
+//    get_task.ptr_->Wait();
+    get_task->Wait();
+
+    GetRankTask *task = get_task->get();
+    uint choosen_rank = task->rank_;
+
+    HRUN_CLIENT->DelTask(get_task);
+    return choosen_rank;
   }
   HRUN_TASK_NODE_PUSH_ROOT(GetRank);
 };
