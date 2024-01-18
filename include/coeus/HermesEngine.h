@@ -25,7 +25,7 @@
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include "ContainerManager.h"
-
+#include "rankConsensus/rankConsensus.h"
 #include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -49,6 +49,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   SQLiteWrapper* db;
   std::string db_file;
   hrun::coeus_mdm::Client client;
+  hrun::rankConsensus::Client rank_consensus;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
   int ppn;
@@ -104,7 +105,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int total_steps = -1;
 
 //  std::shared_ptr<coeus::MPI> mpiComm;
-  int rank;
+  uint rank;
   int comm_size;
 
   YAMLMap variableMap;

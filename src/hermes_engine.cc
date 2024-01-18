@@ -102,9 +102,19 @@ namespace coeus {
         engine_logger = std::make_shared<spdlog::logger>(logger);
 
 
+        // add rank with consensus
+        rank_consensus.CreateRoot(DomainId::GetLocal(), "rank_consensus");
+        rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
+        const size_t bufferSize = 1024;  // Define the buffer size
+        char buffer[bufferSize];         // Create a buffer to hold the hostname
+
+        // Get the hostname
+        if (gethostname(buffer, bufferSize) == 0) {
+            std::cout << "THIS: rank " << rank << ", host: " << buffer << std::endl;
+        }
 
         //MPI setup
-        rank = getpid();
+        //rank = getpid();
         comm_size = m_Comm.Size();
         pid_t processId = getpid();
 
