@@ -22,7 +22,7 @@ class Server : public TaskLib {
   std::atomic<uint> rank_count;
   /** Construct rankConsensus */
   void Construct(ConstructTask *task, RunContext &rctx) {
-    rank_count.load(0);
+    rank_count = 0;
     task->SetModuleComplete();
   }
   void MonitorConstruct(u32 mode, ConstructTask *task, RunContext &rctx) {
