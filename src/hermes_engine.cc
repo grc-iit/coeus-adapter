@@ -101,6 +101,15 @@ namespace coeus {
         logger.set_level(spdlog::level::debug);
         engine_logger = std::make_shared<spdlog::logger>(logger);
 
+         
+         // hermes setup
+          if (!Hermes->connect()) {
+            engine_logger->warn("Could not connect to Hermes", rank);
+            throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+        }
+        if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+ 
+
 
         // add rank with consensus
         rank_consensus.CreateRoot(DomainId::GetLocal(), "rank_consensus");
@@ -153,11 +162,7 @@ namespace coeus {
             }
         }
         //Hermes setup
-        if (!Hermes->connect()) {
-            engine_logger->warn("Could not connect to Hermes", rank);
-            throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-        }
-        if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+        
 
 //        if (params.find("db_file") != params.end()) {
 //            db_file = params["db_file"];
