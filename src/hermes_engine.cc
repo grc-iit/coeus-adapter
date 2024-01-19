@@ -174,7 +174,7 @@ namespace coeus {
         }
             if (rank % ppn == 0) {
                 db->createTables();
-                std::cout << "DB_FILE: " << db_file << std::endl;
+                std::cout << "MDM: DB_FILE: " << db_file << std::endl;
             }
        //     if (rank == 0)
           //  {std::cout << "Done with root" << std::endl;}
