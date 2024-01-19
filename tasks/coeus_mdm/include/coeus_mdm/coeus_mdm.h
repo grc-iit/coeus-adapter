@@ -45,7 +45,9 @@ class Client : public TaskLibClient {
   void CreateRoot(Args&& ...args) {
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
+    std::cout << "MDM: create root wait start" << std::endl;
     task->Wait();
+    std::cout << "MDM: create root wait done" << std::endl;
     Init(task->id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
@@ -62,8 +64,11 @@ class Client : public TaskLibClient {
                             const TaskNode &task_node,
                             const DomainId &domain_id,
                             DbOperation db_op) {
+    std::cout << "MDM: insert fire" << std::endl;
     HRUN_CLIENT->ConstructTask<Mdm_insertTask>(
         task, task_node, domain_id, id_, db_op);
+    std::cout << "MDM: insert forget" << std::endl;
+
   }
   HSHM_ALWAYS_INLINE
   void Mdm_insertRoot(const DomainId &domain_id, DbOperation db_op) {

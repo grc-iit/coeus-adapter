@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sqlite3.h>
 #include <string>
+#include <unistd.h>
 #include <vector>
 #include <utility>
 #include <type_traits>
@@ -52,11 +53,13 @@ class SQLiteWrapper {
   }
 
   void createTables(){
-    std::cout << "MDM: table creation: " << dbName << std::endl;
-
+    std::cout << "MDM: table creation: " << getpid() << " "<< dbName << std::endl;
     createAppsTable();
+    std::cout << "MDM: table APPS: " << getpid() << " " << dbName << std::endl;
     createBlobLocationsTable();
+    std::cout << "MDM: table LOCATION: " << getpid() << " "<< dbName << std::endl;
     createVariableMetadataTable();
+    std::cout << "MDM: table METADATA: " << getpid() << " "<< dbName << std::endl;
   }
 
   ~SQLiteWrapper() {
