@@ -47,7 +47,7 @@ class Client : public TaskLibClient {
         AsyncCreateRoot(std::forward<Args>(args)...);
     std::cout << "root started" << std::endl;
     task->Wait();
-    std::cout << "root wait" << std::endl;
+    std::cout << "root wait: " << task->id_ << std::endl;
     Init(id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
