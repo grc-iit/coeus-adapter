@@ -38,6 +38,9 @@ class SQLiteWrapper {
   }
 
  public:
+  void getName(){
+    return dbName;
+  }
   SQLiteWrapper(const std::string& dbName, bool deleteOnDestruction = false)
       : dbName(dbName), deleteOnDestruction(deleteOnDestruction) {
     if (sqlite3_open(dbName.c_str(), &db)) {

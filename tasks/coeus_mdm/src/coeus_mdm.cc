@@ -38,7 +38,7 @@ private:
     DbOperation db_op = task->GetDbOp();
 
     if (db_op.type == OperationType::InsertData) {
-      std::cout << "MDM: Hermes Insert MDM: " << db->dbName << ", name:" << db_op.name <<std::endl;
+      std::cout << "MDM: Hermes Insert MDM: " << db->getName() << ", name:" << db_op.name <<std::endl;
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
     } else if (db_op.type == OperationType::UpdateSteps) {
