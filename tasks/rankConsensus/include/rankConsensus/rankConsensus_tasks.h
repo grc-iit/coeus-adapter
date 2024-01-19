@@ -108,7 +108,7 @@ struct GetRankTask : public Task, TaskFlags<TF_LOCAL> {
   /** (De)serialize message return */
   template<typename Ar>
   void SerializeEnd(u32 replica, Ar &ar) {
-    std::cout << "end " << task->rank_ << std::endl;
+    std::cout << "end " << rank_ << std::endl;
     ar(rank_);
   }
 
