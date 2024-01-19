@@ -22,7 +22,7 @@ class Server : public TaskLib {
   std::atomic<uint> rank_count;
   /** Construct rankConsensus */
   void Construct(ConstructTask *task, RunContext &rctx) {
-    std::cout << "task constructor" <<std::endl;
+    std::cout << "rank task constructor" << std::endl;
     rank_count = 0;
     task->SetModuleComplete();
   }

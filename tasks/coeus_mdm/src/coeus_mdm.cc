@@ -26,7 +26,7 @@ private:
 
   void Construct(ConstructTask *task, RunContext &rctx) {
     db = std::make_unique<SQLiteWrapper>(task->db_path_->str());
-
+    std::cout << "mdm task constructor" << std::endl;
     task->SetModuleComplete();
   }
 

@@ -48,7 +48,7 @@ class Client : public TaskLibClient {
     std::cout << "root started" << std::endl;
     task->Wait();
     std::cout << "root wait: " << task->id_ << std::endl;
-    Init(id_, HRUN_ADMIN->queue_id_);
+    Init(task->id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
 
