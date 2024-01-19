@@ -113,9 +113,9 @@ namespace coeus {
 
         // add rank with consensus
         rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
-        std::cout << "hermes engine rank root id: " << rank_consensus.id_ << std::endl;
-        client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
-        std::cout << "hermes engine mdm root id: " << client.id_ << std::endl;
+        //std::cout << "hermes engine rank root id: " << rank_consensus.id_ << std::endl;
+
+        //std::cout << "hermes engine mdm root id: " << client.id_ << std::endl;
 
         rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
         const size_t bufferSize = 1024;  // Define the buffer size
@@ -170,14 +170,17 @@ namespace coeus {
         if (params.find("db_file") != params.end()) {
             db_file = params["db_file"];
             db = new SQLiteWrapper(db_file);
+            client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
+        }
             if (rank % ppn == 0) {
                 db->createTables();
                 std::cout << "DB_FILE: " << db_file << std::endl;
             }
-            if (rank == 0) std::cout << "Done with root" << std::endl;
-        } else {
+            if (rank == 0)
+            {std::cout << "Done with root" << std::endl;}
+            else {
             throw std::invalid_argument("db_file not found in parameters");
-        }
+            }
         open = true;
 
 
