@@ -37,7 +37,7 @@ struct ConstructTask : public CreateTaskStateTask {
                 const TaskStateId &id,
                 const std::vector<PriorityInfo> &queue_info)
       : CreateTaskStateTask(alloc, task_node, domain_id, state_name,
-                            "rankConsensus", id, queue_info) {
+                            "rank_consensus", id, queue_info) {
     // Custom params
   }
 
