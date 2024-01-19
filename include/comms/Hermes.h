@@ -34,7 +34,7 @@ class Hermes : public IHermes {
     hermes = HERMES;
     std::cout << "hermes assigment" << std::endl;
     HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
-    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "rankConsensus");
+    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetLocal(), "rankConsensus");
     std::cout << "Registered task" << std::endl;
     return hermes->IsInitialized();
   };
