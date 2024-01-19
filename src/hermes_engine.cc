@@ -266,7 +266,7 @@ namespace coeus {
    if (m_OpenMode == adios2::Mode::Write) {
     if(rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
-      client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
   }
         // debug Mode
@@ -500,7 +500,7 @@ namespace coeus {
                             adios2::ToString(variable.m_Type));
         BlobInfo blobInfo(Hermes->bkt->name, name);
         DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+//        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
         // debug mode
         engine_logger->info("Put Done, rank {}", rank);
@@ -550,7 +550,7 @@ namespace coeus {
                             adios2::ToString(variable.m_Type));
         BlobInfo blobInfo(Hermes->bkt->name, name);
         DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-        client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+//        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
         // debug mode
         engine_logger->info("Put Done, rank {}", rank);
