@@ -38,7 +38,7 @@ class SQLiteWrapper {
   }
 
  public:
-  void getName(){
+  std::string getName(){
     return dbName;
   }
   SQLiteWrapper(const std::string& dbName, bool deleteOnDestruction = false)
