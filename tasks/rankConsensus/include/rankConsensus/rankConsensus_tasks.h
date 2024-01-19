@@ -73,7 +73,7 @@ struct DestructTask : public DestroyTaskStateTask {
 /**
  * A custom task in rankConsensus
  * */
-struct GetRankTask : public Task, TaskFlags<TF_SRL_SYM> {
+struct GetRankTask : public Task, TaskFlags<TF_LOCAL> {
   OUT uint rank_;
   /** SHM default constructor */
   HSHM_ALWAYS_INLINE explicit

@@ -69,7 +69,6 @@ class Client : public TaskLibClient {
   HSHM_ALWAYS_INLINE
   uint GetRankRoot(const DomainId &domain_id) {
     std::cout << "rank root " << std::endl;
-
     LPointer<hrunpq::TypedPushTask<GetRankTask>> get_task = AsyncGetRankRoot(domain_id);
     std::cout << "set up " << std::endl;
 //    get_task.ptr_->Wa it();
