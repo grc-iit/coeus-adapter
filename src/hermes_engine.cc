@@ -176,11 +176,11 @@ namespace coeus {
                 db->createTables();
                 std::cout << "DB_FILE: " << db_file << std::endl;
             }
-            if (rank == 0)
-            {std::cout << "Done with root" << std::endl;}
-            else {
-            throw std::invalid_argument("db_file not found in parameters");
-            }
+       //     if (rank == 0)
+          //  {std::cout << "Done with root" << std::endl;}
+        //    else {
+         //   throw std::invalid_argument("db_file not found in parameters");
+       //     }
         open = true;
 
 
