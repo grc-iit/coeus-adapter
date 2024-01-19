@@ -112,7 +112,7 @@ namespace coeus {
 
 
         // add rank with consensus
-        rank_consensus.CreateRoot(DomainId::GetLocal(), "rank_consensus");
+        rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
         rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
         const size_t bufferSize = 1024;  // Define the buffer size
         char buffer[bufferSize];         // Create a buffer to hold the hostname
