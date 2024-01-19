@@ -42,9 +42,12 @@ class Client : public TaskLibClient {
   template<typename ...Args>
   HSHM_ALWAYS_INLINE
   void CreateRoot(Args&& ...args) {
+    std::cout << "root " << std::endl;
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
+    std::cout << "root started" << std::endl;
     task->Wait();
+    std::cout << "root wait" << std::endl;
     Init(id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
@@ -65,7 +68,7 @@ class Client : public TaskLibClient {
   }
   HSHM_ALWAYS_INLINE
   uint GetRankRoot(const DomainId &domain_id) {
-    std::cout << "root " << std::endl;
+    std::cout << "rank root " << std::endl;
 
     LPointer<hrunpq::TypedPushTask<GetRankTask>> get_task = AsyncGetRankRoot(domain_id);
     std::cout << "set up " << std::endl;
