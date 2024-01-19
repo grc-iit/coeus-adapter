@@ -37,7 +37,9 @@ class Server : public TaskLib {
 
   /** A custom method */
   void GetRank(GetRankTask *task, RunContext &rctx) {
+    std::cout << "in" <<std::endl;
     task->rank_ = rank_count.fetch_add(1);
+    std::cout << "out " << task->rank_ << std::endl;
     task->SetModuleComplete();
   }
   void MonitorGetRank(u32 mode, GetRankTask *task, RunContext &rctx) {
