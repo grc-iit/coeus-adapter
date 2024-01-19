@@ -263,12 +263,12 @@ namespace coeus {
 
     void HermesEngine::EndStep() {
         TRACE_FUNC();
-//   if (m_OpenMode == adios2::Mode::Write) {
-//    if(rank % ppn == 0) {
-//      DbOperation db_op(uid, currentStep);
-//      client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
-//    }
-//  }
+   if (m_OpenMode == adios2::Mode::Write) {
+    if(rank % ppn == 0) {
+      DbOperation db_op(uid, currentStep);
+      client.Mdm_insertRoot(DomainId::GetGlobal(), db_op);
+    }
+  }
         // debug Mode
         engine_logger->info("Finish EndStep, rank {}", rank);
         delete Hermes->bkt;
