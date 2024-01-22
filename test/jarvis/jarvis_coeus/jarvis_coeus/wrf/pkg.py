@@ -79,7 +79,6 @@ class Wrf(Application):
         if output_location[-1] != '/':
             output_location += '/'
         output_location += 'wrfout_d01_2019-11-26_12:00:00'
-        print(output_location)
         replacement = [("wrfout_d01_2019-11-26_12:00:00", output_location), ("EngineType", self.config['engine'])]
         self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 f'{self.config["wrf_location"]}/adios2.xml', replacement)

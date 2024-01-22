@@ -40,9 +40,9 @@ class Lammps(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp4', 'hermes'],
                 'type': str,
-                'default': 'bp5',
+                'default': 'bp4',
             },
             {
                 'name': 'script_location',
@@ -67,6 +67,7 @@ class Lammps(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+
         self.update_config(kwargs, rebuild=False)
 
     def start(self):
