@@ -59,6 +59,7 @@ class Client : public TaskLibClient {
     QueueManagerInfo &qm = HRUN_CLIENT->server_config_.queue_manager_;
     std::vector<PriorityInfo> queue_info;
     std::cout << "AsyncCreate path: " << db_path << std::endl;
+//    AsyncCreate path: /mnt/nvme/hxu40/metadata.db
     return HRUN_ADMIN->AsyncCreateTaskState<ConstructTask>(
         task_node, domain_id, state_name, id_, queue_info, db_path);
   }
@@ -68,6 +69,7 @@ class Client : public TaskLibClient {
   void CreateRoot(Args&& ...args) {
     std::cout << "MDM args: ";
     hrun::coeus_mdm::printArgs(std::forward<Args>(args)...);
+//    MDM args: [non-streamable type] db_operation /mnt/nvme/hxu40/metadata.db
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
     std::cout << "MDM: create root wait start" << std::endl;

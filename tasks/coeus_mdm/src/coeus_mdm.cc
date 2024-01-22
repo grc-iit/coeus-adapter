@@ -25,6 +25,7 @@ private:
   Server() = default;
 
   void Construct(ConstructTask *task, RunContext &rctx) {
+    task->Deserialize();
     db = std::make_unique<SQLiteWrapper>(task->db_path_->str());
     std::cout << "MDM: mdm task constructor: " << task->db_path_->str() << std::endl;
     task->SetModuleComplete();
