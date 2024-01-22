@@ -15,6 +15,28 @@
 
 #include "coeus_mdm_tasks.h"
 
+template<typename T, typename = void>
+struct is_streamable : std::false_type {};
+
+template<typename T>
+struct is_streamable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>> : std::true_type {};
+
+template <typename T>
+typename std::enable_if<is_streamable<T>::value>::type printArg(const T& arg) {
+  std::cout << arg << " ";
+}
+
+template <typename T>
+typename std::enable_if<!is_streamable<T>::value>::type printArg(const T& arg) {
+  std::cout << "[non-streamable type] ";
+}
+
+template <typename... Args>
+void printArgs(Args&&... args) {
+  (printArg(args), ...);
+  std::cout << std::endl;
+}
+
 namespace hrun::coeus_mdm {
 
 /** Create coeus_mdm requests */
@@ -45,7 +67,7 @@ class Client : public TaskLibClient {
   HSHM_ALWAYS_INLINE
   void CreateRoot(Args&& ...args) {
     std::cout << "MDM args: ";
-    (std::cout << ... << args) << std::endl;
+    printArgs(std::forward<Args>(args)...);
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
     std::cout << "MDM: create root wait start" << std::endl;
