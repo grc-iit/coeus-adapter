@@ -44,9 +44,12 @@ class Client : public TaskLibClient {
   template<typename ...Args>
   HSHM_ALWAYS_INLINE
   void CreateRoot(Args&& ...args) {
+    std::cout << "MDM args: ";
+    (std::cout << ... << args) << std::endl;
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
     std::cout << "MDM: create root wait start" << std::endl;
+    std::cout << "TEST" << std::endl;
     task->Wait();
     std::cout << "MDM: create root wait done" << std::endl;
     Init(task->id_, HRUN_ADMIN->queue_id_);
