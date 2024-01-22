@@ -44,6 +44,8 @@ struct ConstructTask : public CreateTaskStateTask {
       : CreateTaskStateTask(alloc, task_node, domain_id, state_name,
                             "coeus_mdm", id, queue_info) {
     // Custom params
+    std::cout << "Constructor path: " << db_path << std::endl;
+
     HSHM_MAKE_AR(db_path_, alloc, db_path);
   }
 

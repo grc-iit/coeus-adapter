@@ -36,6 +36,7 @@ class Client : public TaskLibClient {
     id_ = TaskStateId::GetNull();
     QueueManagerInfo &qm = HRUN_CLIENT->server_config_.queue_manager_;
     std::vector<PriorityInfo> queue_info;
+    std::cout << "AsyncCreate path: " << db_path << std::endl;
     return HRUN_ADMIN->AsyncCreateTaskState<ConstructTask>(
         task_node, domain_id, state_name, id_, queue_info, db_path);
   }
