@@ -93,6 +93,11 @@ jarvis pipeline append hermes_run --sleep=10 --provider=sockets
 jarvis pipeline append lammps ppn=?? nprocs=?? script_location=/the/location/of/script/folder engine=hermes
 ```
 
+Jarvis also can support LAMMPS without hermes engine(only adios)
+```bash
+jarvis pipeline append hermes_run --sleep=10 --provider=sockets
+jarvis pipeline append lammps ppn=?? nprocs=?? script_location=/the/location/of/script/folder engine=BP5
+```
 ## 5. Run the Experiment
 
 Run the experiment
