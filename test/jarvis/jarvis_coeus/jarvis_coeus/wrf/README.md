@@ -22,22 +22,9 @@ export PATH=$DIR/bin:$PATH
 export LD_LIBRARY_PATH=/adios2/lib:$LD_LIBRARY_PATH
 ```
 
-## 2. Create a Resource Graph
-
-If you haven't already, create a resource graph. This only needs to be done
-once throughout the lifetime of Jarvis. No need to repeat if you have already
-done this for a different pipeline.
-
-If you are running distributed tests, set path to the hostfile you are  using.
-```bash
-jarvis hostfile set /path/to/hostfile.txt
-```
-
-Next, collect the resources from each of those pkgs. Walkthrough will give
-a command line tutorial on how to build the hostfile.
-```bash
-jarvis resource-graph build +walkthrough
-```
+## 2. Install Jarvis and set up Jarvis
+Please refer this website for more information about Jarvis.  
+https://grc.iit.edu/docs/jarvis/jarvis-cd/index
 
 ## 3. Create a Pipeline
 
