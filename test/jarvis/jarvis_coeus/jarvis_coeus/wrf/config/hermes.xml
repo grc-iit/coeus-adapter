@@ -9,8 +9,8 @@
         <engine type="Plugin">
             <parameter key="PluginName" value="hermes"/>
             <parameter key="PluginLibrary" value="hermes_engine"/>
-            <parameter key="ppn" value="16"/>
-            <parameter key="db_file" value="/mnt/nvme/hxu40/metadata.db"/>
+            <parameter key="ppn" value="##ppn###"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
 
     </io>

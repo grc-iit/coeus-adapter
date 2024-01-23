@@ -45,12 +45,6 @@ class Wrf(Application):
                 'default': None,
             },
             {
-                'name': 'wrf_output',
-                'msg': 'The location of output file',
-                'type': str,
-                'default': None,
-            },
-            {
                 'name': 'engine',
                 'msg': 'Engine to be used',
                 'choices': ['bp5', 'hermes'],
@@ -74,17 +68,17 @@ class Wrf(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        self.update_config(kwargs, rebuild=False)
-        output_location = self.config['wrf_output']
-        if output_location[-1] != '/':
-            output_location += '/'
-        output_location += 'wrfout_d01_2019-11-26_12:00:00'
-        replacement = [("wrfout_d01_2019-11-26_12:00:00", output_location), ("EngineType", self.config['engine'])]
-        self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                f'{self.config["wrf_location"]}/adios2.xml', replacement)
-        replacement2 = ["Path_to_output", output_location]
-        self.copy_template_file(f'{self.pkg_dir}/config/namelist.input',
-                                f'{self.config["wrf_location"]}/namelist.input', replacement2)
+        if self.config['engine'].lower() == 'bp4':
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                            f'{self.config["wrf_location"]}/adios_config.xml')
+        elif  self.config['engine'].lower == 'hermes':
+            replacement = [("ppn", self.config['ppn']), ("db_path", self.config['db_file'])]
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                        f'{self.config["wrf_location"]}/adios_config.xml', replacement)
+        else:
+            raise Exception('Engine not defined')
+
+
 
     def start(self):
         """
@@ -118,4 +112,6 @@ class Wrf(Application):
 
         :return: None
         """
+        output_file = [self.config['db_path']]
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
         pass

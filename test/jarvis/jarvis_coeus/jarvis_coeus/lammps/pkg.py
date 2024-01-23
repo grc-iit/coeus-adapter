@@ -67,8 +67,16 @@ class Lammps(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-
-        self.update_config(kwargs, rebuild=False)
+       if self.config['engine'].lower() == 'bp4':
+          self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                                  f'{self.config["script_location"]}/adios_config.xml')
+       elif  self.config['engine'].lower == 'hermes':
+           replacement = [("ppn", self.config['ppn']), ("DB_FIEL", self.config['db_file'])]
+           self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                   f'{self.config["script_location"]}/adios_config.xml', replacement)
+       else:
+           raise Exception('Engine not defined')
+       self.update_config(kwargs, rebuild=False)
 
     def start(self):
         """
@@ -101,4 +109,7 @@ class Lammps(Application):
 
         :return: None
         """
+
+        output_file = [self.config['db_path']]
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
         pass
