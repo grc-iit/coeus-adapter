@@ -55,7 +55,13 @@ Store the current environment in the pipeline.
 jarvis pipeline env build
 ```
 
-## 4. Add pkgs to the Pipeline
+## 4. change some parameter in namelist.input file
+```
+io_form_history = 14
+io_form_restart = 14
+frames_per_outfile   = 1000000,
+```
+## 5. Add pkgs to the Pipeline
 
 Create a Jarvis pipeline with Hermes, the Hermes MPI-IO interceptor,
 and wrf
@@ -65,14 +71,14 @@ jarvis pipeline append wrf wrf_location=/WRF/test/em_real nprocs=4 ppn=6 engine=
 
 ```
 
-## 5. Run the Experiment
+## 6. Run the Experiment
 
 Run the experiment
 ```bash
 jarvis pipeline run
 ```
 
-## 6. Clean Data
+## 7. Clean Data
 
 To clean data produced by Hermes + Gray-Scott:
 ```bash
