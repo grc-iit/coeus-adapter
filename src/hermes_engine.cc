@@ -62,7 +62,6 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
 * */
 void HermesEngine::Init_() {
   // initiate the trace manager
-  INIT_TRACE_MANAGER();
   // Logger setup
   // Console log
 
