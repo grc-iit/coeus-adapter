@@ -1,4 +1,4 @@
-Openfoam is a fuild dynamic application.
+Openfoam is a fully dynamic application.
 
 # Install openfoam
 use spack to install openfoam
