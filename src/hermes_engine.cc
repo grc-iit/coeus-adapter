@@ -240,12 +240,12 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 }
 
 void HermesEngine::IncrementCurrentStep() {
-  TRACE_FUNC();
+  TRACE_FUNC(currentStep);
   currentStep++;
 }
 
 size_t HermesEngine::CurrentStep() const {
-  TRACE_FUNC();
+  TRACE_FUNC(currentStep);
   return currentStep;
 }
 
@@ -268,7 +268,7 @@ void HermesEngine::EndStep() {
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
-  TRACE_FUNC();
+  TRACE_FUNC(Var.m_Name);
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
@@ -351,7 +351,7 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-  TRACE_FUNC();
+  TRACE_FUNC("loadMetadata");
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
 
