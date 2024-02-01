@@ -209,7 +209,7 @@ HermesEngine::~HermesEngine() {
   std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   //delete db;
-  
+
 }
 
 /**
@@ -236,8 +236,6 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
   Hermes->GetBucket(bucket_name);
 
-  engine_logger->info("finish BeginStep and Hermes getBucket, rank {}", rank);
-  engine_logger->flush();
   return adios2::StepStatus::OK;
 }
 
@@ -259,11 +257,9 @@ void HermesEngine::EndStep() {
       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
   }
-  // debug Mode
-  engine_logger->info("Finish EndStep, rank {}", rank);
+
   delete Hermes->bkt;
-  engine_logger->info("Finish EndStep and delete Hermes->bkt, rank {}", rank);
-  engine_logger->flush();
+
 }
 
 /**
@@ -278,8 +274,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
 
   // Obtain the blob from Hermes using the filename and variable name
   hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
-  // debug Mode
-  engine_logger->info("finish VariableMinMax, rank {}", rank);
+
 #define DEFINE_VARIABLE(T) \
       if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
           size_t dataSize = blob.size() / sizeof(T);                               \
@@ -353,9 +348,6 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
   if (*value > *max) {
     max = value;
   }
-  // debug mode
-  engine_logger->info("ElementMinMax Done, rank {}", rank);
-  engine_logger->flush();
 }
 
 void HermesEngine::LoadMetadata() {
@@ -367,9 +359,6 @@ void HermesEngine::LoadMetadata() {
   }
 
 
-  // debug mode
-  engine_logger->info("LoadMetadata Done, rank {}", rank);
-  engine_logger->flush();
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
@@ -412,9 +401,7 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
   //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 
-  // debug mode
-  engine_logger->info("Get Done, rank {}", rank);
-  engine_logger->flush();
+
 }
 
 template<typename T>
@@ -433,9 +420,7 @@ void HermesEngine::DoGetDeferred_(
   //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 
-  // debug mode
-  engine_logger->info("Get Done, rank {}", rank);
-  engine_logger->flush();
+
 }
 
 template<typename T>
@@ -444,34 +429,12 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC();
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << "SyncPut variable info: " << " ranks: " << rank << " variable Name: " << variable.m_Name;
-  std::cout << " sizeof: " << sizeof(T) << " selectionSize: " << variable.SelectionSize() << std::endl;
-  /* 2. POSIX engine
-  std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
-  const char* filename = c_filename.c_str();
-  int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-    }
-   size_t dataSize = variable.SelectionSize() * sizeof(T);
-    ssize_t bytesWritten = write(fd, values, dataSize);
-    if (bytesWritten == -1) {
-        perror("write");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-    if (close(fd) == -1) {
-        perror("close");
-        exit(EXIT_FAILURE);
-    }
-*/
-  // metadata extraction
 
+#ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
-
+#endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
@@ -480,9 +443,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-  // debug mode
-  engine_logger->info("Put Done, rank {}", rank);
-  engine_logger->flush();
+
 
 }
 
@@ -492,35 +453,12 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC();
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << "DeferredPut variable info: " << " ranks: " << rank << " variable Name: " << variable.m_Name;
-  std::cout << " sizeof: " << sizeof(T) << " selectionSize: " << variable.SelectionSize() << std::endl;
-  /* 2. POSIX engine
-  std::string c_filename = "/mnt/nvme/hxu40/output_." + std::to_string(rank) + ".txt";
-  const char* filename = c_filename.c_str();
-  int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-    }
-   size_t dataSize = variable.SelectionSize() * sizeof(T);
-    ssize_t bytesWritten = write(fd, values, dataSize);
-    if (bytesWritten == -1) {
-        perror("write");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-    if (close(fd) == -1) {
-        perror("close");
-        exit(EXIT_FAILURE);
-    }
-*/
-  // metadata extraction
 
-
+#ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
-
+#endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
@@ -529,9 +467,6 @@ void HermesEngine::DoPutDeferred_(
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-  // debug mode
-  engine_logger->info("Put Done, rank {}", rank);
-  engine_logger->flush();
 }
 
 }  // namespace coeus
