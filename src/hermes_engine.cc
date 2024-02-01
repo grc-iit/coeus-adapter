@@ -34,8 +34,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Init_();
   TRACE_FUNC();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-  // debug model
-  engine_logger->info("Debug: initial done rank: {}", rank);
+
 }
 
 /**
@@ -53,8 +52,6 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
   Init_();
   TRACE_FUNC();
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-  // debug model
-  engine_logger->info("Debug: initial done 2 rank: {}", rank);
 }
 
 /**
@@ -188,14 +185,14 @@ void HermesEngine::Init_() {
 
   // debug mode
 
-
+/*
   char processor_name[MPI_MAX_PROCESSOR_NAME];
   int name_len;
   MPI_Get_processor_name(processor_name, &name_len);
 
   std::cout << "Process " << processId << "rank " << rank << " is running on " << processor_name << std::endl;
-  engine_logger->info("rank: {} Process: {} is running on {} ", rank, processId, processor_name);
-  engine_logger->flush();
+
+  */
 }
 
 /**
@@ -203,11 +200,8 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC();
-  engine_logger->info("Do close rank {}", rank);
   open = false;
 //  mpiComm->free();
-
-  engine_logger->flush();
 }
 
 HermesEngine::~HermesEngine() {
@@ -215,10 +209,7 @@ HermesEngine::~HermesEngine() {
   std::cout << "Close des" << std::endl;
   engine_logger->info("rank {}", rank);
   //delete db;
-
-  // debug mode
-  engine_logger->info("deconstrctor Done, rank {}", rank);
-  engine_logger->flush();
+  
 }
 
 /**
