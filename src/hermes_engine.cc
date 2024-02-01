@@ -32,7 +32,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-  TRACE_FUNC();
+  TRACE_FUNC("Init HermesEngine");
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 
 }
@@ -199,7 +199,7 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-  TRACE_FUNC();
+  TRACE_FUNC("engine close");
   open = false;
 //  mpiComm->free();
 }
@@ -207,7 +207,7 @@ void HermesEngine::DoClose(const int transportIndex) {
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
   std::cout << "Close des" << std::endl;
-  engine_logger->info("rank {}", rank);
+
   //delete db;
 
 }
@@ -388,7 +388,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
                               T *values) {
-  TRACE_FUNC();
+    TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = Hermes->bkt->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
@@ -407,7 +407,7 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-  TRACE_FUNC();
+    TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = Hermes->bkt->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
@@ -426,7 +426,7 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
-  TRACE_FUNC();
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
@@ -450,7 +450,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  TRACE_FUNC();
+    TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
