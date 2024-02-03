@@ -12,7 +12,7 @@ target_link_libraries(rankConsensus ${Hermes_RUNTIME_LIBRARIES})
 #        TARGETS
 #        rankConsensus
 #        EXPORT
-#        ${HERMES_EXPORTED_TARGETS}
+#        ${COEUS_EXPORTED_TARGETS}
 #        LIBRARY DESTINATION ${HERMES_INSTALL_LIB_DIR}
 #        ARCHIVE DESTINATION ${HERMES_INSTALL_LIB_DIR}
 #        RUNTIME DESTINATION ${HERMES_INSTALL_BIN_DIR}
@@ -23,11 +23,11 @@ target_link_libraries(rankConsensus ${Hermes_RUNTIME_LIBRARIES})
 #-----------------------------------------------------------------------------
 #install(
 #        EXPORT
-#        ${HERMES_EXPORTED_TARGETS}
+#        ${COEUS_EXPORTED_TARGETS}
 #        DESTINATION
 #        ${HERMES_INSTALL_DATA_DIR}/cmake/hermes
 #        FILE
-#        ${HERMES_EXPORTED_TARGETS}.cmake
+#        ${COEUS_EXPORTED_TARGETS}.cmake
 #)
 
 #-----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ if(NOT HERMES_EXTERNALLY_CONFIGURED)
             TARGETS
             ${HERMES_EXPORTED_LIBS}
             FILE
-            ${HERMES_EXPORTED_TARGETS}.cmake
+            ${COEUS_EXPORTED_TARGETS}.cmake
     )
 endif()
 
