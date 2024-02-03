@@ -63,7 +63,7 @@ class MdmCompare(Application):
     # ppn=20 metadata_engine=empress db_path=/mnt/nvme/jcernudagarcia/client/benchmark_metadata.db  nprocs=1
     # ppn=20 metadata_engine=hermes db_path=db_path=/mnt/nvme/jcernudagarcia/benchmark_metadata.db  nprocs=1
 
-    def configure(self, **kwargs):
+    def _configure(self, **kwargs):
         """
         Converts the Jarvis configuration to application-specific configuration.
         E.g., OrangeFS produces an orangefs.xml file.
