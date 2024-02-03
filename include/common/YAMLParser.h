@@ -44,6 +44,7 @@ class YAMLParser {
     YAMLMap resultMap;
 
     if (!isValid()) {
+      std::cout<<"Invalid YAML file"<<std::endl;
       throw ErrorException(BAD_YAML);
     }
 

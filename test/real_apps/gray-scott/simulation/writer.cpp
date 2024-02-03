@@ -1,5 +1,18 @@
 #include "../../gray-scott/simulation/writer.h"
 
+std::string concatenateVectorToString(const std::vector<size_t>& vec) {
+  std::stringstream ss;
+  ss << "( ";
+  for (size_t i = 0; i < vec.size(); ++i) {
+    ss << vec[i];
+    if (i < vec.size() - 1) {
+      ss << ", ";
+    }
+  }
+  ss << " )";
+  return ss.str();
+}
+
 void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
 {
     auto lf_VTKImage = [](const Settings &s, adios2::IO &io) {
@@ -100,7 +113,7 @@ void Writer::open(const std::string &fname, bool append)
     writer = io.Open(fname, mode);
 }
 
-void Writer::write(int step, const GrayScott &sim)
+void Writer::write(int step, const GrayScott &sim, int rank)
 {
     if (!sim.size_x || !sim.size_y || !sim.size_z)
     {
@@ -111,10 +124,14 @@ void Writer::write(int step, const GrayScott &sim)
 
     if (settings.adios_memory_selection)
     {
+      std::cout << "mem_selection" <<std::endl;
         const std::vector<double> &u = sim.u_ghost();
         const std::vector<double> &v = sim.v_ghost();
 
-        writer.BeginStep();
+      std::cout << u.size() << " " << v.size() <<std::endl;
+      std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
+
+      writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
 
@@ -123,6 +140,7 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else if (settings.adios_span)
     {
+      std::cout << "span" <<std::endl;
         writer.BeginStep();
 
         writer.Put<int>(var_step, &step);
@@ -139,9 +157,22 @@ void Writer::write(int step, const GrayScott &sim)
     }
     else
     {
-
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
+
+//        if(rank == 0 || u.size() != 1024 || v.size() != 1024 ||
+//        var_u.SelectionSize() != 1024 || var_v.SelectionSize() != 1024)
+//        {
+//          std::cout << "App rank: " << rank << u.size() << " " << v.size()
+//          << var_u.SelectionSize() << " " << var_v.SelectionSize()
+//          << " Count Var U " << concatenateVectorToString(var_u.Count())
+//          << " Count Var V " << concatenateVectorToString(var_v.Count())
+//          << " Start Var U " << concatenateVectorToString(var_u.Start())
+//          << " Start Var V " << concatenateVectorToString(var_v.Start())
+//          << " Shape Var U " << concatenateVectorToString(var_u.Shape())
+//          << " Shape Var V " << concatenateVectorToString(var_v.Shape())
+//         <<std::endl;
+//        }
 
         writer.BeginStep();
         writer.Put<int>(var_step, &step);

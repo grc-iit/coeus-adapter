@@ -8,6 +8,8 @@ of the ADIOS plugins interface.
 To compile
 ```
 git clone https://github.com/lukemartinlogan/coeus-adapter.git
+spack load hermes@master
+spack load adios2
 cd coeus-adapter
 mkdir build
 cd build

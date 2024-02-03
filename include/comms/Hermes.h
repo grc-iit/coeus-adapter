@@ -15,6 +15,7 @@
 
 #include "interfaces/IHermes.h"
 #include "Bucket.h"
+#include "common/Tracer.h"
 
 namespace coeus {
 class Hermes : public IHermes {
@@ -25,18 +26,27 @@ class Hermes : public IHermes {
   Hermes() = default;
 
   bool connect() override {
+      TRACE_FUNC();
+    std::cout << "Entering connect" << std::endl;
+    std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
     TRANSPARENT_HERMES();
-    hermes = std::unique_ptr<hermes::Hermes>(HERMES);
+    std::cout << "transparent done" << std::endl;
+    hermes = HERMES;
+    std::cout << "hermes assigment" << std::endl;
+    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
+    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetLocal(), "rankConsensus");
+    std::cout << "Registered task" << std::endl;
     return hermes->IsInitialized();
   };
 
-  std::unique_ptr<IBucket> GetBucket(const std::string &bucket_name) override {
-    Bucket* bkt = new coeus::Bucket(bucket_name, this);
-    std::unique_ptr<IBucket> bucketPtr(bkt);
-    return bucketPtr;
+    bool GetBucket(const std::string &bucket_name) override {
+        TRACE_FUNC();
+    bkt = (IBucket*) new coeus::Bucket(bucket_name, this);
+    return true;
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
+      TRACE_FUNC();
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
@@ -47,6 +57,7 @@ class Hermes : public IHermes {
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
+      TRACE_FUNC();
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 

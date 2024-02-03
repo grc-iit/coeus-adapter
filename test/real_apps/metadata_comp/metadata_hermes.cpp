@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  if (argc < 2) {
+  if (argc < 3) {
     if (rank == 0) {
       std::cerr << "Please provide the number of steps as an argument." << std::endl;
     }
@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
   }
 
   int N = std::stoi(argv[1]);  // Number of steps
+  int ppn = std::stoi(argv[2]);  // Number of steps
 
   adios2::ADIOS adios(MPI_COMM_WORLD);
   adios2::IO io = adios.DeclareIO("TestIO");
@@ -49,15 +50,16 @@ int main(int argc, char* argv[]) {
   for (int step = 0; step < N; ++step) {
     auto startInsertApps = std::chrono::high_resolution_clock::now();
 
-    {
+    if (rank % ppn == 0) {
       int currentStep;
       auto blob_name = "total_steps_" + io.Name();
-      auto bkt = Hermes->GetBucket("total_steps");
-      bkt->Put(blob_name, sizeof(int), &currentStep);
+      Hermes->GetBucket("total_steps");
+      Hermes->bkt->Put(blob_name, sizeof(int), &currentStep);
     }
 
     auto endInsertApps = std::chrono::high_resolution_clock::now();
-    localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();
+    localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();\
+    delete Hermes->bkt;
 
     auto startInsertBlobs = std::chrono::high_resolution_clock::now();
     {
@@ -66,12 +68,13 @@ int main(int argc, char* argv[]) {
 
       std::string serializedBlobInfo = MetadataSerializer::SerializeBlobInfo(blob_info);
 
-      auto bkt = Hermes->GetBucket(bucket_name);
-      auto status = bkt->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
+      Hermes->GetBucket(bucket_name);
+      Hermes->bkt->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
 
     }
     auto endInsertBlobs = std::chrono::high_resolution_clock::now();
     localInsertBlobsTime += std::chrono::duration<double>(endInsertBlobs - startInsertBlobs).count();
+    delete Hermes->bkt;
 
     auto startInsertMetadata = std::chrono::high_resolution_clock::now();
     {
@@ -80,58 +83,65 @@ int main(int argc, char* argv[]) {
 
       std::string serializedMetadata = MetadataSerializer::SerializeMetadata(metadata);
 
-      auto bkt = Hermes->GetBucket(bucket_name_metadata);
-      auto status = bkt->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
+      Hermes->GetBucket(bucket_name_metadata);
+      Hermes->bkt->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
     }
     auto endInsertMetadata = std::chrono::high_resolution_clock::now();
     localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();
+    delete Hermes->bkt;
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0) std::cout << "Rank " << rank << " finished writting" << std::endl;
+
   double localQueryAppsTime = 0.0, localQueryBlobsTime = 0.0, localQueryMetadataTime = 0.0;
   for (int step = 0; step < N; ++step) {
     auto startQueryApps = std::chrono::high_resolution_clock::now();
     {
-      auto bkt = Hermes->GetBucket("total_steps");
-      hermes::Blob blob = bkt->Get("total_steps_" + io.Name());
+      Hermes->GetBucket("total_steps");
+      hermes::Blob blob = Hermes->bkt->Get("total_steps_" + io.Name());
       auto total_steps = *reinterpret_cast<const int *>(blob.data());
     }
     auto endQueryApps = std::chrono::high_resolution_clock::now();
     localQueryAppsTime += std::chrono::duration<double>(endQueryApps - startQueryApps).count();
+    delete Hermes->bkt;
 
     auto startQueryBlobs = std::chrono::high_resolution_clock::now();
     {
       std::string bucket_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
 
-      auto bkt = Hermes->GetBucket(bucket_name);
-      std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
+      Hermes->GetBucket(bucket_name);
+      std::vector<hermes::BlobId> blobIds = Hermes->bkt->GetContainedBlobIds();
       for (const auto &blobId : blobIds) {
-        hermes::Blob blob = bkt->Get(blobId);
+        hermes::Blob blob = Hermes->bkt->Get(blobId);
         BlobInfo blob_info =
             MetadataSerializer::DeserializeBlobInfo(blob);
       }
     }
     auto endQueryBlobs = std::chrono::high_resolution_clock::now();
     localQueryBlobsTime += std::chrono::duration<double>(endQueryBlobs - startQueryBlobs).count();
+    delete Hermes->bkt;
 
     auto startQueryMetadata = std::chrono::high_resolution_clock::now();
     {
       std::string filename = "step_" + std::to_string(step) +
           "_rank_" + std::to_string(rank);
 
-      auto bkt = Hermes->GetBucket(filename);
-      std::vector<hermes::BlobId> blobIds = bkt->GetContainedBlobIds();
+      Hermes->GetBucket(filename);
+      std::vector<hermes::BlobId> blobIds = Hermes->bkt->GetContainedBlobIds();
       for (const auto &blobId : blobIds) {
-        hermes::Blob blob = bkt->Get(blobId);
+        hermes::Blob blob = Hermes->bkt->Get(blobId);
         VariableMetadata variableMetadata =
             MetadataSerializer::DeserializeMetadata(blob);
       }
     }
     auto endQueryMetadata = std::chrono::high_resolution_clock::now();
     localQueryMetadataTime += std::chrono::duration<double>(endQueryMetadata - startQueryMetadata).count();
+    delete Hermes->bkt;
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
+  if(rank==0) std::cout << "Rank " << rank << " finished reading" << std::endl;
 
   double globalInsertAppsTime = 0.0, globalInsertBlobsTime = 0.0, globalInsertMetadataTime = 0.0;
   double globalQueryAppsTime = 0.0, globalQueryBlobsTime = 0.0, globalQueryMetadataTime = 0.0;
@@ -146,7 +156,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   if(rank == 0) {
-    std::string header = "Size,"
+    std::string header = "Size,N,"
                          "globalInsertAppsTime,globalInsertBlobsTime,globalInsertMetadataTime,"
                          "globalQueryAppsTime,globalQueryBlobsTime,globalQueryMetadataTime\n";
     bool needHeader = false;
@@ -168,12 +178,13 @@ int main(int argc, char* argv[]) {
 
     // Append the results
     outputFile << size << ","
-               << globalInsertAppsTime / (size * N) << ","
-               << globalInsertBlobsTime / (size * N) << ","
-               << globalInsertMetadataTime / (size * N) << ","
-               << globalQueryAppsTime / (size * N) << ","
-               << globalQueryBlobsTime / (size * N) << ","
-               << globalQueryMetadataTime / (size * N) << "\n";    outputFile.close();
+               << N  << ","
+               << globalInsertAppsTime  << ","
+               << globalInsertBlobsTime  << ","
+               << globalInsertMetadataTime  << ","
+               << globalQueryAppsTime  << ","
+               << globalQueryBlobsTime  << ","
+               << globalQueryMetadataTime  << "\n";    outputFile.close();
   }
 
   MPI_Finalize();

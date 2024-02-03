@@ -1,0 +1,615 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "bin/hello_test"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"target_link_libraries",
+			"set_property",
+			"find_package",
+			"config_compiler_and_linker",
+			"_pkg_create_imp_target",
+			"_pkg_recalculate",
+			"pkg_check_modules",
+			"boost_find_component",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"test/unit/gtest/CMakeLists.txt",
+			"cmake-build-debug/_deps/googletest-src/googlemock/CMakeLists.txt",
+			"cmake-build-debug/_deps/googletest-src/googletest/CMakeLists.txt",
+			"/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindThreads.cmake",
+			"cmake-build-debug/_deps/googletest-src/googletest/cmake/internal_utils.cmake",
+			"test/mocks/CMakeLists.txt",
+			"/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindPkgConfig.cmake",
+			"/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-thallium-0.10.1-dcs2paxflgkvd6rlzrk4wjun6c6vsbsy/share/cmake/thallium/thallium-config.cmake",
+			"/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/cmake/HermesConfig.cmake",
+			"CMakeLists.txt",
+			"/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/cmake/boost_filesystem-1.80.0/boost_filesystem-config.cmake",
+			"/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/cmake/Boost-1.80.0/BoostConfig.cmake",
+			"/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.26/Modules/FindBoost.cmake",
+			"/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/cmake/boost_fiber-1.80.0/boost_fiber-config.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 3,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 100,
+				"parent" : 3
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 2,
+				"line" : 153,
+				"parent" : 5
+			},
+			{
+				"command" : 4,
+				"file" : 2,
+				"line" : 83,
+				"parent" : 5
+			},
+			{
+				"command" : 3,
+				"file" : 4,
+				"line" : 66,
+				"parent" : 7
+			},
+			{
+				"file" : 3,
+				"parent" : 8
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 238,
+				"parent" : 9
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 1,
+				"file" : 5,
+				"line" : 11,
+				"parent" : 11
+			},
+			{
+				"file" : 9
+			},
+			{
+				"command" : 3,
+				"file" : 9,
+				"line" : 86,
+				"parent" : 13
+			},
+			{
+				"file" : 8,
+				"parent" : 14
+			},
+			{
+				"command" : 3,
+				"file" : 8,
+				"line" : 63,
+				"parent" : 15
+			},
+			{
+				"file" : 7,
+				"parent" : 16
+			},
+			{
+				"command" : 7,
+				"file" : 7,
+				"line" : 38,
+				"parent" : 17
+			},
+			{
+				"command" : 6,
+				"file" : 6,
+				"line" : 837,
+				"parent" : 18
+			},
+			{
+				"command" : 5,
+				"file" : 6,
+				"line" : 339,
+				"parent" : 19
+			},
+			{
+				"command" : 2,
+				"file" : 6,
+				"line" : 320,
+				"parent" : 20
+			},
+			{
+				"command" : 3,
+				"file" : 8,
+				"line" : 57,
+				"parent" : 15
+			},
+			{
+				"file" : 12,
+				"parent" : 22
+			},
+			{
+				"command" : 3,
+				"file" : 12,
+				"line" : 594,
+				"parent" : 23
+			},
+			{
+				"file" : 11,
+				"parent" : 24
+			},
+			{
+				"command" : 8,
+				"file" : 11,
+				"line" : 262,
+				"parent" : 25
+			},
+			{
+				"command" : 3,
+				"file" : 11,
+				"line" : 141,
+				"parent" : 26
+			},
+			{
+				"file" : 10,
+				"parent" : 27
+			},
+			{
+				"command" : 2,
+				"file" : 10,
+				"line" : 103,
+				"parent" : 28
+			},
+			{
+				"command" : 8,
+				"file" : 11,
+				"line" : 262,
+				"parent" : 25
+			},
+			{
+				"command" : 3,
+				"file" : 11,
+				"line" : 141,
+				"parent" : 30
+			},
+			{
+				"file" : 13,
+				"parent" : 31
+			},
+			{
+				"command" : 2,
+				"file" : 13,
+				"line" : 103,
+				"parent" : 32
+			},
+			{
+				"command" : 9,
+				"file" : 9,
+				"line" : 108,
+				"parent" : 13
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g -O0  -g -std=gnu++17 -fdiagnostics-color=always"
+				},
+				{
+					"backtrace" : 2,
+					"fragment" : "-pthread"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_ATOMIC_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_ATOMIC_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_CONTEXT_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_CONTEXT_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FIBER_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FIBER_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FILESYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_FILESYSTEM_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_REGEX_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_REGEX_NO_LIB"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_DYN_LINK"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "BOOST_SYSTEM_NO_LIB"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 34,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/sqlite-3.39.4-qvvuyhgy3ecf3qxeunximov5bljwisuh/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/test/mocks"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/include/comms/interfaces"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-src/googletest/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-src/googletest"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-src/googlemock/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-src/googlemock"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/cereal-1.3.2-nwu7piasornjzrcswgsxjkygalmb6icm/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/yaml-cpp-0.7.0-ilml5ydu247xw63eeoscufdhwnvbr3nc/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-thallium-0.10.1-dcs2paxflgkvd6rlzrk4wjun6c6vsbsy/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-margo-0.10-yz6ktxq5dukvdog7rckunhldoccfeay3/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/argobots-1.1-55wbecmg5firhbezcdwgnibfy4dss4gh/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/json-c-0.16-3xtkooho3jkc6h4kniu7h52r4iubasic/include"
+				},
+				{
+					"backtrace" : 2,
+					"isSystem" : true,
+					"path" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/json-c-0.16-3xtkooho3jkc6h4kniu7h52r4iubasic/include/json-c"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2,
+					2
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 2,
+			"id" : "gmock::@0f7bb11d64f3678238c7"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gmock_main::@0f7bb11d64f3678238c7"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest::@1ea2dfc0605fe3ab2a3f"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "gtest_main::@1ea2dfc0605fe3ab2a3f"
+		},
+		{
+			"backtrace" : 2,
+			"id" : "hermes_mocks::@623ad58f8ede9f94d57b"
+		}
+	],
+	"id" : "hello_test::@6717f81f36bc35d1332a",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g -O0  -g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/yaml-cpp-0.7.0-ilml5ydu247xw63eeoscufdhwnvbr3nc/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-margo-0.10-yz6ktxq5dukvdog7rckunhldoccfeay3/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/argobots-1.1-55wbecmg5firhbezcdwgnibfy4dss4gh/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/json-c-0.16-3xtkooho3jkc6h4kniu7h52r4iubasic/lib:/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "lib/libgtest_main.so.1.14.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 2,
+				"fragment" : "lib/libgmock_main.so.1.14.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "lib/libgmock.so.1.14.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "lib/libgtest.so.1.14.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "-lpthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lrt",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-ldl",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/yaml-cpp-0.7.0-ilml5ydu247xw63eeoscufdhwnvbr3nc/lib/libyaml-cpp.so.0.7.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lc",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-pthread",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-margo-0.10-yz6ktxq5dukvdog7rckunhldoccfeay3/lib/libmargo.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/usr/lib/x86_64-linux-gnu/libpthread.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib/libmercury_hl.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib/libmercury.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib/libmchecksum.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib/libmercury_util.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mercury-2.1.0-cioky3lb7vjzpdwqnamgiezvwic6tsfc/lib/libna.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/argobots-1.1-55wbecmg5firhbezcdwgnibfy4dss4gh/lib/libabt.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 21,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/json-c-0.16-3xtkooho3jkc6h4kniu7h52r4iubasic/lib/libjson-c.so",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "-lhermes",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_regex.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_system.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_fiber.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_filesystem.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 29,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_atomic.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 33,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/boost-1.80.0-fsjd7e73bkecdkp56o6l4srmimwcvyln/lib/libboost_context.so.1.80.0",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/lib/liblabstor_client.so",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "hello_test",
+	"nameOnDisk" : "hello_test",
+	"paths" : 
+	{
+		"build" : "test/unit/gtest",
+		"source" : "test/unit/gtest"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "test/unit/gtest/gtest.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

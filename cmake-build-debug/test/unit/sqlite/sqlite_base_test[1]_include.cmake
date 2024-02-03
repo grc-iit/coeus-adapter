@@ -1,0 +1,5 @@
+if(EXISTS "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/unit/sqlite/sqlite_base_test[1]_tests.cmake")
+  include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/unit/sqlite/sqlite_base_test[1]_tests.cmake")
+else()
+  add_test(sqlite_base_test_NOT_BUILT sqlite_base_test_NOT_BUILT)
+endif()

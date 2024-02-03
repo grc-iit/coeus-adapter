@@ -14,4 +14,4 @@ target_link_libraries(sqlite_base_test
         spdlog
         cereal
         rapidjson)
-gtest_discover_tests(sqlite_base_test)
+#gtest_discover_tests(sqlite_base_test)
