@@ -40,7 +40,7 @@ class Adios2GrayScott(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'L',
