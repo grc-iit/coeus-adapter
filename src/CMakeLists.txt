@@ -33,15 +33,15 @@ target_link_libraries(hermes_engine LINK_PUBLIC
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
-#install(
-#  TARGETS
-#    hermes_engine
-#  EXPORT
-#    ${COEUS_EXPORTED_TARGETS}
-#  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
-#  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
-#  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
-#)
+install(
+  TARGETS
+    hermes_engine
+  EXPORT
+    ${COEUS_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
+)
 #
 ##-----------------------------------------------------------------------------
 ## Add Target(s) to CMake Install for import into other projects
