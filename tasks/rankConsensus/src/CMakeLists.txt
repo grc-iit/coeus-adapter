@@ -8,15 +8,15 @@ target_link_libraries(rankConsensus ${Hermes_RUNTIME_LIBRARIES})
 #------------------------------------------------------------------------------
 # Install Small Message Task Library
 #------------------------------------------------------------------------------
-#install(
-#        TARGETS
-#        rankConsensus
-#        EXPORT
-#        ${COEUS_EXPORTED_TARGETS}
-#        LIBRARY DESTINATION ${HERMES_INSTALL_LIB_DIR}
-#        ARCHIVE DESTINATION ${HERMES_INSTALL_LIB_DIR}
-#        RUNTIME DESTINATION ${HERMES_INSTALL_BIN_DIR}
-#)
+install(
+        TARGETS
+        rankConsensus
+        EXPORT
+        ${COEUS_EXPORTED_TARGETS}
+        LIBRARY DESTINATION ${HERMES_INSTALL_LIB_DIR}
+        ARCHIVE DESTINATION ${HERMES_INSTALL_LIB_DIR}
+        RUNTIME DESTINATION ${HERMES_INSTALL_BIN_DIR}
+)
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects
