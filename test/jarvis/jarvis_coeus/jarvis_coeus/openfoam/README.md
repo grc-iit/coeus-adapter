@@ -17,7 +17,12 @@ git clone https://github.com/hxu65/adiosfoam.git
 
 ```
 # Run the Openfoam with ADIOS
-
+In adiosfoam/tutorials/finiteArea/surfactantFoam/planeTransport
+create a adios2.xml configuration file
+```
+spack load adios
+./Allrun
+```
 
 # OpenFoam With Hermes
 
@@ -43,7 +48,7 @@ The Jarvis pipeline will store all configuration data needed by Hermes
 and Gray Scott.
 
 ```bash
-jarvis pipeline create lammps
+jarvis pipeline create openfoam 
 ```
 
 ## 3. Save Environment
@@ -55,18 +60,13 @@ jarvis pipeline env build
 
 ## 4. Add pkgs to the Pipeline
 
-Create a Jarvis pipeline with Hermes, the Hermes MPI-IO interceptor,
-and gray-scott
+Create a Jarvis pipeline with Hermes, the Hermes MPI-IO interceptor, and OpenFOAM
 ```bash
 jarvis pipeline append hermes_run --sleep=10 --provider=sockets
-jarvis pipeline append lammps ppn=?? nprocs=?? script_location=/the/location/of/script/folder engine=hermes
+jarvis pipeline append openfoam ppn=4 nprocs=1 script_location=/adiosfoam/tutorials/finiteArea/surfactantFoam/planeTransport/ engine=hermes
 ```
 
-Jarvis also can support LAMMPS without hermes engine(only adios)
-```bash
-jarvis pipeline append hermes_run --sleep=10 --provider=sockets
-jarvis pipeline append lammps ppn=?? nprocs=?? script_location=/the/location/of/script/folder engine=BP5
-```
+
 ## 5. Run the Experiment
 
 Run the experiment
