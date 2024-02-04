@@ -50,7 +50,11 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
   Hermes = h;
 //  mpiComm = mpi;
   Init_();
+   #ifdef debug_mode
+  TRACE_FUNC("hermes engine construction");
+  #else
   TRACE_FUNC();
+  #endif
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
 
