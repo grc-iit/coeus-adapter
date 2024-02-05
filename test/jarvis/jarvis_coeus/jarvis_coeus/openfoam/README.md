@@ -6,8 +6,8 @@ use spack to install openfoam
 spack install openfoam@2206^adios2@2.9.0^mpi
 ```
 
-# Download ADIOSFOAM 
-download the adiosfoam, a modified adiosfoam version is available to support 
+# Download ADIOSFOAM
+download the adiosfoam, a modified adiosfoam version is available to support
 ```
 git clone https://github.com/hxu65/adiosfoam.git
 ```
@@ -48,7 +48,7 @@ The Jarvis pipeline will store all configuration data needed by Hermes
 and Gray Scott.
 
 ```bash
-jarvis pipeline create openfoam 
+jarvis pipeline create openfoam
 ```
 
 ## 3. Save Environment
@@ -65,7 +65,6 @@ Create a Jarvis pipeline with Hermes, the Hermes MPI-IO interceptor, and OpenFOA
 jarvis pipeline append hermes_run --sleep=10 --provider=sockets
 jarvis pipeline append openfoam ppn=4 nprocs=1 script_location=/adiosfoam/tutorials/finiteArea/surfactantFoam/planeTransport/ engine=hermes
 ```
-
 
 ## 5. Run the Experiment
 

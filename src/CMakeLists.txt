@@ -9,6 +9,7 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
+add_definitions(-DMeta_enabled)
 add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
 add_dependencies(hermes_engine coeus_mdm)
@@ -32,15 +33,15 @@ target_link_libraries(hermes_engine LINK_PUBLIC
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
-#install(
-#  TARGETS
-#    hermes_engine
-#  EXPORT
-#    ${COEUS_EXPORTED_TARGETS}
-#  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
-#  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
-#  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
-#)
+install(
+  TARGETS
+    hermes_engine
+  EXPORT
+    ${COEUS_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${COEUS_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${COEUS_INSTALL_BIN_DIR}
+)
 #
 ##-----------------------------------------------------------------------------
 ## Add Target(s) to CMake Install for import into other projects

@@ -90,6 +90,7 @@ class Client : public TaskLibClient {
                             const TaskNode &task_node,
                             const DomainId &domain_id,
                             DbOperation db_op) {
+    std::cout << "MDM: insert fire" << std::endl;
     HRUN_CLIENT->ConstructTask<Mdm_insertTask>(
         task, task_node, domain_id, id_, db_op);
 

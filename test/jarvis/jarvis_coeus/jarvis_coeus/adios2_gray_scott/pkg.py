@@ -40,7 +40,7 @@ class Adios2GrayScott(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'L',
@@ -173,7 +173,7 @@ class Adios2GrayScott(Application):
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
 
-    def configure(self, **kwargs):
+    def _configure(self, **kwargs):
         """
         Converts the Jarvis configuration to application-specific configuration.
         E.g., OrangeFS produces an orangefs.xml file.
@@ -221,7 +221,13 @@ class Adios2GrayScott(Application):
                                 self.adios2_xml_path)
         elif self.config['engine'].lower() == 'hermes':
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    self.adios2_xml_path)
+                                    self.adios2_xml_path,
+                                    replacements={
+                                        'PPN': self.config['ppn'],
+                                        'VARFILE': self.var_json_path,
+                                        'OPFILE': self.operator_json_path,
+                                        'DBFILE': self.config['db_path'],
+                                    })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',

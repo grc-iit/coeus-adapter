@@ -1,0 +1,16 @@
+                                                                                                                                                                                                
+DoPutDeferred variable info:  ranks: 177668 variable Name: atoms sizeof: 8 selectionSize: 8000                                                                                                                                                       
+[Coeus engine] [: @ ] [info]  Put Done, rank 177668
+[Coeus engine] [: @ ] [info]  Finish EndStep, rank 177668
+[Coeus engine] [: @ ] [info]  Finish EndStep and delete Hermes->bkt, rank 177668
+[Coeus engine] [: @ ] [info]  Put Done, rank 177666
+[Coeus engine] [: @ ] [info]  Put Done, rank 177667
+DoPutDeferred variable info:  ranks: 177665 variable Name: atoms sizeof: 8 selectionSize: 8000
+[Coeus engine] [: @ ] [info]  Put Done, rank 177665
+[Coeus engine] [: @ ] [info]  Put Done, rank 177666
+[Coeus engine] [: @ ] [info]  Finish EndStep, rank 177665
+[Coeus engine] [: @ ] [info]  Finish EndStep and delete Hermes->bkt, rank 177665
+[Coeus engine] [: @ ] [info]  Put Done, rank 177667
+DoPutDeferred variable info:  ranks: 177666 variable Name: atoms sizeof: 8 selectionSize: 8000
+[Coeus engine] [: @ ] [info]  Put Done, rank 177666
+DoPutDeferred variable info:  ranks: 177667 variable Name: atoms sizeof: 8 selectionSize: 8000
