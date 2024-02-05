@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 #------------------------------------------------------------------------------
 set(COEUS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 MESSAGE(STATUS "CMAKE_PREFIX_PATH: $ENV{CMAKE_PREFIX_PATH}")
+MESSAGE(STATUS "MODULEPATH: $ENV{MODULEPATH}")
 #------------------------------------------------------------------------------
 # Solving some weirdness with CLion docker toolchain
 #------------------------------------------------------------------------------
@@ -37,6 +38,7 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
 option(COEUS_ENABLE_COVERAGE "Enable coverage calaculation" OFF)
 option(COEUS_ENABLE_DOXYGEN "Enable documentation" OFF)
+option(COEUS_ENABLE_JARVIS "Enable use of jarvis" ON)
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
@@ -76,7 +78,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "-g -O0 ${CMAKE_CXX_FLAGS}")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Building in release mode")
-    set(CMAKE_CXX_FLAGS "-g -O3 ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-g -O0 ${CMAKE_CXX_FLAGS}")
 endif()
 
 #------------------------------------------------------------------------------
@@ -85,7 +87,10 @@ endif()
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
-
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_definitions(HERMES_LOG_VERBOSITY=1)
+endif()
+include_directories(${HermesShm_INCLUDE_DIRS})
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "Found Adios2")
@@ -105,6 +110,7 @@ message(STATUS "Found OpenMP")
 
 find_package(SQLite3 REQUIRED)
 message(STATUS "Found SQLite3")
+include_directories(${SQLite3_INCLUDE_DIRS})
 
 #spdlog
 add_subdirectory(external_libraries/spdlog)
@@ -181,6 +187,15 @@ endif()
 #------------------------------------------------------------------------------
 # Build COEUS
 #------------------------------------------------------------------------------
+add_subdirectory(tasks)
+option(meta_enabled "Enable metadata features" OFF)
+option(debug_mode "Enable debug mode" OFF)
+if(meta_enabled)
+    add_compile_definitions(Meta_enabled)
+endif ()
+if(debug_mode)
+    add_compile_definitions(debug_mode)
+endif ()
 add_subdirectory(src)
 #add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
@@ -188,8 +203,14 @@ add_subdirectory(src)
 # Build tests + benchmarks
 #------------------------------------------------------------------------------
 set(TEST_MAIN ${PROJECT_SOURCE_DIR}/test/unit)
-#set(TEST_MAIN ${CMAKE_SOURCE_DIR}/test/unit)
+set(JARVIS_PIPELINES PATH="${CMAKE_SOURCE_DIR}/test/unit/pipelines")
+
 enable_testing()
+function(jarvis_test test_type test_name)
+    add_test(NAME ${test_name}
+            COMMAND jarvis pipeline run yaml "${JARVIS_PIPELINES}/${test_type}/${test_name}.yaml")
+endfunction()
+
 add_subdirectory(test)
 
 #------------------------------------------------------------------------------

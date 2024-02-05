@@ -78,6 +78,11 @@ class MPI : public IMPI {
   int getNodeSize() const override {
     return nodeComm.Size();
   }
+
+  void free(){
+    globalComm.Free();
+    nodeComm.Free();
+  }
 };
 }
 #endif //COEUS_INCLUDE_COMMS_INTERFACES_MPI_H_

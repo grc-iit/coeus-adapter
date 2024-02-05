@@ -88,9 +88,7 @@ int main() {
     assert(data2 == data2_get);
     assert(data3 == data3_get);
 
-    std::cout << "All data arrays match!" << std::endl;
 
-    std::cout << "Done" << std::endl;
 
     return 0;
 }

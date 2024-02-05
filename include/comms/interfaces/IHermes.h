@@ -19,11 +19,12 @@
 namespace coeus {
 class IHermes {
  public:
-  std::unique_ptr<hermes::Hermes> hermes;
+  hermes::Hermes* hermes;
+  coeus::IBucket* bkt;
   virtual ~IHermes() = default;
 
   virtual bool connect() = 0;
-  virtual std::unique_ptr<IBucket> GetBucket(const std::string &bucket_name) = 0;
+  virtual bool GetBucket(const std::string &bucket_name) = 0;
   virtual bool Demote(const std::string &bucket_name, const std::string &blob_name) = 0;
   virtual bool Prefetch(const std::string &bucket_name, const std::string &blob_name) = 0;
 };

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<adios-config>
+    <io name="TestIO">
+        <engine type="##ENGINE##">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+        </engine>
+    </io>
+</adios-config>
