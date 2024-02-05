@@ -94,7 +94,6 @@ struct GetRankTask : public Task, TaskFlags<TF_LOCAL> {
     task_flags_.SetBits(0);
     domain_id_ = domain_id;
 
-    std::cout << "task constructor" << std::endl;
 
     // Custom params
   }
@@ -108,7 +107,6 @@ struct GetRankTask : public Task, TaskFlags<TF_LOCAL> {
   /** (De)serialize message return */
   template<typename Ar>
   void SerializeEnd(u32 replica, Ar &ar) {
-    std::cout << "end " << rank_ << std::endl;
     ar(rank_);
   }
 

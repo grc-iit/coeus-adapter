@@ -27,7 +27,7 @@ private:
   void Construct(ConstructTask *task, RunContext &rctx) {
     task->Deserialize();
     db = std::make_unique<SQLiteWrapper>(task->db_path_->str());
-    std::cout << "MDM: mdm task constructor: " << task->db_path_->str() << std::endl;
+    //std::cout << "MDM: mdm task constructor: " << task->db_path_->str() << std::endl;
     task->SetModuleComplete();
   }
 
@@ -39,14 +39,14 @@ private:
     DbOperation db_op = task->GetDbOp();
 
     if (db_op.type == OperationType::InsertData) {
-      std::cout << "MDM: Hermes Insert MDM: " << db->getName() << ", name:" << db_op.name <<std::endl;
+
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
-      std::cout << "MDM: Hermes Insert MDM done" << std::endl;
+      s
     } else if (db_op.type == OperationType::UpdateSteps) {
-      std::cout << "MDM: Hermes update MDM: "  << db->getName() << ", step:" << db_op.currentStep <<std::endl;
+     // std::cout << "MDM: Hermes update MDM: "  << db->getName() << ", step:" << db_op.currentStep <<std::endl;
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
-      std::cout << "MDM: Hermes update MDM done " << std::endl;
+      //std::cout << "MDM: Hermes update MDM done " << std::endl;
     }
 
     task->SetModuleComplete();

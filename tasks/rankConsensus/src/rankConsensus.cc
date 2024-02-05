@@ -22,7 +22,6 @@ class Server : public TaskLib {
   std::atomic<uint> rank_count;
   /** Construct rankConsensus */
   void Construct(ConstructTask *task, RunContext &rctx) {
-    std::cout << "rank task constructor" << std::endl;
     rank_count = 0;
     task->SetModuleComplete();
   }
@@ -38,9 +37,8 @@ class Server : public TaskLib {
 
   /** A custom method */
   void GetRank(GetRankTask *task, RunContext &rctx) {
-    std::cout << "in" <<std::endl;
     task->rank_ = rank_count.fetch_add(1);
-    std::cout << "out " << task->rank_ << std::endl;
+    //std::cout << "out " << task->rank_ << std::endl;
     task->SetModuleComplete();
   }
   void MonitorGetRank(u32 mode, GetRankTask *task, RunContext &rctx) {
