@@ -33,6 +33,8 @@ __pycache__/
 /hermes_adapters/test/posix/Testing/Temporary/LastTest.log
 .cache
 
+logs
+
 wrapper/java/out
 
 Testing
