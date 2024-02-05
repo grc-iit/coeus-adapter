@@ -41,8 +41,9 @@ private:
 
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
-      
+
     } else if (db_op.type == OperationType::UpdateSteps) {
+      std::cout << "MDM: Hermes update MDM: "  << db->getName() << ", step:" << db_op.currentStep <<std::endl;
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
 
     }

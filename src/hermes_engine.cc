@@ -27,7 +27,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
@@ -56,10 +55,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
 * Initialize the engine.
 * */
 void HermesEngine::Init_() {
-  
-  // Logger setup
-  // Console log
-
+  // initiate the trace manager
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::trace);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
@@ -81,7 +77,7 @@ void HermesEngine::Init_() {
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
       "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
-      
+
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
   file_sink3->set_level(spdlog::level::trace);
@@ -97,7 +93,6 @@ void HermesEngine::Init_() {
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
-
 
   // hermes setup
   if (!Hermes->connect()) {
@@ -118,7 +113,6 @@ void HermesEngine::Init_() {
 
   comm_size = m_Comm.Size();
   pid_t processId = getpid();
-
 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
@@ -167,7 +161,7 @@ void HermesEngine::Init_() {
   open = true;
 
 
-  
+
 }
 
 /**
@@ -195,7 +189,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   TRACE_FUNC(std::to_string(currentStep));
 
   IncrementCurrentStep();
- 
+
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
 
@@ -303,8 +297,9 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
 
 template<typename T>
 T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
+  TRACE_FUNC();
   return reinterpret_cast<T *>(&u);
-  
+
 
 }
 
@@ -457,4 +452,3 @@ coeus::HermesEngine *EngineCreate(adios2::core::IO &io,//NOLINT
 /** C wrapper to destroy engine */
 void EngineDestroy(coeus::HermesEngine *obj) { delete obj; }
 }
-
