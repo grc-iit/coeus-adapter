@@ -30,8 +30,8 @@
 #include <adios2/cxx11/Variable.h>
 #include "globalVariable.h"
 
-//____________Hua_______________
-// this the variable metadata structure, it can collect the variable metadata information
+
+// This structure is designed to capture metadata information about adios2 variables.
 
 enum class adiosOpType {
     get = 0,
@@ -72,18 +72,6 @@ struct metaInfo {
         stepStart = variable.m_AvailableStepsStart;
         blockID = variable.m_BlockID;
         steps = variable.m_AvailableStepsCount;
-        /*
-        if(operationType == adiosOpType::put){
-            order = PutCount;
-            PutCount++;
-            PutMap[name].push_back(PutCount);
-        }
-        if(operationType == adiosOpType::get){
-            order = GetCount;
-            GetCount++;
-            GetMap[name].push_back(GetCount);
-        }
-         */
         // Check if start is empty or null and assign an empty array if so
         if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
             start = std::vector<size_t>();
@@ -119,18 +107,7 @@ struct metaInfo {
         stepStart = variable.StepStart();
         blockID = variable.BlockID();
         steps = variable.Steps();
-        /*
-        if(operationType == adiosOpType::put){
-            order = PutCount;
-            PutCount++;
-             PutMap[name].push_back(PutCount);
-        }
-        if(operationType == adiosOpType::get){
-            order = GetCount;
-            GetCount++;
-            GetMap[name].push_back(GetCount);
-        }
-    */
+
         // Check if start is empty or null and assign an empty array if so
         if (variable.Start().empty() || variable.Start().data() == nullptr) {
             start = std::vector<size_t>();

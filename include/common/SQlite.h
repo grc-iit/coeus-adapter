@@ -28,7 +28,7 @@ class SQLiteWrapper {
     char* errMsg = 0;
     int rc = sqlite3_exec(db, sql.c_str(), callbackFunc, data, &errMsg);
     if (rc != SQLITE_OK) {
-      //std::cerr << "MDM: SQL error: " << errMsg << std::endl;
+      std::cerr << "MDM: SQL error: " << errMsg << std::endl;
       sqlite3_free(errMsg);
       return false;
     }
@@ -58,7 +58,6 @@ class SQLiteWrapper {
     createAppsTable();
     createBlobLocationsTable();
     createVariableMetadataTable();
-   // std::cout << "MDM: table METADATA: " << getpid() << " "<< dbName << std::endl;
   }
 
   ~SQLiteWrapper() {

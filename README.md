@@ -19,10 +19,9 @@ cmake ../
 make -j8
 ```
 Note:
-To enable metadata and function trace feature, please comment out /src/CMakeLists.txt
+To enable metadata and function trace feature, please add flag during cmake
 ```
-#add_definitions(-DMeta_enabled)
-#add_definitions(-Ddebug_mode)
+cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ```
 ## Test
 

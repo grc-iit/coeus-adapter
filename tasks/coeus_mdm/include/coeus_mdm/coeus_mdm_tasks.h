@@ -44,7 +44,7 @@ struct ConstructTask : public CreateTaskStateTask {
       : CreateTaskStateTask(alloc, task_node, domain_id, state_name,
                             "coeus_mdm", id, queue_info) {
     // Custom params
-   // std::cout << "Constructor path: " << db_path << std::endl;
+
 
 
     HSHM_MAKE_AR(db_path_, alloc, db_path);
@@ -110,7 +110,7 @@ struct Mdm_insertTask : public Task, TaskFlags<TF_LOCAL> {
                  const TaskStateId &state_id,
                  const DbOperation &db_op) : Task(alloc) {
     // Initialize task
-    //std::cout << "MDM: task insertion creation" << std::endl;
+
     task_node_ = task_node;
     lane_hash_ = 0;
     prio_ = TaskPrio::kLowLatency;
@@ -125,7 +125,7 @@ struct Mdm_insertTask : public Task, TaskFlags<TF_LOCAL> {
     ar << db_op;
     std::string db_op_ser = ss.str();
     HSHM_MAKE_AR(db_op_, alloc, db_op_ser);
-   // std::cout << "MDM: task insertion done" << std::endl;
+
 
   }
 
