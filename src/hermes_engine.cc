@@ -27,8 +27,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-//  if (comm.Rank() == 0) std::cout << "NAMING: " << name << " " << this->m_Name << " "
-//  << m_Name << " " << this->m_IO.m_Name << std::endl;
+
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
@@ -48,7 +47,6 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = h;
-//  mpiComm = mpi;
   Init_();
   TRACE_FUNC("hermes engine construction");
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
@@ -158,7 +156,6 @@ void HermesEngine::Init_() {
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    std::cout << "MDM: DB_FILE: " << db_file << std::endl;
     client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
     if (rank % ppn == 0) {
       db->createTables();
@@ -179,12 +176,12 @@ void HermesEngine::Init_() {
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
   open = false;
-//  mpiComm->free();
+
 }
 
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
-  //delete db;
+  delete db;
 
 }
 
