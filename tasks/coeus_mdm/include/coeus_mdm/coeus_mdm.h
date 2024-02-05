@@ -59,7 +59,7 @@ class Client : public TaskLibClient {
     QueueManagerInfo &qm = HRUN_CLIENT->server_config_.queue_manager_;
     std::vector<PriorityInfo> queue_info;
     std::cout << "AsyncCreate path: " << db_path << std::endl;
-//    AsyncCreate path: /mnt/nvme/hxu40/metadata.db
+
     return HRUN_ADMIN->AsyncCreateTaskState<ConstructTask>(
         task_node, domain_id, state_name, id_, queue_info, db_path);
   }
@@ -67,15 +67,14 @@ class Client : public TaskLibClient {
   template<typename ...Args>
   HSHM_ALWAYS_INLINE
   void CreateRoot(Args&& ...args) {
-    std::cout << "MDM args: ";
+   // std::cout << "MDM args: ";
     hrun::coeus_mdm::printArgs(std::forward<Args>(args)...);
 //    MDM args: [non-streamable type] db_operation /mnt/nvme/hxu40/metadata.db
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
-    std::cout << "MDM: create root wait start" << std::endl;
-    std::cout << "TEST" << std::endl;
+  //  std::cout << "MDM: create root wait start" << std::endl;
     task->Wait();
-    std::cout << "MDM: create root wait done" << std::endl;
+  //  std::cout << "MDM: create root wait done" << std::endl;
     Init(task->id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
@@ -92,10 +91,10 @@ class Client : public TaskLibClient {
                             const TaskNode &task_node,
                             const DomainId &domain_id,
                             DbOperation db_op) {
-    std::cout << "MDM: insert fire" << std::endl;
+   // std::cout << "MDM: insert fire" << std::endl;
     HRUN_CLIENT->ConstructTask<Mdm_insertTask>(
         task, task_node, domain_id, id_, db_op);
-    std::cout << "MDM: insert forget" << std::endl;
+   // std::cout << "MDM: insert forget" << std::endl;
 
   }
   HSHM_ALWAYS_INLINE

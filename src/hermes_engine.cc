@@ -50,11 +50,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
   Hermes = h;
 //  mpiComm = mpi;
   Init_();
-   #ifdef debug_mode
   TRACE_FUNC("hermes engine construction");
-  #else
-  TRACE_FUNC();
-  #endif
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 }
 
@@ -116,27 +112,16 @@ void HermesEngine::Init_() {
 
   // add rank with consensus
   rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
-  //std::cout << "hermes engine rank root id: " << rank_consensus.id_ << std::endl;
-
-  //std::cout << "hermes engine mdm root id: " << client.id_ << std::endl;
-
   rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
   const size_t bufferSize = 1024;  // Define the buffer size
   char buffer[bufferSize];         // Create a buffer to hold the hostname
-
   // Get the hostname
-  if (gethostname(buffer, bufferSize) == 0) {
-    std::cout << "THIS: rank " << rank << ", host: " << buffer << std::endl;
-  }
 
-  //MPI setup
-  //rank = getpid();
+
   comm_size = m_Comm.Size();
   pid_t processId = getpid();
 
-  engine_logger->info("rank {}", rank);
-  engine_logger->info("comm size {}", comm_size);
-  engine_logger->info("Process Id {}", processId);
+
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
@@ -182,19 +167,8 @@ void HermesEngine::Init_() {
     throw std::invalid_argument("db_file not found in parameters");
   }
 
-  //     if (rank == 0)
-  //  {std::cout << "Done with root" << std::endl;}
-
   open = true;
 
-  // debug mode
-
-/*
-  char processor_name[MPI_MAX_PROCESSOR_NAME];
-  int name_len;
-  MPI_Get_processor_name(processor_name, &name_len);
-
-  std::cout << "Process " << processId << "rank " << rank << " is running on " << processor_name << std::endl;
 
   */
 }
@@ -203,19 +177,13 @@ void HermesEngine::Init_() {
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
-  #ifdef debug_mode
   TRACE_FUNC("engine close");
-  #else
-  TRACE_FUNC();
-  #endif
   open = false;
 //  mpiComm->free();
 }
 
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
-  std::cout << "Close des" << std::endl;
-
   //delete db;
 
 }
@@ -226,11 +194,9 @@ HermesEngine::~HermesEngine() {
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-  #ifdef debug_mode                                         
+
   TRACE_FUNC(std::to_string(currentStep));
-  #else
-  TRACE_FUNC();
-  #endif
+
   IncrementCurrentStep();
  
   if (m_OpenMode == adios2::Mode::Read) {
@@ -250,29 +216,17 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 }
 
 void HermesEngine::IncrementCurrentStep() {
-  #ifdef debug_mode                                         
   TRACE_FUNC(std::to_string(currentStep));
-  #else
-  TRACE_FUNC();
-  #endif
   currentStep++;
 }
 
 size_t HermesEngine::CurrentStep() const {
-  #ifdef debug_mode                                         
   TRACE_FUNC(std::to_string(currentStep));
-  #else
-  TRACE_FUNC();
-  #endif
   return currentStep;
 }
 
 void HermesEngine::EndStep() {
-  #ifdef debug_mode                                         
   TRACE_FUNC(std::to_string(currentStep));
-  #else
-  TRACE_FUNC();
-  #endif
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
@@ -290,11 +244,7 @@ void HermesEngine::EndStep() {
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
-  #ifdef debug_mode                                         
   TRACE_FUNC(Var.m_Name);
-  #else
-  TRACE_FUNC();
-  #endif
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
@@ -363,11 +313,7 @@ T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
 
 template<typename T>
 void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
-  #ifdef debug_mode                                         
   TRACE_FUNC("MinMax operation");
-  #else
-  TRACE_FUNC();
-  #endif
   T *min = SelectUnion<T>(MinMax.MinUnion);
   T *max = SelectUnion<T>(MinMax.MaxUnion);
   T *value = static_cast<T *>(element);
@@ -380,14 +326,9 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-  #ifdef debug_mode                                         
   TRACE_FUNC(rank);
-  #else
-  TRACE_FUNC();
-  #endif
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
-
     DefineVariable(variableMetadata);
   }
 
@@ -421,12 +362,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
 template<typename T>
 void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
                               T *values) {
-  #ifdef debug_mode                                         
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  #else
-  TRACE_FUNC();
-  #endif
-    
   auto blob = Hermes->bkt->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
@@ -445,11 +381,7 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-  #ifdef debug_mode                                         
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  #else
-  TRACE_FUNC();
-  #endif
   auto blob = Hermes->bkt->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
@@ -468,11 +400,7 @@ void HermesEngine::DoGetDeferred_(
 template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
-  #ifdef debug_mode                                         
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  #else
-  TRACE_FUNC();
-  #endif
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
@@ -496,19 +424,13 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-  
-  #ifdef debug_mode                                         
+
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  #else
-  TRACE_FUNC();
-  #endif
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
-
 #endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
