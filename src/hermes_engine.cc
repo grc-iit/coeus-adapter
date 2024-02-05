@@ -58,7 +58,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
 * Initialize the engine.
 * */
 void HermesEngine::Init_() {
-  // initiate the trace manager
+  
   // Logger setup
   // Console log
 
@@ -170,7 +170,7 @@ void HermesEngine::Init_() {
   open = true;
 
 
-  */
+  
 }
 
 /**
