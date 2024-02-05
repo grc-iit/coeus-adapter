@@ -1954,3 +1954,93 @@ events:
       
       
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/FindMPI.cmake:10 (include)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config-common.cmake:72 (find_dependency)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config.cmake:29 (include)"
+      - "CMakeLists.txt:98 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Ynw20t"
+      binary: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Ynw20t"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/catch2-3.0.1-yrauk4p7npwsamowazocf5i44m2hzv5x/lib/cmake/Catch2"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Ynw20t'
+        
+        Run Build Command(s): /home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/ninja/linux/x64/ninja -v cmTC_c354a
+        [1/2] /usr/bin/gcc  -isystem /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/include -fdiagnostics-color=always -o CMakeFiles/cmTC_c354a.dir/test_mpi.c.o -c /home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-Ynw20t/test_mpi.c
+        [2/2] : && /usr/bin/gcc  -rdynamic  -Wl,-rpath -Wl,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib -L/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hwloc-2.8.0-tr6ncz42z6n6oh4jy2bgj73rx3dbzt5x/lib CMakeFiles/cmTC_c354a.dir/test_mpi.c.o -o cmTC_c354a  -Wl,-rpath,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib  /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib/libmpi.so && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/FindMPI.cmake:10 (include)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config-common.cmake:72 (find_dependency)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config.cmake:29 (include)"
+      - "CMakeLists.txt:98 (find_package)"
+    description: "The MPI test test_mpi for CXX in mode normal"
+    directories:
+      source: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-vvHBdr"
+      binary: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-vvHBdr"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "-g -O0 "
+      CMAKE_MODULE_PATH: "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/catch2-3.0.1-yrauk4p7npwsamowazocf5i44m2hzv5x/lib/cmake/Catch2"
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-vvHBdr'
+        
+        Run Build Command(s): /home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/ninja/linux/x64/ninja -v cmTC_213c7
+        [1/2] /usr/bin/g++  -isystem /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/include -g -O0   -fdiagnostics-color=always -o CMakeFiles/cmTC_213c7.dir/test_mpi.cpp.o -c /home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-vvHBdr/test_mpi.cpp
+        [2/2] : && /usr/bin/g++ -g -O0 -rdynamic  -Wl,-rpath -Wl,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib -L/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hwloc-2.8.0-tr6ncz42z6n6oh4jy2bgj73rx3dbzt5x/lib CMakeFiles/cmTC_213c7.dir/test_mpi.cpp.o -o cmTC_213c7  -Wl,-rpath,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib  /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib/libmpicxx.so  /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib/libmpi.so && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/FindMPI.cmake:1672 (_MPI_try_staged_settings)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/FindMPI.cmake:10 (include)"
+      - "/home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/cmake/linux/x64/share/cmake-3.27/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config-common.cmake:72 (find_dependency)"
+      - "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2/adios2-config.cmake:29 (include)"
+      - "CMakeLists.txt:98 (find_package)"
+    description: "The MPI test test_mpi for CXX in mode MPICXX"
+    directories:
+      source: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-QQWPYt"
+      binary: "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-QQWPYt"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "-g -O0 "
+      CMAKE_MODULE_PATH: "/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/adios2-2.8.3-7rark635o4stmbd5d5as2q5l54m7q2nv/lib/cmake/adios2;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/catch2-3.0.1-yrauk4p7npwsamowazocf5i44m2hzv5x/lib/cmake/Catch2"
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_MPICXX"
+      cached: true
+      stdout: |
+        Change Dir: '/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-QQWPYt'
+        
+        Run Build Command(s): /home/lukemartinlogan/.local/programs/clion-2021.3.2/bin/ninja/linux/x64/ninja -v cmTC_da91a
+        [1/2] /usr/bin/g++  -isystem /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/include -g -O0   -fdiagnostics-color=always -o CMakeFiles/cmTC_da91a.dir/test_mpi.cpp.o -c /home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-QQWPYt/test_mpi.cpp
+        [2/2] : && /usr/bin/g++ -g -O0 -rdynamic  -Wl,-rpath -Wl,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib -L/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hwloc-2.8.0-tr6ncz42z6n6oh4jy2bgj73rx3dbzt5x/lib CMakeFiles/cmTC_da91a.dir/test_mpi.cpp.o -o cmTC_da91a  -Wl,-rpath,/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib  /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib/libmpicxx.so  /home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mpich-3.3.2-ckeytik2v4h4opvpxupznbyjsdig7ybq/lib/libmpi.so && :
+        
+      exitCode: 0
+...

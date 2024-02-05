@@ -48,6 +48,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/external_libraries/cereal/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/external_libraries/rapidjson/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-build/cmake_install.cmake")
+  include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/tasks/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/src/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/cmake_install.cmake")
 

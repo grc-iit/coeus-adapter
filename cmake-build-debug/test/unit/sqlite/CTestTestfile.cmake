@@ -4,4 +4,3 @@
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.
-include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/unit/sqlite/sqlite_base_test[1]_include.cmake")

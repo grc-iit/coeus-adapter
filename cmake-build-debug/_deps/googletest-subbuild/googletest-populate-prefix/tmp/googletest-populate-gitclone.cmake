@@ -25,7 +25,7 @@ set(error_code 1)
 set(number_of_tries 0)
 while(error_code AND number_of_tries LESS 3)
   execute_process(
-    COMMAND "/usr/bin/git" 
+    COMMAND "/usr/bin/git"
             clone --no-checkout --config "advice.detachedHead=false" "https://github.com/google/googletest.git" "googletest-src"
     WORKING_DIRECTORY "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps"
     RESULT_VARIABLE error_code
@@ -40,7 +40,7 @@ if(error_code)
 endif()
 
 execute_process(
-  COMMAND "/usr/bin/git" 
+  COMMAND "/usr/bin/git"
           checkout "f8d7d77c06936315286eb55f8de22cd23c188571" --
   WORKING_DIRECTORY "/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-src"
   RESULT_VARIABLE error_code

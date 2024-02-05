@@ -53,8 +53,8 @@ CMAKE_BUILD_TYPE:STRING=Debug
 //Enable colored diagnostics throughout.
 CMAKE_COLOR_DIAGNOSTICS:BOOL=ON
 
-//CXX compiler
-CMAKE_CXX_COMPILER:STRING=/usr/bin/g++
+//No help, variable specified on the command line.
+CMAKE_CXX_COMPILER:UNINITIALIZED=g++
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -79,8 +79,8 @@ CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 //Flags used by the CXX compiler during RELWITHDEBINFO builds.
 CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
-//C compiler
-CMAKE_C_COMPILER:STRING=/usr/bin/gcc
+//No help, variable specified on the command line.
+CMAKE_C_COMPILER:UNINITIALIZED=gcc
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -359,7 +359,7 @@ GIT_EXECUTABLE:FILEPATH=/usr/bin/git
 GTEST_HAS_ABSL:BOOL=OFF
 
 //The directory containing a CMake configuration file for HermesShm.
-HermesShm_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/cmake
+HermesShm_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-64pq2plpacbsukjimxq4htgrbmqjozck/cmake
 
 //Path to a file.
 HermesShm_INCLUDE_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/include
@@ -368,7 +368,7 @@ HermesShm_INCLUDE_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/op
 HermesShm_LIBRARY:FILEPATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so
 
 //The directory containing a CMake configuration file for Hermes.
-Hermes_DIR:PATH=Hermes_DIR-NOTFOUND
+Hermes_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/scspkg/packages/hermes_run/cmake
 
 //Path to a file.
 Hermes_INCLUDE_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/include
@@ -511,6 +511,9 @@ boost_system_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spa
 //The directory containing a CMake configuration file for cereal.
 cereal_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/cereal-1.3.2-nwu7piasornjzrcswgsxjkygalmb6icm/lib/cmake/cereal
 
+//Dependencies for the target
+coeus_mdm_LIB_DEPENDS:STATIC=general;-lrt;general;-ldl;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so;general;yaml-cpp;general;-ldl;general;-lrt;general;-lc;general;-pthread;general;hermes;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/lib/liblabstor_client.so;general;hrun_runtime;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/sqlite-3.39.4-qvvuyhgy3ecf3qxeunximov5bljwisuh/lib/libsqlite3.so;
+
 //Value Computed by CMake
 gmock_BINARY_DIR:STATIC=/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/_deps/googletest-build/googlemock
 
@@ -558,7 +561,7 @@ gtest_force_shared_crt:BOOL=ON
 gtest_hide_internal_symbols:BOOL=OFF
 
 //Dependencies for the target
-hermes_engine_LIB_DEPENDS:STATIC=general;-lrt;general;-ldl;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so;general;yaml-cpp;general;-ldl;general;-lrt;general;-lc;general;-pthread;general;hermes;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/lib/liblabstor_client.so;
+hermes_engine_LIB_DEPENDS:STATIC=general;-lrt;general;-ldl;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so;general;yaml-cpp;general;-ldl;general;-lrt;general;-lc;general;-pthread;general;hermes;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/lib/liblabstor_client.so;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/sqlite-3.39.4-qvvuyhgy3ecf3qxeunximov5bljwisuh/lib/libsqlite3.so;general;coeus_mdm;
 
 //Path to a library.
 pkgcfg_lib_margo_abt:FILEPATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/argobots-1.1-55wbecmg5firhbezcdwgnibfy4dss4gh/lib/libabt.so
@@ -586,6 +589,9 @@ pkgcfg_lib_margo_na:FILEPATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/
 
 //Path to a library.
 pkgcfg_lib_margo_pthread:FILEPATH=/usr/lib/x86_64-linux-gnu/libpthread.so
+
+//Dependencies for the target
+rankConsensus_LIB_DEPENDS:STATIC=general;-lrt;general;-ldl;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes_shm-master-lagagphskmh4kdu75me4di6w7bgs3oe7/lib/libhermes_shm_data_structures.so;general;yaml-cpp;general;-ldl;general;-lrt;general;-lc;general;-pthread;general;hermes;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;general;/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/hermes-dev-1.1-kmd7tpnxdge6wxhny4sxq7ivgtrzm3wu/lib/liblabstor_client.so;general;hrun_runtime;general;Boost::regex;general;Boost::system;general;Boost::filesystem;general;Boost::fiber;
 
 //The directory containing a CMake configuration file for thallium.
 thallium_DIR:PATH=/home/lukemartinlogan/Documents/Projects/PhD/spack/opt/spack/linux-linuxmint20-zen2/gcc-9.4.0/mochi-thallium-0.10.1-dcs2paxflgkvd6rlzrk4wjun6c6vsbsy/share/cmake/thallium
@@ -734,7 +740,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=24
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

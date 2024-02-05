@@ -46,7 +46,6 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/unit/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/real_apps/cmake_install.cmake")
-  include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/benchmark/cmake_install.cmake")
   include("/home/lukemartinlogan/Documents/Projects/PhD/coeus-adapter/cmake-build-debug/test/mocks/cmake_install.cmake")
 
 endif()
