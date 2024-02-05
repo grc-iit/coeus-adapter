@@ -6,6 +6,8 @@ of the ADIOS plugins interface.
 ## Install
 
 To compile
+
+
 ```
 git clone https://github.com/lukemartinlogan/coeus-adapter.git
 spack load hermes@master
@@ -16,7 +18,12 @@ cd build
 cmake ../
 make -j8
 ```
-
+Note:
+To enable metadata and function trace feature, please comment out /src/CMakeLists.txt
+```
+#add_definitions(-DMeta_enabled)
+#add_definitions(-Ddebug_mode)
+```
 ## Test
 
 To test the functionality of the adapter, run:
