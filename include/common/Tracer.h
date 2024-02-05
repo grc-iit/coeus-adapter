@@ -31,8 +31,11 @@ std::string demangle(const char* name) {
 }
 #endif
 
+#ifdef debug_mode
 #define TRACE_FUNC(...) TraceLogger traceLogger(__func__, ##__VA_ARGS__)
-
+#else
+#define TRACE_FUNC(...)
+#endif
 
 template<typename T>
 class EasySingleton {
