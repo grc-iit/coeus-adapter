@@ -188,6 +188,14 @@ endif()
 # Build COEUS
 #------------------------------------------------------------------------------
 add_subdirectory(tasks)
+option(meta_enabled "Enable metadata features" OFF)
+option(debug_mode "Enable debug mode" OFF)
+if(meta_enabled)
+    add_compile_definitions(Meta_enabled)
+endif ()
+if(debug_mode)
+    add_compile_definitions(debug_mode)
+endif ()
 add_subdirectory(src)
 #add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
