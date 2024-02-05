@@ -54,7 +54,6 @@ int main() {
   reader.Get(var, data.data());
   reader.Close();
 
-  std::cout << "Done" << std::endl;
 
   return 0;
 }

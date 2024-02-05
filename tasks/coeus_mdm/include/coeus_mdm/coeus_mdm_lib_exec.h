@@ -1,6 +1,10 @@
 #ifndef HRUN_COEUS_MDM_LIB_EXEC_H_
 #define HRUN_COEUS_MDM_LIB_EXEC_H_
 
+void MonitorConstruct(u32 mode, ConstructTask *task, RunContext &rctx) {}
+void MonitorDestruct(u32 mode, DestructTask *task, RunContext &rctx) {}
+void MonitorMdm_insert(u32 mode, Mdm_insertTask *task, RunContext &rctx) {}
+void MonitorMdm_insert(u32 mode, DestructTask *task, RunContext &rctx) {}
 /** Execute a task */
 void Run(u32 method, Task *task, RunContext &rctx) override {
   switch (method) {
@@ -18,19 +22,36 @@ void Run(u32 method, Task *task, RunContext &rctx) override {
     }
   }
 }
+/** Execute a task */
+void Monitor(u32 mode, Task *task, RunContext &rctx) override {
+  switch (task->method_) {
+    case Method::kConstruct: {
+      MonitorConstruct(mode, reinterpret_cast<ConstructTask *>(task), rctx);
+      break;
+    }
+    case Method::kDestruct: {
+      MonitorDestruct(mode, reinterpret_cast<DestructTask *>(task), rctx);
+      break;
+    }
+    case Method::kMdm_insert: {
+      MonitorMdm_insert(mode, reinterpret_cast<Mdm_insertTask *>(task), rctx);
+      break;
+    }
+  }
+}
 /** Delete a task */
 void Del(u32 method, Task *task) override {
   switch (method) {
     case Method::kConstruct: {
-      HRUN_CLIENT->DelTask(reinterpret_cast<ConstructTask *>(task));
+      HRUN_CLIENT->DelTask<ConstructTask>(reinterpret_cast<ConstructTask *>(task));
       break;
     }
     case Method::kDestruct: {
-      HRUN_CLIENT->DelTask(reinterpret_cast<DestructTask *>(task));
+      HRUN_CLIENT->DelTask<DestructTask>(reinterpret_cast<DestructTask *>(task));
       break;
     }
     case Method::kMdm_insert: {
-      HRUN_CLIENT->DelTask(reinterpret_cast<Mdm_insertTask *>(task));
+      HRUN_CLIENT->DelTask<Mdm_insertTask>(reinterpret_cast<Mdm_insertTask *>(task));
       break;
     }
   }

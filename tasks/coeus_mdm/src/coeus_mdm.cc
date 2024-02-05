@@ -25,8 +25,8 @@ private:
   Server() = default;
 
   void Construct(ConstructTask *task, RunContext &rctx) {
+    task->Deserialize();
     db = std::make_unique<SQLiteWrapper>(task->db_path_->str());
-
     task->SetModuleComplete();
   }
 
@@ -38,10 +38,13 @@ private:
     DbOperation db_op = task->GetDbOp();
 
     if (db_op.type == OperationType::InsertData) {
+
       db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
       db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
+      
     } else if (db_op.type == OperationType::UpdateSteps) {
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
+
     }
 
     task->SetModuleComplete();

@@ -25,7 +25,7 @@
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include "ContainerManager.h"
-
+#include "rankConsensus/rankConsensus.h"
 #include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -34,11 +34,12 @@
 #include <common/ErrorCodes.h>
 #include "common/DbOperation.h"
 #include "coeus_mdm/coeus_mdm.h"
-
+#include "common/VariableMetadata.h"
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
 #include <comms/MPI.h>
-
+#include "common/globalVariable.h"
+#include "common/Tracer.h"
 
 namespace coeus {
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -48,9 +49,11 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   SQLiteWrapper* db;
   std::string db_file;
   hrun::coeus_mdm::Client client;
+  hrun::rankConsensus::Client rank_consensus;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
   int ppn;
+  GlobalVariable globalData;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
                const std::string &name,
@@ -102,7 +105,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int total_steps = -1;
 
 //  std::shared_ptr<coeus::MPI> mpiComm;
-  int rank;
+  uint rank;
   int comm_size;
 
   YAMLMap variableMap;
@@ -111,7 +114,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::vector<std::string> listOfVars;
 
   std::shared_ptr<spdlog::logger> engine_logger;
-
+  std::shared_ptr<spdlog::logger> meta_logger_put;
+  std::shared_ptr<spdlog::logger> meta_logger_get;
   void IncrementCurrentStep();
 
   template<typename T>
@@ -137,7 +141,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Place data in Hermes */
   template<typename T>
   void DoPutSync_(const adios2::core::Variable<T> &variable,
-                  const T *values) {engine_logger->info("rank {}", rank);}
+                  const T *values);
 
     /** Place data in Hermes asynchronously */
   template<typename T>
@@ -147,7 +151,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   /** Get data from Hermes (sync) */
   template<typename T>
   void DoGetSync_(const adios2::core::Variable<T> &variable,
-                  T *values) {engine_logger->info("rank {}", rank);}
+                  T *values);
 
   /** Get data from Hermes (async) */
   template<typename T>

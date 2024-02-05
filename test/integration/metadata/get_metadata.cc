@@ -83,7 +83,5 @@ int main() {
 
     reader.Close();
 
-    std::cout << "All data arrays match!" << std::endl;
-    std::cout << "Done" << std::endl;
     return 0;
 }

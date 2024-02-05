@@ -12,12 +12,14 @@ set(HERMES_ENGINE_SRCS
 add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
 add_dependencies(hermes_engine coeus_mdm)
+add_dependencies(hermes_engine rankConsensus)
 target_include_directories(hermes_engine PUBLIC
         ../include
         ${Hermes_INCLUDE_DIR}
         ${ADIOS2_INCLUDE_DIR}
         ${SQLite3_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/tasks/coeus_mdm/include
+        ${CMAKE_SOURCE_DIR}/tasks/rankConsensus/include
         )
 target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
