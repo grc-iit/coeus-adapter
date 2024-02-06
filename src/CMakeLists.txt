@@ -9,7 +9,6 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-add_definitions(-DMeta_enabled)
 add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
 add_dependencies(hermes_engine coeus_mdm)
