@@ -28,7 +28,6 @@ class SQLiteWrapper {
     char* errMsg = 0;
     int rc = sqlite3_exec(db, sql.c_str(), callbackFunc, data, &errMsg);
     if (rc != SQLITE_OK) {
-      std::cerr << "MDM: SQL error: " << errMsg << std::endl;
       sqlite3_free(errMsg);
       return false;
     }
@@ -55,13 +54,9 @@ class SQLiteWrapper {
   }
 
   void createTables(){
-    std::cout << "MDM: table creation: " << getpid() << " "<< dbName << std::endl;
     createAppsTable();
-    std::cout << "MDM: table APPS: " << getpid() << " " << dbName << std::endl;
     createBlobLocationsTable();
-    std::cout << "MDM: table LOCATION: " << getpid() << " "<< dbName << std::endl;
     createVariableMetadataTable();
-    std::cout << "MDM: table METADATA: " << getpid() << " "<< dbName << std::endl;
   }
 
   ~SQLiteWrapper() {
@@ -87,7 +82,6 @@ class SQLiteWrapper {
   }
 
   void UpdateTotalSteps(const std::string& appName, int step) {
-    std::cout << "MDM: UpdateTotalSteps" << std::endl;
     sqlite3_stmt* stmt;
     const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO Apps (appName, TotalSteps) VALUES (?, ?);";
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
@@ -138,7 +132,6 @@ class SQLiteWrapper {
   }
 
   void InsertBlobLocation(int step, int mpi_rank, const std::string& varName, const BlobInfo& blobInfo) {
-    std::cout << "MDM: InsertBlobLocation" << std::endl;
     sqlite3_stmt* stmt;
     const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO BlobLocations (step, mpi_rank, name, bucket_name, blob_name) VALUES (?, ?, ?, ?, ?);";
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
@@ -194,14 +187,6 @@ class SQLiteWrapper {
     auto start = VariableMetadata::serializeVector(metadata.start);
     auto count = VariableMetadata::serializeVector(metadata.count);
 
-//    if(mpi_rank == 0) {
-//      std::cout << "Inserting metadata for " << metadata.name
-//      << " with shape " << shape
-//      << " with start " << start
-//      << " with count " << count
-//      << std::endl;
-//    }
-
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
@@ -213,7 +198,6 @@ class SQLiteWrapper {
     sqlite3_bind_text(stmt, 8, metadata.dataType.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    std::cout << "MDM: InsertVariableMetadata done" << std::endl;
   }
 
   VariableMetadata GetVariableMetadata(int step, int mpi_rank, const std::string& name) {
