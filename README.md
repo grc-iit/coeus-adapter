@@ -24,8 +24,14 @@ mkdir build
 cd build
 cmake ../ \
 -DCMAKE_INSTALL_PREFIX=$(scspkg pkg root adios2) \
--DADIOS2_USE_HDF5=ON \
--DADIOS2_USE_MPI=ON
+-DCMAKE_CXX_COMPILER=g++ \
+-DCMAKE_C_COMPILER=gcc \
+-DADIOS2_USE_SST=OFF \
+-DBUILD_DOCS=ON \
+-DBUILD_TESTING=ON \
+-DADIOS2_BUILD_EXAMPLES=ON \
+-DADIOS2_USE_MPI=ON \
+-DADIOS2_USE_Derived_Variable=ON
 make -j32 install
 ```
 
