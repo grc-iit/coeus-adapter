@@ -28,7 +28,6 @@ class SQLiteWrapper {
     char* errMsg = 0;
     int rc = sqlite3_exec(db, sql.c_str(), callbackFunc, data, &errMsg);
     if (rc != SQLITE_OK) {
-      std::cerr << "MDM: SQL error: " << errMsg << std::endl;
       sqlite3_free(errMsg);
       return false;
     }
@@ -193,14 +192,6 @@ class SQLiteWrapper {
     auto shape = VariableMetadata::serializeVector(metadata.shape);
     auto start = VariableMetadata::serializeVector(metadata.start);
     auto count = VariableMetadata::serializeVector(metadata.count);
-
-//    if(mpi_rank == 0) {
-//      std::cout << "Inserting metadata for " << metadata.name
-//      << " with shape " << shape
-//      << " with start " << start
-//      << " with count " << count
-//      << std::endl;
-//    }
 
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);

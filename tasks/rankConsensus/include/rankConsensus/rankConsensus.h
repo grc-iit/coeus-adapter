@@ -47,7 +47,6 @@ class Client : public TaskLibClient {
         AsyncCreateRoot(std::forward<Args>(args)...);
 
     task->Wait();
-    //std::cout << "root wait: " << task->id_ << std::endl;
     Init(task->id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
@@ -74,7 +73,6 @@ class Client : public TaskLibClient {
 
     GetRankTask *task = get_task->get();
     uint choosen_rank = task->rank_;
-    //std::cout << "root rank " << choosen_rank << std::endl;
     HRUN_CLIENT->DelTask(get_task);
     return choosen_rank;
   }
