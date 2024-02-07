@@ -10,7 +10,7 @@ of the ADIOS plugins interface.
 
 ### ADIOS2
 
-We have found some cases where spcak failed to install ADIOS2. Below are
+We have found some cases where spack failed to install ADIOS2. Below are
 instructions on installing ADIOS2 from source. SCSPKG is a system for 
 organizing manually-built software and producing modulefiles for them.
 Instructions to install are [here](https://grc.iit.edu/docs/hermes/building-hermes#optional-create-a-hermes-scspkg-repo).
