@@ -88,6 +88,7 @@ endif()
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Hermes
+message("LD_LIBRARY_PATH: $ENV{LD_LIBRARY_PATH}")
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
