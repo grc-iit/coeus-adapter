@@ -5,6 +5,7 @@ of the ADIOS plugins interface.
 
 ## Dependencies
 
+* A C++17 compiler, GCC 9.4 is the minimum tested version.
 * [Hermes](https://github.com/HDFGroup/hermes): a multi-tiered I/O buffering platform.
 * [ADIOS2](https://github.com/ornladios/ADIOS2): an I/O library
 

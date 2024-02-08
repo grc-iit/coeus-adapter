@@ -11,13 +11,13 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include <gtest/gtest.h>
-#include <common/JSONParser.h>
-
-TEST(JSONParser, NoFile) {
-  EXPECT_THROW(JSONParser parser(""), ErrorException);
-}
-
-TEST(JSONParser, ProperFile) {
-  JSONParser parser("../test/unitJSONParser/samples/correct.json");
-  ASSERT_EQ(parser.isValid(), true);
-}
+//#include <common/JSONParser.h>
+//
+//TEST(JSONParser, NoFile) {
+//  EXPECT_THROW(JSONParser parser(""), ErrorException);
+//}
+//
+//TEST(JSONParser, ProperFile) {
+//  JSONParser parser("../test/unitJSONParser/samples/correct.json");
+//  ASSERT_EQ(parser.isValid(), true);
+//}

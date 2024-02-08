@@ -25,8 +25,6 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
         spdlog
-        cereal
-        rapidjson
         ${SQLite3_LIBRARIES}
         coeus_mdm)
 #-----------------------------------------------------------------------------

@@ -117,8 +117,8 @@ include_directories(${SQLite3_INCLUDE_DIRS})
 
 #spdlog
 add_subdirectory(external_libraries/spdlog)
-add_subdirectory(external_libraries/cereal)
-add_subdirectory(external_libraries/rapidjson)
+# add_subdirectory(external_libraries/cereal)
+# add_subdirectory(external_libraries/rapidjson)
 
 #Gtest
 include(FetchContent)

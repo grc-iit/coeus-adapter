@@ -11,7 +11,5 @@ target_link_libraries(sqlite_base_test
         ${SQLite3_LIBRARIES}
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
-        spdlog
-        cereal
-        rapidjson)
+        spdlog)
 #gtest_discover_tests(sqlite_base_test)

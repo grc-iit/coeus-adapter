@@ -6,9 +6,7 @@ target_include_directories(metadata_hermes PRIVATE
 target_link_libraries(metadata_hermes PRIVATE
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
-        spdlog
-        cereal
-        rapidjson)
+        spdlog)
 
 #add_executable(metadata_empress metadata_empress.cpp)
 #target_include_directories(metadata_empress PRIVATE
