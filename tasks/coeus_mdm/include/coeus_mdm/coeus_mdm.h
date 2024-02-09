@@ -17,6 +17,28 @@
 
 namespace hrun::coeus_mdm {
 
+template<typename T, typename = void>
+struct is_streamable : std::false_type {};
+
+template<typename T>
+struct is_streamable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>> : std::true_type {};
+
+template <typename T>
+typename std::enable_if<is_streamable<T>::value>::type printArg(const T& arg) {
+  std::cout << arg << " ";
+}
+
+template <typename T>
+typename std::enable_if<!is_streamable<T>::value>::type printArg(const T& arg) {
+  std::cout << "[non-streamable type] ";
+}
+
+template <typename... Args>
+void printArgs(Args&&... args) {
+  (printArg(args), ...);
+  std::cout << std::endl;
+}
+
 /** Create coeus_mdm requests */
 class Client : public TaskLibClient {
 
@@ -35,11 +57,9 @@ class Client : public TaskLibClient {
                                       const std::string &db_path) {
     id_ = TaskStateId::GetNull();
     QueueManagerInfo &qm = HRUN_CLIENT->server_config_.queue_manager_;
-    std::vector<PriorityInfo> queue_info = {
-        {1, 1, qm.queue_depth_, 0},
-        {1, 1, qm.queue_depth_, QUEUE_LONG_RUNNING},
-        {qm.max_lanes_, qm.max_lanes_, qm.queue_depth_, QUEUE_LOW_LATENCY}
-    };
+    std::vector<PriorityInfo> queue_info;
+    std::cout << "AsyncCreate path: " << db_path << std::endl;
+
     return HRUN_ADMIN->AsyncCreateTaskState<ConstructTask>(
         task_node, domain_id, state_name, id_, queue_info, db_path);
   }
@@ -47,11 +67,14 @@ class Client : public TaskLibClient {
   template<typename ...Args>
   HSHM_ALWAYS_INLINE
   void CreateRoot(Args&& ...args) {
+
+    hrun::coeus_mdm::printArgs(std::forward<Args>(args)...);
     LPointer<ConstructTask> task =
         AsyncCreateRoot(std::forward<Args>(args)...);
+
     task->Wait();
-    id_ = task->id_;
-    queue_id_ = QueueId(id_);
+
+    Init(task->id_, HRUN_ADMIN->queue_id_);
     HRUN_CLIENT->DelTask(task);
   }
 
@@ -69,6 +92,7 @@ class Client : public TaskLibClient {
                             DbOperation db_op) {
     HRUN_CLIENT->ConstructTask<Mdm_insertTask>(
         task, task_node, domain_id, id_, db_op);
+
   }
   HSHM_ALWAYS_INLINE
   void Mdm_insertRoot(const DomainId &domain_id, DbOperation db_op) {

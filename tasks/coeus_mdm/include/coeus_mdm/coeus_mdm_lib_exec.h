@@ -1,6 +1,10 @@
 #ifndef HRUN_COEUS_MDM_LIB_EXEC_H_
 #define HRUN_COEUS_MDM_LIB_EXEC_H_
 
+void MonitorConstruct(u32 mode, ConstructTask *task, RunContext &rctx) {}
+void MonitorDestruct(u32 mode, DestructTask *task, RunContext &rctx) {}
+void MonitorMdm_insert(u32 mode, Mdm_insertTask *task, RunContext &rctx) {}
+void MonitorMdm_insert(u32 mode, DestructTask *task, RunContext &rctx) {}
 /** Execute a task */
 void Run(u32 method, Task *task, RunContext &rctx) override {
   switch (method) {

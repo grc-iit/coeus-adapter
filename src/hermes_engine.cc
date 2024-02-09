@@ -20,13 +20,21 @@ namespace coeus {
  * initialization of the engine. The PluginEngineInterface will store
  * the "io" variable in the "m_IO" variable.
  * */
-HermesEngine::HermesEngine(adios2::core::IO &io, // NOLINT
-                           const std::string &name, const adios2::Mode mode,
+
+
+
+HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
+                           const std::string &name,
+                           const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_shared<coeus::Hermes>();
+  //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-//  m_Comm.Barrier();
+  TRACE_FUNC("Init HermesEngine");
+  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+
+
 }
 
 /**
@@ -39,16 +47,18 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = h;
   Init_();
+  TRACE_FUNC("hermes engine construction");
+  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+
 }
 
 /**
  * Initialize the engine.
  * */
 void HermesEngine::Init_() {
-  // Logger setup
-  // Console log
+  // initiate the trace manager
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  console_sink->set_level(spdlog::level::info);
+  console_sink->set_level(spdlog::level::trace);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
   // File log
@@ -57,18 +67,58 @@ void HermesEngine::Init_() {
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
-  // Merge Log
+
+  // File log for metadata collection
+  #ifdef Meta_enabled
+  auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+      "logs/metadataCollect_get.txt", true);
+  file_sink2->set_level(spdlog::level::trace);
+  file_sink2->set_pattern("%v");
+  spdlog::logger logger2("metadata_logger_get", {file_sink2});
+  logger2.set_level(spdlog::level::trace);
+  meta_logger_get = std::make_shared<spdlog::logger>(logger2);
+  meta_logger_get->info(
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+
+  auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+      "logs/metadataCollect_put.txt", true);
+  file_sink3->set_level(spdlog::level::trace);
+  file_sink3->set_pattern("%v");
+  spdlog::logger logger3("metadata_logger_put", {file_sink3});
+  logger3.set_level(spdlog::level::trace);
+  meta_logger_put = std::make_shared<spdlog::logger>(logger3);
+  meta_logger_put->info(
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+#endif
+
+  //Merge Log
+
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-//  engine_logger->info("rank {}", rank);
 
-  // MPI setup
-  rank = m_Comm.Rank();
+  // hermes setup
+  if (!Hermes->connect()) {
+    engine_logger->warn("Could not connect to Hermes", rank);
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
+  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+
+
+
+  // add rank with consensus
+  rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
+  rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
+  const size_t bufferSize = 1024;  // Define the buffer size
+  char buffer[bufferSize];         // Create a buffer to hold the hostname
+  // Get the hostname
+
+
   comm_size = m_Comm.Size();
+  pid_t processId = getpid();
 
-  // Identifier, should be the file, but we dont get it
+  //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
   // Configuration Setup through the Adios xml configuration
@@ -116,40 +166,38 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
-  // Hermes setup
-  if (!Hermes->connect()) {
-    engine_logger->warn("Could not connect to Hermes", rank);
-    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-  }
-  if (rank == 0)
-    std::cout << "Connected to Hermes" << std::endl;
+
+  //Hermes setup
 
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
+    client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
     if (rank % ppn == 0) {
       db->createTables();
-      std::cout << "DB_FILE: " << db_file << std::endl;
     }
-    TRANSPARENT_HERMES();
-    client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
-    if (rank == 0)
-      std::cout << "Done with root" << std::endl;
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
+
   open = true;
+
+
+
 }
 
 /**
  * Close the Engine.
  * */
 void HermesEngine::DoClose(const int transportIndex) {
+  TRACE_FUNC("engine close");
   open = false;
 }
 
 HermesEngine::~HermesEngine() {
+  TRACE_FUNC();
   delete db;
+
 }
 
 /**
@@ -180,7 +228,9 @@ bool HermesEngine::Demote(int step){
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
+  TRACE_FUNC(std::to_string(currentStep));
   IncrementCurrentStep();
+
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
       total_steps = db->GetTotalSteps(uid);
@@ -194,6 +244,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
       "step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
   Hermes->GetBucket(bucket_name);
 
+// derived part
   if(m_OpenMode == adios2::Mode::Read){
       for(int i = 0; i < num_layers; i++) {
           Promote(currentStep + lookahead + i);
@@ -204,14 +255,13 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
           Demote(currentStep - lookahead - i);
       }
   }
-
+// end derived part
   return adios2::StepStatus::OK;
 }
 
-void HermesEngine::IncrementCurrentStep() { currentStep++; }
 
-size_t HermesEngine::CurrentStep() const { return currentStep; }
 
+//derived part
 void HermesEngine::ComputeDerivedVariables() {
   auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
   auto const &m_Variables = m_IO.GetVariables();
@@ -287,15 +337,32 @@ void HermesEngine::ComputeDerivedVariables() {
   }
 }
 
+
+
+void HermesEngine::IncrementCurrentStep() {
+  TRACE_FUNC(std::to_string(currentStep));
+  currentStep++;
+}
+
+size_t HermesEngine::CurrentStep() const {
+  TRACE_FUNC(std::to_string(currentStep));
+  return currentStep;
+}
+
 void HermesEngine::EndStep() {
-  ComputeDerivedVariables();
+  TRACE_FUNC(std::to_string(currentStep));
+  //derived
+    ComputeDerivedVariables();
+    //end derived
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
   }
+
   delete Hermes->bkt;
+
 }
 
 /**
@@ -304,6 +371,7 @@ void HermesEngine::EndStep() {
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
+  TRACE_FUNC(Var.m_Name);
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
@@ -377,11 +445,15 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
 
 template <typename T>
 T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
+  TRACE_FUNC();
   return reinterpret_cast<T *>(&u);
+
+
 }
 
 template <typename T>
 void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
+  TRACE_FUNC("MinMax operation");
   T *min = SelectUnion<T>(MinMax.MinUnion);
   T *max = SelectUnion<T>(MinMax.MaxUnion);
   T *value = static_cast<T *>(element);
@@ -394,11 +466,13 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
+  TRACE_FUNC(rank);
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
-
     DefineVariable(variableMetadata);
   }
+
+
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
@@ -423,20 +497,90 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
 #undef DEFINE_VARIABLE
 }
 
-template <typename T>
-void HermesEngine::DoGetDeferred_(const adios2::core::Variable<T> &variable,
-                                  T *values) {
+
+template<typename T>
+void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
+                              T *values) {
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = Hermes->bkt->Get(variable.m_Name);
+  std::string name = variable.m_Name;
+#ifdef Meta_enabled
+  // add spdlog method to extract the variable metadata
+  metaInfo metaInfo(variable, adiosOpType::get);
+  meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
+  globalData.insertGet(name);
+  meta_logger_get->info("order: {}", globalData.GetMapToString());
+#endif
+  //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
+
+
 }
 
-template <typename T>
-void HermesEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
-                                  const T *values) {
-  Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
+template<typename T>
+void HermesEngine::DoGetDeferred_(
+    const adios2::core::Variable<T> &variable, T *values) {
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
+  auto blob = Hermes->bkt->Get(variable.m_Name);
+  std::string name = variable.m_Name;
+#ifdef Meta_enabled
+  // add spdlog method to extract the variable metadata
+  metaInfo metaInfo(variable, adiosOpType::get);
+  meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
+  globalData.insertGet(name);
+  meta_logger_get->info("order: {}", globalData.GetMapToString());
+#endif
+  //finish metadata extraction
+  memcpy(values, blob.data(), blob.size());
 
-  DbOperation db_op = generateMetadata(variable);
+
+}
+
+template<typename T>
+void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
+                              const T *values) {
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
+  std::string name = variable.m_Name;
+  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+
+#ifdef Meta_enabled
+  metaInfo metaInfo(variable, adiosOpType::put);
+  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+
+#endif
+  // database
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                      variable.m_Count, variable.IsConstantDims(),
+                      adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, name);
+  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+
+
+
+}
+
+
+template<typename T>
+void HermesEngine::DoPutDeferred_(
+    const adios2::core::Variable<T> &variable, const T *values) {
+
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
+  std::string name = variable.m_Name;
+  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+#ifdef Meta_enabled
+  metaInfo metaInfo(variable, adiosOpType::put);
+  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+#endif
+  // database
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                      variable.m_Count, variable.IsConstantDims(),
+                      adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, name);
+  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+
+
 }
 
 template<typename T>

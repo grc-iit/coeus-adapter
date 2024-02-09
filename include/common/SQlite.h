@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sqlite3.h>
 #include <string>
+#include <unistd.h>
 #include <vector>
 #include <utility>
 #include <type_traits>
@@ -23,13 +24,14 @@ class SQLiteWrapper {
   bool deleteOnDestruction;
 
   bool execute(const std::string& sql, void* data = nullptr, int (*callbackFunc)(void*, int, char**, char**) = nullptr) {
+
     char* errMsg = 0;
     int rc = sqlite3_exec(db, sql.c_str(), callbackFunc, data, &errMsg);
     if (rc != SQLITE_OK) {
-      std::cerr << "SQL error: " << errMsg << std::endl;
       sqlite3_free(errMsg);
       return false;
     }
+
     return true;
   }
 
@@ -38,6 +40,9 @@ class SQLiteWrapper {
   }
 
  public:
+  std::string getName(){
+    return dbName;
+  }
   SQLiteWrapper(const std::string& dbName, bool deleteOnDestruction = false)
       : dbName(dbName), deleteOnDestruction(deleteOnDestruction) {
     if (sqlite3_open(dbName.c_str(), &db)) {
@@ -85,6 +90,7 @@ class SQLiteWrapper {
     sqlite3_bind_int(stmt, 2, step);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
+
   }
 
   int GetTotalSteps(const std::string& appName) {
@@ -137,6 +143,7 @@ class SQLiteWrapper {
     sqlite3_bind_text(stmt, 5, blobInfo.blob_name.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
+
   }
 
   BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
@@ -202,6 +209,7 @@ class SQLiteWrapper {
   }
 
   void InsertVariableMetadata(int step, int mpi_rank, const VariableMetadata& metadata) {
+
     sqlite3_stmt* stmt;
     const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, derived, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
     auto shape = VariableMetadata::serializeVector(metadata.shape);

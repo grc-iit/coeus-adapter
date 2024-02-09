@@ -234,12 +234,16 @@ class Adios2GrayScott(Application):
         if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
             replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path, replacements)
-
-        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
-            replacements.append(('ENGINE', 'plugin'))
-            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    self.adios2_xml_path, replacements)
+                                self.adios2_xml_path)
+        elif self.config['engine'].lower() == 'hermes':
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                    self.adios2_xml_path,
+                                    replacements={
+                                        'PPN': self.config['ppn'],
+                                        'VARFILE': self.var_json_path,
+                                        'OPFILE': self.operator_json_path,
+                                        'DBFILE': self.config['db_path'],
+                                    })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',
