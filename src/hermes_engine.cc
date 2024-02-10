@@ -550,7 +550,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 #endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(),
+                      variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
@@ -574,7 +574,7 @@ void HermesEngine::DoPutDeferred_(
 #endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(),
+                      variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));

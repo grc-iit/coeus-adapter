@@ -30,15 +30,13 @@ private:
     task->SetModuleComplete();
   }
 
-  void MonitorConstruct(u32 mode, ConstructTask *task, RunContext &rctx) {
-  }
+
 
   void Destruct(DestructTask *task, RunContext &rctx) {
     task->SetModuleComplete();
   }
 
-  void MonitorDestruct(u32 mode, DestructTask *task, RunContext &rctx) {
-  }
+
 
   void Mdm_insert(Mdm_insertTask *task, RunContext &rctx) {
     DbOperation db_op = task->GetDbOp();
@@ -68,8 +66,7 @@ private:
     task->SetModuleComplete();
   }
 
-  void MonitorMdm_insert(u32 mode, Mdm_insertTask *task, RunContext &rctx) {
-  }
+
 
  public:
 #include "coeus_mdm/coeus_mdm_lib_exec.h"

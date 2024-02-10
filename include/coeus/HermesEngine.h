@@ -60,7 +60,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   hrun::rankConsensus::Client rank_consensus;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
-  int ppn;
   GlobalVariable globalData;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
