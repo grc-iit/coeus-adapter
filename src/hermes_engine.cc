@@ -76,7 +76,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
@@ -86,7 +86,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name");
 #endif
 
   //Merge Log
@@ -407,6 +407,11 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
 #ifdef Meta_enabled
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    std::string process_name(processor_name);
+    std::cout << process_name << std::endl;
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
@@ -431,7 +436,11 @@ void HermesEngine::DoPutDeferred_(
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 #ifdef Meta_enabled
-
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    std::string process_name(processor_name);
+    std::cout << process_name << std::endl;
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
