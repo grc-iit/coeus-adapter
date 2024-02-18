@@ -54,17 +54,21 @@ struct metaInfo {
     size_t stepStart;
     size_t blockID;
     //int order;
-
+    std::string blob_name;
+    std::string bucket_name;
 
 
 
     template<typename T>
-    metaInfo(const adios2::core::Variable<T> &variable, adiosOpType operationType) {
+    metaInfo(const adios2::core::Variable<T> &variable, adiosOpType operationType, std::string blob,
+             std::string bucket ) {
         name = variable.m_Name;
         operation = operationType;
+        blob_name = blob;
+        bucket_name = bucket
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
-        time = std::to_string(localTime->tm_hour) + ": " + std::to_string(localTime->tm_min)+ ": " + std::to_string(localTime->tm_sec);
+        time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
         selectionSize = variable.SelectionSize();
         sizeofVariable = variable.m_ElementSize;
         shape = variable.Shape();
@@ -93,13 +97,16 @@ struct metaInfo {
     }
 
     template<typename T>
-    explicit metaInfo(const adios2::Variable<T> variable, adiosOpType operationType) {
+    explicit metaInfo(const adios2::Variable<T> variable, adiosOpType operationType,  std::string blob,
+                      std::string bucket ) {
         name = variable.Name();
         shape = variable.Shape();
         operation = operationType;
+        blob_name = blob;
+        bucket_name = bucket
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
-        time = std::to_string(localTime->tm_hour) + ": " + std::to_string(localTime->tm_min)+ ": " + std::to_string(localTime->tm_sec);
+        time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
         selectionSize = variable.SelectionSize();
         sizeofVariable= variable.Sizeof();
         shape = variable.Shape();
@@ -138,7 +145,7 @@ struct metaInfo {
     template <class Archive>
     void serialize(Archive &ar) {
         ar(operation, time, name, sizeofVariable, shapeID, shape, start, count, constantShape, dataType,
-        steps, stepStart, blockID);
+        steps, stepStart, blockID, blob_name, bucket_name);
     }
 };
 
@@ -160,7 +167,8 @@ std::ostream& operator<<(std::ostream &out, const metaInfo &data) {
     out << "," << (data.constantShape ? "True" : "False");
     out << "," << data.time << "," << data.selectionSize <<
         "," << data.sizeofVariable << "," << data.shapeID << "," << data.steps <<
-                                    "," << data.stepStart << "," << data.blockID ;
+                                    "," << data.stepStart << "," << data.blockID << "," <<
+                                    data.blob_name << "," << data.bucket_name;
     return out;
 }
 
