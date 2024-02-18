@@ -65,7 +65,7 @@ struct metaInfo {
         name = variable.m_Name;
         operation = operationType;
         blob_name = blob;
-        bucket_name = bucket
+        bucket_name = bucket;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
         time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
@@ -103,7 +103,7 @@ struct metaInfo {
         shape = variable.Shape();
         operation = operationType;
         blob_name = blob;
-        bucket_name = bucket
+        bucket_name = bucket;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
         time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
