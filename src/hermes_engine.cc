@@ -402,12 +402,12 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
-  std::cout << "DoPutSync_" << Hermes->bkt->name << "bucket" << name;
+
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, blobInfo.blob_name, blobInfo.bucket_name);
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
 #endif
@@ -427,12 +427,12 @@ void HermesEngine::DoPutDeferred_(
                       variable.m_Count, variable.IsConstantDims(),
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
-    std::cout << "DoPutDeferred_" << Hermes->bkt->name << "bucket" << name;
+
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 #ifdef Meta_enabled
 
-    metaInfo metaInfo(variable, adiosOpType::put, blobInfo.blob_name, blobInfo.bucket_name);
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
 
 #endif
