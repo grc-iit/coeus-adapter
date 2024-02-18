@@ -200,7 +200,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   }
   std::string bucket_name = "step_" + std::to_string(currentStep)
       + "_rank" + std::to_string(rank);
-
+  std::cout <<"beginestep:: " <<  bucket_name << std::endl;
   Hermes->GetBucket(bucket_name);
 
   return adios2::StepStatus::OK;
