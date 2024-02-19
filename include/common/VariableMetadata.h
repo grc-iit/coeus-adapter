@@ -102,7 +102,7 @@ struct metaInfo {
                       std::string bucket, std::string processor_name ) {
         name = variable.Name();
         shape = variable.Shape();
-        processor processor_name;
+        processor = processor_name;
         operation = operationType;
         blob_name = blob;
         bucket_name = bucket;
