@@ -76,8 +76,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
-      "ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
@@ -87,8 +86,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
-      "ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
 #endif
 
   //Merge Log
@@ -414,8 +412,8 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
     std::string processor(processor_name);
     int pid = static_cast<int>(getpid());
     std::cout << pid << std::endl;
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor);
-  meta_logger_put->info("Data: {}", metaInfoToString(metaInfo));
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor, pid);
+  meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 
 #endif
 
@@ -444,8 +442,8 @@ void HermesEngine::DoPutDeferred_(
     std::string processor(processor_name);
    int pid = static_cast<int>(getpid());
     std::cout << pid << std::endl;
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor);
-  meta_logger_put->info("Data: {}", metaInfoToString(metaInfo));
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor, pid);
+  meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 
 #endif
 
