@@ -76,7 +76,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
       "ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
@@ -87,7 +87,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, "
       "ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
 #endif
 
