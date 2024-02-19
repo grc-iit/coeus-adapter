@@ -76,7 +76,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name");
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
@@ -86,7 +86,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name");
+      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor");
 #endif
 
   //Merge Log
@@ -200,7 +200,6 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   }
   std::string bucket_name = "step_" + std::to_string(currentStep)
       + "_rank" + std::to_string(rank);
-  std::cout <<"beginestep:: " <<  bucket_name << std::endl;
   Hermes->GetBucket(bucket_name);
 
   return adios2::StepStatus::OK;
@@ -410,10 +409,11 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
-    std::string process_name(processor_name);
-    std::cout << process_name << std::endl;
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
-  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+    std::string processor(processor_name);
+    int pid = static_cast<int>(getpid());
+    std::cout << pid << std::endl;
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor);
+  meta_logger_put->info("Data: {}", metaInfoToString(metaInfo));
 
 #endif
 
@@ -439,10 +439,11 @@ void HermesEngine::DoPutDeferred_(
     char processor_name[MPI_MAX_PROCESSOR_NAME];
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
-    std::string process_name(processor_name);
-    std::cout << process_name << std::endl;
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name);
-  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+    std::string processor(processor_name);
+   int pid = static_cast<int>(getpid());
+    std::cout << pid << std::endl;
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, processor);
+  meta_logger_put->info("Data: {}", metaInfoToString(metaInfo));
 
 #endif
 
