@@ -118,9 +118,11 @@ int main(int argc, char **argv)
         io_main.SetParameter("AppendAfterSteps",
                              std::to_string(restart_step / settings.plotgap));
     }
-
+    std::cout << "flag1.1" << std::endl;
     Writer writer_main(settings, sim, io_main, derived);
+    std::cout << "flag1.2" << std::endl;
     writer_main.open(settings.output, (restart_step > 0));
+    std::cout << "flag1.3" << std::endl;
     auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     std::cout << "flag2" << std::endl;
     if (rank == 0)
