@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     }
 
     Settings settings = Settings::from_json(argv[1]);
-    bool derived = true;
+    bool derived = atoi(argv[2]);
 
     GrayScott sim(settings, comm);
     sim.init();

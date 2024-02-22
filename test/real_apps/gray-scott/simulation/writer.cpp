@@ -58,6 +58,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 : settings(settings), io(io)
 {
     io.DefineAttribute<double>("F", settings.F);
+
     io.DefineAttribute<double>("k", settings.k);
     io.DefineAttribute<double>("dt", settings.dt);
     io.DefineAttribute<double>("Du", settings.Du);
