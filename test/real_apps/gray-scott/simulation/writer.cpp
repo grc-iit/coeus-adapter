@@ -108,14 +108,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
   */
 
 
-    if(derived == 1) {
-        auto PDFU = io.DefineDerivedVariable("U2",
 
-                                             adios2::DerivedVarType::StoreData);
-        auto PDFV = io.DefineDerivedVariable("U1",
-
-                                             adios2::DerivedVarType::StoreData);
-    }
     std::cout << "flag2.7" << std::endl;
     if (settings.adios_memory_selection)
     {
