@@ -96,7 +96,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
                                   {sim.size_z, sim.size_y, sim.size_x});
     std::cout << "flag2.6" << std::endl;
 
- for record
+
     if(derived == 1) {
         auto PDFU = io.DefineDerivedVariable("pdfU",
                                              "x:U \n"
