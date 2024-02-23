@@ -112,7 +112,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
         auto PDFU = io.DefineDerivedVariable("U2",
                                              "V2");
         auto PDFV = io.DefineDerivedVariable("U1",
-                                             "V1",
+                                             "V1"
                                              );
     }
     std::cout << "flag2.7" << std::endl;
