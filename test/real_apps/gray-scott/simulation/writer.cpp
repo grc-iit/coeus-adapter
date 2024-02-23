@@ -97,12 +97,10 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
     std::cout << "flag2.6" << std::endl;
     if(derived == 1) {
         auto PDFU = io.DefineDerivedVariable("derive/pdfU",
-                                             //"x:U \n"
-                                             "curl(10, x)",
+                                             "x:U \n curl(10, x)",
                                              adios2::DerivedVarType::StoreData);
         auto PDFV = io.DefineDerivedVariable("derive/pdfV",
-                                            // "x:V \n"
-                                             "curl(10, x)",
+                                             "x:V \n curl(10, x)",
                                              adios2::DerivedVarType::StoreData);
     }
     std::cout << "flag2.7" << std::endl;
