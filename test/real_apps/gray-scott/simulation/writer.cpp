@@ -106,7 +106,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
                                              "x:V \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
-
+    }
 
 
 
