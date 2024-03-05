@@ -583,6 +583,19 @@ void HermesEngine::DoPutDeferred_(
 
 }
 
+    template <typename T>
+    void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
+                                  T *values) {
+        std::string name = variable.m_Name;
+        int total_count = 1;
+        for (auto count : variable.m_Count) {
+            total_count *= count;
+        }
+        Hermes->bkt->Put(name, total_count * sizeof(T), values);
+
+    }
+
+
 template<typename T>
 DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,

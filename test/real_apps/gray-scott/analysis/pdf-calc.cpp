@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
     // the variable dimensions do not change across timesteps
     if (firstStep){
       shape = var_u_pdf.Shape();
-        std::cout << "flag3.45" << std::endl;
+        std::cout << "flag3.46" << std::endl;
       // Calculate global and local sizes of U and V
       u_global_size = shape[0] * shape[1] * shape[2];
       u_local_size = u_global_size / comm_size;
