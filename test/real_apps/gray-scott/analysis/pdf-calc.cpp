@@ -211,12 +211,13 @@ int main(int argc, char *argv[])
   adios2::Variable<double> var_u_bins, var_v_bins;
   adios2::Variable<int> var_step_out;
   adios2::Variable<double> var_u_out, var_v_out;
-
+  std::cout << "flag3.1" << std::endl;
   // adios2 io object and engine init
   adios2::ADIOS ad("adios2.xml", comm);
 
   // IO objects for reading and writing
   adios2::IO reader_io = ad.DeclareIO("SimulationOutput");
+  std::cout << "flag3.2" << std::endl;
   if (!rank)
   {
     std::cout << "PDF analysis reads from Simulation using engine type:  "
@@ -226,7 +227,7 @@ int main(int argc, char *argv[])
   // Engines for reading and writing
   adios2::Engine reader =
       reader_io.Open(in_filename, adios2::Mode::Read, comm);
-
+    std::cout << "flag3.3" << std::endl;
   // read data step-by-step
     auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     int stepAnalysis = 0;
@@ -248,7 +249,7 @@ int main(int argc, char *argv[])
 
     // int stepSimOut = reader.CurrentStep();
     int stepSimOut = stepAnalysis;
-
+      std::cout << "flag3.4" << std::endl;
     // Inquire variable
     var_u_in = reader_io.InquireVariable<double>("U");
     var_v_in = reader_io.InquireVariable<double>("V");
@@ -260,13 +261,13 @@ int main(int argc, char *argv[])
     // the variable dimensions do not change across timesteps
     if (firstStep){
       shape = var_u_in.Shape();
-
+        std::cout << "flag3.5" << std::endl;
       // Calculate global and local sizes of U and V
       u_global_size = shape[0] * shape[1] * shape[2];
       u_local_size = u_global_size / comm_size;
       v_global_size = shape[0] * shape[1] * shape[2];
       v_local_size = v_global_size / comm_size;
-
+        std::cout << "flag3.6" << std::endl;
       // 1D decomposition
       count1 = shape[0] / comm_size;
       start1 = count1 * rank;
