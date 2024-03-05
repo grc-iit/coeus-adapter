@@ -640,20 +640,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 
 }
 
-template <typename T>
-void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
-                              T *values) {
-  std::string name = variable.m_Name;
-  int total_count = 1;
-  for (auto count : variable.m_Count) {
-    total_count *= count;
-  }
 
-  Hermes->bkt->Put(name, total_count * sizeof(T), values);
-
-  DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
-  client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-}
 
 } // namespace coeus
 /**
