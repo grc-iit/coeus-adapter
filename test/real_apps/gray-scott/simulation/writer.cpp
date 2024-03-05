@@ -77,13 +77,13 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
     double spacing[3] = {0.1, 0.1, 0.1};
     io.DefineAttribute<double>("Fides_Spacing", &spacing[0], 3);
     io.DefineAttribute<std::string>("Fides_Dimension_Variable", "U");
-    std::cout << "flag2.2" << std::endl;
+
     std::vector<std::string> varList = {"U", "V"};
     std::vector<std::string> assocList = {"points", "points"};
     io.DefineAttribute<std::string>("Fides_Variable_List", varList.data(), varList.size());
-    std::cout << "flag2.3" << std::endl;
+
     io.DefineAttribute<std::string>("Fides_Variable_Associations", assocList.data(), assocList.size());
-    std::cout << "flag2.4" << std::endl;
+
 
     var_u =
         io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
