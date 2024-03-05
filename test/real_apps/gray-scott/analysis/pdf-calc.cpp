@@ -252,10 +252,15 @@ int main(int argc, char *argv[])
       std::cout << "flag3.4" << std::endl;
     // Inquire variable
     var_u_in = reader_io.InquireVariable<double>("U");
+      std::cout << "flag3.41" << std::endl;
     var_v_in = reader_io.InquireVariable<double>("V");
+      std::cout << "flag3.42" << std::endl;
     var_u_pdf = reader_io.InquireVariable<double>("derive/pdfU");
+      std::cout << "flag3.43" << std::endl;
     var_v_pdf = reader_io.InquireVariable<double>("derive/pdfV");
+      std::cout << "flag3.44" << std::endl;
     var_step_in = reader_io.InquireVariable<int>("step");
+      std::cout << "flag3.45" << std::endl;
 
     // Set the selection at the first step only, assuming that
     // the variable dimensions do not change across timesteps
