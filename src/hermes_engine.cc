@@ -542,7 +542,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-
+    std::cout << "DoPutsync" << std::endl;
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
@@ -567,6 +567,7 @@ void HermesEngine::DoPutDeferred_(
 
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
+  std::cout << "DoPutDeferred_" << std::endl;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
@@ -591,6 +592,7 @@ void HermesEngine::DoPutDeferred_(
         for (auto count : variable.m_Count) {
             total_count *= count;
         }
+        std::cout << "DoPutDerived" << std::endl;
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
     }
