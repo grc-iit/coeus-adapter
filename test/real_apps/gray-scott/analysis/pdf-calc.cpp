@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 
   // adios2 variable declarations
   adios2::Variable<double> var_u_in, var_v_in;
-  adios2::Variable<int> var_step_in;
+    adios2::Variable<int> var_step_in;
   adios2::Variable<double> var_u_pdf, var_v_pdf;
   adios2::Variable<double> var_u_bins, var_v_bins;
   adios2::Variable<int> var_step_out;
@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
       std::cout << "flag3.4" << std::endl;
     // Inquire variable
     var_u_in = reader_io.InquireVariable<double>("U");
+      std::cout << var_u_in.Name() << std::endl;
     var_v_in = reader_io.InquireVariable<double>("V");
     var_u_pdf = reader_io.InquireVariable<double>("derive/pdfU");
     var_v_pdf = reader_io.InquireVariable<double>("derive/pdfV");
@@ -261,7 +262,7 @@ int main(int argc, char *argv[])
     // Set the selection at the first step only, assuming that
     // the variable dimensions do not change across timesteps
     if (firstStep){
-      shape = var_u_pdf.Shape();
+      shape = var_u_in.Shape();
         std::cout << "flag3.46" << std::endl;
       // Calculate global and local sizes of U and V
       u_global_size = shape[0] * shape[1] * shape[2];

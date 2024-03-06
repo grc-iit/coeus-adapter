@@ -531,8 +531,8 @@ void HermesEngine::DoGetDeferred_(
   meta_logger_get->info("order: {}", globalData.GetMapToString());
 #endif*/
   //finish metadata extraction
-    Hermes->bkt->Put(variable.m_Name, variable.SelectionSize() * sizeof(T), values);
-  memcpy(values, blob.data(), blob.size());
+    auto blob = Hermes->bkt->Get(variable.m_Name);
+    memcpy(values, blob.data(), blob.size());
 
 
 }
