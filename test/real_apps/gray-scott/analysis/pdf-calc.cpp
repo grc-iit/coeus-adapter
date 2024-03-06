@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
   // Engines for reading and writing
   adios2::Engine reader =
       reader_io.Open(in_filename, adios2::Mode::Read, comm);
+    std::cout << "Engine Type: " << reader_io.Type() << std::endl;
     std::cout << "flag3.3" << std::endl;
   // read data step-by-step
     auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
