@@ -178,7 +178,9 @@ int main(int argc, char *argv[])
     }
     derived = atoi(argv[5]);
   }
-
+   std::cout << "*****derived" << derived << std::endl;
+    std::cout << "*****derived" << in_filename << std::endl;
+    std::cout << rank << std::endl;
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink->set_level(spdlog::level::debug);
     console_sink->set_pattern("%v");
