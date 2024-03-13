@@ -288,6 +288,7 @@ int main(int argc, char *argv[])
         reader.Get<double>(var_v_in, v);
     }
     if(derived == 1) {
+        std::cout << "_________FLAG 4.1__________________" << std::endl;
       reader.Get<double>(var_u_pdf, pdf_u);
       reader.Get<double>(var_v_pdf, pdf_v);
     }
