@@ -290,7 +290,9 @@ int main(int argc, char *argv[])
     if(derived == 1) {
         std::cout << "_________FLAG 4.1__________________" << std::endl;
       reader.Get<double>(var_u_pdf, pdf_u);
+        std::cout << "_________FLAG 4.2__________________" << std::endl;
       reader.Get<double>(var_v_pdf, pdf_v);
+        std::cout << "_________FLAG 4.3__________________" << std::endl;
     }
 
     // End read step (let resources about step go)
