@@ -23,8 +23,7 @@ protected:
     adios2::Variable<double> var_u;
     adios2::Variable<double> var_v;
     adios2::Variable<int> var_step;
-    auto PDFU;
-    auto PDFV;
+
 };
 
 #endif
