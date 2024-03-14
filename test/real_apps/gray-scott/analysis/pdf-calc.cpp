@@ -288,11 +288,10 @@ int main(int argc, char *argv[])
         reader.Get<double>(var_v_in, v);
     }
     if(derived == 1) {
-        std::cout << "_________FLAG 4.1__________________" << std::endl;
-      reader.Get<double>(var_u_pdf, pdf_u);
-        std::cout << "_________FLAG 4.2__________________" << std::endl;
-      reader.Get<double>(var_v_pdf, pdf_v);
-        std::cout << "_________FLAG 4.3__________________" << std::endl;
+        /* disable this since we do not have derivedvariable put and get API
+        reader.Get<double>(var_u_pdf, pdf_u);
+        reader.Get<double>(var_v_pdf, pdf_v);
+       */
     }
 
     // End read step (let resources about step go)
