@@ -136,14 +136,7 @@ void Writer::open(const std::string &fname, bool append)
 void Writer::write(int step, const GrayScott &sim, int rank)
 {
 
-        auto PDFU = io.DefineDerivedVariable("derive/pdfU",
-                                             "x:U \n"
-                                             "magnitude(x)",
-                                             adios2::DerivedVarType::StoreData);
-        auto PDFV = io.DefineDerivedVariable("derive/pdfV",
-                                             "x:V \n"
-                                             "magnitude(x)",
-                                             adios2::DerivedVarType::StoreData);
+
 
     if (!sim.size_x || !sim.size_y || !sim.size_z)
     {
@@ -163,9 +156,7 @@ void Writer::write(int step, const GrayScott &sim, int rank)
 
       writer.BeginStep();
       writer.Put<int>(var_step, &step);
-        writer.Put<double>(var_u, u.data());
-        writer.Put<double>(PDFU, u.data());
-      writer.Put<double>(PDFV, v.data());
+      writer.Put<double>(var_u, u.data());
       writer.Put<double>(var_v, v.data());
       writer.EndStep();
     }
@@ -209,8 +200,6 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
         writer.Put<double>(var_v, v.data());
-        writer.Put<double>(PDFU, u.data());
-        writer.Put<double>(PDFV, v.data());
         writer.EndStep();
     }
 }
