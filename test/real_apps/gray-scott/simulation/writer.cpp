@@ -98,11 +98,11 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 
 
     if(derived == 1) {
-        auto PDFU = io.DefineDerivedVariable("derive/pdfU",
+        PDFU = io.DefineDerivedVariable("derive/pdfU",
                                              "x:U \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
-        auto PDFV = io.DefineDerivedVariable("derive/pdfV",
+        PDFV = io.DefineDerivedVariable("derive/pdfV",
                                              "x:V \n"
                                              "magnitude(x)",
                                              adios2::DerivedVarType::StoreData);
