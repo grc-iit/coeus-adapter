@@ -153,7 +153,9 @@ void Writer::write(int step, const GrayScott &sim, int rank)
 
       writer.BeginStep();
       writer.Put<int>(var_step, &step);
-      writer.Put<double>(var_u, u.data());
+        writer.Put<double>(var_u, u.data());
+        writer.Put<double>(PDFU, u.data());
+      writer.Put<double>(PDFV, v.data());
       writer.Put<double>(var_v, v.data());
       writer.EndStep();
     }
@@ -197,6 +199,8 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
         writer.Put<double>(var_v, v.data());
+        writer.Put<double>(PDFU, u.data());
+        writer.Put<double>(PDFV, v.data());
         writer.EndStep();
     }
 }
