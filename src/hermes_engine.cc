@@ -589,6 +589,7 @@ void HermesEngine::DoPutDeferred_(
     void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                                   T *values) {
         std::string name = variable.m_Name;
+        std::cout << "PutDeirved" << name << std::endl;
         int total_count = 1;
         for (auto count : variable.m_Count) {
             total_count *= count;
