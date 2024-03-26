@@ -596,7 +596,12 @@ void HermesEngine::DoPutDeferred_(
         }
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
-       std::cout << adios2::ToString(variable.m_Type) << std::endl;
+        VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                            variable.m_Count, variable.IsConstantDims(), true,
+                            adios2::ToString(variable.m_Type));
+        BlobInfo blobInfo(Hermes->bkt->name, name);
+        DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
 
 
