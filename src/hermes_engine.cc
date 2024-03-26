@@ -594,9 +594,9 @@ void HermesEngine::DoPutDeferred_(
         for (auto count : variable.m_Count) {
             total_count *= count;
         }
-        std::cout << "DoPutDerived" << std::endl;
-        Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
+        Hermes->bkt->Put(name, total_count * sizeof(T), values);
+       std::cout << adios2::ToString(variable.m_Type) << std::endl;
     }
 
 
