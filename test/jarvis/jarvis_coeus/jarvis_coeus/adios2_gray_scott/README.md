@@ -60,7 +60,8 @@ jarvis pipeline env build
 
 Create a Jarvis pipeline with Gray Scott
 ```bash
-jarvis pipeline append gray_scott
+jarvis pipeline append gadios2_gray_scott
+
 ```
 
 ## 5. Run Experiment
@@ -87,8 +88,8 @@ Create the environment variables needed by Hermes + Gray Scott
 spack install hermes@master adios2
 spack load hermes adios2
 # On Ares
-module load hermes/master-feow7up adios2/2.9.0-mmkelnu
-# export GRAY_SCOTT_PATH=${HOME}/adiosvm/Tutorial/gs-mpiio/build
+spack load hermes@master
+# export GRAY_SCOTT_PATH=$/coeus_adapter/build/bin
 export PATH="${GRAY_SCOTT_PATH}:$PATH"
 ```
 
@@ -130,9 +131,8 @@ jarvis pipeline env build
 Create a Jarvis pipeline with Hermes, the Hermes MPI-IO interceptor,
 and gray-scott
 ```bash
-jarvis pipeline append hermes --sleep=10 --output_dir=${HOME}/gray-scott
-jarvis pipeline append hermes_api +mpi
-jarvis pipeline append gray_scott
+jarvis pipeline append hermes_run --sleep=10 --provider=sockets
+jarvis pipeline append adios2_gray_scott engine=hermes 
 ```
 
 ## 5. Run the Experiment
