@@ -60,7 +60,7 @@ jarvis pipeline env build
 
 Create a Jarvis pipeline with Gray Scott
 ```bash
-jarvis pipeline append gadios2_gray_scott
+jarvis pipeline append adios2_gray_scott
 
 ```
 
