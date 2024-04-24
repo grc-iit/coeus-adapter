@@ -1,7 +1,7 @@
 Gray-Scott is a 3D 7-Point stencil code
 
 # Installation
-
+The gray_scott is installed along with coeus-adapter, these step can skip
 ```bash
 git clone https://github.com/pnorbert/adiosvm
 pushd adiosvm/Tutorial/gs-mpiio
@@ -21,7 +21,7 @@ popd
 Create the environment variables needed by Gray Scott
 ```bash
 spack load mpi
-export PATH="${GRAY_SCOTT_PATH}:$PATH"
+export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```````````
 
 ## 1. Create a Resource Graph
@@ -90,7 +90,7 @@ spack load hermes adios2
 # On Ares
 spack load hermes@master
 # export GRAY_SCOTT_PATH=$/coeus_adapter/build/bin
-export PATH="${GRAY_SCOTT_PATH}:$PATH"
+export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```
 
 ## 2. Create a Resource Graph
@@ -133,6 +133,12 @@ and gray-scott
 ```bash
 jarvis pipeline append hermes_run --sleep=10 --provider=sockets
 jarvis pipeline append adios2_gray_scott engine=hermes 
+```
+
+For derived variable with adios2 in hermes:
+```bash
+jarvis pipeline append hermes_run --sleep=10 --provider=sockets
+jarvis pipeline append adios2_gray_scott engine=hermes_derived
 ```
 
 ## 5. Run the Experiment
