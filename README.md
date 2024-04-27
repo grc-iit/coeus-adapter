@@ -58,9 +58,6 @@ To enable metadata and function trace feature, please add flag during cmake
 ```
 cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ```
-## Test
 
-To test the functionality of the adapter, run:
-```
-ctest
-```
+## Derived Variable
+To use the adios2 derived variable feature, please go to derived_merged branch and install adios2 latest version with derived enabled
