@@ -22,7 +22,7 @@
 
 #include <vector>
 #include <string>
-
+#include <comms/MPI.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -37,6 +37,13 @@ enum class adiosOpType {
     get = 0,
     put = 1
 };
+srd::string Get_processor_name() {
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    std::string processor(processor_name);
+    return processor;
+}
 
 struct metaInfo {
     adiosOpType operation;
