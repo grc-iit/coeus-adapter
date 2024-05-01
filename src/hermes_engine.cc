@@ -402,6 +402,27 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+
+  #ifdef POSIX_as_engine
+const char *filename = "output.txt";
+ int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+   size_t dataSize = variable.SelectionSize() * sizeof(T);
+    ssize_t bytesWritten = write(fd, values, dataSize);
+    if (bytesWritten == -1) {
+        perror("write");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    if (close(fd) == -1) {
+        perror("close");
+        exit(EXIT_FAILURE);
+    }
+#endif
+
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
