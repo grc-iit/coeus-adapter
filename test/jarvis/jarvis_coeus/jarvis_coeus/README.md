@@ -1,6 +1,6 @@
 To use this jarvis packages:
 in coeus directory:
-```angular2html
+```
 jarvis repo add test/jarvis/jarvis_coeus
 ```
 
