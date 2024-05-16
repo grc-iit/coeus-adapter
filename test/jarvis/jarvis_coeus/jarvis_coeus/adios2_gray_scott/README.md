@@ -1,7 +1,7 @@
 Gray-Scott is a 3D 7-Point stencil code
 
 # Installation
-The gray_scott is installed along with coeus-adapter, these step can skip
+Since gray_scott is installed along with the coeus-adapter, these steps can be skipped.
 ```bash
 git clone https://github.com/pnorbert/adiosvm
 pushd adiosvm/Tutorial/gs-mpiio
@@ -24,22 +24,7 @@ spack load mpi
 export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```````````
 
-## 1. Create a Resource Graph
 
-If you haven't already, create a resource graph. This only needs to be done
-once throughout the lifetime of Jarvis. No need to repeat if you have already
-done this for a different pipeline.
-
-If you are running distributed tests, set path to the hostfile you are  using.
-```bash
-jarvis hostfile set /path/to/hostfile
-```
-
-Next, collect the resources from each of those pkgs. Walkthrough will give
-a command line tutorial on how to build the hostfile.
-```bash
-jarvis resource-graph build +walkthrough
-```
 
 ## 2. Create a Pipeline
 
@@ -93,24 +78,8 @@ spack load hermes@master
 export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```
 
-## 2. Create a Resource Graph
 
-If you haven't already, create a resource graph. This only needs to be done
-once throughout the lifetime of Jarvis. No need to repeat if you have already
-done this for a different pipeline.
-
-If you are running distributed tests, set path to the hostfile you are  using.
-```bash
-jarvis hostfile set /path/to/hostfile.txt
-```
-
-Next, collect the resources from each of those pkgs. Walkthrough will give
-a command line tutorial on how to build the hostfile.
-```bash
-jarvis resource-graph build +walkthrough
-```
-
-## 3. Create a Pipeline
+## 2. Create a Pipeline
 
 The Jarvis pipeline will store all configuration data needed by Hermes
 and Gray Scott.
@@ -121,7 +90,8 @@ jarvis pipeline create gs-hermes
 
 ## 3. Save Environment
 
-Store the current environment in the pipeline.
+We must make Jarvis aware of all environment variables needed to execute applications in the pipeline.
+
 ```bash
 jarvis pipeline env build
 ```
