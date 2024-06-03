@@ -1,3 +1,10 @@
+To use this jarvis packages:
+in coeus directory:
+```
+jarvis repo add test/jarvis/jarvis_coeus
+```
+
+
 | code name  | directory  | derived quantity example  | query session examples  | notes  |
 |---|---|---|---|---|
 | WRF (weather forecasting)  |  test/jarvis/jarvis_coeus/jarvis_coeus/wrf |   |   |   |

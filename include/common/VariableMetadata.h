@@ -22,7 +22,7 @@
 
 #include <vector>
 #include <string>
-
+#include <comms/MPI.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -37,6 +37,13 @@ enum class adiosOpType {
     get = 0,
     put = 1
 };
+std::string Get_processor_name() {
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    std::string processor(processor_name);
+    return processor;
+}
 
 struct metaInfo {
     adiosOpType operation;
@@ -54,17 +61,23 @@ struct metaInfo {
     size_t stepStart;
     size_t blockID;
     //int order;
-
-
-
+    std::string blob_name;
+    std::string bucket_name;
+    std::string processor;
+    int processNo;
 
     template<typename T>
-    metaInfo(const adios2::core::Variable<T> &variable, adiosOpType operationType) {
+    metaInfo(const adios2::core::Variable<T> &variable, adiosOpType operationType, std::string blob,
+             std::string bucket, std::string processor_name, int process_No ) {
         name = variable.m_Name;
         operation = operationType;
+        blob_name = blob;
+        processor = processor_name;
+        bucket_name = bucket;
+        processNo = process_No;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
-        time = std::to_string(localTime->tm_hour) + ": " + std::to_string(localTime->tm_min)+ ": " + std::to_string(localTime->tm_sec);
+        time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
         selectionSize = variable.SelectionSize();
         sizeofVariable = variable.m_ElementSize;
         shape = variable.Shape();
@@ -93,13 +106,18 @@ struct metaInfo {
     }
 
     template<typename T>
-    explicit metaInfo(const adios2::Variable<T> variable, adiosOpType operationType) {
+    explicit metaInfo(const adios2::Variable<T> variable, adiosOpType operationType,  std::string blob,
+                      std::string bucket, std::string processor_name, int process_No  ) {
         name = variable.Name();
         shape = variable.Shape();
+        processor = processor_name;
         operation = operationType;
+        blob_name = blob;
+        processNo = process_No;
+        bucket_name = bucket;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
-        time = std::to_string(localTime->tm_hour) + ": " + std::to_string(localTime->tm_min)+ ": " + std::to_string(localTime->tm_sec);
+        time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
         selectionSize = variable.SelectionSize();
         sizeofVariable= variable.Sizeof();
         shape = variable.Shape();
@@ -138,7 +156,7 @@ struct metaInfo {
     template <class Archive>
     void serialize(Archive &ar) {
         ar(operation, time, name, sizeofVariable, shapeID, shape, start, count, constantShape, dataType,
-        steps, stepStart, blockID);
+        steps, stepStart, blockID, blob_name, bucket_name, processor, processNo);
     }
 };
 
@@ -160,7 +178,8 @@ std::ostream& operator<<(std::ostream &out, const metaInfo &data) {
     out << "," << (data.constantShape ? "True" : "False");
     out << "," << data.time << "," << data.selectionSize <<
         "," << data.sizeofVariable << "," << data.shapeID << "," << data.steps <<
-                                    "," << data.stepStart << "," << data.blockID ;
+                                    "," << data.stepStart << "," << data.blockID << "," <<
+                                    data.blob_name << "," << data.bucket_name << "," << data.processor << "," << data.processNo;
     return out;
 }
 

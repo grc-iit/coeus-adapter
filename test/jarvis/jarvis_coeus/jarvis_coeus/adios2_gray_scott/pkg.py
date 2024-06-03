@@ -153,7 +153,7 @@ class Adios2GrayScott(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp5', 'hermes', 'bp5_derived', 'hermes_derived'],
                 'type': str,
                 'default': 'bp5',
             },
@@ -162,6 +162,12 @@ class Adios2GrayScott(Application):
                 'msg': 'Whill postprocessing be executed?',
                 'type': bool,
                 'default': True,
+            },
+            {
+                'name': 'limit',
+                'msg': 'Limit the value of data to track',
+                'type': int,
+                'default': 0,
             },
             {
                 'name': 'db_path',
@@ -215,11 +221,11 @@ class Adios2GrayScott(Application):
                                        env=self.env))
 
         JsonFile(self.settings_json_path).save(settings_json)
-
-        if self.config['engine'].lower() == 'bp5':
+        print(f"Using engine {self.config['engine']}")
+        if self.config['engine'].lower() in ['bp5', 'bp5_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
-        elif self.config['engine'].lower() == 'hermes':
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path,
                                     replacements={
@@ -243,8 +249,19 @@ class Adios2GrayScott(Application):
         :return: None
         """
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'adios2-gray-scott {self.settings_json_path}',
-             MpiExecInfo(nprocs=self.config['nprocs'],
+        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+            derived = 1
+            Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
+                 MpiExecInfo(nprocs=self.config['nprocs'],
+                             ppn=self.config['ppn'],
+                             hostfile=self.jarvis.hostfile,
+                             env=self.mod_env,
+                             do_dbg=self.config['do_dbg'],
+                             dbg_port=self.config['dbg_port']
+                             ))
+        elif self.config['engine'].lower() in ['hermes', 'bp5']:
+            Exec(f'adios2-gray-scott {self.settings_json_path}',
+                MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env))
