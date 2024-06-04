@@ -157,8 +157,13 @@ void HermesEngine::Init_() {
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
+/*
+  if(params.find("adiosOutput") != params.end()) {
+      adiosOutput = params["adiosOutput"];
+  }
 
-  open = true;
+*/
+        adiosOutput = "/mnt/common/hxu40/copy.bp";
 
 
 
@@ -365,10 +370,7 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
     metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-
-  memcpy(values, blob.data(), blob.size());
-
-
+    memcpy(values, blob.data(), blob.size());
 }
 
 template<typename T>
@@ -394,6 +396,9 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+
+
+
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
@@ -427,6 +432,22 @@ const char *filename = "output.txt";
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
+
+
+    std::vector<size_t> start2;
+
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
+    adios2::ADIOS adios_copy;
+    adios2::IO io_copy = adios_copy.DeclareIO("twins");
+    io_copy.SetEngine("BPFile");
+    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Write);
+    adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
+            variable.m_Name, variable.Shape(), start2, variable.Count());
+    writer2.Put(var2, values);
 }
 
 template<typename T>
@@ -442,10 +463,26 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+
+
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
+    std::vector<size_t> start2;
+
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
+    adios2::ADIOS adios_copy;
+    adios2::IO io_copy = adios_copy.DeclareIO("twins");
+    io_copy.SetEngine("BPFile");
+    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Write);
+    adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
+            variable.m_Name, variable.Shape(), start2, variable.Count());
+    writer2.Put(var2, values);
 
 }
 
