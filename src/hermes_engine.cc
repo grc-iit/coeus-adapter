@@ -448,6 +448,7 @@ const char *filename = "output.txt";
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
+    writer2.close();
 }
 
 template<typename T>
@@ -483,7 +484,7 @@ void HermesEngine::DoPutDeferred_(
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
-
+    writer2.close();
 }
 
 }  // namespace coeus
