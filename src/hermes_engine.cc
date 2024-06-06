@@ -441,10 +441,10 @@ const char *filename = "output.txt";
     } else {
         start2 = variable.m_Start;
     }
-    adios2::ADIOS adios_copy;
+    adios2::ADIOS adios_copy(MPI_COMM_WORLD);
     adios2::IO io_copy = adios_copy.DeclareIO("twins");
     io_copy.SetEngine("BPFile");
-    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Write);
+    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
@@ -477,10 +477,10 @@ void HermesEngine::DoPutDeferred_(
     } else {
         start2 = variable.m_Start;
     }
-    adios2::ADIOS adios_copy;
+    adios2::ADIOS adios_copy(MPI_COMM_WORLD);
     adios2::IO io_copy = adios_copy.DeclareIO("twins");
     io_copy.SetEngine("BPFile");
-    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Write);
+    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
