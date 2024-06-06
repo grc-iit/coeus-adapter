@@ -163,7 +163,7 @@ void HermesEngine::Init_() {
   }
 
 */
-        adiosOutput = "/mnt/common/hxu40/copy.bp";
+        adiosOutput = "/mnt/ssd/hxu40/copy.bp";
 
 
 
