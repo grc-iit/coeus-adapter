@@ -158,11 +158,11 @@ void HermesEngine::Init_() {
     throw std::invalid_argument("db_file not found in parameters");
   }
 
-  if(params.find("adiosOutput") != params.end()) {
-      adiosOutput = params["adiosOutput"];
-  }
+//  if(params.find("adiosOutput") != params.end()) {
+//      adiosOutput = params["adiosOutput"];
+//  }
 
-
+        adiosOutput = "/mnt/common/hxu40/copy2.bp";
 
 
 
