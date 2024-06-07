@@ -471,7 +471,7 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
     std::vector<size_t> start2;
-
+     std::cout << currentStep << std::endl;
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
         start2 = std::vector<size_t>();
     } else {
