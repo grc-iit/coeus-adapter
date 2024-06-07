@@ -162,7 +162,7 @@ void HermesEngine::Init_() {
 //      adiosOutput = params["adiosOutput"];
 //  }
 
-        adiosOutput = "/mnt/common/hxu40/copy2.bp";
+        adiosOutput = "/mnt/common/hxu40/copyfiles/bp";
 
 
 
@@ -471,7 +471,7 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
     std::vector<size_t> start2;
-     std::cout << currentStep << std::endl;
+
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
         start2 = std::vector<size_t>();
     } else {
@@ -480,7 +480,8 @@ void HermesEngine::DoPutDeferred_(
     adios2::ADIOS adios_copy(MPI_COMM_WORLD);
     adios2::IO io_copy = adios_copy.DeclareIO("twins");
     io_copy.SetEngine("BPFile");
-    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
+    std::string fileName1 = adiosOutput + std::to_string(getpid());
+    adios2::Engine writer2 = io_copy.Open(fileName1, adios2::Mode::Append);
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
