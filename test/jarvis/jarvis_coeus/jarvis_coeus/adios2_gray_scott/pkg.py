@@ -175,6 +175,13 @@ class Adios2GrayScott(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'bp_file_copy',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': None,
+            },
+
         ]
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
@@ -233,6 +240,7 @@ class Adios2GrayScott(Application):
                                         'VARFILE': self.var_json_path,
                                         'OPFILE': self.operator_json_path,
                                         'DBFILE': self.config['db_path'],
+                                        'copy_output': self.config['bp_file_copy'],
                                     })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)

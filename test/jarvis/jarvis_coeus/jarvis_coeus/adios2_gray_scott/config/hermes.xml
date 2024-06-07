@@ -14,7 +14,7 @@
             <parameter key="VarFile" value="##VARFILE##"/>
             <parameter key="OPFile" value="##OPFILE##"/>
             <parameter key="db_file" value="##DBFILE##"/>
-
+            <parameter key="adiosOutput" value="##copy_output##"/>
         </engine>
     </io>
 
