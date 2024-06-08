@@ -465,7 +465,7 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-
+/*
     const char *filename = "/mnt/common/hxu40/adios2_out/posix.txt";
     int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
     if (fd == -1) {
@@ -483,7 +483,7 @@ void HermesEngine::DoPutDeferred_(
         perror("close");
         exit(EXIT_FAILURE);
     }
-
+*/
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
@@ -501,7 +501,9 @@ void HermesEngine::DoPutDeferred_(
     adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
+    writer2.BeginStep();
     writer2.Put(var2, values);
+    writer2.EndStep();
     writer2.Close();
 }
 
