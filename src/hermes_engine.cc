@@ -162,7 +162,7 @@ void HermesEngine::Init_() {
 //      adiosOutput = params["adiosOutput"];
 //  }
 
-        adiosOutput = "/mnt/common/hxu40/copyfiles/bp";
+        adiosOutput = "/mnt/common/hxu40/adios2_out/copy3.bp";
 
 
 
@@ -408,8 +408,8 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-  #ifdef POSIX_as_engine
-const char *filename = "output.txt";
+  /*
+const char *filename = "/mnt/common/hxu40/output.txt";
  int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   if (fd == -1) {
         perror("open");
@@ -426,14 +426,14 @@ const char *filename = "output.txt";
         perror("close");
         exit(EXIT_FAILURE);
     }
-#endif
+*/
 
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-
+/*
     std::vector<size_t> start2;
 
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
@@ -449,6 +449,7 @@ const char *filename = "output.txt";
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
     writer2.Close();
+    */
 }
 
 template<typename T>
@@ -465,6 +466,23 @@ void HermesEngine::DoPutDeferred_(
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
+    const char *filename = "/mnt/common/hxu40/adios2_out/posix.txt";
+    int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+    size_t dataSize = variable.SelectionSize() * sizeof(T);
+    ssize_t bytesWritten = write(fd, values, dataSize);
+    if (bytesWritten == -1) {
+        perror("write");
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    if (close(fd) == -1) {
+        perror("close");
+        exit(EXIT_FAILURE);
+    }
 
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
@@ -480,8 +498,7 @@ void HermesEngine::DoPutDeferred_(
     adios2::ADIOS adios_copy(MPI_COMM_WORLD);
     adios2::IO io_copy = adios_copy.DeclareIO("twins");
     io_copy.SetEngine("BPFile");
-    std::string fileName1 = adiosOutput + std::to_string(getpid());
-    adios2::Engine writer2 = io_copy.Open(fileName1, adios2::Mode::Append);
+    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
     adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer2.Put(var2, values);
