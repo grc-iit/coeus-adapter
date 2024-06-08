@@ -174,7 +174,7 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
-  open = false;
+  open1 = false;
 
 }
 
