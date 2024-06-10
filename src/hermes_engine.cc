@@ -171,7 +171,7 @@ void HermesEngine::Init_() {
         adios2::ADIOS adios(MPI_COMM_WORLD);
         io2 = adios.DeclareIO("Output");
         io2.SetEngine("BPFile");
-
+        writer = io2.Open(adiosOutput, adios2::Mode::Append);
 }
 
 /**
@@ -499,7 +499,7 @@ void HermesEngine::DoPutDeferred_(
         start2 = variable.m_Start;
     }
 
-    writer = io2.Open(adiosOutput, adios2::Mode::Append);
+
     adios2::Variable<T> var2 = io2.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer.BeginStep();
