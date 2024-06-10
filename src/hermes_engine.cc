@@ -502,7 +502,9 @@ void HermesEngine::DoPutDeferred_(
     writer = io2.Open(adiosOutput, adios2::Mode::Append);
     adios2::Variable<T> var2 = io2.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
+    writer.BeginStep();
     writer.Put(var2, values);
+    writer.EndStep();
     writer.Close();
 }
 
