@@ -12,6 +12,7 @@
 
 #include "coeus/HermesEngine.h"
 
+
 namespace coeus {
 /**
  * Construct the HermesEngine.
@@ -30,6 +31,7 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   Hermes = std::make_shared<coeus::Hermes>();
 //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
+
   TRACE_FUNC("Init HermesEngine");
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
 
@@ -163,9 +165,11 @@ void HermesEngine::Init_() {
 //  }
 
         adiosOutput = "/mnt/common/hxu40/adios2_out/copy3.bp";
+//        adios2::ADIOS adios_copy(MPI_COMM_WORLD);
+//        adios2::IO io_copy = adios_copy.DeclareIO("twins");
+//        io_copy.SetEngine("BPFile");
 
-
-
+        io2.SetEngine("BPFile");
 
 }
 
@@ -433,7 +437,7 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-/*
+
     std::vector<size_t> start2;
 
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
@@ -441,15 +445,13 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     } else {
         start2 = variable.m_Start;
     }
-    adios2::ADIOS adios_copy(MPI_COMM_WORLD);
-    adios2::IO io_copy = adios_copy.DeclareIO("twins");
-    io_copy.SetEngine("BPFile");
-    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
-    adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
+
+    writer = io2.Open(adiosOutput, adios2::Mode::Append);
+    adios2::Variable<T> var2 = io2.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
-    writer2.Put(var2, values);
-    writer2.Close();
-    */
+    writer.Put(var2, values);
+    writer.Close();
+
 }
 
 template<typename T>
@@ -495,16 +497,12 @@ void HermesEngine::DoPutDeferred_(
     } else {
         start2 = variable.m_Start;
     }
-    adios2::ADIOS adios_copy(MPI_COMM_WORLD);
-    adios2::IO io_copy = adios_copy.DeclareIO("twins");
-    io_copy.SetEngine("BPFile");
-    adios2::Engine writer2 = io_copy.Open(adiosOutput, adios2::Mode::Append);
-    adios2::Variable<T> var2 = io_copy.DefineVariable<T>(
+
+    writer = io2.Open(adiosOutput, adios2::Mode::Append);
+    adios2::Variable<T> var2 = io2.DefineVariable<T>(
             variable.m_Name, variable.Shape(), start2, variable.Count());
-    writer2.BeginStep();
-    writer2.Put(var2, values);
-    writer2.EndStep();
-    writer2.Close();
+    writer.Put(var2, values);
+    writer.Close();
 }
 
 }  // namespace coeus

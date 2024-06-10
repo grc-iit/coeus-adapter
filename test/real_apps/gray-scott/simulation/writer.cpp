@@ -1,16 +1,16 @@
 #include "../../gray-scott/simulation/writer.h"
 
 std::string concatenateVectorToString(const std::vector<size_t>& vec) {
-  std::stringstream ss;
-  ss << "( ";
-  for (size_t i = 0; i < vec.size(); ++i) {
-    ss << vec[i];
-    if (i < vec.size() - 1) {
-      ss << ", ";
+    std::stringstream ss;
+    ss << "( ";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        ss << vec[i];
+        if (i < vec.size() - 1) {
+            ss << ", ";
+        }
     }
-  }
-  ss << " )";
-  return ss.str();
+    ss << " )";
+    return ss.str();
 }
 
 void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
@@ -48,14 +48,14 @@ void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
     else if (s.mesh_type == "structured")
     {
         throw std::invalid_argument(
-            "ERROR: mesh_type=structured not yet "
-            "   supported in settings.json, use mesh_type=image instead\n");
+                "ERROR: mesh_type=structured not yet "
+                "   supported in settings.json, use mesh_type=image instead\n");
     }
     // TODO extend to other formats e.g. structured
 }
 
 Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
-: settings(settings), io(io)
+        : settings(settings), io(io)
 {
     io.DefineAttribute<double>("F", settings.F);
     io.DefineAttribute<double>("k", settings.k);
@@ -83,21 +83,21 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
     io.DefineAttribute<std::string>("Fides_Variable_Associations", assocList.data(), assocList.size());
 
     var_u =
-        io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
-                                  {sim.offset_z, sim.offset_y, sim.offset_x},
-                                  {sim.size_z, sim.size_y, sim.size_x});
+            io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
+                                      {sim.offset_z, sim.offset_y, sim.offset_x},
+                                      {sim.size_z, sim.size_y, sim.size_x});
 
     var_v =
-        io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
-                                  {sim.offset_z, sim.offset_y, sim.offset_x},
-                                  {sim.size_z, sim.size_y, sim.size_x});
+            io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
+                                      {sim.offset_z, sim.offset_y, sim.offset_x},
+                                      {sim.size_z, sim.size_y, sim.size_x});
 
     if (settings.adios_memory_selection)
     {
         var_u.SetMemorySelection(
-            {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
+                {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
         var_v.SetMemorySelection(
-            {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
+                {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
     }
 
     var_step = io.DefineVariable<int>("step");
@@ -124,14 +124,14 @@ void Writer::write(int step, const GrayScott &sim, int rank)
 
     if (settings.adios_memory_selection)
     {
-      std::cout << "mem_selection" <<std::endl;
+        std::cout << "mem_selection" <<std::endl;
         const std::vector<double> &u = sim.u_ghost();
         const std::vector<double> &v = sim.v_ghost();
 
-      std::cout << u.size() << " " << v.size() <<std::endl;
-      std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
+        std::cout << u.size() << " " << v.size() <<std::endl;
+        std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
 
-      writer.BeginStep();
+        writer.BeginStep();
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
 
@@ -140,7 +140,7 @@ void Writer::write(int step, const GrayScott &sim, int rank)
     }
     else if (settings.adios_span)
     {
-      std::cout << "span" <<std::endl;
+        std::cout << "span" <<std::endl;
         writer.BeginStep();
 
         writer.Put<int>(var_step, &step);

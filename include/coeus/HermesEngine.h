@@ -106,6 +106,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int total_steps = -1;
   std::string adiosOutput;
 
+    adios2::IO io2;
+    adios2::Engine writer;
+
+
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
   int comm_size;
