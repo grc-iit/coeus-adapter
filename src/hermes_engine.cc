@@ -438,7 +438,7 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-
+/*
     std::vector<size_t> start2;
 
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
@@ -452,7 +452,7 @@ const char *filename = "/mnt/common/hxu40/output.txt";
             variable.m_Name, variable.Shape(), start2, variable.Count());
     writer.Put(var2, values);
     writer.Close();
-
+*/
 }
 
 template<typename T>
