@@ -86,7 +86,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
             io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
                                       {sim.offset_z, sim.offset_y, sim.offset_x},
                                       {sim.size_z, sim.size_y, sim.size_x});
-
+   std::cout << sim.offset_z << " " << sim.offset_y << " " << sim.offset_x << "size: " <<  sim.size_z << std::endl;
     var_v =
             io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                       {sim.offset_z, sim.offset_y, sim.offset_x},
@@ -157,7 +157,7 @@ void Writer::write(int step, const GrayScott &sim, int rank)
     }
     else
     {
-        std::cout << "normal" << std::endl;
+
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
 
