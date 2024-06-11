@@ -121,6 +121,7 @@ int main(int argc, char **argv)
     }
 
     Writer writer_main(settings, sim, io_main);
+    std::cout << sim.offset_z << " " << sim.offset_y << " " << sim.offset_x << "size: " <<  sim.size_z << std::endl;
     writer_main.open(settings.output, (restart_step > 0));
 
     if (rank == 0)
