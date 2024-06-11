@@ -35,6 +35,7 @@
 #include "common/DbOperation.h"
 #include "coeus_mdm/coeus_mdm.h"
 #include "common/VariableMetadata.h"
+#include "common/Adios2Writer.h"
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
 #include <comms/MPI.h>

@@ -13,38 +13,7 @@
 #include "coeus/HermesEngine.h"
 
 
-class Adios2Writer {
-public:
-    template<typename T>
-    Adios2Writer(const std::string &engineType, const std::string &fileName, const std::string &variableName)
-            : engineType_(engineType), fileName_(fileName), variableName_(variableName), adios_(adios2::ADIOS()), io_(adios_.DeclareIO("OutputIO")) {
-        // Set the engine type
-        io_.SetEngine(engineType_);
 
-        // Define the variable to be written
-        var_ = io_.DefineVariable<T>(variableName_, {adios2::LocalValueDim});
-    }
-    template<typename T>
-    void WriteData(const T *data) {
-        // Open the engine to write data
-        adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
-
-        // Perform the write operation
-        writer.Put(var_, data);
-
-        // Close the engine
-        writer.Close();
-    }
-
-private:
-    std::string engineType_;
-    std::string fileName_;
-    std::string variableName_;
-
-    adios2::ADIOS adios_;
-    adios2::IO io_;
-    adios2::Variable<double> var_;
-};
 
 
 namespace coeus {
@@ -508,8 +477,8 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-    Adios2Writer writer("BPFile", "output.bp", "myVariable");
-    writer.WriteData(data);
+    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+    writer.WriteData(values);
 
 }
 
