@@ -463,7 +463,10 @@ void HermesEngine::DoPutDeferred_(
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-
+    for(auto i: variable.m_Count) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
     Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
     writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
