@@ -105,7 +105,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
 
 void Writer::open(const std::string &fname, bool append)
 {
-    adios2::Mode mode = adios2::Mode::Write;
+    adios2::Mode mode = adios2::Mode::Append;
     if (append)
     {
         mode = adios2::Mode::Append;
