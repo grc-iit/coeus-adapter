@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     }
 
     Writer writer_main(settings, sim, io_main);
-    std::cout << sim.offset_z << " " << sim.offset_y << " " << sim.offset_x << "size: " <<  sim.size_z << std::endl;
+
     writer_main.open(settings.output, (restart_step > 0));
 
     if (rank == 0)
@@ -172,6 +172,7 @@ int main(int argc, char **argv)
             }
 
             writer_main.write(it, sim, rank);
+            std::cout << sim.offset_z << " " << sim.offset_y << " " << sim.offset_x << " size: " <<  sim.size_z << std::endl;
         }
 
         if (settings.checkpoint && (it % settings.checkpoint_freq) == 0)
