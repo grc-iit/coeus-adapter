@@ -464,7 +464,13 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-    std::vector<size_t> start2 = std::vector<size_t>();
+    std::vector<size_t> start2;
+
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
 
     Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
 
