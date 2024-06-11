@@ -13,7 +13,38 @@
 #include "coeus/HermesEngine.h"
 
 
+class Adios2Writer {
+public:
+    template<typename T>
+    Adios2Writer(const std::string &engineType, const std::string &fileName, const std::string &variableName)
+            : engineType_(engineType), fileName_(fileName), variableName_(variableName), adios_(adios2::ADIOS()), io_(adios_.DeclareIO("OutputIO")) {
+        // Set the engine type
+        io_.SetEngine(engineType_);
 
+        // Define the variable to be written
+        var_ = io_.DefineVariable<T>(variableName_, {adios2::LocalValueDim});
+    }
+    template<typename T>
+    void WriteData(const T *data) {
+        // Open the engine to write data
+        adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
+
+        // Perform the write operation
+        writer.Put(var_, data);
+
+        // Close the engine
+        writer.Close();
+    }
+
+private:
+    std::string engineType_;
+    std::string fileName_;
+    std::string variableName_;
+
+    adios2::ADIOS adios_;
+    adios2::IO io_;
+    adios2::Variable<double> var_;
+};
 
 
 namespace coeus {
@@ -471,44 +502,15 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-/*
-    const char *filename = "/mnt/common/hxu40/adios2_out/posix.txt";
-    int fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-    if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-    }
-    size_t dataSize = variable.SelectionSize() * sizeof(T);
-    ssize_t bytesWritten = write(fd, values, dataSize);
-    if (bytesWritten == -1) {
-        perror("write");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-    if (close(fd) == -1) {
-        perror("close");
-        exit(EXIT_FAILURE);
-    }
-*/
+
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-    std::vector<size_t> start2;
 
-    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-        start2 = std::vector<size_t>();
-    } else {
-        start2 = variable.m_Start;
-    }
+    Adios2Writer writer("BPFile", "output.bp", "myVariable");
+    writer.WriteData(data);
 
-
-    adios2::Variable<T> var2 = io2.DefineVariable<T>(
-            variable.m_Name, variable.Shape(), start2, variable.Count());
-    writer.BeginStep();
-    writer.Put(var2, values);
-    writer.EndStep();
-    writer.Close();
 }
 
 }  // namespace coeus
