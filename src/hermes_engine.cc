@@ -447,8 +447,8 @@ void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << getpid()  << " generate: "  << variable.SelectionSize() * sizeof(T) << std::endl;
+  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T)/4, values);
+  std::cout << getpid()  << " generate: "  << variable.SelectionSize() * sizeof(T)/4 << std::endl;
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
