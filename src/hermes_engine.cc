@@ -171,10 +171,7 @@ void HermesEngine::Init_() {
 //        adios2::ADIOS adios_copy(MPI_COMM_WORLD);
 //        adios2::IO io_copy = adios_copy.DeclareIO("twins");
 //        io_copy.SetEngine("BPFile");
-        adios2::ADIOS adios(MPI_COMM_WORLD);
-        io2 = adios.DeclareIO("Output");
-        io2.SetEngine("BPFile");
-        writer = io2.Open(adiosOutput, adios2::Mode::Append);
+
 }
 
 /**
