@@ -440,22 +440,9 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
+    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
-/*
-    std::vector<size_t> start2;
-
-    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-        start2 = std::vector<size_t>();
-    } else {
-        start2 = variable.m_Start;
-    }
-
-    writer = io2.Open(adiosOutput, adios2::Mode::Append);
-    adios2::Variable<T> var2 = io2.DefineVariable<T>(
-            variable.m_Name, variable.Shape(), start2, variable.Count());
-    writer.Put(var2, values);
-    writer.Close();
-*/
 }
 
 template<typename T>
@@ -477,8 +464,8 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
-    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
+//    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+//    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
 }
 
