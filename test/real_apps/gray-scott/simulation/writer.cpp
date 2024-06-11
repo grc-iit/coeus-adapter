@@ -157,6 +157,7 @@ void Writer::write(int step, const GrayScott &sim, int rank)
     }
     else
     {
+        std::cout << "normal" << std::endl;
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
 
