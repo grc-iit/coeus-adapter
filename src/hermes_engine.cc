@@ -463,7 +463,7 @@ void HermesEngine::DoPutDeferred_(
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-    for(auto i: variable.m_Count) {
+    for(auto i: variable.m_Start) {
       std::cout << i << " ";
     }
     std::cout << std::endl;
