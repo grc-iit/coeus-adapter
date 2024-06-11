@@ -14,7 +14,6 @@
 #include <cereal/types/vector.hpp>
 #include <adios2/core/Variable.h>
 #include <adios2/cxx11/Variable.h>
-#include "globalVariable.h"
 #include <adios2.h>
 #ifndef COEUS_ADAPTER_ADIOSWRITE_H
 #define COEUS_ADAPTER_ADIOSWRITE_H
@@ -28,12 +27,12 @@ public:
         // Set the engine type
         io_.SetEngine(engineType_);
 
-        // Define the variable to be written
-        var_ = io_.DefineVariable<T>(variableName_, {adios2::LocalValueDim});
+
     }
 
-    void WriteData(const T *data) {
+    void WriteData(const T *data, std::vector<size_t> shape, std::vector<size_t> start, std::vector<size_t> count) {
         // Open the engine to write data
+        auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
         adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
 
         // Perform the write operation

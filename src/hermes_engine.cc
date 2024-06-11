@@ -478,7 +478,7 @@ void HermesEngine::DoPutDeferred_(
 #endif
 
     Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
-    writer.WriteData(values);
+    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
 }
 
