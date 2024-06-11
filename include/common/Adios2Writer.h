@@ -34,10 +34,10 @@ public:
         // Open the engine to write data
         auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
         adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
-
+        writer.BeginStep();
         // Perform the write operation
         writer.Put(var_, data);
-
+        writer.EndStep();
         // Close the engine
         writer.Close();
     }
