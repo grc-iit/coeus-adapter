@@ -470,9 +470,9 @@ void HermesEngine::DoPutDeferred_(
         start2 = variable.m_Start;
     }
 
-    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
-
-    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
+//    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+//
+//    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
 }
 
