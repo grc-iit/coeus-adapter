@@ -448,7 +448,7 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  std::cout << getpid()  << " in hermes_engine generate: "  << variable.SelectionSize() * sizeof(T) << std::endl;
+  std::cout << getpid()  << " has selectionSize in hermes_engine "  << variable.SelectionSize() * sizeof(T) << std::endl;
     std::cout << "Shape in hermes_engine PUT: ";
   for (auto i: variable.m_Shape) {
    std::cout << i << " ";

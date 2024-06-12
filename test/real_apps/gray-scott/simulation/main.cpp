@@ -173,7 +173,7 @@ int main(int argc, char **argv)
             }
 
             writer_main.write(it, sim, rank);
-            std::cout << "during run time in gray_scott application grid size:  " << " size_z: " << sim.size_z  << ", size_y: "
+            std::cout << "during run time in gray_scott application grid size:" << " size_z: " << sim.size_z  << ", size_y: "
                       << sim.size_y << ", size_x: " << sim.size_x << std::endl;
         }
 

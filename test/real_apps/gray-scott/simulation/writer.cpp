@@ -91,7 +91,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
             io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                       {sim.offset_z, sim.offset_y, sim.offset_x},
                                       {sim.size_z, sim.size_y, sim.size_x});
-    std::cout << "Initial grid size:  " << "size_z: " << sim.size_z  << "size_y: "
+    std::cout << "Initial grid size: " << "size_z: " << sim.size_z  << "size_y: "
     << sim.size_y << "size_x: " << sim.size_x << std::endl;
 
     if (settings.adios_memory_selection)
