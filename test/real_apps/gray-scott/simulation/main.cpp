@@ -173,7 +173,8 @@ int main(int argc, char **argv)
             }
 
             writer_main.write(it, sim, rank);
-            std::cout << sim.offset_z << " " << sim.offset_y << " " << sim.offset_x << " size: " <<  sim.size_z << std::endl;
+            std::cout << "during run time grid size:  " << "size_z: " << sim.size_z  << "size_y: "
+                      << sim.size_y << "size_x: " << sim.size_x << std::endl;
         }
 
         if (settings.checkpoint && (it % settings.checkpoint_freq) == 0)
