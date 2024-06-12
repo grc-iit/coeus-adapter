@@ -186,8 +186,8 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
         writer.Put<double>(var_v, v.data());
-       Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", var_u.Name);
-       writer.WriteData(values, var_u.Shape(), var_u.Start(), var_u.Count());
+       Adios2Writer<T> writer2("BPFile", "/mnt/common/hxu40/output.bp", var_u.Name());
+       writer2.WriteData(values, var_u.Shape(), var_u.Start(), var_u.Count());
         writer.EndStep();
     }
 }
