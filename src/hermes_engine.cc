@@ -453,12 +453,12 @@ void HermesEngine::DoPutDeferred_(
   for(auto i: variable.m_Shape) {
    std::cout << i << " ";
   }
-   std::cout << endl;
+   std::cout << std::endl;
     cout << "Count in hermes_engine PUT: "
     for(auto i: variable.m_Count) {
         std::cout << i << " ";
     }
-    std::cout << endl;
+    std::cout << std::endl;
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
