@@ -1,5 +1,6 @@
 #include "../../gray-scott/simulation/writer.h"
-
+#include <unistd.h>
+#include <iostream>
 std::string concatenateVectorToString(const std::vector<size_t>& vec) {
     std::stringstream ss;
     ss << "( ";
