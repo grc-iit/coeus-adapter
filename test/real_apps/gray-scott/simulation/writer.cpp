@@ -1,6 +1,7 @@
 #include "../../gray-scott/simulation/writer.h"
 #include <unistd.h>
 #include <iostream>
+#include "../../gray-scott/simulation/adiosWrite.h"
 std::string concatenateVectorToString(const std::vector<size_t>& vec) {
     std::stringstream ss;
     ss << "( ";
@@ -185,6 +186,8 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
         writer.Put<double>(var_v, v.data());
+       Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", var_u.m_Name);
+       writer.WriteData(values, var_u.m_Shape, var_u.m_Start, var_u.m_Count);
         writer.EndStep();
     }
 }
