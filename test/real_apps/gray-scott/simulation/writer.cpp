@@ -128,8 +128,10 @@ void Writer::write(int step, const GrayScott &sim, int rank)
     {
         std::cout << "mem_selection" <<std::endl;
         const std::vector<double> &u = sim.u_ghost();
+        std::cout <<"process:" << getpid() << " the size of U" << u.size() << std::endl;
         const std::vector<double> &v = sim.v_ghost();
-
+        std::cout <<"process:" << getpid() << " the size of V" << v.size() << std::endl;
+        std::cout << u.size() << std::endl;
         std::cout << u.size() << " " << v.size() <<std::endl;
         std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
 
