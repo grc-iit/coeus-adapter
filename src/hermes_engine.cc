@@ -449,12 +449,12 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
   std::cout << getpid()  << "in hermes_engine generate: "  << variable.SelectionSize() * sizeof(T) << std::endl;
-    std::cout << "Shape in hermes_engine PUT: "
+    std::cout << "Shape in hermes_engine PUT: ";
   for (auto i: variable.m_Shape) {
    std::cout << i << " ";
   }
    std::cout << std::endl;
-   std::cout << "Count in hermes_engine PUT: "
+   std::cout << "Count in hermes_engine PUT: ";
     for (auto i: variable.m_Count) {
         std::cout << i << " ";
     }
