@@ -176,8 +176,11 @@ void GrayScott::init_mpi()
     pz = coords[2];
 
     size_x = settings.L / npx;
+    std::cout << "gray_scoot in MPI " << " size_x: " <<  size_x << std::endl;
     size_y = settings.L / npy;
+    std::cout << "gray_scoot in MPI " << " size_x: " <<  size_y << std::endl;
     size_z = settings.L / npz;
+    std::cout << "gray_scoot in MPI " << " size_x: " <<  size_z << std::endl;
 
     if (px < settings.L % npx)
     {
