@@ -3,7 +3,7 @@
 // https://github.com/kaityo256/sevendayshpc/tree/master/day5
 
 #include "../../gray-scott/simulation/gray-scott.h"
-
+#include <iostream>
 #include <mpi.h>
 #include <random>
 #include <stdexcept> // runtime_error
