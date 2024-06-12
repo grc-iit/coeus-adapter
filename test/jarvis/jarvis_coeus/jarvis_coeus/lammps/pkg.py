@@ -4,7 +4,7 @@ Lammps is ....
 """
 from jarvis_cd.basic.pkg import Application
 from jarvis_util import *
-
+import pathlib
 
 class Lammps(Application):
     """
@@ -67,7 +67,7 @@ class Lammps(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-       if self.config['engine'].lower() == 'bp4':
+       if self.config['engine'].lower() == 'bp5':
           self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                   f'{self.config["script_location"]}/adios_config.xml')
        elif  self.config['engine'].lower == 'hermes':
