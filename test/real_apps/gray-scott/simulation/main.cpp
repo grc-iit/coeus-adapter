@@ -121,7 +121,8 @@ int main(int argc, char **argv)
     }
 
     Writer writer_main(settings, sim, io_main);
-
+    std::cout << "during run time grid size:  " << "size_z: " << sim.size_z  << "size_y: "
+              << sim.size_y << "size_x: " << sim.size_x << std::endl;
     writer_main.open(settings.output, (restart_step > 0));
 
     if (rank == 0)
