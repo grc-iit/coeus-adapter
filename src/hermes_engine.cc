@@ -454,9 +454,9 @@ const char *filename = "/mnt/common/hxu40/output.txt";
 //    writer.Put(var2, values);
 //    writer.EndStep();
 //    writer.Close();
-  //  Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
 
-  //  writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
+    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
 }
 
@@ -513,9 +513,9 @@ void HermesEngine::DoPutDeferred_(
 //    writer.Put(var2, values);
 //    writer.EndStep();
 //    writer.Close();
-   // Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
 
-  //  writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
+    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
 }
 
