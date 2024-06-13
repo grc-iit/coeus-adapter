@@ -41,10 +41,10 @@ public:
         }
         adios2::Engine writer = io_.Open(fileName_, mode);
 
-
+        writer.BeginStep();
         // Perform the write operation
         writer.Put(var_, data);
-
+        writer.EndStep();
         // Close the engine
         writer.Close();
     }
