@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <string>
-
+#include <fstream>
 #include <vector>
 #include <string>
 #include <comms/MPI.h>
@@ -32,7 +32,11 @@ public:
     void WriteData(const T *data, std::vector<size_t> shape, std::vector<size_t> start, std::vector<size_t> count) {
         // Open the engine to write data
         auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
-        adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
+        i if (fileExists(filename_)) {
+            adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
+        } else {
+            adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Write);
+        }
 
         // Perform the write operation
         writer.Put(var_, data);
