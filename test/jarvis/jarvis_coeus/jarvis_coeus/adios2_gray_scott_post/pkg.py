@@ -32,29 +32,47 @@ class Adios2GrayScottPost(Application):
         return [
             {
                 'name': 'nprocs',
-                'msg': 'Number of processes',
-                'type': int,
-                'default': 1,
-            },
-            {
-                'name': 'ppn',
-                'msg': 'The number of processes per node',
+                'msg': 'Number of processes to spawn',
                 'type': int,
                 'default': 4,
             },
             {
-                'name': 'engine',
-                'msg': 'Engine to be used',
-                'choices': ['bp4', 'hermes'],
-                'type': str,
-                'default': 'bp4',
+                'name': 'ppn',
+                'msg': 'Processes per node',
+                'type': int,
+                'default': None,
             },
             {
-                'name': 'script_location',
-                'msg': 'the location of lammps script',  # the location for lammps scirpt
+                'name': 'in_filename',
+                'msg': 'Input file location',
                 'type': str,
                 'default': None,
-
+            },
+            {
+                'name': 'out_filename',
+                'msg': 'Output file location',
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'nbins',
+                'msg': 'Number of bins used in the post processing (??)',
+                'type': int,
+                'default': 100,
+            },
+            {
+                'name': 'write_inputvars',
+                'msg': 'Should the read variables we written to the output file',
+                'choices': ['yes', 'no'],
+                'type': str,
+                'default': "no",
+            },
+            {
+                'name': 'engine',
+                'msg': 'Engine to be used',
+                'choices': ['bp5', 'hermes'],
+                'type': str,
+                'default': "bp5",
             },
             {
                 'name': 'db_path',
@@ -74,10 +92,20 @@ class Adios2GrayScottPost(Application):
         :return: None
         """
         self.update_config(kwargs, rebuild=False)
+        if self.config['out_filename'] is None:
+            adios_dir = os.path.join(self.shared_dir, 'post-gray-scott-output')
+            self.config['out_filename'] = os.path.join(adios_dir, 'data/post.bp')
+            Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
+                                          env=self.env))
+
+        output_dir = os.path.dirname(self.config['out_filename'])
+        db_dir = os.path.dirname(self.config['db_path'])
+        Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
+                                       env=self.env))
 
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    f'{self.config["script_location"]}/adios_config.xml')
+                                self.adios2_xml_path)
         elif self.config['engine'].lower() == 'hermes':
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path)

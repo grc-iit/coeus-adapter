@@ -68,8 +68,7 @@ class Lammps(Application):
            replacement = [("ppn", self.config['ppn']), ("DB_FIEL", self.config['db_file'])]
            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                    f'{self.config["script_location"]}/adios_config.xml', replacement)
-        else:
-           raise Exception('Engine not defined')
+
 
 
     def start(self):
