@@ -22,7 +22,7 @@ class Adios2Writer {
 public:
 
     Adios2Writer(const std::string &engineType, const std::string &fileName, const std::string &variableName)
-            : engineType_(engineType), fileName_(fileName), variableName_(variableName), adios_(adios2::ADIOS()), io_(adios_.DeclareIO("OutputIO")) {
+            : engineType_(engineType), fileName_(fileName), variableName_(variableName), adios_(adios2::ADIOS(MPI_COMM_WORLD)), io_(adios_.DeclareIO("OutputIO")) {
         // Set the engine type
         io_.SetEngine(engineType_);
 
