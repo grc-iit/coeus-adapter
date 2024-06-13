@@ -166,8 +166,8 @@ void Writer::write(int step, const GrayScott &sim, int rank)
 
         std::vector<double> u = sim.u_noghost();
         std::vector<double> v = sim.v_noghost();
-        std::cout <<"process:" << getpid() << " the size of U" << u.size() << std::endl;
-        std::cout <<"process:" << getpid() << " the size of V" << v.size() << std::endl;
+       // std::cout <<"process:" << getpid() << " the size of U" << u.size() << std::endl;
+       // std::cout <<"process:" << getpid() << " the size of V" << v.size() << std::endl;
 //        if(rank == 0 || u.size() != 1024 || v.size() != 1024 ||
 //        var_u.SelectionSize() != 1024 || var_v.SelectionSize() != 1024)
 //        {
@@ -186,9 +186,9 @@ void Writer::write(int step, const GrayScott &sim, int rank)
         writer.Put<int>(var_step, &step);
         writer.Put<double>(var_u, u.data());
         writer.Put<double>(var_v, v.data());
-       Adios2Writer<double> writer2("BPFile", "/mnt/common/hxu40/output.bp", "U");
+       //Adios2Writer<double> writer2("BPFile", "/mnt/common/hxu40/output.bp", "U");
        writer2.WriteData(u.data(), var_u.Shape(), var_u.Start(), var_u.Count());
-        Adios2Writer<double> writer3("BPFile", "/mnt/common/hxu40/output.bp", "V");
+      //  Adios2Writer<double> writer3("BPFile", "/mnt/common/hxu40/output.bp", "V");
         writer3.WriteData(v.data(), var_v.Shape(), var_v.Start(), var_v.Count());
         writer.EndStep();
     }
