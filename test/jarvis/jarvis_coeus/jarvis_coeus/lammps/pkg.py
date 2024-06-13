@@ -40,9 +40,9 @@ class Lammps(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp4', 'hermes'],
+                'choices': ['bp5', 'hermes'],
                 'type': str,
-                'default': 'bp4',
+                'default': 'bp5',
             },
             {
                 'name': 'script_location',
