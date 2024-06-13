@@ -32,7 +32,7 @@ public:
     void WriteData(const T *data, std::vector<size_t> shape, std::vector<size_t> start, std::vector<size_t> count) {
         // Open the engine to write data
         auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
-        if (fileExists(fileName_)) {
+        if (std::filesystem::exists(fileName_)) {
             adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Append);
         } else {
             adios2::Engine writer = io_.Open(fileName_, adios2::Mode::Write);
