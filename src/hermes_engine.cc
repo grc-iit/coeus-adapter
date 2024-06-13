@@ -437,13 +437,13 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-//    std::vector<size_t> start2;
-//
-//    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-//        start2 = std::vector<size_t>();
-//    } else {
-//        start2 = variable.m_Start;
-//    }
+    std::vector<size_t> start2;
+
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
 //    adios2::ADIOS adios(MPI_COMM_WORLD);
 //    adios2::IO io2 = adios.DeclareIO("Output");
 //    io2.SetEngine("BPFile");
@@ -495,13 +495,13 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-//    std::vector<size_t> start2;
-//
-//    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-//        start2 = std::vector<size_t>();
-//    } else {
-//        start2 = variable.m_Start;
-//    }
+    std::vector<size_t> start2;
+
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
 //
 //    adios2::ADIOS adios(MPI_COMM_WORLD);
 //    adios2::IO io2 = adios.DeclareIO("Output");
