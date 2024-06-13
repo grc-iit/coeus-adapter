@@ -60,31 +60,20 @@ class Lammps(Application):
         ]
 
     def _configure(self, **kwargs):
-        """
-        Converts the Jarvis configuration to application-specific configuration.
-        E.g., OrangeFS produces an orangefs.xml file.
 
-        :param kwargs: Configuration parameters for this pkg.
-        :return: None
-        """
-       if self.config['engine'].lower() == 'bp5':
+        if self.config['engine'].lower() == 'bp5':
           self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                   f'{self.config["script_location"]}/adios_config.xml')
-       elif  self.config['engine'].lower == 'hermes':
+        elif self.config['engine'].lower == 'hermes':
            replacement = [("ppn", self.config['ppn']), ("DB_FIEL", self.config['db_file'])]
            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                    f'{self.config["script_location"]}/adios_config.xml', replacement)
-       else:
+        else:
            raise Exception('Engine not defined')
-       self.update_config(kwargs, rebuild=False)
+
 
     def start(self):
-        """
-        Launch an application. E.g., OrangeFS will launch the servers, clients,
-        and metadata services on all necessary pkgs.
 
-        :return: None
-        """
         Exec('lmp -in input.lammps',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
