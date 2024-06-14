@@ -454,7 +454,7 @@ const char *filename = "/mnt/common/hxu40/output.txt";
 //    writer.Put(var2, values);
 //    writer.EndStep();
 //    writer.Close();
-    std::count <<  "!!!!!!!!!!!!!!!!!!!" << adiosOutput << std::endl;
+
     Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
 
     writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
