@@ -124,3 +124,18 @@ To clean data produced by Hermes + Gray-Scott:
 ```bash
 jarvis pipeline clean
 ```
+
+# Adios2 Write engine for a BP5 file copy
+
+## 1. add this package into jarvis package folder
+Compile the Coeus-adapter with OPENMPI.
+## 2. when append adios2_gray_scott, add the location where you want to have BP5 file copy in
+```
+jarvis pipeline append adios2_gray_scott engine=hermes bp_file_copy=/the/location/of/file
+```
+## 3. run the gray_scott
+```
+jarvis pipeline run
+```
+
+
