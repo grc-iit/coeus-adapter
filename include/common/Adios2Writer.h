@@ -31,8 +31,8 @@ public:
 
     void WriteData(const T *data, std::vector<size_t> shape, std::vector<size_t> start, std::vector<size_t> count) {
         // Open the engine to write data
-        //auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
-         auto var_ = io_.DefineVariable<T>(variableName_, {adios2::LocalValueDim});
+        auto var_ = io_.DefineVariable<T>(variableName_, shape, start, count);
+        //auto var_ = io_.DefineVariable<T>(variableName_, {adios2::LocalValueDim});
         adios2::Mode mode = adios2::Mode::Write;
 
 
