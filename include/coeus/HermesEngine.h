@@ -49,7 +49,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;
-
+    std::string adiosOutput;
   hrun::coeus_mdm::Client client;
   hrun::rankConsensus::Client rank_consensus;
 //  FileLock* lock;
@@ -105,7 +105,6 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   int currentStep = 0;
   int total_steps = -1;
-  std::string adiosOutput;
 
     adios2::IO io2;
     adios2::Engine writer;
