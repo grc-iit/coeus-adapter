@@ -163,15 +163,15 @@ void HermesEngine::Init_() {
     throw std::invalid_argument("db_file not found in parameters");
   }
 
-//  if(params.find("adiosOutput") != params.end()) {
-//      adiosOutput = params["adiosOutput"];
-//  }
+ if(params.find("adiosOutput") != params.end()) {
+     adiosOutput = params["adiosOutput"];
+  }
 
-        adiosOutput = "/mnt/common/hxu40/adios2_out/copy3.bp";
+       // adiosOutput = "/mnt/common/hxu40/adios2_out/copy3.bp";
 //        adios2::ADIOS adios_copy(MPI_COMM_WORLD);
 //        adios2::IO io_copy = adios_copy.DeclareIO("twins");
 //        io_copy.SetEngine("BPFile");
-
+       std::cout << adiosOutput << std::endl;
 }
 
 /**
@@ -454,7 +454,7 @@ const char *filename = "/mnt/common/hxu40/output.txt";
 //    writer.Put(var2, values);
 //    writer.EndStep();
 //    writer.Close();
-    Adios2Writer<T> writer("BPFile", "/mnt/common/hxu40/output.bp", variable.m_Name);
+    Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
 
     writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
