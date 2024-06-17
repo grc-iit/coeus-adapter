@@ -139,3 +139,15 @@ jarvis pipeline run
 ```
 
 
+# Adios2 Write engine for a BP5 file copy
+
+## 1. Add this package to the Jarvis package folder
+Compile the Coeus-adapter with OpenMPI.
+## 2. Specify the location where you want the BP5 file copy:
+```
+jarvis pipeline append adios2_gray_scott engine=hermes bp_file_copy=/path/to/file
+```
+## 3. Run Gray-Scott
+```
+jarvis pipeline run
+```
