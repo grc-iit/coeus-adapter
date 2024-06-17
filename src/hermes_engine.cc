@@ -427,7 +427,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
     }
 
     Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-    writer.WriteData(values,{adios2::LocalValueDim}, variable.m_Start, variable.m_Count);
+    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
 }
 
@@ -456,7 +456,7 @@ void HermesEngine::DoPutDeferred_(
         start2 = variable.m_Start;
     }
     Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-    writer.WriteData(values, {adios2::LocalValueDim}, start2, variable.m_Count);
+    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
 }
 
