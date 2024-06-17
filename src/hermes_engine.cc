@@ -413,25 +413,6 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-  /*
-const char *filename = "/mnt/common/hxu40/output.txt";
- int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-    }
-   size_t dataSize = variable.SelectionSize() * sizeof(T);
-    ssize_t bytesWritten = write(fd, values, dataSize);
-    if (bytesWritten == -1) {
-        perror("write");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-    if (close(fd) == -1) {
-        perror("close");
-        exit(EXIT_FAILURE);
-    }
-*/
 
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
@@ -444,20 +425,9 @@ const char *filename = "/mnt/common/hxu40/output.txt";
     } else {
         start2 = variable.m_Start;
     }
-//    adios2::ADIOS adios(MPI_COMM_WORLD);
-//    adios2::IO io2 = adios.DeclareIO("Output");
-//    io2.SetEngine("BPFile");
-//    adios2::Engine writer = io2.Open(adiosOutput, adios2::Mode::Append);
-//    adios2::Variable<T> var2 = io2.DefineVariable<T>(
-//            variable.m_Name, variable.Shape(), start2, variable.Count());
-//    writer.BeginStep();
-//    writer.Put(var2, values);
-//    writer.EndStep();
-//    writer.Close();
 
     Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-
-    writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
+    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
 
 }
 
@@ -467,22 +437,6 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-  std::cout <<"Process " << getpid()  << " has selectionSize in hermes_engine "  << variable.SelectionSize() * sizeof(T) << std::endl;
-    std::cout << "Shape in hermes_engine PUT: ";
-  for (auto i: variable.m_Shape) {
-   std::cout << i << " ";
-  }
-   std::cout << std::endl;
-   std::cout << "Count in hermes_engine PUT: ";
-    for (auto i: variable.m_Count) {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "Start in hermes_engine PUT: ";
-    for (auto i: variable.m_Start) {
-        std::cout << i << " ";
-    }
-    std::cout << std::endl;
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(),
@@ -495,27 +449,13 @@ void HermesEngine::DoPutDeferred_(
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-
     std::vector<size_t> start2;
-
     if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
         start2 = std::vector<size_t>();
     } else {
         start2 = variable.m_Start;
     }
-//
-//    adios2::ADIOS adios(MPI_COMM_WORLD);
-//    adios2::IO io2 = adios.DeclareIO("Output");
-//    io2.SetEngine("BPFile");
-//    adios2::Engine writer = io2.Open(adiosOutput, adios2::Mode::Append);
-//    adios2::Variable<T> var2 = io2.DefineVariable<T>(
-//            variable.m_Name, variable.Shape(), start2, variable.Count());
-//    writer.BeginStep();
-//    writer.Put(var2, values);
-//    writer.EndStep();
-//    writer.Close();
     Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-
     writer.WriteData(values, variable.m_Shape, start2, variable.m_Count);
 
 }
