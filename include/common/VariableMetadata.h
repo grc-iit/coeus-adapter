@@ -19,7 +19,7 @@
 #include "common/MetadataStructs.h"
 #include <vector>
 #include <string>
-
+#include <comms/MPI.h>
 #include <vector>
 #include <string>
 
@@ -37,7 +37,13 @@ enum class adiosOpType {
     get = 0,
     put = 1
 };
-
+std::string Get_processor_name() {
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
+    int name_len;
+    MPI_Get_processor_name(processor_name, &name_len);
+    std::string processor(processor_name);
+    return processor;
+}
 struct metaInfo {
     adiosOpType operation;
     std::string time;
@@ -54,7 +60,10 @@ struct metaInfo {
     size_t stepStart;
     size_t blockID;
     //int order;
-
+    std::string blob_name;
+    std::string bucket_name;
+    std::string processor;
+    int processNo;
 
 
 
@@ -64,7 +73,7 @@ struct metaInfo {
         operation = operationType;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
-        time = std::to_string(localTime->tm_hour) + ": " + std::to_string(localTime->tm_min)+ ": " + std::to_string(localTime->tm_sec);
+        time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
         selectionSize = variable.SelectionSize();
         sizeofVariable = variable.m_ElementSize;
         shape = variable.Shape();

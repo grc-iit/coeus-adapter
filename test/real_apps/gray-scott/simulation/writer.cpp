@@ -69,7 +69,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
     {
         define_bpvtk_attribute(settings, io);
     }
-    std::cout << "flag2.1" << std::endl;
+
     // add attributes for Fides
     io.DefineAttribute<std::string>("Fides_Data_Model", "uniform");
     double origin[3] = {0.0, 0.0, 0.0};
@@ -89,12 +89,12 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
         io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
-    std::cout << "flag2.5" << std::endl;
+
     var_v =
         io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
-    std::cout << "flag2.6" << std::endl;
+
 
 
     if(derived == 1) {
@@ -111,7 +111,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 
 
 
-    std::cout << "flag2.7" << std::endl;
+
     if (settings.adios_memory_selection)
     {
         var_u.SetMemorySelection(
@@ -119,7 +119,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
         var_v.SetMemorySelection(
             {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
     }
-    std::cout << "flag2.8" << std::endl;
+
     var_step = io.DefineVariable<int>("step");
 }
 

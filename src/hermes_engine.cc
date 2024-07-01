@@ -557,8 +557,16 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-
-
+    /* duplicate adios2 bp5 file
+    std::vector<size_t> start2;
+    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+        start2 = std::vector<size_t>();
+    } else {
+        start2 = variable.m_Start;
+    }
+    Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
+    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
+   */
 }
 
 
@@ -581,7 +589,16 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-
+    /* duplicate adios2 bp5 file
+      std::vector<size_t> start2;
+      if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
+          start2 = std::vector<size_t>();
+      } else {
+          start2 = variable.m_Start;
+      }
+      Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
+      writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
+     */
 
 }
 

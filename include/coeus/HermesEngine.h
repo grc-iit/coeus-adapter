@@ -52,6 +52,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;
+  std::string adiosOutput;
   int lookahead;
   hrun::coeus_mdm::Client client;
   int num_layers = 4;

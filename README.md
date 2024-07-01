@@ -54,7 +54,7 @@ make -j8
 ```
 
 Note:
-To enable metadata and function trace feature, please add flag during cmake
+To enable the metadata and function trace features, please add the appropriate flags during the CMake configuration.
 ```
 cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ```
@@ -64,3 +64,8 @@ To test the functionality of the adapter, run:
 ```
 ctest
 ```
+## Derived Variable
+To use the Adios2 derived variable feature, please switch to the derived_merged branch and install the latest version of Adios2 with the derived feature enabled.
+
+## Hermes Info log
+The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.

@@ -16,10 +16,10 @@ class Adios2GrayScott(Application):
         """
         Initialize paths
         """
-        self.settings_json_path = f'{self.shared_dir}/settings-files.json'
         self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
-        self.var_json_path = f'{self.shared_dir}/var.yaml'
-        self.operator_json_path = f'{self.shared_dir}/operator.yaml'
+        self.settings_json_path = f'{self.shared_dir}/settings-files.json'
+        self.var_json_path = f'{self.shared_dir}/var.json'
+        self.operator_json_path = f'{self.shared_dir}/operator.json'
 
     def _configure_menu(self):
         """
@@ -164,17 +164,17 @@ class Adios2GrayScott(Application):
                 'default': True,
             },
             {
+                'name': 'limit',
+                'msg': 'Limit the value of data to track',
+                'type': int,
+                'default': 0,
+            },
+            {
                 'name': 'db_path',
                 'msg': 'Path where the DB will be stored',
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
-            {
-                'name': 'limit',
-                'msg': 'Limit the value of data to track',
-                'type': int,
-                'default': 0,
-            }
         ]
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
@@ -187,10 +187,11 @@ class Adios2GrayScott(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        self.update_config(kwargs, rebuild=False)
         if self.config['out_file'] is None:
             adios_dir = os.path.join(self.shared_dir, 'gray-scott-output')
             self.config['out_file'] = os.path.join(adios_dir,
-                                                 'data/out.bp')
+                                                   'data/out.bp')
             Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
                                           env=self.env))
         settings_json = {
@@ -217,25 +218,14 @@ class Adios2GrayScott(Application):
         output_dir = os.path.dirname(self.config['out_file'])
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                       env=self.env))
+                                                 env=self.env))
 
         JsonFile(self.settings_json_path).save(settings_json)
-
-        ppn = self.config['ppn']
-        replacements = [
-            ('PPN', f'{ppn}'),
-            ('VARFILE', self.var_json_path),
-            ('OPFILE', self.operator_json_path),
-            ('DBFILE', self.config['db_path']),
-            ('LIMIT', self.config['limit']),
-        ]
-
         print(f"Using engine {self.config['engine']}")
-        if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
-            replacements.append(('ENGINE', 'bp5'))
+        if self.config['engine'].lower() in ['bp5', 'bp5_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path)
-        elif self.config['engine'].lower() == 'hermes':
+                                    self.adios2_xml_path)
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path,
                                     replacements={
@@ -261,21 +251,20 @@ class Adios2GrayScott(Application):
         # print(self.env['HERMES_CLIENT_CONF'])
         if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
             derived = 1
+            Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
+                 MpiExecInfo(nprocs=self.config['nprocs'],
+                             ppn=self.config['ppn'],
+                             hostfile=self.jarvis.hostfile,
+                             env=self.mod_env,
+                             do_dbg=self.config['do_dbg'],
+                             dbg_port=self.config['dbg_port']
+                             ))
         elif self.config['engine'].lower() in ['hermes', 'bp5']:
-            derived = 0
-        else:
-            raise Exception('Engine not defined')
-        Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
-             MpiExecInfo(nprocs=self.config['nprocs'],
-                         ppn=self.config['ppn'],
-                         hostfile=self.jarvis.hostfile,
-                         env=self.mod_env,
-                         do_dbg=self.config['do_dbg'],
-                         dbg_port=self.config['dbg_port']
-                         ))
-
-        time.sleep(self.config['sleep'])
-        print('Done sleeping')
+            Exec(f'adios2-gray-scott {self.settings_json_path}',
+                 MpiExecInfo(nprocs=self.config['nprocs'],
+                             ppn=self.config['ppn'],
+                             hostfile=self.jarvis.hostfile,
+                             env=self.mod_env))
 
     def stop(self):
         """
