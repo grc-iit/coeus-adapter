@@ -68,24 +68,6 @@ private:
   }
 
   void Put_hash(Put_hashTask *task, RunContext &rctx) {
-//    float* data_run0_ptr = (float*)data_run0_h.data();
-//
-//    Kokkos::View<float*> data_run0_d("Run0 Data", data_run0_h.size());
-//    Kokkos::View<float*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > data_run0_h_kokkos(data_run0_ptr, data_run0_h.size());
-//    Kokkos::deep_copy(data_run0_d, data_run0_h_kokkos);
-//    std::cout << "EXEC STATE:: Data loaded and transfered to GPU" << std::endl;
-//
-//    // Create tree_run0
-//    CompareTreeDeduplicator tree_object(chunk_size, root_level, fuzzy_hash, error_tolerance, dtype);
-//    tree_object.setup(data_len);
-//    tree_object.create_tree((uint8_t*)data_run0_d.data(), data_run0_d.size());
-//    std::cout << "EXEC STATE:: Tree created" << std::endl;
-//
-//    // Serialize tree
-//    std::vector<uint8_t> serialized_buffer;
-//    serialized_buffer = tree_object.serialize();
-//    std::cout << "EXEC STATE:: Tree serialized" << std::endl;
-
     hshm::charbuf blob_name = hshm::to_charbuf(*task->blob_name_);
     hshm::charbuf good_name(blob_name.str() + "_hash");
     char *blob_buf = HRUN_CLIENT->GetDataPointer(task->data_);
@@ -116,7 +98,7 @@ private:
     std::memcpy(p.ptr_, serialized_buffer, serialized_buffer.size());
 
     hermes_client.AsyncPut(task->task_node_ + 1, task->tag_id_, good_name, taks->blob_id_, task->blob_off_,
-                           serialized_buffer.size(), p.ptr_, task->score_, task->flags_);
+                           serialized_buffer.size(), p.shm_, task->score_, task->flags_);
     task->SetModuleComplete();
   }
 
