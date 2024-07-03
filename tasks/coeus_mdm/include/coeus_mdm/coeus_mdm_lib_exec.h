@@ -1,10 +1,6 @@
 #ifndef HRUN_COEUS_MDM_LIB_EXEC_H_
 #define HRUN_COEUS_MDM_LIB_EXEC_H_
 
-void MonitorConstruct(u32 mode, ConstructTask *task, RunContext &rctx) {}
-void MonitorDestruct(u32 mode, DestructTask *task, RunContext &rctx) {}
-void MonitorMdm_insert(u32 mode, Mdm_insertTask *task, RunContext &rctx) {}
-void MonitorMdm_insert(u32 mode, DestructTask *task, RunContext &rctx) {}
 /** Execute a task */
 void Run(u32 method, Task *task, RunContext &rctx) override {
   switch (method) {
@@ -18,6 +14,10 @@ void Run(u32 method, Task *task, RunContext &rctx) override {
     }
     case Method::kMdm_insert: {
       Mdm_insert(reinterpret_cast<Mdm_insertTask *>(task), rctx);
+      break;
+    }
+    case Method::kPut_hash: {
+      Put_hash(reinterpret_cast<Put_hashTask *>(task), rctx);
       break;
     }
   }
@@ -37,6 +37,10 @@ void Monitor(u32 mode, Task *task, RunContext &rctx) override {
       MonitorMdm_insert(mode, reinterpret_cast<Mdm_insertTask *>(task), rctx);
       break;
     }
+    case Method::kPut_hash: {
+      MonitorPut_hash(mode, reinterpret_cast<Put_hashTask *>(task), rctx);
+      break;
+    }
   }
 }
 /** Delete a task */
@@ -52,6 +56,10 @@ void Del(u32 method, Task *task) override {
     }
     case Method::kMdm_insert: {
       HRUN_CLIENT->DelTask<Mdm_insertTask>(reinterpret_cast<Mdm_insertTask *>(task));
+      break;
+    }
+    case Method::kPut_hash: {
+      HRUN_CLIENT->DelTask<Put_hashTask>(reinterpret_cast<Put_hashTask *>(task));
       break;
     }
   }
@@ -71,6 +79,10 @@ void Dup(u32 method, Task *orig_task, std::vector<LPointer<Task>> &dups) overrid
       hrun::CALL_DUPLICATE(reinterpret_cast<Mdm_insertTask*>(orig_task), dups);
       break;
     }
+    case Method::kPut_hash: {
+      hrun::CALL_DUPLICATE(reinterpret_cast<Put_hashTask*>(orig_task), dups);
+      break;
+    }
   }
 }
 /** Register the duplicate output with the origin task */
@@ -86,6 +98,10 @@ void DupEnd(u32 method, u32 replica, Task *orig_task, Task *dup_task) override {
     }
     case Method::kMdm_insert: {
       hrun::CALL_DUPLICATE_END(replica, reinterpret_cast<Mdm_insertTask*>(orig_task), reinterpret_cast<Mdm_insertTask*>(dup_task));
+      break;
+    }
+    case Method::kPut_hash: {
+      hrun::CALL_DUPLICATE_END(replica, reinterpret_cast<Put_hashTask*>(orig_task), reinterpret_cast<Put_hashTask*>(dup_task));
       break;
     }
   }
@@ -105,6 +121,10 @@ void ReplicateStart(u32 method, u32 count, Task *task) override {
       hrun::CALL_REPLICA_START(count, reinterpret_cast<Mdm_insertTask*>(task));
       break;
     }
+    case Method::kPut_hash: {
+      hrun::CALL_REPLICA_START(count, reinterpret_cast<Put_hashTask*>(task));
+      break;
+    }
   }
 }
 /** Determine success and handle failures */
@@ -122,6 +142,10 @@ void ReplicateEnd(u32 method, Task *task) override {
       hrun::CALL_REPLICA_END(reinterpret_cast<Mdm_insertTask*>(task));
       break;
     }
+    case Method::kPut_hash: {
+      hrun::CALL_REPLICA_END(reinterpret_cast<Put_hashTask*>(task));
+      break;
+    }
   }
 }
 /** Serialize a task when initially pushing into remote */
@@ -137,6 +161,10 @@ std::vector<DataTransfer> SaveStart(u32 method, BinaryOutputArchive<true> &ar, T
     }
     case Method::kMdm_insert: {
       ar << *reinterpret_cast<Mdm_insertTask*>(task);
+      break;
+    }
+    case Method::kPut_hash: {
+      ar << *reinterpret_cast<Put_hashTask*>(task);
       break;
     }
   }
@@ -161,6 +189,11 @@ TaskPointer LoadStart(u32 method, BinaryInputArchive<true> &ar) override {
       ar >> *reinterpret_cast<Mdm_insertTask*>(task_ptr.ptr_);
       break;
     }
+    case Method::kPut_hash: {
+      task_ptr.ptr_ = HRUN_CLIENT->NewEmptyTask<Put_hashTask>(task_ptr.shm_);
+      ar >> *reinterpret_cast<Put_hashTask*>(task_ptr.ptr_);
+      break;
+    }
   }
   return task_ptr;
 }
@@ -177,6 +210,10 @@ std::vector<DataTransfer> SaveEnd(u32 method, BinaryOutputArchive<false> &ar, Ta
     }
     case Method::kMdm_insert: {
       ar << *reinterpret_cast<Mdm_insertTask*>(task);
+      break;
+    }
+    case Method::kPut_hash: {
+      ar << *reinterpret_cast<Put_hashTask*>(task);
       break;
     }
   }
@@ -197,6 +234,10 @@ void LoadEnd(u32 replica, u32 method, BinaryInputArchive<false> &ar, Task *task)
       ar.Deserialize(replica, *reinterpret_cast<Mdm_insertTask*>(task));
       break;
     }
+    case Method::kPut_hash: {
+      ar.Deserialize(replica, *reinterpret_cast<Put_hashTask*>(task));
+      break;
+    }
   }
 }
 /** Get the grouping of the task */
@@ -210,6 +251,9 @@ u32 GetGroup(u32 method, Task *task, hshm::charbuf &group) override {
     }
     case Method::kMdm_insert: {
       return reinterpret_cast<Mdm_insertTask*>(task)->GetGroup(group);
+    }
+    case Method::kPut_hash: {
+      return reinterpret_cast<Put_hashTask*>(task)->GetGroup(group);
     }
   }
   return -1;

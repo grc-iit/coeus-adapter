@@ -393,6 +393,22 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
+  if(variable.m_Name.find("_checkpoint") != std::string::npos){
+    id_ = Hermes->bkt->id_; //check
+    hshm::charbuf blob_name_buf = hshm::to_charbuf(variable.m_Name);
+
+    BlobId blob_id = hermes::BlobId::GetNull();
+
+    size_t data_size = variable.SelectionSize() * sizeof(T);
+
+    LPointer<char> p = HRUN_CLIENT->AllocateBufferClient(data_size);
+    memcopy(p.ptr_, values, data_size);
+
+    client.Put_hashRoot(DomainId::GetLocal(),
+                        id_, blob_name_buf,
+                        blob_id, 0, data_size,
+                        p.shm_, 1, HERMES_BLOB_REPLACE);
+  }
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,

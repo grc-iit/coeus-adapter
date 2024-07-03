@@ -86,7 +86,13 @@ endif()
 #------------------------------------------------------------------------------
 # This is for compatability with SPACK
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
 
+#find_package(StateDiff REQUIRED)
+#find_package(Kokkos REQUIRED)
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(uring REQUIRED IMPORTED_TARGET liburing)
+#find_package(OpenSSL REQUIRED)
 # Hermes
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")

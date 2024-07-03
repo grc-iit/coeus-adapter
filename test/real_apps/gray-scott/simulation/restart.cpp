@@ -28,19 +28,19 @@ void WriteCkpt(MPI_Comm comm, const int step, const Settings &settings,
             size_t R = static_cast<size_t>(rank);
             size_t N = static_cast<size_t>(nproc);
 
-            var_u = io.DefineVariable<double>("U", {N, X, Y, Z}, {R, 0, 0, 0},
+            var_u = io.DefineVariable<double>("U_checkpoint", {N, X, Y, Z}, {R, 0, 0, 0},
                                             {1, X, Y, Z});
-            var_v = io.DefineVariable<double>("V", {N, X, Y, Z}, {R, 0, 0, 0},
+            var_v = io.DefineVariable<double>("V_checkpoint", {N, X, Y, Z}, {R, 0, 0, 0},
                                             {1, X, Y, Z});
 
-            var_step = io.DefineVariable<int>("step");
+            var_step = io.DefineVariable<int>("step_checkpoint");
             firstCkpt = false;
         }
         else
         {
-            var_u = io.InquireVariable<double>("U");
-            var_v = io.InquireVariable<double>("V");
-            var_step = io.InquireVariable<int>("step");
+            var_u = io.InquireVariable<double>("U_checkpoint");
+            var_v = io.InquireVariable<double>("V_checkpoint");
+            var_step = io.InquireVariable<int>("step_checkpoint");
         }
 
         writer.Put<int>(var_step, &step);

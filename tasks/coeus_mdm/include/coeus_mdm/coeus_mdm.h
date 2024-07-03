@@ -100,7 +100,30 @@ class Client : public TaskLibClient {
 //    task.ptr_->Wait();
   }
   HRUN_TASK_NODE_PUSH_ROOT(Mdm_insert);
+
+  void AsyncPut_hashConstruct(
+      Put_hashTask *task,
+      const TaskNode &task_node,
+      hermes::TagId tag_id,
+      const hshm::charbuf &blob_name,
+      const hermes::BlobId &blob_id,
+      size_t blob_off,
+      size_t blob_size,
+      const hipc::Pointer &blob,
+      float score,
+      u32 flags,
+      hermes::Context ctx = hermes::Context(),
+      u32 task_flags = TASK_FIRE_AND_FORGET | TASK_DATA_OWNER | TASK_LOW_LATENCY) {
+    HRUN_CLIENT->ConstructTask<Put_hashTask>(
+        task, task_node, DomainId::GetNode(blob_id.node_id_), id_,
+        tag_id, blob_name, blob_id,
+        blob_off, blob_size,
+        blob, score, flags, ctx, task_flags);
+  }
+  HRUN_TASK_NODE_PUSH_ROOT(Put_hash);
+
 };
+
 
 }  // namespace hrun
 

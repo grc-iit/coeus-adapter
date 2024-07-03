@@ -66,6 +66,8 @@ class Hermes : public IHermes {
 
     bkt.ReorganizeBlob(blob_id, blob_score + promote_weight, 0, ctx);
   }
+
+
 };
 
 }

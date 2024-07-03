@@ -5,7 +5,10 @@ add_library(coeus_mdm SHARED
         coeus_mdm.cc)
 target_link_libraries(coeus_mdm
         ${Hermes_RUNTIME_LIBRARIES}
-        ${SQLite3_LIBRARIES})
+        ${SQLite3_LIBRARIES}
+        Deduplicator::StateDiff
+)
+
 target_include_directories(coeus_mdm PRIVATE
         ${PROJECT_SOURCE_DIR}/include
         ${SQLite3_INCLUDE_DIRS})
