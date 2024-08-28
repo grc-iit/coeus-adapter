@@ -66,7 +66,7 @@ ctest
 ```
 ## Derived Variable
 To use the Adios2 derived variable feature, please switch to the derived_merged branch and install the latest version of Adios2 with the derived feature enabled.
-1. install kokkos with enable threads, ```spack install kokkos```
+1. install kokkos with enable threads, ```spack install kokkos```,
 2.  install statediff https://github.com/DataStates/state-diff/tree/coeus,   add these config:
    ```
 -D BUILD_SHARED_LIBS=ON
