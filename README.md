@@ -66,6 +66,12 @@ ctest
 ```
 ## Derived Variable
 To use the Adios2 derived variable feature, please switch to the derived_merged branch and install the latest version of Adios2 with the derived feature enabled.
+1. install kokkos with enable threads, ```spack install kokkos```
+2.  install statediff https://github.com/DataStates/state-diff/tree/coeus,   add these config:
+   ```
+-D BUILD_SHARED_LIBS=ON
+-D CMAKE_INSTALL_PREFIX="${INSTALL_DIR}
+4.  modify adios2 packages.py, and change the URL and branch. https://github.com/lizdulac/ADIOS2/tree/coeus_hash
 
 ## Hermes Info log
 The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
