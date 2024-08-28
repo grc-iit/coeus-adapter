@@ -71,6 +71,7 @@ To use the Adios2 derived variable feature, please switch to the derived_merged 
    ```
 -D BUILD_SHARED_LIBS=ON
 -D CMAKE_INSTALL_PREFIX="${INSTALL_DIR}
+```
 4.  modify adios2 packages.py, and change the URL and branch. https://github.com/lizdulac/ADIOS2/tree/coeus_hash
 
 ## Hermes Info log
