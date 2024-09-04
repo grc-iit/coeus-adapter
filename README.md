@@ -106,8 +106,7 @@ The Hermes info log is disabled by default. To enable the Hermes log, please set
 
 3. install adios2@coeus_hash
    first, comment out the source/adios2/Cmakefile.txt from line from line 144 to 162
-   
-   ```
+```
    find_package(BISON "3.8.2")
   find_package(FLEX)
 
@@ -127,7 +126,7 @@ if(NOT BISON_FOUND OR NOT FLEX_FOUND)
       DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
    ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
  endif()
- ```
+``` 
 
 ```
 git clone -b coeus-hash https://github.com/lizdulac/ADIOS2.git
