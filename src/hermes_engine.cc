@@ -321,7 +321,7 @@ void HermesEngine::ComputeDerivedVariables() {
         DerivedBlockData;
     if (derivedVar->GetDerivedType() !=
         adios2::DerivedVarType::ExpressionString) {
-      DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo, true);
+     // DerivedBlockData = derivedVar->ApplyExpression(nameToVarInfo, true);
     }
 
     for (auto derivedBlock : DerivedBlockData) {
