@@ -111,22 +111,22 @@ The Hermes info log is disabled by default. To enable the Hermes log, please set
    find_package(BISON "3.8.2")
   find_package(FLEX)
 
- //  if(NOT BISON_FOUND OR NOT FLEX_FOUND)
+if(NOT BISON_FOUND OR NOT FLEX_FOUND)
     include(ADIOSBisonFlexSub)
     SETUP_ADIOS_BISON_FLEX_SUB()
- //  else()
- //   BISON_TARGET(MyParser
- //     toolkit/derived/parser/parser.y
- //     ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp
- //     COMPILE_FLAGS "-o parser.cpp --header=parser.h"
- //     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.h)
-//   FLEX_TARGET(MyScanner
-//     toolkit/derived/parser/lexer.l
- //     COMPILE_FLAGS "-o lexer.cpp --header-file=lexer.h" 
- //     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
- //     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
-//   ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
- // endif()
+ else()
+   BISON_TARGET(MyParser
+     toolkit/derived/parser/parser.y
+     ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp
+     COMPILE_FLAGS "-o parser.cpp --header=parser.h"
+     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.h)
+ FLEX_TARGET(MyScanner
+    toolkit/derived/parser/lexer.l
+    COMPILE_FLAGS "-o lexer.cpp --header-file=lexer.h" 
+     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
+      DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
+   ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
+ endif()
  ```
 
 ```
