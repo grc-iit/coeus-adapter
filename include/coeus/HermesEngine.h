@@ -26,7 +26,7 @@
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
 #include <adios2/core/VariableDerived.h>
-
+#include "adios2/helper/adiosType.h"
 #include "ContainerManager.h"
 #include "rankConsensus/rankConsensus.h"
 #include "coeus/MetadataSerializer.h"
