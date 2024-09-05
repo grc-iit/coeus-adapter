@@ -278,7 +278,7 @@ void HermesEngine::ComputeDerivedVariables() {
     std::vector<std::string> varList = derivedVar->VariableNameList();
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
-    std::map<std::string, adios2::<MinVarInfo>> nameToVarInfo;
+    std::map<std::string, std::unique_ptr<MinVarInfo>> nameToVarInfo;
     for (auto varName : varList) {
       auto itVariable = m_Variables.find(varName);
           if (itVariable == m_Variables.end())
