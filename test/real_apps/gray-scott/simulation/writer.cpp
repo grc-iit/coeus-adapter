@@ -81,31 +81,33 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
     std::vector<std::string> varList = {"U", "V"};
     std::vector<std::string> assocList = {"points", "points"};
     io.DefineAttribute<std::string>("Fides_Variable_List", varList.data(), varList.size());
-
+    std::cout << "flag 1.1.1" << std::endl;
     io.DefineAttribute<std::string>("Fides_Variable_Associations", assocList.data(), assocList.size());
-
+    std::cout << "flag 1.1.2" << std::endl;
 
     var_u =
         io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
-
+    std::cout << "flag 1.1.3 " << std::endl;
     var_v =
         io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
 
-
+    std::cout << "flag 1.1.4" << std::endl;
 
     if(derived == 1) {
         auto PDFU = io.DefineDerivedVariable("derive/pdfU",
                                              "x:U \n"
-                                             "magnitude(x)",
+                                             "add(x)",
                                              adios2::DerivedVarType::StoreData);
+        std::cout << "flag 1.1.5" << std::endl;
         auto PDFV = io.DefineDerivedVariable("derive/pdfV",
                                              "x:V \n"
-                                             "magnitude(x)",
+                                             "add(x)",
                                              adios2::DerivedVarType::StoreData);
+        std::cout << "flag 1.1.6" << std::endl;
     }
 
 
@@ -119,7 +121,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
         var_v.SetMemorySelection(
             {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
     }
-
+    std::cout << "flag 1.1.7" << std::endl;
     var_step = io.DefineVariable<int>("step");
 }
 
