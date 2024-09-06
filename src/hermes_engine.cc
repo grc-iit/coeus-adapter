@@ -327,7 +327,7 @@ void HermesEngine::ComputeDerivedVariables() {
 //
 //            NameToMVI[pair.first] = std::make_unique<adios2::MinVarInfo>(std::move(pair.second));
 //        }
-      DerivedBlockData = derivedVar->ApplyExpression(NameToVarInfo2, true);
+      DerivedBlockData = derivedVar.ApplyExpression(NameToVarInfo2, true);
     }
 
     for (auto derivedBlock : DerivedBlockData) {
