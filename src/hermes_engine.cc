@@ -321,13 +321,13 @@ void HermesEngine::ComputeDerivedVariables() {
         DerivedBlockData;
     if (derivedVar->GetDerivedType() !=
         adios2::DerivedVarType::ExpressionString) {
-     //   std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
-        std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToVarInfo2;
-//        for (auto &pair : nameToVarInfo) {
-//
-//            NameToMVI[pair.first] = std::make_unique<adios2::MinVarInfo>(std::move(pair.second));
-//        }
-      DerivedBlockData = derivedVar->ApplyExpression(NameToVarInfo2);
+        std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
+       // std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToVarInfo2;
+        for (auto &pair : nameToVarInfo) {
+
+            NameToMVI[pair.first] = std::make_unique<adios2::MinVarInfo>(std::move(pair.second));
+        }
+      DerivedBlockData = derivedVar->ApplyExpression(NameToMVI);
     }
 
     for (auto derivedBlock : DerivedBlockData) {
