@@ -189,9 +189,9 @@ int main(int argc, char **argv)
             << std::endl;
 #endif
     }
-    std::cout << "flag4" << std::endl;
+
     writer_main.close();
-    std::cout << "flag5" << std::endl;
+
 #ifdef ENABLE_TIMERS
     log << "total\t" << timer_total.elapsed() << "\t" << timer_compute.elapsed()
         << "\t" << timer_write.elapsed() << std::endl;
@@ -203,6 +203,6 @@ int main(int argc, char **argv)
     auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
     logger.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
-    std::cout << "flag6" << std::endl;
+
     MPI_Finalize();
 }
