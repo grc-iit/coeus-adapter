@@ -109,7 +109,6 @@ int main(int argc, char **argv)
     adios2::ADIOS adios(settings.adios_config, comm);
     adios2::IO io_main = adios.DeclareIO("SimulationOutput");
     adios2::IO io_ckpt = adios.DeclareIO("SimulationCheckpoint");
-   std::cout << "flag1" << std::endl;
     int restart_step = 0;
     if (settings.restart)
     {
@@ -118,13 +117,13 @@ int main(int argc, char **argv)
         io_main.SetParameter("AppendAfterSteps",
                              std::to_string(restart_step / settings.plotgap));
     }
-    std::cout << "flag1.1" << std::endl;
+
     Writer writer_main(settings, sim, io_main, derived);
-    std::cout << "flag1.2" << std::endl;
+
     writer_main.open(settings.output, (restart_step > 0));
-    std::cout << "flag1.3" << std::endl;
+
     auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
-    std::cout << "flag2" << std::endl;
+
     if (rank == 0)
     {
         print_io_settings(io_main);
@@ -133,7 +132,7 @@ int main(int argc, char **argv)
         print_simulator_settings(sim);
         std::cout << "========================================" << std::endl;
     }
-    std::cout << "flag13" << std::endl;
+
 #ifdef ENABLE_TIMERS
     Timer timer_total;
     Timer timer_compute;
