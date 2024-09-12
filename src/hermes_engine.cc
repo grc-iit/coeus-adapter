@@ -356,7 +356,7 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep() {
   TRACE_FUNC(std::to_string(currentStep));
   //derived
-    ComputeDerivedVariables();
+  //  ComputeDerivedVariables();
     //end derived
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
