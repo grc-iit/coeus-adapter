@@ -97,6 +97,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 
 
     if(derived == 1) {
+        std::cout << "use derived variables" << std::endl;
         auto PDFU = io.DefineDerivedVariable("derive/hashU",
                                              "x = U \n"
                                              "hash(x)",
@@ -120,7 +121,7 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
         var_v.SetMemorySelection(
             {{1, 1, 1}, {sim.size_z + 2, sim.size_y + 2, sim.size_x + 2}});
     }
-    std::cout << "flag 1.1.7" << std::endl;
+
     var_step = io.DefineVariable<int>("step");
 }
 
