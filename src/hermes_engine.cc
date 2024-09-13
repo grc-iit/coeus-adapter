@@ -527,11 +527,7 @@ void HermesEngine::DoGetDeferred_(
     TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
     auto blob = Hermes->bkt->Get(variable.m_Name);
     std::string name = variable.m_Name;
-#ifdef Meta_enabled
-    // add spdlog method to extract the variable metadata
-    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
+
     //finish metadata extraction
     memcpy(values, blob.data(), blob.size());
 
