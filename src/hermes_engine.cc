@@ -524,19 +524,17 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-//TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-//  auto blob = Hermes->bkt->Get(variable.m_Name);
- // std::string name = variable.m_Name;
-/*#ifdef Meta_enabled
-  // add spdlog method to extract the variable metadata
-  metaInfo metaInfo(variable, adiosOpType::get);
-  meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
-  globalData.insertGet(name);
-  meta_logger_get->info("order: {}", globalData.GetMapToString());
-#endif*/
-  //finish metadata extraction
+    TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
     auto blob = Hermes->bkt->Get(variable.m_Name);
+    std::string name = variable.m_Name;
+#ifdef Meta_enabled
+    // add spdlog method to extract the variable metadata
+    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
+#endif
+    //finish metadata extraction
     memcpy(values, blob.data(), blob.size());
+
 
 
 }
@@ -561,16 +559,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-    /* duplicate adios2 bp5 file
-    std::vector<size_t> start2;
-    if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-        start2 = std::vector<size_t>();
-    } else {
-        start2 = variable.m_Start;
-    }
-    Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-    writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
-   */
+   
 }
 
 
@@ -593,16 +582,7 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-    /* duplicate adios2 bp5 file
-      std::vector<size_t> start2;
-      if (variable.m_Start.empty() || variable.m_Start.data() == nullptr) {
-          start2 = std::vector<size_t>();
-      } else {
-          start2 = variable.m_Start;
-      }
-      Adios2Writer<T> writer("BPFile", adiosOutput, variable.m_Name);
-      writer.WriteData(values, variable.m_Shape, variable.m_Start, variable.m_Count);
-     */
+
 
 }
 
@@ -617,8 +597,8 @@ void HermesEngine::DoPutDeferred_(
         }
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
-        DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
-        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+       // DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
+       // client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
 
 
