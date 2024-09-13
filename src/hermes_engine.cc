@@ -593,8 +593,8 @@ void HermesEngine::DoPutDeferred_(
         }
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
-       // DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
-       // client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+        DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
+        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     }
 
 
