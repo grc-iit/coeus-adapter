@@ -120,7 +120,7 @@ void HermesEngine::Init_() {
 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
-
+  std::cout << m_IO.m_Name << std::endl;
   // Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
   if (params.find("OPFile") != params.end()) {
