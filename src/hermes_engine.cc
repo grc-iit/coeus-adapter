@@ -241,9 +241,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     LoadMetadata();
   }
 
-  std::string bucket_name =  uid +"_"+ "step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+  std::string bucket_name =  uid +"_" + std::to_string(index) + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
   Hermes->GetBucket(bucket_name);
-
+  index++;
 // derived part
   if(m_OpenMode == adios2::Mode::Read){
       for(int i = 0; i < num_layers; i++) {

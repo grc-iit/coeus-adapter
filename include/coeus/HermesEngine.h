@@ -54,6 +54,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string db_file;
   std::string adiosOutput;
   int lookahead;
+  int index = 0;
   hrun::coeus_mdm::Client client;
   int num_layers = 4;
   int ppn;
