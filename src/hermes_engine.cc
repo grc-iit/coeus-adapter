@@ -242,6 +242,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   }
 
   std::string bucket_name =  uid +"_" + std::to_string(index) + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+  std::cout << "HEre is the buckerName: " << bucket_name << std::endl;
   Hermes->GetBucket(bucket_name);
   index++;
 // derived part
