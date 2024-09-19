@@ -245,7 +245,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     std::string result = a.substr(0, pos);
     std::string bucket_name =  result + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
-  Hermes->GetBucket(bucket_name);
+    Hermes->GetBucket(bucket_name);
 
 // derived part
   if(m_OpenMode == adios2::Mode::Read){
@@ -267,6 +267,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 //derived part
 void HermesEngine::ComputeDerivedVariables() {
   auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
+
   auto const &m_Variables = m_IO.GetVariables();
   // parse all derived variables
   if(rank == 0) {
@@ -279,6 +280,9 @@ void HermesEngine::ComputeDerivedVariables() {
     auto derivedVar =
         dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
     std::vector<std::string> varList = derivedVar->VariableNameList();
+    for(auto i: varList) {
+        std::cout << "Compute Derived Variables: " << i << std::endl;
+    }
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
@@ -589,7 +593,7 @@ void HermesEngine::DoPutDeferred_(
     void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                                   T *values) {
         std::string name = variable.m_Name;
-        std::cout << "PutDeirved" << name << std::endl;
+
         int total_count = 1;
         for (auto count : variable.m_Count) {
             total_count *= count;
