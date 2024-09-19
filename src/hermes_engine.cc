@@ -241,13 +241,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     LoadMetadata();
   }
     std::string a = db_file;
-
     size_t pos = a.find('.');
-
-    // Check if '.' is found
     std::string result = a.substr(0, pos);
-    std::cout << "HEre is the bucker Name: " << result << std::endl;
-  std::string bucket_name =  result + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+    std::string bucket_name =  result + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
   Hermes->GetBucket(bucket_name);
 
