@@ -140,6 +140,7 @@ export LD_LIBRARY_PATH=~/coeus/derived/coeus-adapter/build/bin/:$LD_LIBRARY_PATH
 jarvis pipeline env build
 jarvis pipeline append hermes_run --sleep=10 --provider=sockets
 jarvis pipeline append adios2_gray_scott engine=hermes_derived ppn=8 nprocs=16
+jarvis pipeline append adios2_gray_scott_2 engine=hermes_derived ppn=8 nprocs=16
 jarvis ppl run
 
 ```
