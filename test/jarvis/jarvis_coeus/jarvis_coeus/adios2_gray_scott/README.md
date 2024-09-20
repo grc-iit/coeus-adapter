@@ -127,3 +127,19 @@ To clean data produced by Hermes + Gray-Scott:
 ```bash
 jarvis pipeline clean
 ```
+
+
+## 7. example to set the jarvis pipeline and derived variables:
+```
+jarvis pipeline create gray_scott
+module load orangefs/2.10
+module load openmpi
+spack load hermes@master
+export PATH=~/coeus/derived/coeus-adapter/build/bin/:$PATH
+export LD_LIBRARY_PATH=~/coeus/derived/coeus-adapter/build/bin/:$LD_LIBRARY_PATH
+jarvis pipeline env build
+jarvis pipeline append hermes_run --sleep=10 --provider=sockets
+jarvis pipeline append adios2_gray_scott engine=hermes_derived ppn=8 nprocs=16
+jarvis ppl run
+
+```
