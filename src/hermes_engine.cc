@@ -621,9 +621,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-        bool existed = SQLiteWrapper.CheckVariableExists(currentStep, rank, name);
+        if(DbOperation.CheckVariableExists(currentStep, rank, name)) {
+            std::cout << "existed: " << std::endl;
+        }
 
-        std::cout << "existed: " << existed << std::endl;
+
 
 
 
