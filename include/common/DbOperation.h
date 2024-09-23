@@ -13,7 +13,8 @@
 enum class OperationType {
   InsertData,
   UpdateSteps,
-  InsertDerivedData
+  InsertDerivedData,
+  CheckVariable,
 };
 
 class DbOperation {
@@ -44,6 +45,10 @@ class DbOperation {
   // Constructor for UpdateSteps type
   DbOperation(const std::string& _uid, int _currentStep)
       : type(OperationType::UpdateSteps), uid(std::move(_uid)), currentStep(_currentStep) {}
+
+  //constructor for check the name
+  DbOperation(int _step, int _rank, std::string _name)
+      : type(OperationType::CheckVariable), step(_step), rank(_rank), name(std::move(_name)) {}
 
   template <class Archive>
   void serialize(Archive &ar) {

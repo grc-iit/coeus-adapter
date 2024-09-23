@@ -41,6 +41,9 @@ class DbQueueWorker {
     } else if (op.type == OperationType::UpdateSteps) {
       db->UpdateTotalSteps(op.uid, op.currentStep);
     }
+    else if (op.type == OperationType::CheckVariable) {
+        db->FindVariable(op.step,op.rank, op.name);
+    }
   }
 
  public:

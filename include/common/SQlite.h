@@ -146,6 +146,25 @@ class SQLiteWrapper {
 
   }
 
+    bool FindVariable(int step, int mpi_rank, const std::string& varName) {
+        sqlite3_stmt* stmt;
+        const std::string findVariable =  "SELECT COUNT(*) FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
+        sqlite3_bind_int(stmt, 1, step);
+        sqlite3_bind_int(stmt, 2, mpi_rank);
+        sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
+        bool exists = false;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            exists = (count > 0); // If count is greater than 0, the variable exists
+        }
+
+        // Clean up and finalize the statement
+        sqlite3_finalize(stmt);
+        return exists;
+  }
+
+
+
   BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
     const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
