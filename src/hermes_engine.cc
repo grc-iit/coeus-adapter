@@ -620,9 +620,9 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         std::cout << "Put Derived " << name << std::endl;
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-        name1 = name.substr(0,9);
-        bool existed  = DbOperation(currentStep, rank,name1);
 
+        bool existed  = DbOperation(currentStep, rank,name);
+        std::cout << "existed: " << existed << std::endl;
 
         memcpy(value3, blob.data(), blob.size());
 
