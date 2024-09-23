@@ -173,12 +173,14 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   template<typename T>
   void DoGetSync_(const adios2::core::Variable<T> &variable,
                   T *values);
-
+//  void HermesEngine::DoGetDerivedVariableSync_(const adios2::core::Variable<T> &variable,
+//                                                     T *values);
   /** Get data from Hermes (async) */
   template<typename T>
   void DoGetDeferred_(const adios2::core::Variable<T> &variable,
                       T *values);
-
+//  void DoGetDerivedVariableDeferred_(const adios2::core::Variable<T> &variable,
+//                            T *values);
   /** Calls to support Adios native queries */
   void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
                                  void *Element);

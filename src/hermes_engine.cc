@@ -525,8 +525,16 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
   //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 
-
 }
+
+//template<typename T>
+//void HermesEngine::DoGetDerivedVariableSync_(const adios2::core::Variable<T> &variable,
+//                                  T *values) {
+//
+//
+//}
+
+
 
 template<typename T>
 void HermesEngine::DoGetDeferred_(
@@ -537,10 +545,17 @@ void HermesEngine::DoGetDeferred_(
 
     //finish metadata extraction
     memcpy(values, blob.data(), blob.size());
-
-
-
 }
+
+//    template<typename T>
+//    void HermesEngine::DoGetDerivedVariableDeferred_(
+//            const adios2::core::Variable<T> &variable, T *values) {
+//        auto blob = Hermes->bkt->Get(variable.m_Name);
+//        std::string name = variable.m_Name;
+//        memcpy(values, blob.data(), blob.size());
+//    }
+
+
 
 template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
@@ -548,7 +563,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-    std::cout << "DoPutsync" << std::endl;
+
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
@@ -589,8 +604,8 @@ void HermesEngine::DoPutDeferred_(
 
 }
 
-    template <typename T>
-    void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
+template <typename T>
+void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                                   T *values) {
         std::string name = variable.m_Name;
 
@@ -602,7 +617,22 @@ void HermesEngine::DoPutDeferred_(
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-    }
+
+        std::string derived_name = variable.m_Name;
+        auto blob = Hermes->bkt->Get(derived_name);
+        T* value2 = new T[blob.size() / sizeof(T)];
+        //finish metadata extraction
+        memcpy(value2, blob.data(), blob.size());
+        std::cout << "value2 data: ";
+        for (size_t i = 0; i < blob.size() / sizeof(T); ++i) {
+            std::cout << value2[i] << " ";
+        }
+        std::cout << std::endl;
+
+    // Free the allocated memory
+        delete[] value2;
+
+}
 
 
 template<typename T>
