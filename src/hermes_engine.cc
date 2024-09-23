@@ -629,11 +629,6 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
 
 
-        std::string derived_name = variable.m_Name;
-        auto blob = Hermes->bkt->Get(derived_name);
-        T* value2= new T[total_count * sizeof(T)];
-        //finish metadata extraction
-        memcpy(value2, blob.data(), blob.size());
 
 
 
