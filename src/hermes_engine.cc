@@ -621,10 +621,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-        bool existed  = DbOperation(currentStep, rank,name);
+        bool existed = sqliteWrapper.CheckVariableExists(currentStep, rank, name);
+
         std::cout << "existed: " << existed << std::endl;
 
-        memcpy(value3, blob.data(), blob.size());
+
 
         std::string derived_name = variable.m_Name;
         auto blob = Hermes->bkt->Get(derived_name);
