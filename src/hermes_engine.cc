@@ -615,6 +615,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         }
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
+        std::cout << "Put Derived " << name << std::endl;
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
