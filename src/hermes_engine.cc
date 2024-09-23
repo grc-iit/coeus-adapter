@@ -340,7 +340,7 @@ void HermesEngine::ComputeDerivedVariables() {
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
     T* data = static_cast<T *>(std::get<0>(derivedBlock));\
     PutDerived(*derivedVar, data);   \
-    td::cout << data[1] << " " << data[2] << "" << data[3] << " ";        \
+    std::cout << data[1] << " " << data[2] << "" << data[3] << " ";        \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
 #undef DEFINE_VARIABLE_PUT
