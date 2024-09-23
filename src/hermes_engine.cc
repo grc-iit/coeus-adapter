@@ -621,9 +621,19 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-        if(db->FindVariable(currentStep,rank, name)) {
-            std::cout << "existed: " << std::endl;
-        }
+    if (db == nullptr) {
+        std::cerr << "Database connection is null." << std::endl;
+        return; // Handle error appropriately
+    }
+
+    std::cout << "Checking for variable existence for step: " << currentStep
+              << ", rank: " << rank << ", name: " << name << std::endl;
+
+    if (db->FindVariable(currentStep, rank, name)) {
+        std::cout << "existed: " << name << std::endl;
+    } else {
+        std::cout << "not existed: " << name << std::endl;
+    }
 
 
 

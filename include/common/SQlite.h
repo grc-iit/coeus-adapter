@@ -148,22 +148,36 @@ class SQLiteWrapper {
 
     bool FindVariable(int step, int mpi_rank, const std::string& varName) {
         sqlite3_stmt* stmt;
-        const std::string findVariable =  "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
+        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
+
+        // Prepare the SQL statement
+        if (sqlite3_prepare_v2(db, findVariable.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+            // Handle the error (e.g., log it)
+            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+            return false;
+        }
+
+        // Bind the parameters
         sqlite3_bind_int(stmt, 1, step);
         sqlite3_bind_int(stmt, 2, mpi_rank);
         sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
-        bool exists = false;
-        sqlite3_step(stmt);
 
+        // Execute the statement and check if the variable exists
+        bool exists = false;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            exists = (count > 0);
+        }
 
         // Clean up and finalize the statement
         sqlite3_finalize(stmt);
-        return true;
-  }
+        return exists;
+    }
 
 
 
-  BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
+
+    BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
     const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
