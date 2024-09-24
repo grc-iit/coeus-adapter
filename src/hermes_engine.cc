@@ -615,7 +615,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (int i = 0; i < total_count; ++i) {
         std::cout << static_cast<int>(values[i]) << " "; // cast uint8_t to int for readable output
     }
-
+   std::cout << "  " << std::endl;
     if (db->FindVariable(currentStep, rank, name)) {
         std::cout << "existed: " << name << std::endl;
     } else {
