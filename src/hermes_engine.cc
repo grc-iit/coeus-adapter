@@ -616,15 +616,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         }
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
-
+        std::cout << "total count" <<  total_count << std::endl;
 
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-    if (db == nullptr) {
-        std::cerr << "Database connection is null." << std::endl;
-        return; // Handle error appropriately
-    }
 
 
 
