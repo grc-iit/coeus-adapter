@@ -148,7 +148,7 @@ class SQLiteWrapper {
 
     bool FindVariable(int step, int mpi_rank, const std::string& varName) {
         sqlite3_stmt* stmt;
-        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = 6 AND mpi_rank = 0 AND name = ?;";
+        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
         sqlite3_prepare_v2(db, findVariable.c_str(), -1, &stmt, 0);
         sqlite3_bind_int(stmt, 1, step);
        sqlite3_bind_int(stmt, 2, mpi_rank);
