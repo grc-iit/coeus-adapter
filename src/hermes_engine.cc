@@ -617,7 +617,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
         Hermes->bkt->Put(name, total_count * sizeof(T), values);
 
-        std::cout << "Put Derived " << name << std::endl;
+
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
@@ -628,9 +628,8 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
     std::cout << "Checking for variable existence for step: " << currentStep
               << ", rank: " << rank << ", name: " << name << std::endl;
-    int rank1;
-    rank1 = rank-1;
-    if (db->FindVariable(currentStep, rank1, name)) {
+
+    if (db->FindVariable(currentStep, rank, name)) {
         std::cout << "existed: " << name << std::endl;
     } else {
         std::cout << "not existed: " << name << std::endl;
