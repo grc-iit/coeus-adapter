@@ -267,7 +267,6 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 //derived part
 void HermesEngine::ComputeDerivedVariables() {
   auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
-
   auto const &m_Variables = m_IO.GetVariables();
   // parse all derived variables
   if(rank == 0) {
@@ -290,15 +289,6 @@ void HermesEngine::ComputeDerivedVariables() {
       auto itVariable = m_Variables.find(varName);
           if (itVariable == m_Variables.end())
             std::cout <<"throw error commented" <<std::endl;
-//              adios2::helper::Throw<std::invalid_argument>("Core", "IO",
-//              "DefineDerivedVariable",
-//                                                     "using undefine
-//                                                     variable " +
-//                                                     varName +
-//                                                         " in defining
-//                                                         the derived
-//                                                         variable " +
-//                                                         (*it).second->m_Name);
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
       auto blob = Hermes->bkt->Get(varName);
@@ -621,17 +611,16 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 
-
-
+    std::cout << "Retrieved data for variable: " << name << std::endl;
+    for (int i = 0; i < total_count; ++i) {
+        std::cout << static_cast<int>(values[i]) << " "; // cast uint8_t to int for readable output
+    }
 
     if (db->FindVariable(currentStep, rank, name)) {
         std::cout << "existed: " << name << std::endl;
     } else {
         std::cout << "not existed: " << name << std::endl;
     }
-
-
-
 
 
 
