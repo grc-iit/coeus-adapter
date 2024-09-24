@@ -151,11 +151,6 @@ class SQLiteWrapper {
         const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
 
         // Prepare the SQL statement
-        if (sqlite3_prepare_v2(db, findVariable.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-            // Handle the error (e.g., log it)
-            std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
-            return false;
-        }
 
         // Bind the parameters
         sqlite3_bind_int(stmt, 1, step);
