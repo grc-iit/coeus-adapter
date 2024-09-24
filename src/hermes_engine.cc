@@ -626,8 +626,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         return; // Handle error appropriately
     }
 
-    std::cout << "Checking for variable existence for step: " << currentStep
-              << ", rank: " << rank << ", name: " << name << std::endl;
+
 
     if (db->FindVariable(currentStep, rank, name)) {
         std::cout << "existed: " << name << std::endl;
