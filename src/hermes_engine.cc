@@ -620,7 +620,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         int current_bucket = stoi(adiosOutput);
 
         if(current_bucket == 0) {
-        contirue;
+        continue;
         } else {
          std::string previous_bucket_name = std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
          std::cout << "Be Attention: " << previous_bucket_name << std::endl;
