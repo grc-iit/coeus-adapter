@@ -1,8 +1,18 @@
 Gray-Scott is a 3D 7-Point stencil code
 
 # Installation
-
 Since gray_scott is installed along with the coeus-adapter, these steps can be skipped.
+```bash
+git clone https://github.com/pnorbert/adiosvm
+pushd adiosvm/Tutorial/gs-mpiio
+mkdir build
+pushd build
+cmake ../ -DCMAKE_BUILD_TYPE=Release
+make -j8
+export GRAY_SCOTT_PATH=`pwd`
+popd
+popd
+```
 
 # Gray Scott
 
@@ -15,6 +25,7 @@ export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```````````
 
 
+
 ## 2. Create a Pipeline
 
 The Jarvis pipeline will store all configuration data needed by Gray Scott.
@@ -25,7 +36,7 @@ jarvis pipeline create gray-scott-test
 
 ## 3. Save Environment
 
-We must make Jarvis aware of all environment variables needed to execute applications in the pipeline.
+Store the current environment in the pipeline.
 ```bash
 jarvis pipeline env build
 ```
@@ -34,7 +45,8 @@ jarvis pipeline env build
 
 Create a Jarvis pipeline with Gray Scott
 ```bash
-jarvis pipeline append gray_scott
+jarvis pipeline append adios2_gray_scott
+
 ```
 
 ## 5. Run Experiment
@@ -61,29 +73,13 @@ Create the environment variables needed by Hermes + Gray Scott
 spack install hermes@master adios2
 spack load hermes adios2
 # On Ares
-module load hermes/master-feow7up adios2/2.9.0-mmkelnu
-# export GRAY_SCOTT_PATH=${HOME}/adiosvm/Tutorial/gs-mpiio/build
-export PATH="${GRAY_SCOTT_PATH}:$PATH"
+spack load hermes@master
+# export GRAY_SCOTT_PATH=$/coeus_adapter/build/bin
+export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```
 
-## 2. Create a Resource Graph
 
-If you haven't already, create a resource graph. This only needs to be done
-once throughout the lifetime of Jarvis. No need to repeat if you have already
-done this for a different pipeline.
-
-If you are running distributed tests, set path to the hostfile you are  using.
-```bash
-jarvis hostfile set /path/to/hostfile.txt
-```
-
-Next, collect the resources from each of those pkgs. Walkthrough will give
-a command line tutorial on how to build the hostfile.
-```bash
-jarvis resource-graph build +walkthrough
-```
-
-## 3. Create a Pipeline
+## 2. Create a Pipeline
 
 The Jarvis pipeline will store all configuration data needed by Hermes
 and Gray Scott.
@@ -94,7 +90,8 @@ jarvis pipeline create gs-hermes
 
 ## 3. Save Environment
 
-Store the current environment in the pipeline.
+We must make Jarvis aware of all environment variables needed to execute applications in the pipeline.
+
 ```bash
 jarvis pipeline env build
 ```
@@ -128,19 +125,17 @@ To clean data produced by Hermes + Gray-Scott:
 jarvis pipeline clean
 ```
 
+# Adios2 Write engine for a BP5 file copy
 
-## 7. example to set the jarvis pipeline and derived variables:
+## 1. Add this package to the Jarvis package folder
+Compile the Coeus-adapter with OpenMPI.
+## 2. Specify the location where you want the BP5 file copy:
 ```
-jarvis pipeline create gray_scott
-module load orangefs/2.10
-module load openmpi
-spack load hermes@master
-export PATH=~/coeus/derived/coeus-adapter/build/bin/:$PATH
-export LD_LIBRARY_PATH=~/coeus/derived/coeus-adapter/build/bin/:$LD_LIBRARY_PATH
-jarvis pipeline env build
-jarvis pipeline append hermes_run --sleep=10 --provider=sockets
-jarvis pipeline append adios2_gray_scott engine=hermes_derived ppn=8 nprocs=16
-jarvis pipeline append adios2_gray_scott_2 engine=hermes_derived ppn=8 nprocs=16
-jarvis ppl run
+jarvis pipeline append adios2_gray_scott engine=hermes bp_file_copy=/path/to/file
+```
+## 3. Run Gray-Scott
+```
+jarvis pipeline run
+```
 
-```
+

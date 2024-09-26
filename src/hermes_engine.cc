@@ -179,6 +179,9 @@ void HermesEngine::Init_() {
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
+  if(params.find("adiosOutput") != params.end()) {
+      adiosOutput = params["adiosOutput"];
+  }
 
   open = true;
 
@@ -240,10 +243,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     }
     LoadMetadata();
   }
-    std::string a = db_file;
-    size_t pos = a.find('.');
-    std::string result = a.substr(0, pos);
-    std::string bucket_name =  result + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+
+    std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
 
     Hermes->GetBucket(bucket_name);
 
@@ -610,18 +611,27 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+      // switch the bucket
+       std:string prev_bucket_name;
 
-    std::cout << "Retrieved data for variable: " << name << std::endl;
-    for (int i = 0; i < total_count; ++i) {
-        std::cout << static_cast<int>(values[i]) << " "; // cast uint8_t to int for readable output
-    }
-   std::cout << "  " << std::endl;
+
+
+
+
     if (db->FindVariable(currentStep, rank, name)) {
-        std::cout << "existed: " << name << std::endl;
-    } else {
-        std::cout << "not existed: " << name << std::endl;
-    }
+        T* values2;
+        Hermes->GetBucket(preivous_bucket_name);
+        auto blob = Hermes->bkt->Get(_previous_hash_variable_Name);
 
+        memcpy(values2, blob.data(), blob.size());
+        for (int i = 0; i < total_count; ++i) {
+            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01) {
+                continue;
+            } else{
+                //do something;
+            }
+
+        }
 
 
 

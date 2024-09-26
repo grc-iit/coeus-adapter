@@ -175,6 +175,13 @@ class Adios2GrayScott(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'bp_file_copy',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': None,
+            },
+
         ]
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
@@ -191,7 +198,7 @@ class Adios2GrayScott(Application):
         if self.config['out_file'] is None:
             adios_dir = os.path.join(self.shared_dir, 'gray-scott-output')
             self.config['out_file'] = os.path.join(adios_dir,
-                                                   'data/out.bp')
+                                                 'data/out.bp')
             Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
                                           env=self.env))
         settings_json = {
@@ -218,13 +225,13 @@ class Adios2GrayScott(Application):
         output_dir = os.path.dirname(self.config['out_file'])
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                                 env=self.env))
+                                       env=self.env))
 
         JsonFile(self.settings_json_path).save(settings_json)
         print(f"Using engine {self.config['engine']}")
         if self.config['engine'].lower() in ['bp5', 'bp5_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    self.adios2_xml_path)
+                                self.adios2_xml_path)
         elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     self.adios2_xml_path,
@@ -233,6 +240,7 @@ class Adios2GrayScott(Application):
                                         'VARFILE': self.var_json_path,
                                         'OPFILE': self.operator_json_path,
                                         'DBFILE': self.config['db_path'],
+                                        'copy_output': self.config['bp_file_copy'],
                                     })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
@@ -261,10 +269,10 @@ class Adios2GrayScott(Application):
                              ))
         elif self.config['engine'].lower() in ['hermes', 'bp5']:
             Exec(f'adios2-gray-scott {self.settings_json_path}',
-                 MpiExecInfo(nprocs=self.config['nprocs'],
-                             ppn=self.config['ppn'],
-                             hostfile=self.jarvis.hostfile,
-                             env=self.mod_env))
+                MpiExecInfo(nprocs=self.config['nprocs'],
+                         ppn=self.config['ppn'],
+                         hostfile=self.jarvis.hostfile,
+                         env=self.mod_env))
 
     def stop(self):
         """

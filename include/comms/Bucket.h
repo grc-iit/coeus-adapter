@@ -29,6 +29,9 @@ class Bucket : public IBucket {
     bkt = h->hermes->GetBucket(bucket_name);
   }
 
+//  void SwitchBucket(const std::string &bucket_name, coeus::IHermes *h){
+//      bkt = h->hermes->GetBucket(bucket_name);
+//  }
 //  hermes::BlobId Put(const std::string &blob_name, const std::string &data){
 //    hapi::Context ctx;
 //    bkt.Put<std::string>(blob_name, data, ctx);
