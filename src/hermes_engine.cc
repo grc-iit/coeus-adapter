@@ -614,18 +614,15 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
       // switch the bucket
        std:string prev_bucket_name;
 
-
-
-
-
+/*
     if (db->FindVariable(currentStep, rank, name)) {
         T* values2;
-        Hermes->GetBucket(preivous_bucket_name);
+        Hermes->GetBucket(prev_bucket_name);
         auto blob = Hermes->bkt->Get(_previous_hash_variable_Name);
 
         memcpy(values2, blob.data(), blob.size());
         for (int i = 0; i < total_count; ++i) {
-            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01) {
+            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01)) {
                 continue;
             } else{
                 //do something;
@@ -634,11 +631,10 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         }
 
 
-
+    }
+    */
 
 }
-
-
 template<typename T>
 DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
