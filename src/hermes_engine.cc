@@ -619,9 +619,12 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
       // switch the bucket
         int current_bucket = stoi(adiosOutput);
 
-        if(current_bucket > 1)
-         std::string previous_bucket_name = std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-         std::cout << "Be Attention: " << previous_bucket_name << std::endl;
+        if(current_bucket > 1) {
+            std::string previous_bucket_name =
+                    std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
+                    std::to_string(rank);
+            std::cout << "Be Attention: " << previous_bucket_name << std::endl;
+        }
         }
 /*
     if (db->FindVariable(currentStep, rank, name)) {
@@ -643,7 +646,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     }
     */
 
-}
+
 template<typename T>
 DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
