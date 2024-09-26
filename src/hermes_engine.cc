@@ -596,6 +596,11 @@ void HermesEngine::DoPutDeferred_(
 
 }
 
+
+
+
+
+
 template <typename T>
 void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                                   T *values) {
@@ -612,7 +617,14 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
       // switch the bucket
+        int current_bucket = stoi(adiosOutput);
 
+        if(current_bucket == 0) {
+        contirue;
+        } else {
+         std::string previous_bucket_name = std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+         std::cout << "Be Attention: " << previous_bucket_name << std::endl;
+        }
 /*
     if (db->FindVariable(currentStep, rank, name)) {
         T* values2;
