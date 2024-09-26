@@ -604,47 +604,49 @@ void HermesEngine::DoPutDeferred_(
 template <typename T>
 void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                                   T *values) {
-        std::string name = variable.m_Name;
+    std::string name = variable.m_Name;
 
-        int total_count = 1;
-        for (auto count : variable.m_Count) {
-            total_count *= count;
-        }
-
-        Hermes->bkt->Put(name, total_count * sizeof(T), values);
-        std::cout << "total count" <<  total_count << std::endl;
-
-        DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
-        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-      // switch the bucket
-        int current_bucket = stoi(adiosOutput);
-
-        if(current_bucket > 1) {
-            std::string previous_bucket_name =
-                    std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
-                    std::to_string(rank);
-            std::cout << "Be Attention: " << previous_bucket_name << std::endl;
-        }
-        }
-/*
-    if (db->FindVariable(currentStep, rank, name)) {
-        T* values2;
-        Hermes->GetBucket(prev_bucket_name);
-        auto blob = Hermes->bkt->Get(_previous_hash_variable_Name);
-
-        memcpy(values2, blob.data(), blob.size());
-        for (int i = 0; i < total_count; ++i) {
-            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01)) {
-                continue;
-            } else{
-                //do something;
-            }
-
-        }
-
-
+    int total_count = 1;
+    for (auto count: variable.m_Count) {
+        total_count *= count;
     }
-    */
+
+    Hermes->bkt->Put(name, total_count * sizeof(T), values);
+    std::cout << "total count" << total_count << std::endl;
+
+    DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
+    client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+    // switch the bucket
+    int current_bucket = stoi(adiosOutput);
+
+    if (current_bucket > 1) {
+        std::string previous_bucket_name =
+                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
+                std::to_string(rank);
+
+        if (db->FindVariable(currentStep, rank, name, previous_bucket_name)) {
+            std::cout << "Be Attention: " << previous_bucket_name << std::endl;
+
+        }
+    }
+}
+//        T* values2;
+//        Hermes->GetBucket(prev_bucket_name);
+//        auto blob = Hermes->bkt->Get(_previous_hash_variable_Name);
+//
+//        memcpy(values2, blob.data(), blob.size());
+//        for (int i = 0; i < total_count; ++i) {
+//            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01)) {
+//                continue;
+//            } else{
+//                //do something;
+//            }
+//
+//        }
+
+
+
+
 
 
 template<typename T>
