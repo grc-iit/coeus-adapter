@@ -612,7 +612,6 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         DbOperation db_op = generateMetadata(variable, (float*) values, total_count);
         client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
       // switch the bucket
-       std:string prev_bucket_name = "bucket";
 
 /*
     if (db->FindVariable(currentStep, rank, name)) {
