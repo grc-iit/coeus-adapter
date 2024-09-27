@@ -621,10 +621,10 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
     if (current_bucket > 0) {
         std::string previous_bucket_name =
-                std::to_string(current_bucket) + "_step_" + std::to_string(currentStep) + "_rank" +
+                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
                 std::to_string(rank);
         std::cout << currentStep << " " << rank << " " << name << " " << previous_bucket_name << std::endl;
-        if (db->FindVariable(currentStep, rank, name)) {
+        if (db->FindVariable(4, 0, "derive/hashU")) {
 
             std::cout << "Be Attention: " << previous_bucket_name << std::endl;
 
