@@ -613,7 +613,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     std::cout << "total count" << total_count << std::endl;
-
+    T* values2;
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     // switch the bucket
@@ -627,7 +627,17 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         if (db->FindVariable(currentStep, rank -4, name,previous_bucket_name)) {
 
             std::cout << "Be Attention: " << previous_bucket_name << std::endl;
-
+            Hermes->GetBucket(previous_bucket_name);
+            auto blob = Hermes->bkt->Get(name);
+            memcpy(values2, blob.data(), blob.size());
+            for (int i = 0; i < total_count; ++i) {
+           if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01)) {
+              std::cout << "No difference" << std::endl;
+           } else{
+               std::cout << "difference" << std::endl;
+           }
+//
+        }
         }
     }
 }
