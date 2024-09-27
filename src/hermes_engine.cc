@@ -629,15 +629,14 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
             std::cout << "Be Attention: " << previous_bucket_name << std::endl;
             Hermes->GetBucket(previous_bucket_name);
             auto blob = Hermes->bkt->Get(name);
-            memcpy(values2, blob.data(), blob.size());
-            for (int i = 0; i < total_count; ++i) {
-                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) < 0.01) {
-                    std::cout << "No difference" << std::endl;
-                } else {
-                    std::cout << "difference" << std::endl;
-                }
-//
-        }
+            //memcpy(values2, blob.data(), blob.size());
+//            for (int i = 0; i < total_count; ++i) {
+//                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) < 0.01) {
+//                    std::cout << "No difference" << std::endl;
+//                } else {
+//                    std::cout << "difference" << std::endl;
+//                }
+//            }
         }
     }
 }
