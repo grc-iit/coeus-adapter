@@ -354,7 +354,7 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
   TRACE_FUNC(std::to_string(currentStep));
-    ComputeDerivedVariables();
+  //  ComputeDerivedVariables();
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
