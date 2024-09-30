@@ -634,7 +634,8 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                 if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) < 0.01) {
                     std::cout << "No difference" << std::endl;
                 } else {
-                    std::cout << "difference" << std::endl;
+                    auto app_end_time = std::chrono::high_resolution_clock::now();
+                    engine_logger->info("The difference happened at {}", app_end_time);
                 }
             }
         }
