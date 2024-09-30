@@ -354,9 +354,7 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
   TRACE_FUNC(std::to_string(currentStep));
-  //derived
     ComputeDerivedVariables();
-    //end derived
   if (m_OpenMode == adios2::Mode::Write) {
     if (rank % ppn == 0) {
       DbOperation db_op(uid, currentStep);
@@ -539,12 +537,6 @@ void HermesEngine::DoGetDeferred_(
     memcpy(values, blob.data(), blob.size());
 }
 
-//    template<typename T>
-//    void HermesEngine::DoGetDerivedVariableDeferred_(
-//            const adios2::core::Variable<T> &variable, T *values) {
-//        auto blob = Hermes->bkt->Get(variable.m_Name);
-//        std::string name = variable.m_Name;
-//        memcpy(values, blob.data(), blob.size());
 //    }
 
 
@@ -610,7 +602,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-
+    int numberOfProcesses = 1;
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     std::cout << "total count" << total_count << std::endl;
     T* values2 = new T[total_count];
@@ -622,9 +614,9 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     if (current_bucket > 1) {
         std::string previous_bucket_name =
                 std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
-                std::to_string(rank-4);
+                std::to_string(rank-numberOfProcesses);
         std::cout << currentStep << " " << rank << " " << name << " " << previous_bucket_name << std::endl;
-        if (db->FindVariable(currentStep, rank -4, name,previous_bucket_name)) {
+        if (db->FindVariable(currentStep, rank -numberOfProcesses, name,previous_bucket_name)) {
 
             std::cout << "Be Attention: " << previous_bucket_name << std::endl;
             Hermes->GetBucket(previous_bucket_name);
@@ -634,7 +626,6 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
                 if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) < 0.01) {
                     std::cout << "No difference" << std::endl;
                 } else {
-
                     auto app_end_time = std::chrono::system_clock::now();
                     std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
                     engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
@@ -643,19 +634,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         }
     }
 }
-//        T* values2;
-//        Hermes->GetBucket(prev_bucket_name);
-//        auto blob = Hermes->bkt->Get(_previous_hash_variable_Name);
-//
-//        memcpy(values2, blob.data(), blob.size());
-//        for (int i = 0; i < total_count; ++i) {
-//            if((static_cast<int>(values[i] - static_cast<int>(values2[i]) < 0.01)) {
-//                continue;
-//            } else{
-//                //do something;
-//            }
-//
-//        }
+
 
 
 
