@@ -4,16 +4,20 @@
 #include <mpi.h>
 int main(int argc, char *argv[]) {
     // Initialize MPI (if needed)
-    int rank, size;
-    //#if ADIOS2_HAVE_MPI
-
     MPI_Init(&argc, &argv);
+    int rank, comm_size, wrank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
+
+    const unsigned int color = 2;
+    MPI_Comm comm;
 
 
-    adios2::ADIOS adios(MPI_COMM_WORLD);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &comm_size);
+
+
+    adios2::ADIOS adios("adios2.xml", comm);
     adios2::IO reader_io = adios.DeclareIO("BPFileReader");
 
     // Open the BP5 file for reading
