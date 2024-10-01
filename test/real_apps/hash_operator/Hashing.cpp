@@ -5,7 +5,7 @@
 int main() {
     // Initialize MPI (if needed)
     std::cout << "begin"  << std::endl;
-    MPI_Init();
+    MPI_Init(Null, Null);
     int rank, comm_size, wrank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
