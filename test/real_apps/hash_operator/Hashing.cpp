@@ -4,6 +4,7 @@
 #include <mpi.h>
 int main(int argc, char *argv[]) {
     // Initialize MPI (if needed)
+    std::cout << "begin"  << std::endl;
     MPI_Init(&argc, &argv);
     int rank, comm_size, wrank;
 
@@ -19,14 +20,11 @@ int main(int argc, char *argv[]) {
 
     adios2::ADIOS adios("adios2.xml", comm);
     adios2::IO reader_io = adios.DeclareIO("SimulationOutput");
-
+    std::cout << "begin2"  << std::endl;
     // Open the BP5 file for reading
     adios2::Engine bpFileReader = reader_io.Open("out1.bp", adios2::Mode::Read);
 
     // Inquire the variables U, V, and step
-
-
-
 
     // Prepare for reading data
     std::vector<double> u_data, v_data;
