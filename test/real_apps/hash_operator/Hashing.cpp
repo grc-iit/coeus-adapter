@@ -22,11 +22,7 @@ int main(int argc, char *argv[]) {
     // Inquire the variables U, V, and step
 
 
-    if (!var_u_in || !var_v_in || !var_step_in) {
-        std::cerr << "Error: One or more variables not found in the input file!" << std::endl;
-        MPI_Finalize();
-        return -1;
-    }
+
 
     // Prepare for reading data
     std::vector<double> u_data, v_data;
@@ -43,7 +39,7 @@ int main(int argc, char *argv[]) {
         if (read_status == adios2::StepStatus::NotReady)
         {
             // std::cout << "Stream not ready yet. Waiting...\n";
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+           // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             continue;
         }
         else if (read_status != adios2::StepStatus::OK)
@@ -53,7 +49,11 @@ int main(int argc, char *argv[]) {
         auto var_u_in = reader_io.InquireVariable<double>("U");
         auto var_v_in = reader_io.InquireVariable<double>("V");
         auto var_step_in = reader_io.InquireVariable<int>("step");
-
+        if (!var_u_in || !var_v_in || !var_step_in) {
+            std::cerr << "Error: One or more variables not found in the input file!" << std::endl;
+            MPI_Finalize();
+            return -1;
+        }
         auto u_shape = var_u_in.Shape();
         auto v_shape = var_v_in.Shape();
         size_t u_size = u_shape[0];  // Assuming 1D data
