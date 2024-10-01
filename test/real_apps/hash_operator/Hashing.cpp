@@ -2,20 +2,20 @@
 #include <iostream>
 #include <vector>
 #include <mpi.h>
-int main() {
-    // Initialize MPI (if needed)
-    std::cout << "begin"  << std::endl;
-    MPI_Init();
+int main(int argc, char *argv[])
+{
+    MPI_Init(&argc, &argv);
     int rank, comm_size, wrank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
 
     const unsigned int color = 2;
     MPI_Comm comm;
-
+    MPI_Comm_split(MPI_COMM_WORLD, color, wrank, &comm);
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
+
 
 
     adios2::ADIOS adios("adios2.xml", comm);
