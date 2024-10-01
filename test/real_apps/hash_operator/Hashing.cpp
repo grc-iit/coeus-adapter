@@ -79,12 +79,12 @@ int main(int argc, char *argv[]) {
         auto var_v_out = writer_io.DefineVariable<double>("V1", {v_size}, {0}, {v_size});
         auto var_step_out = writer_io.DefineVariable<int>("step1", {1}, {0}, {1});
 
-        // Write to the new BP file
-//        bpFileWriter.BeginStep();
-//        bpFileWriter.Put(var_u_out, u_data.data());
-//        bpFileWriter.Put(var_v_out, v_data.data());
-//        bpFileWriter.Put(var_step_out, step_data.data());
-//        bpFileWriter.EndStep();
+         Write to the new BP file
+        bpFileWriter.BeginStep();
+        bpFileWriter.Put(var_u_out, u_data.data());
+        bpFileWriter.Put(var_v_out, v_data.data());
+        bpFileWriter.Put(var_step_out, step_data.data());
+        bpFileWriter.EndStep();
     }
 
     // Close the reader and writer engines
