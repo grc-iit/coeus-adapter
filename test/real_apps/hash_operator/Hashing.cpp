@@ -2,10 +2,10 @@
 #include <iostream>
 #include <vector>
 #include <mpi.h>
-int main(int argc, char *argv[]) {
+int main() {
     // Initialize MPI (if needed)
     std::cout << "begin"  << std::endl;
-    MPI_Init(&argc, &argv);
+    MPI_Init();
     int rank, comm_size, wrank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     // Define the output file
     adios2::IO writer_io = adios.DeclareIO("SimulationOutput2");
     adios2::Engine bpFileWriter = writer_io.Open("output2.bp", adios2::Mode::Write);
-
+    std::cout << "flag1" << std::endl;
     while (true) {
         // Allocate memory for variables based on the current step's variable size
         adios2::StepStatus read_status =
@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
         {
             break;
         }
+        std::cout << "flag2" << std::endl;
         auto var_u_in = reader_io.InquireVariable<double>("U");
         auto var_v_in = reader_io.InquireVariable<double>("V");
         auto var_step_in = reader_io.InquireVariable<int>("step");
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
         }
         auto u_shape = var_u_in.Shape();
         std::cout << u_shape[0] << std::endl;
-
+        std::cout << "flag3" << std::endl;
         auto v_shape = var_v_in.Shape();
         std::cout << v_shape[0]<< std::endl;
         size_t u_size = u_shape[0];  // Assuming 1D data
@@ -75,11 +76,12 @@ int main(int argc, char *argv[]) {
 
         // End the reading step
         bpFileReader.EndStep();
+        std::cout << "flag4" << std::endl;
         // Define variables for writing (U1, V1, step1)
         auto var_u_out = writer_io.DefineVariable<double>("U1", {u_size}, {0}, {u_size});
         auto var_v_out = writer_io.DefineVariable<double>("V1", {v_size}, {0}, {v_size});
         auto var_step_out = writer_io.DefineVariable<int>("step1", {1}, {0}, {1});
-
+        std::cout << "flag5" << std::endl;
        //  Write to the new BP file
         bpFileWriter.BeginStep();
         bpFileWriter.Put(var_u_out, u_data.data());
