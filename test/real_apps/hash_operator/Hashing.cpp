@@ -59,7 +59,10 @@ int main(int argc, char *argv[]) {
             return -1;
         }
         auto u_shape = var_u_in.Shape();
+        std::cout << u_shape << std::endl;
+
         auto v_shape = var_v_in.Shape();
+        std::cout << v_shape << std::endl;
         size_t u_size = u_shape[0];  // Assuming 1D data
         size_t v_size = v_shape[0];
 
