@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
 
     adios2::ADIOS adios("adios2.xml", comm);
-    adios2::IO reader_io = adios.DeclareIO("BPFileReader");
+    adios2::IO reader_io = adios.DeclareIO("SimulationOutput");
 
     // Open the BP5 file for reading
     adios2::Engine bpFileReader = reader_io.Open("out1.bp", adios2::Mode::Read);
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> step_data;
 
     // Define the output file
-    adios2::IO writer_io = adios.DeclareIO("BPFileWriter");
+    adios2::IO writer_io = adios.DeclareIO("SimulationOutput2");
     adios2::Engine bpFileWriter = writer_io.Open("output2.bp", adios2::Mode::Write);
 
     while (true) {
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
         auto var_v_out = writer_io.DefineVariable<double>("V1", {v_size}, {0}, {v_size});
         auto var_step_out = writer_io.DefineVariable<int>("step1", {1}, {0}, {1});
 
-         Write to the new BP file
+       //  Write to the new BP file
         bpFileWriter.BeginStep();
         bpFileWriter.Put(var_u_out, u_data.data());
         bpFileWriter.Put(var_v_out, v_data.data());
