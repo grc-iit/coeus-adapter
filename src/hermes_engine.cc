@@ -331,7 +331,7 @@ void HermesEngine::ComputeDerivedVariables() {
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
     T* data = static_cast<T *>(std::get<0>(derivedBlock));\
     PutDerived(*derivedVar, data);   \
-    std::cout << "Do computer: " << data[1] << " " << data[2] << "" << data[3] << " " << std::endl;        \
+
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
 #undef DEFINE_VARIABLE_PUT
@@ -602,9 +602,9 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-    int numberOfProcesses = 1;
+    int numberOfProcesses = 4;
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
-    std::cout << "total count" << total_count << std::endl;
+
     T* values2 = new T[total_count];
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
@@ -615,10 +615,10 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         std::string previous_bucket_name =
                 std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
                 std::to_string(rank-numberOfProcesses);
-        std::cout << currentStep << " " << rank << " " << name << " " << previous_bucket_name << std::endl;
+
         if (db->FindVariable(currentStep, rank -numberOfProcesses, name,previous_bucket_name)) {
 
-            std::cout << "Be Attention: " << previous_bucket_name << std::endl;
+
             Hermes->GetBucket(previous_bucket_name);
             auto blob = Hermes->bkt->Get(name);
             memcpy(values2, blob.data(), blob.size());
