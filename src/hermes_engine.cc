@@ -331,7 +331,6 @@ void HermesEngine::ComputeDerivedVariables() {
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
     T* data = static_cast<T *>(std::get<0>(derivedBlock));\
     PutDerived(*derivedVar, data);   \
-
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
 #undef DEFINE_VARIABLE_PUT
@@ -604,7 +603,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     }
     int numberOfProcesses = 4;
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
-
+    std::cout << "total count" << total_count << std::endl;
     T* values2 = new T[total_count];
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
