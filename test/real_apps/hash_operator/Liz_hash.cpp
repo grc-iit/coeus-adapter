@@ -140,8 +140,8 @@ bpFileReader.EndStep();
 std::cout << "Rank " << rank << " looping over out_buff.size() of " << out_buff.size() << std::endl;
 for (size_t ind = 0; ind < out_buff.size(); ++ind)
 {
-//std::cout << "Hash[" << ind << "] = " << out_buff[ind] << " (" << readHash[ind] << " read) ";
-//EXPECT_TRUE(fabs(readHash[ind] - out_buff[ind]) < epsilon);
+std::cout << "Hash[" << ind << "] = " << out_buff[ind] << " (" << readHash[ind] << " read) ";
+EXPECT_TRUE(fabs(readHash[ind] - out_buff[ind]) < epsilon);
 }
 }
 std::cout << "Rank " << rank << " reader.Close()" << std::endl;
