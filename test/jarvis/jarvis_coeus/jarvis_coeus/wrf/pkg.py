@@ -74,7 +74,7 @@ class Wrf(Application):
         elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
                 self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                         f'{self.config["wrf_location"]}/adios2.xml', replacements={
-                    'PPN': self.config['ppn'],
+                    'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                     })
         else:
