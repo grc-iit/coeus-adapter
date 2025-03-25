@@ -75,7 +75,7 @@ class Wrf(Application):
                 self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                         f'{self.config["wrf_location"]}/adios2.xml', replacements={
                     'PPN': self.config['ppn'],
-                    'db_path': self.config['db_file'],
+                    'db_path': self.config['db_path'],
                     })
         else:
             raise Exception('Engine not defined')
