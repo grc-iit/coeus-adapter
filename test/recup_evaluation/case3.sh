@@ -3,8 +3,8 @@
 # Define variables
 L_values=(134 170 214 268 340 428 540 680 848)
 nprocs_values=(1 2 4 8 16 32 64 128 256 )
-location="hdd"
-report="eva1_case3"
+location="ssd"
+report="case3_fixed_step_1"
 for i in ${!L_values[@]}; do
   L=${L_values[$i]}
   nprocs=${nprocs_values[$i]}

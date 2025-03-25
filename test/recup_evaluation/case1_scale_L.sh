@@ -3,8 +3,8 @@
 # Define variables
 steps=(2 4 8 16 32 64 128 256 512)
 nprocs_values=(1 2 4 8 16 32 64 128 256)
-location="hdd"
-report="eva2_case1"
+location="nvme"
+report="case1_fix_L_nvme_1"
 for i in ${!steps[@]}; do
   step=${steps[$i]}
   nprocs=${nprocs_values[$i]}

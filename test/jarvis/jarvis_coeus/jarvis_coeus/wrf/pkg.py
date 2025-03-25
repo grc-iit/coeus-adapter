@@ -68,13 +68,16 @@ class Wrf(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        if self.config['engine'].lower() == 'bp4':
+        if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                            f'{self.config["wrf_location"]}/adios_config.xml')
+                            f'{self.config["wrf_location"]}/adios2.xml')
         elif  self.config['engine'].lower == 'hermes':
-            replacement = [("ppn", self.config['ppn']), ("db_path", self.config['db_file'])]
+            replacement = [("PPN", self.config['ppn']), ("db_path", self.config['db_file'])]
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                        f'{self.config["wrf_location"]}/adios_config.xml', replacement)
+                        f'{self.config["wrf_location"]}/adios2.xml', replacements={
+                    'PPN': self.config['ppn'],
+                    'db_path': self.config['db_file'],
+                })
         else:
             raise Exception('Engine not defined')
 

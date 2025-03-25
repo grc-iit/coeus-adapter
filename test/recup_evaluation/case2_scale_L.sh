@@ -2,7 +2,6 @@
 
 # Define variables
 steps=(2 4 8 16 32 64 128 256 512)
-
 nprocs_values=(1 2 4 8 16 32 64 128 256)
 location="hdd"
 report="eva2_case2"
@@ -12,8 +11,8 @@ for i in ${!nprocs_values[@]}; do
   mkdir -p ~/${report}/${nprocs}process
   jarvis cd gray_scott
   jarvis pkg config adios2_gray_scott plotgap=1 out_file=/mnt/${location}/hxu40/ofs-mount/case2/${nprocs}process/out1.bp ppn=20 nprocs=${nprocs} checkpoint_output=/mnt/${location}/hxu40/ofs-mount/case2/ckpt.bp steps=$step L=512
-
   jarvis ppl run &> ~/${report}/${nprocs}process/result.txt
+
   jarvis pkg config adios2_gray_scott plotgap=1 out_file=/mnt/${location}/hxu40/ofs-mount/case2/${nprocs}process/out2.bp ppn=20 nprocs=${nprocs} checkpoint_output=/mnt/${location}/hxu40/ofs-mount/case2/ckpt.bp steps=$step L=512
   jarvis ppl run &> ~/${report}/${nprocs}process/result1.txt
 
