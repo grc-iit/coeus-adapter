@@ -593,7 +593,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     }
 
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put);
+
   meta_logger_put->info("metadata: {}",variable.m_Name );
 #endif
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
