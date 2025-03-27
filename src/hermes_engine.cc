@@ -273,7 +273,7 @@ void HermesEngine::ComputeDerivedVariables() {
       std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
                 << std::endl;
   }
-
+        meta_logger_put->info("compute derived" );
   for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
        it++) {
     // identify the variables used in the derived variable
