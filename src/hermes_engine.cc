@@ -273,7 +273,7 @@ void HermesEngine::ComputeDerivedVariables() {
       std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
                 << std::endl;
   }
-        meta_logger_put->info("compute derived" );
+   meta_logger_put->info("compute derived" );
   for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
        it++) {
     // identify the variables used in the derived variable
@@ -289,6 +289,7 @@ void HermesEngine::ComputeDerivedVariables() {
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
     for (auto varName : varList) {
+        meta_logger_put->info("derived: {}", varName );
       auto itVariable = m_Variables.find(varName);
           if (itVariable == m_Variables.end())
             std::cout <<"throw error commented" <<std::endl;
