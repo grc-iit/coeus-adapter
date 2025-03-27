@@ -543,7 +543,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
+  meta_logger_put->info("metadata sync: {}", metaInfoToString(metaInfo));
 
 #endif
   // database
@@ -592,10 +592,8 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         total_count *= count;
     }
 
-#ifdef Meta_enabled
-
   meta_logger_put->info("metadata: {}",variable.m_Name );
-#endif
+
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
