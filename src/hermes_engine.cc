@@ -351,7 +351,7 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
-
+    meta_logger_put->info("endstep" );
     ComputeDerivedVariables();
 //  if (m_OpenMode == adios2::Mode::Write) {
 //    if (rank % ppn == 0) {
