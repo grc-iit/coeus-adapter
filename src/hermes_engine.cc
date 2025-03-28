@@ -592,9 +592,12 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-
+#ifdef Meta_enabled
   meta_logger_put->info("metadata: {}",variable.m_Name );
-
+    for (int i = 0; i < total_count; ++i) {
+        meta_logger_put->info("metadata: {}",static_cast<int>(values[i]));
+        }
+#endif
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
@@ -611,7 +614,6 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
             Hermes->GetBucket(previous_bucket_name);
             auto blob = Hermes->bkt->Get(name);
             memcpy(values2, blob.data(), blob.size());
-
             for (int i = 0; i < total_count; ++i) {
                 if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
                     auto app_end_time = std::chrono::system_clock::now();
