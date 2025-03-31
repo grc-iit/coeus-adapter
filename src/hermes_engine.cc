@@ -272,6 +272,7 @@ void HermesEngine::ComputeDerivedVariables() {
   if(rank == 0) {
       std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
                 << std::endl;
+      meta_logger_put->info("The size of m_VariableDerived: {}", m_VariablesDerived.size() );
   }
 
   for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
@@ -282,8 +283,8 @@ void HermesEngine::ComputeDerivedVariables() {
 
 
     for(auto i: varList) {
-        std::cout << "Compute Derived Variables: " << i << std::endl;
-        meta_logger_put->info("derived: {}", i );
+        //std::cout << "Compute Derived Variables: " << i << std::endl;
+        meta_logger_put->info("Varlist: {}", i );
     }
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
