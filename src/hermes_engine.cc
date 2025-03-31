@@ -284,16 +284,15 @@ void HermesEngine::ComputeDerivedVariables() {
                 continue;
             }
 
-            std::vector<std::string> varList = derivedVar2->VariableNameList();
+            std::vector<std::string> varList2 = derivedVar2->VariableNameList();
             meta_logger_put->info("Derived Variable: {}", name);
-            meta_logger_put->info("  - Dependent Variables: [{}]", fmt::join(varList, ", "));
+            meta_logger_put->info("  - Dependent Variables: [{}]", fmt::join(varList2, ", "));
         }
 #endif
-  for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
-       it++) {
+     for (const auto& [name, varPtr] : m_VariablesDerived) {
     // identify the variables used in the derived variable
-    auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
-    std::vector<std::string> varList = derivedVar->VariableNameList();
+    auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
+         std::vector<std::string> varList = derivedVar->VariableNameList();
 
 
     for(auto i: varList) {
