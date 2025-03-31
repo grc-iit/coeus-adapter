@@ -279,7 +279,7 @@ void HermesEngine::ComputeDerivedVariables() {
 #ifdef Meta_enabled
         for (const auto& [name, varPtr] : m_VariablesDerived) {
             auto derivedVar2 = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
-            if (!derivedVar) {
+            if (!derivedVar2) {
                 meta_logger_put->error("Failed to cast variable {} to VariableDerived", name);
                 continue;
             }
