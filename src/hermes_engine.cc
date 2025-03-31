@@ -285,14 +285,14 @@ void HermesEngine::ComputeDerivedVariables() {
             }
 
             std::vector<std::string> varList2 = derivedVar2->VariableNameList();
-            meta_logger_put->info("Derived Variable: {}", name);
-            meta_logger_put->info("  - Dependent Variables: [{}]", fmt::join(varList2, ", "));
+            //meta_logger_put->info("Derived Variable: {}", name);
+           // meta_logger_put->info("  - Dependent Variables: [{}]", fmt::join(varList2, ", "));
         }
 #endif
      for (const auto& [name, varPtr] : m_VariablesDerived) {
     // identify the variables used in the derived variable
     auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
-         std::vector<std::string> varList = derivedVar->VariableNameList();
+    std::vector<std::string> varList = derivedVar->VariableNameList();
 
 
     for(auto i: varList) {
@@ -329,9 +329,11 @@ void HermesEngine::ComputeDerivedVariables() {
         entry->second.BlocksInfo.push_back(blk);
       }
     }
+         meta_logger_put->info("Flag1");
     // ExpressionString
     std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
         DerivedBlockData;
+         meta_logger_put->info("Flag2");
     if (derivedVar->GetDerivedType() !=
         adios2::DerivedVarType::ExpressionString) {
         std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
@@ -340,6 +342,7 @@ void HermesEngine::ComputeDerivedVariables() {
         }
       DerivedBlockData = derivedVar->ApplyExpression(NameToMVI);
     }
+         meta_logger_put->info("Flag3");
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
@@ -350,6 +353,7 @@ void HermesEngine::ComputeDerivedVariables() {
 #undef DEFINE_VARIABLE_PUT
       free(std::get<0>(derivedBlock));
     }
+         meta_logger_put->info("Flag4");
   }
 
     }
