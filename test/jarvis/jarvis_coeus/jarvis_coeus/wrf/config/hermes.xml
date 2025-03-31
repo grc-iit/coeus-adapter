@@ -10,6 +10,7 @@
             <parameter key="PluginLibrary" value="hermes_engine"/>
             <parameter key="ppn" value="##ppn##"/>
             <parameter key="db_file" value="##db_path##"/>
+            <parameter key="execution_order" value="##Order##"/>
         </engine>
 
     </io>

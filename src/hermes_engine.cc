@@ -618,7 +618,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     // switch the bucket
-    /*
+
     int current_bucket = stoi(adiosOutput);
     if (current_bucket > 2) {
         // time here
@@ -642,7 +642,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
 
 
     }
-    */
+
 
 }
 

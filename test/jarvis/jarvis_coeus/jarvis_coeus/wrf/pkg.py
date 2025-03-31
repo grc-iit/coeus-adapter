@@ -52,11 +52,18 @@ class Wrf(Application):
                 'default': 'bp5',
             },
             {
+                'name': 'Execution_order',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': None,
+            },
+            {
                 'name': 'db_path',
                 'msg': 'Path where the DB will be stored',
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+
 
         ]
 
@@ -76,6 +83,7 @@ class Wrf(Application):
                         f'{self.config["wrf_location"]}/adios2.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
+                    'Order': self.config['Execution_order'],
                     })
         else:
             raise Exception('Engine not defined')
