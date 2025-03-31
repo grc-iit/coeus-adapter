@@ -179,7 +179,7 @@ class Adios2GrayScott(Application):
                 'name': 'Execution_order',
                 'msg': 'Path where the bp5 will be stored',
                 'type': str,
-                'default': None,
+                'default': '1',
             },
 
         ]
