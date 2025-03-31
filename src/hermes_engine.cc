@@ -273,18 +273,18 @@ void HermesEngine::ComputeDerivedVariables() {
       std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
                 << std::endl;
   }
-   meta_logger_put->info("compute derived" );
+
   for (auto it = m_VariablesDerived.begin(); it != m_VariablesDerived.end();
        it++) {
     // identify the variables used in the derived variable
-    auto derivedVar =
-        dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
+    auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>((*it).second.get());
     std::vector<std::string> varList = derivedVar->VariableNameList();
 
 
-    //for(auto i: varList) {
-       // std::cout << "Compute Derived Variables: " << i << std::endl;
-   // }
+    for(auto i: varList) {
+        std::cout << "Compute Derived Variables: " << i << std::endl;
+        meta_logger_put->info("derived: {}", i );
+    }
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
