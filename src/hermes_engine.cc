@@ -298,6 +298,7 @@ void HermesEngine::ComputeDerivedVariables() {
 
     for(auto i: varList) {
         std::cout << "Compute Derived Variables: " << i << std::endl;
+        meta_logger_put->info("Loop: {}", i);
     }
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
