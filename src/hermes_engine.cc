@@ -329,11 +329,9 @@ void HermesEngine::ComputeDerivedVariables() {
         entry->second.BlocksInfo.push_back(blk);
       }
     }
-         meta_logger_put->info("Flag1");
     // ExpressionString
     std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
         DerivedBlockData;
-         meta_logger_put->info("Flag2");
     if (derivedVar->GetDerivedType() !=
         adios2::DerivedVarType::ExpressionString) {
         std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
@@ -342,7 +340,7 @@ void HermesEngine::ComputeDerivedVariables() {
         }
       DerivedBlockData = derivedVar->ApplyExpression(NameToMVI);
     }
-         meta_logger_put->info("Flag3");
+
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
@@ -353,9 +351,9 @@ void HermesEngine::ComputeDerivedVariables() {
 #undef DEFINE_VARIABLE_PUT
       free(std::get<0>(derivedBlock));
     }
-         meta_logger_put->info("Flag4");
+
   }
-        meta_logger_put->info("Flag5");
+
     }
 
 

@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # Define variables
+
 L_values=(134 170 214 268 340 428 540 680 848)
 nprocs_values=(1 2 4 8 16 32 64 128 256)
-location="hdd"
-report="case1_fixed_step"
+location="/add/location"
+report="/add/out_put_file"
+
+# this is the jarvis pipeline establish, once
 
 for i in ${!L_values[@]}; do
   L=${L_values[$i]}
