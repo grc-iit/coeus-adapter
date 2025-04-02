@@ -90,8 +90,8 @@ int main(int argc, char **argv) {
 
         writer.BeginStep();
         // Read and write all float variables
-        for (const auto &varEntry : availableVars) {
-            const std::string &varName = varEntry.first;
+       // for (const auto &varEntry : availableVars) {
+            const std::string &varName = "XLONG"
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
                 if (var) {
@@ -106,12 +106,12 @@ int main(int argc, char **argv) {
 
                     }
                 }
-            }
+        //    }
         }
-        writer.EndStep();
+
 
         reader.EndStep();
-
+        writer.EndStep();
         ++stepAnalysis;
     }
 
