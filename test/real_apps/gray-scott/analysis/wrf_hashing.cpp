@@ -68,7 +68,10 @@ int main(int argc, char **argv) {
                 const std::string &varName = varEntry.first;
 
                 auto var = reader_io.InquireVariable<double>(varName);
-                writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count());
+                if(var) {
+                    std::cout << " find the var" << std::endl;
+                    writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count());
+                }
             }
             firstStep = false;
         }
