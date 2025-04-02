@@ -64,9 +64,9 @@ int main(int argc, char **argv) {
 
                 // Check variable type before defining it in writer
                 if (varEntry.second.at("Type") == "float") {
-                    auto var = reader_io.InquireVariable<double>(varName);
+                    auto var = reader_io.InquireVariable<float>(varName);
                     if (var) {
-                        writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count());
+                        writer_io.DefineVariable<float>(varName, var.Shape(), var.Start(), var.Count());
                     }
                 }
             }
@@ -78,13 +78,12 @@ int main(int argc, char **argv) {
         // Read and write all double variables
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
-            std::cout << varEntry.second.at("Type") << std::endl;
             if (varEntry.second.at("Type") == "float") {
-                auto var = reader_io.InquireVariable<double>(varName);
+                auto var = reader_io.InquireVariable<float>(varName);
                 if (var) {
-                    std::vector<double> data(var.Shape()[0] * var.Shape()[1] * var.Shape()[2]);
+                    std::vector<float> data(var.Shape()[0] * var.Shape()[1] * var.Shape()[2]);
                     reader.Get(var, data, adios2::Mode::Sync);
-                    writer.Put(writer_io.InquireVariable<double>(varName), data.data());
+                    writer.Put(writer_io.InquireVariable<float>(varName), data.data());
                 }
             }
         }
