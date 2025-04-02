@@ -80,9 +80,7 @@ int main(int argc, char **argv) {
                             derived_expression = "x = " + varName + "\n" + " hash(x)";
                             std::cout << "here is the dervied info:" << derived_name << "  " << derived_expression << std::endl;
                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
-                            auto PDFV = writer_io.DefineDerivedVariable(derived_name,
-                                                                        derived_expression,
-                                                                        adios2::DerivedVarType::StoreData);
+                            //auto PDFV = writer_io.DefineDerivedVariable(derived_name,derived_expression,adios2::DerivedVarType::StoreData);
 
                         } else {
 
