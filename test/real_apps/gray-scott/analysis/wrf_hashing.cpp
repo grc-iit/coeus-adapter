@@ -6,6 +6,15 @@
 #include <chrono>
 #include <thread>
 
+// Helper function to compute the total size of a variable
+size_t GetTotalSize(const std::vector<std::size_t> &shape) {
+    size_t size = 1;
+    for (auto dim : shape) {
+        size *= dim;
+    }
+    return size;
+}
+
 int main(int argc, char **argv) {
     auto app_start_time = std::chrono::high_resolution_clock::now();
     MPI_Init(&argc, &argv);
@@ -66,7 +75,12 @@ int main(int argc, char **argv) {
                 if (varEntry.second.at("Type") == "float") {
                     auto var = reader_io.InquireVariable<float>(varName);
                     if (var) {
-                        writer_io.DefineVariable<float>(varName, var.Shape(), var.Start(), var.Count());
+                        std::vector<std::size_t> shape = var.Shape();
+                        if (!shape.empty()) { // Ensure it is a global array
+                            writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
+                        } else { // Handle local arrays correctly
+                            writer_io.DefineVariable<float>(varName);
+                        }
                     }
                 }
             }
@@ -75,15 +89,20 @@ int main(int argc, char **argv) {
 
         writer.BeginStep();
 
-        // Read and write all double variables
+        // Read and write all float variables
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
                 if (var) {
-                    std::vector<float> data(var.Shape()[0] * var.Shape()[1] * var.Shape()[2]);
-                    reader.Get(var, data, adios2::Mode::Sync);
-                    writer.Put(writer_io.InquireVariable<float>(varName), data.data());
+                    std::vector<std::size_t> shape = var.Shape();
+                    size_t totalSize = GetTotalSize(shape);
+
+                    if (totalSize > 0) {
+                        std::vector<float> data(totalSize);
+                        reader.Get(var, data, adios2::Mode::Sync);
+                        writer.Put(writer_io.InquireVariable<float>(varName), data.data());
+                    }
                 }
             }
         }
