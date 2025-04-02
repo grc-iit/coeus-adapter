@@ -27,8 +27,9 @@ int main(int argc, char **argv) {
     }
 
     std::string in_filename = argv[1];
+    std::cout << in_filename << std::endl;
     std::string out_filename = argv[2];
-
+    std::cout << out_filename << std::endl;
     bool firstStep = true;
     int simStep = -5;
 
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             continue;
         } else if (read_status != adios2::StepStatus::OK) {
+            std::cout << "flag 1.1" << std::endl;
             break;
         }
 
