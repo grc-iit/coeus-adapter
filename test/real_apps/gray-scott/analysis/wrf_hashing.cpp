@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
 
     // Initialize ADIOS2
     adios2::ADIOS ad("adios2.xml", comm);
-    adios2::IO reader_io = ad.DeclareIO("SimulationOutput");
+    adios2::IO reader_io = ad.DeclareIO("wrfout_d01_2019-11-26_12:00:00");
     adios2::IO writer_io = ad.DeclareIO("PDFAnalysisOutput");
 
     if (rank == 0) {
