@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
         // Read and write all float variables
         for (const auto &varEntry : availableVars) {
-            writer.BeginStep();
+
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
@@ -102,13 +102,13 @@ int main(int argc, char **argv) {
                     if (totalSize > 0) {
                         std::vector<float> data(totalSize);
                         reader.Get(var, data, adios2::Mode::Sync);
-
+                        writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
-
+                        writer.EndStep();
                     }
                 }
             }
-            writer.EndStep();
+
         }
 
 
