@@ -80,12 +80,12 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             auto var = reader_io.InquireVariable<double>(varName);
-
+            if(var) {
             reader.Get(var, data);
             writer.BeginStep();
             writer.Put(writer_io.InquireVariable<double>(varName), data.data());
             writer.EndStep();
-
+                }
         }
 
         reader.EndStep();
