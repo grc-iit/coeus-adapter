@@ -38,7 +38,8 @@ int main(int argc, char **argv) {
 
     std::string in_filename = argv[1];
     std::string out_filename = argv[2];
-
+    std::string derived_name;
+    std::string derived_expression;
     bool firstStep = true;
 
     // Initialize ADIOS2
@@ -74,11 +75,19 @@ int main(int argc, char **argv) {
                     if (var) {
                         std::vector<std::size_t> shape = var.Shape();
                         if (!shape.empty()) {
-                            std::cout << "not empty" << std::endl;
+
+                            derived_name = "hash_of_" + varName
+                            derived_expression = "x=" + VarName + " hash(x)"
+                            std::cout << "here is the dervied info:" << derived_name << "  " << derived_expression << std::endl;
                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
+                            auto PDFV = writer_io.DefineDerivedVariable(derived_name,
+                                                                        derived_expression,
+                                                                        adios2::DerivedVarType::StoreData);
+
                         } else {
-                            std::cout << "empty" << std::endl;
+
                             writer_io.DefineVariable<float>(varName);
+
                         }
                     }
                 }
