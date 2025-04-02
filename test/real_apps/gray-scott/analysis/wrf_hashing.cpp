@@ -110,14 +110,14 @@ int main(int argc, char **argv) {
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
                         std::cout << "flag5" << std::endl;
                         writer.EndStep();
-                             std::cout << "flag6" << std::endl;
+                        std::cout << "flag6" << std::endl;
 
             }
         }
 
-
+        std::cout << "flag7" << std::endl;
         reader.EndStep();
-
+        std::cout << "flag8" << std::endl;
         ++stepAnalysis;
     }
 
