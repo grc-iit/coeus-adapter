@@ -104,6 +104,9 @@ int main(int argc, char **argv) {
                         reader.Get(var, data, adios2::Mode::Sync);
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
                     }
+                    else{
+                        std::cout << " total size < 0" << std::endl;
+                    }
                     writer.EndStep();
                 }
             }
