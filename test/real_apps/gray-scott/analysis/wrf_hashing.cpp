@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
     adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
     int stepAnalysis = 0;
-
+    std::cout << "flag1" << std::endl;
     while (true) {
         adios2::StepStatus read_status = reader.BeginStep(adios2::StepMode::Read, 10.0f);
         if (read_status == adios2::StepStatus::NotReady) {
@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
             const std::string &varName = varEntry.first;
             auto var = reader_io.InquireVariable<double>(varName);
             if (var) {
+                std::cout << varName << std::endl;
                 std::vector<double> data(var.Shape()[0]); // Assume 1D for simplicity
                 reader.Get(var, data, adios2::Mode::Sync);
                 writer.BeginStep();
