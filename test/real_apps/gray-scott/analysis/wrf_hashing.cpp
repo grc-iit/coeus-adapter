@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     MPI_Comm_split(MPI_COMM_WORLD, color, wrank, &comm);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
-
+    std::vector<float> data;
     if (argc < 3) {
         if (rank == 0) {
             std::cerr << "Usage: " << argv[0] << " <input_bp5> <output_bp5>" << std::endl;
@@ -74,10 +74,12 @@ int main(int argc, char **argv) {
                 // Check variable type before defining it in writer
                 if (varEntry.second.at("Type") == "float") {
                     auto var = reader_io.InquireVariable<float>(varName);
+
                     if (var) {
                         std::vector<std::size_t> shape = var.Shape();
+                        std::cout << "Variable: " << varName << ", Shape size: " << shape.size() << std::endl;
                         if (!shape.empty()) { // Ensure it is a global array
-                            writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
+                            writer_io.DefineVariable<float>(varName, {shape[0], shape[1], shape[2]}, {shape[0], 0, 0}, {shape[0], shape[1], shape[2]});
                         } else { // Handle local arrays correctly
                             writer_io.DefineVariable<float>(varName);
                         }
@@ -98,15 +100,12 @@ int main(int argc, char **argv) {
                 if (var) {
                     std::vector<std::size_t> shape = var.Shape();
                     size_t totalSize = GetTotalSize(shape);
-                    writer.BeginStep();
-                    if (totalSize > 0) {
-                        std::vector<float> data(totalSize);
-                        reader.Get(var, data, adios2::Mode::Sync);
+
+                        reader.Get(var, data);
+                        writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
-                    }
-                    else{
-                        std::cout << " total size < 0" << std::endl;
-                    }
+                       data.clear();
+
                     writer.EndStep();
                 }
             }
