@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 
                     if (totalSize > 0) {
                         std::vector<float> data(totalSize);
-                        reader.Get(var, data, adios2::Mode::Sync);
+                        reader.Get(var, data);
 
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
 
