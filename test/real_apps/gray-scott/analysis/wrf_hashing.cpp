@@ -100,11 +100,15 @@ int main(int argc, char **argv) {
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
-
+                          std::cout << "flag1" << std::endl;
                         std::vector<float> data;
+                        std::cout << "flag2" << std::endl;
                         reader.Get(var, data);
+                        std::cout << "flag3" << std::endl;
                         writer.BeginStep();
+                        std::cout << "flag4" << std::endl;
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
+                        std::cout << "flag5" << std::endl;
                         writer.EndStep();
 
 
