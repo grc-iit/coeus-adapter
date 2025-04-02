@@ -76,14 +76,24 @@ int main(int argc, char **argv) {
                     auto var = reader_io.InquireVariable<float>(varName);
 
                     if (var) {
-                        if (shape.size() == 1) {
-                            writer_io.DefineVariable<float>(varName, {shape[0]}, {0}, {shape[0]});
-                        } else if (shape.size() == 2) {
-                            writer_io.DefineVariable<float>(varName, {shape[0], shape[1]}, {0, 0}, {shape[0], shape[1]});
-                        } else if (shape.size() == 3) {
-                            writer_io.DefineVariable<float>(varName, {shape[0], shape[1], shape[2]}, {0, 0, 0}, {shape[0], shape[1], shape[2]});
-                        } else {
-                            std::cerr << "Unsupported shape size for variable: " << varName << std::endl;
+                        std::vector<std::size_t> shape = var.Shape();
+                        std::cout << "Variable: " << varName << ", Shape size: " << shape.size() << ", Shape: [";
+                        for (auto dim : shape) std::cout << dim << " ";
+                        std::cout << "]" << std::endl;
+
+                        if (!shape.empty()) { // Ensure it is a global array
+                            std::vector<std::size_t> start(shape.size(), 0); // Start index is {0,0,...}
+
+                            // Handle different shape sizes dynamically
+                            if (shape.size() == 1) {
+                                writer_io.DefineVariable<float>(varName, {shape[0]}, {0}, {shape[0]});
+                            } else if (shape.size() == 2) {
+                                writer_io.DefineVariable<float>(varName, {shape[0], shape[1]}, {0, 0}, {shape[0], shape[1]});
+                            } else if (shape.size() == 3) {
+                                writer_io.DefineVariable<float>(varName, {shape[0], shape[1], shape[2]}, {0, 0, 0}, {shape[0], shape[1], shape[2]});
+                            } else {
+                                std::cerr << "Unsupported shape size for variable: " << varName << std::endl;
+                            }
                         }
                     }
                 }
