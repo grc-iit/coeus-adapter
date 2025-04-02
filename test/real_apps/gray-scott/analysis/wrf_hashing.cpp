@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
         std::cout << "Reading from: " << in_filename << " using engine: " << reader_io.EngineType() << std::endl;
         std::cout << "Writing to: " << out_filename << " using engine: " << writer_io.EngineType() << std::endl;
     }
-    adios2::Variable<float> var_u_out,
+
     adios2::Engine reader = reader_io.Open(in_filename, adios2::Mode::Read, comm);
     adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
