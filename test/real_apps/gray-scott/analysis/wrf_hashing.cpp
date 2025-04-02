@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
         std::cout << "Reading from: " << in_filename << " using engine: " << reader_io.EngineType() << std::endl;
         std::cout << "Writing to: " << out_filename << " using engine: " << writer_io.EngineType() << std::endl;
     }
-
+    std::vector<double> data;
     adios2::Engine reader = reader_io.Open(in_filename, adios2::Mode::Read, comm);
     adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
@@ -66,11 +66,9 @@ int main(int argc, char **argv) {
             for (const auto &varEntry : availableVars) {
 
                 const std::string &varName = varEntry.first;
-                std::cout << varName << std::endl;
+
                 auto var = reader_io.InquireVariable<double>(varName);
-                if (var) {
-                    writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count(), adios2::ConstantDims);
-                }
+                writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count());
             }
             firstStep = false;
         }
@@ -79,14 +77,12 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             auto var = reader_io.InquireVariable<double>(varName);
-            if (var) {
-                std::cout << varName << std::endl;
-                std::vector<double> data(var.Shape()[0]); // Assume 1D for simplicity
-                reader.Get(var, data, adios2::Mode::Sync);
-                writer.BeginStep();
-                writer.Put(writer_io.InquireVariable<double>(varName), data.data());
-                writer.EndStep();
-            }
+
+            reader.Get(var, data);
+            writer.BeginStep();
+            writer.Put(writer_io.InquireVariable<double>(varName), data.data());
+            writer.EndStep();
+
         }
 
         reader.EndStep();
