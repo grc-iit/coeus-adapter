@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
             firstStep = false;
         }
 
-        writer.BeginStep();
+
 
         // Read and write all float variables
         for (const auto &varEntry : availableVars) {
@@ -101,13 +101,15 @@ int main(int argc, char **argv) {
                     if (totalSize > 0) {
                         std::vector<float> data(totalSize);
                         reader.Get(var, data, adios2::Mode::Sync);
+                        writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
+                        writer.EndStep();
                     }
                 }
             }
         }
 
-        writer.EndStep();
+
         reader.EndStep();
 
         ++stepAnalysis;
