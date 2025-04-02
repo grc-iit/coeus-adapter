@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
         // Read and write all float variables
        // for (const auto &varEntry : availableVars) {
             const std::string &varName = "XLONG";
-            if (varEntry.second.at("Type") == "float") {
+           // if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
                 if (var) {
                     std::vector<std::size_t> shape = var.Shape();
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
 
                     }
-                }
+              //  }
         //    }
         }
 
