@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
         std::cout << "Reading from: " << in_filename << " using engine: " << reader_io.EngineType() << std::endl;
         std::cout << "Writing to: " << out_filename << " using engine: " << writer_io.EngineType() << std::endl;
     }
-
+    adios2::Variable<float> var_u_out,
     adios2::Engine reader = reader_io.Open(in_filename, adios2::Mode::Read, comm);
     adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
@@ -78,9 +78,9 @@ int main(int argc, char **argv) {
 
                             derived_name = "Hash_of_" + varName;
                             derived_expression = "x = " + varName + "\n" + " hash(x)";
-                            std::cout << "here is the dervied info:" << derived_name << "  " << derived_expression << std::endl;
-                            writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
-                            //auto PDFV = writer_io.DefineDerivedVariable(derived_name,derived_expression,adios2::DerivedVarType::StoreData);
+
+                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
+                             writer_io.DefineDerivedVariable(derived_name,derived_expression,adios2::DerivedVarType::StoreData);
 
                         } else {
 
@@ -102,11 +102,11 @@ int main(int argc, char **argv) {
                 auto var = reader_io.InquireVariable<float>(varName);
                 if (var) {
                     std::vector<std::size_t> shape = var.Shape();
-                    size_t totalSize = GetTotalSize(shape);
+
 
                     if (totalSize > 0) {
-                        std::vector<float> data(totalSize);
-                        reader.Get(var, data, adios2::Mode::Sync);
+                        std::vector<float> data;
+                        reader.Get(var, data);
                         writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
                         writer.EndStep();
