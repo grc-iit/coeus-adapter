@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
 
     std::string in_filename = argv[1];
     std::string out_filename = argv[2];
-    std::string derived_name;
-    std::string derived_expression;
+
     bool firstStep = true;
 
     // Initialize ADIOS2
@@ -65,27 +64,22 @@ int main(int argc, char **argv) {
         } else if (read_status != adios2::StepStatus::OK) {
             break;
         }
+
         auto availableVars = reader_io.AvailableVariables();
+
         if (firstStep) {
             for (const auto &varEntry : availableVars) {
                 const std::string &varName = varEntry.first;
 
+                // Check variable type before defining it in writer
                 if (varEntry.second.at("Type") == "float") {
                     auto var = reader_io.InquireVariable<float>(varName);
                     if (var) {
                         std::vector<std::size_t> shape = var.Shape();
-                        if (!shape.empty()) {
-
-                            derived_name = "Hash_of_" + varName;
-                            derived_expression = "x = " + varName + "\n" + " hash(x)";
-
-                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
-                            // writer_io.DefineDerivedVariable(derived_name,derived_expression,adios2::DerivedVarType::StoreData);
-
-                        } else {
-
+                        if (!shape.empty()) { // Ensure it is a global array
+                            writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
+                        } else { // Handle local arrays correctly
                             writer_io.DefineVariable<float>(varName);
-
                         }
                     }
                 }
@@ -93,31 +87,29 @@ int main(int argc, char **argv) {
             firstStep = false;
         }
 
-
+        writer.BeginStep();
 
         // Read and write all float variables
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
+                if (var) {
+                    std::vector<std::size_t> shape = var.Shape();
+                    size_t totalSize = GetTotalSize(shape);
 
-                        std::vector<float> data;
-
-                        reader.Get(var, data);
-
-                        writer.BeginStep();
-
+                    if (totalSize > 0) {
+                        std::vector<float> data(totalSize);
+                        reader.Get(var, data, adios2::Mode::Sync);
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
-
-                        writer.EndStep();
-
-
+                    }
+                }
             }
         }
 
-        std::cout << "flag7" << std::endl;
+        writer.EndStep();
         reader.EndStep();
-        std::cout << "flag8" << std::endl;
+
         ++stepAnalysis;
     }
 
