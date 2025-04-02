@@ -53,6 +53,26 @@ install(TARGETS adios2-hashing
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
 
+add_executable(wrf-hashing analysis/wrf_hashing.cpp)
+
+# Link libraries to the executable
+target_link_libraries(wrf-hashing
+        adios2::adios2
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(wrf-hashing PRIVATE
+        ${CMAKE_SOURCE_DIR}/external_libraries/spdlog/include
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS wrf-hashing
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
 add_executable(hashing-comparison analysis/compare.cpp)
 
 # Link libraries to the executable
