@@ -98,14 +98,13 @@ int main(int argc, char **argv) {
                 if (var) {
                     std::vector<std::size_t> shape = var.Shape();
                     size_t totalSize = GetTotalSize(shape);
-
+                    writer.BeginStep();
                     if (totalSize > 0) {
                         std::vector<float> data(totalSize);
                         reader.Get(var, data, adios2::Mode::Sync);
-                        writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
-                        writer.EndStep();
                     }
+                    writer.EndStep();
                 }
             }
 
