@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
                         std::vector<std::size_t> shape = var.Shape();
                         if (!shape.empty()) {
 
-                            derived_name = "hash_of_" + varName
-                            derived_expression = "x=" + VarName + " hash(x)"
+                            derived_name = "hash_of_" + varName;
+                            derived_expression = "x=" + VarName + " hash(x)";
                             std::cout << "here is the dervied info:" << derived_name << "  " << derived_expression << std::endl;
                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
                             auto PDFV = writer_io.DefineDerivedVariable(derived_name,
