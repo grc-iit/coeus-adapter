@@ -64,21 +64,20 @@ int main(int argc, char **argv) {
         } else if (read_status != adios2::StepStatus::OK) {
             break;
         }
-
         auto availableVars = reader_io.AvailableVariables();
-
         if (firstStep) {
             for (const auto &varEntry : availableVars) {
                 const std::string &varName = varEntry.first;
 
-                // Check variable type before defining it in writer
                 if (varEntry.second.at("Type") == "float") {
                     auto var = reader_io.InquireVariable<float>(varName);
                     if (var) {
                         std::vector<std::size_t> shape = var.Shape();
-                        if (!shape.empty()) { // Ensure it is a global array
+                        if (!shape.empty()) {
+                            std::cout << "not empty" << std::endl;
                             writer_io.DefineVariable<float>(varName, shape, var.Start(), var.Count());
-                        } else { // Handle local arrays correctly
+                        } else {
+                            std::cout << "empty" << std::endl;
                             writer_io.DefineVariable<float>(varName);
                         }
                     }
