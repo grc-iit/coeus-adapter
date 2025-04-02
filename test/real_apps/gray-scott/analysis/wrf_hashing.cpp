@@ -100,18 +100,14 @@ int main(int argc, char **argv) {
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
-                if (var) {
-                    std::vector<std::size_t> shape = var.Shape();
 
-
-                    if (totalSize > 0) {
                         std::vector<float> data;
                         reader.Get(var, data);
                         writer.BeginStep();
                         writer.Put(writer_io.InquireVariable<float>(varName), data.data());
                         writer.EndStep();
-                    }
-                }
+
+
             }
         }
 
