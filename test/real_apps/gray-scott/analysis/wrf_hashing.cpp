@@ -64,7 +64,9 @@ int main(int argc, char **argv) {
         if (firstStep) {
             std::cout << "flag2" << std::endl;
             for (const auto &varEntry : availableVars) {
+
                 const std::string &varName = varEntry.first;
+                std::cout << varName << std::endl;
                 auto var = reader_io.InquireVariable<double>(varName);
                 if (var) {
                     writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count(), adios2::ConstantDims);
