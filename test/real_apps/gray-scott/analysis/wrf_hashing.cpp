@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
         auto availableVars = reader_io.AvailableVariables();
 
         if (firstStep) {
+            std::cout << "flag1" << std::endl;
             for (const auto &varEntry : availableVars) {
                 const std::string &varName = varEntry.first;
                 auto var = reader_io.InquireVariable<double>(varName);
@@ -69,7 +70,7 @@ int main(int argc, char **argv) {
             }
             firstStep = false;
         }
-
+        std::cout << "flag1" << std::endl;
         // Read and write all variables
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
