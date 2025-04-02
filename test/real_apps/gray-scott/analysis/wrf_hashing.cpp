@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
                 const std::string &varName = varEntry.first;
 
                 // Check variable type before defining it in writer
-                if (varEntry.second.at("Type") == "double") {
+                if (varEntry.second.at("Type") == "float") {
                     auto var = reader_io.InquireVariable<double>(varName);
                     if (var) {
                         writer_io.DefineVariable<double>(varName, var.Shape(), var.Start(), var.Count());
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             std::cout << varEntry.second.at("Type") << std::endl;
-            if (varEntry.second.at("Type") == "double") {
+            if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<double>(varName);
                 if (var) {
                     std::vector<double> data(var.Shape()[0] * var.Shape()[1] * var.Shape()[2]);
