@@ -5,14 +5,11 @@
 #include <map>
 #include <chrono>
 #include <thread>
+#include <numeric>
 
 // Helper function to compute the total size of a variable
 size_t GetTotalSize(const std::vector<std::size_t> &shape) {
-    size_t size = 1;
-    for (auto dim : shape) {
-        size *= dim;
-    }
-    return size;
+    return shape.empty() ? 1 : std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<std::size_t>());
 }
 
 int main(int argc, char **argv) {
@@ -27,7 +24,7 @@ int main(int argc, char **argv) {
     MPI_Comm_split(MPI_COMM_WORLD, color, wrank, &comm);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &comm_size);
-    std::vector<float> data;
+
     if (argc < 3) {
         if (rank == 0) {
             std::cerr << "Usage: " << argv[0] << " <input_bp5> <output_bp5>" << std::endl;
@@ -81,19 +78,10 @@ int main(int argc, char **argv) {
                         for (auto dim : shape) std::cout << dim << " ";
                         std::cout << "]" << std::endl;
 
-                        if (!shape.empty()) { // Ensure it is a global array
-                            std::vector<std::size_t> start(shape.size(), 0); // Start index is {0,0,...}
-
-                            // Handle different shape sizes dynamically
-                            if (shape.size() == 1) {
-                                writer_io.DefineVariable<float>(varName, {shape[0]}, {0}, {shape[0]});
-                            } else if (shape.size() == 2) {
-                                writer_io.DefineVariable<float>(varName, {shape[0], shape[1]}, {0, 0}, {shape[0], shape[1]});
-                            } else if (shape.size() == 3) {
-                                writer_io.DefineVariable<float>(varName, {shape[0], shape[1], shape[2]}, {0, 0, 0}, {shape[0], shape[1], shape[2]});
-                            } else {
-                                std::cerr << "Unsupported shape size for variable: " << varName << std::endl;
-                            }
+                        if (shape.empty()) {
+                            writer_io.DefineVariable<float>(varName); // Scalar variable
+                        } else {
+                            writer_io.DefineVariable<float>(varName, shape, std::vector<std::size_t>(shape.size(), 0), shape);
                         }
                     }
                 }
@@ -101,11 +89,10 @@ int main(int argc, char **argv) {
             firstStep = false;
         }
 
-
+        writer.BeginStep();  // Begin step for all variables
 
         // Read and write all float variables
         for (const auto &varEntry : availableVars) {
-
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "float") {
                 auto var = reader_io.InquireVariable<float>(varName);
@@ -113,20 +100,23 @@ int main(int argc, char **argv) {
                     std::vector<std::size_t> shape = var.Shape();
                     size_t totalSize = GetTotalSize(shape);
 
-                        reader.Get(var, data);
-                        writer.BeginStep();
-                        writer.Put(writer_io.InquireVariable<float>(varName), data.data());
-                       data.clear();
+                    if (totalSize > 0) {
+                        std::vector<float> data(totalSize);  // Allocate space
+                        reader.Get(var, data, adios2::Mode::Sync);
 
-                    writer.EndStep();
+                        auto writerVar = writer_io.InquireVariable<float>(varName);
+                        if (writerVar) {
+                            writer.Put(writerVar, data.data(), adios2::Mode::Sync);
+                        } else {
+                            std::cerr << "Warning: Writer variable not found for " << varName << std::endl;
+                        }
+                    }
                 }
             }
-
         }
 
-
+        writer.EndStep();  // End step for all variables
         reader.EndStep();
-
         ++stepAnalysis;
     }
 
