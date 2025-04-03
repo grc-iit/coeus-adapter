@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
             break;
         }
         writer.BeginStep();
-        auto availableVars = reader_io.AvailableVariables();
+        auto availableVars = writer_io.AvailableVariables();
 
             for (const auto &varEntry : availableVars) {
                 const std::string &varName = varEntry.first;
