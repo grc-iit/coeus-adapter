@@ -70,19 +70,23 @@ int main(int argc, char **argv) {
                 const std::string &varName = varEntry.first;
 
                 if (varEntry.second.at("Type") == "uint8_t") {
-                    std::cout << varName << std::endl;
+
                     auto var = reader_io.InquireVariable<uint8_t>(varName);
                     auto var1 = writer_io.InquireVariable<uint8_t>(varName);
-                    reader.Get(var, hashing_value_1);
-                    writer.Get(var1, hashing_value_2);
-                    for(int i =0; i < hashing_value_1.size(); i++){
-                        std::cout << static_cast<int>(hashing_value_1[i]) << " value: " << static_cast<int>(hashing_value_2[i]) << std::endl;
-                        if (static_cast<int>(hashing_value_1[i]) - static_cast<int>(hashing_value_2[i]) > 0.01) {
-                            auto app_end_time = std::chrono::system_clock::now();
-                            std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
-                            std::cout << "The difference happened at: " << std::ctime(&end_time_t) << std::endl;
+                    if(var and var1) {
+                        reader.Get(var, hashing_value_1);
+                        writer.Get(var1, hashing_value_2);
+                        for (int i = 0; i < hashing_value_1.size(); i++) {
+
+                            if (static_cast<int>(hashing_value_1[i]) - static_cast<int>(hashing_value_2[i]) > 0.01) {
+                                auto app_end_time = std::chrono::system_clock::now();
+                                std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
+                                std::cout << "The difference happened at: " << std::ctime(&end_time_t) << std::endl;
+                            }
                         }
+
                     }
+
                 }
             }
 
