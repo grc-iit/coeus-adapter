@@ -95,6 +95,31 @@ install(TARGETS hashing-comparison
         )
 
 
+add_executable(wrf-comparison analysis/wrf_compare.cpp)
+
+# Link libraries to the executable
+target_link_libraries(wrf-comparison
+        adios2::adios2
+        hermes_engine
+        ${Hermes_LIBRARIES}
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(wrf-comparison PRIVATE
+        ${Hermes_INCLUDE_DIRS}
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS wrf-comparison
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
+
+
+
 install(FILES "adios2.xml" "adios2-inline-plugin.xml" "adios2-fides-staging.xml"
                            "visit-bp4.session" "visit-bp4.session.gui" 
                            "visit-sst.session" "visit-sst.session.gui"                  
