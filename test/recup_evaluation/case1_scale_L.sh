@@ -13,13 +13,13 @@ for i in ${!steps[@]}; do
   mkdir -p ${report}/${nprocs}process
   jarvis pkg config adios2_gray_scott plotgap=1 out_file=${location}/${nprocs}process/out1.bp ppn=20 nprocs=$nprocs steps=$step L=512
   jarvis pkg config adios_hashing in_filename=${location}/out1.bp ppn=20 nprocs=$nprocs out_filename=${location}/${nprocs}process/copy1.bp
-  jarvis ppl run > ~/${report}/${nprocs}process/gray_scott_1.txt
+  jarvis ppl run > ${report}/${nprocs}process/gray_scott_1.txt
 
 
   # Second configuration and run
   jarvis pkg config adios2_gray_scott plotgap=1 out_file=${location}/${nprocs}process/out2.bp ppn=20 nprocs=$nprocs steps=$step L=512
   jarvis pkg config adios_hashing in_filename=${location}/${nprocs}process/out2.bp ppn=20 nprocs=$nprocs out_filename=${location}/${nprocs}process/copy2.bp
-  jarvis ppl run > ~/${report}/${nprocs}process/gray_scott_2.txt
+  jarvis ppl run > ${report}/${nprocs}process/gray_scott_2.txt
 
 
   # Hashing compare

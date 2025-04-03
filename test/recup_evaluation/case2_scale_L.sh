@@ -14,11 +14,11 @@ for i in ${!nprocs_values[@]}; do
   jarvis ppl run > ${report}/${nprocs}process/result.txt
 
   jarvis pkg config adios2_gray_scott plotgap=1 out_file=${location}/${nprocs}/out2.bp ppn=20 nprocs=${nprocs} checkpoint_output=${location}/${nprocs}/ckpt.bp steps=$step L=512
-  jarvis ppl run &> ${report}/${nprocs}process/result1.txt
+  jarvis ppl run > ${report}/${nprocs}process/result1.txt
 
   jarvis cd hashing_compare
   jarvis pkg config hashing_compare ppn=20 nprocs=${nprocs} in_filename=${location}/${nprocs}/out1.bp out_filename=${location}/${nprocs}/out2.bp
-  jarvis ppl run &> ${report}/${nprocs}process/result2.txt
+  jarvis ppl run > ${report}/${nprocs}process/result2.txt
   rm -r ${location}/${nprocs}
 
 
