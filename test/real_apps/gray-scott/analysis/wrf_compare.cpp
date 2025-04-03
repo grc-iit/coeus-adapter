@@ -70,8 +70,8 @@ int main(int argc, char **argv) {
                 const std::string &varName = varEntry.first;
                 // Check variable type before defining it in writer
                 if (varEntry.second.at("Type") == "uint8_t") {
-                    auto var = reader_io.InquireVariable<float>(varName);
-                    auto var1 = writer_io.InquireVariable<float>(varName);
+                    auto var = reader_io.InquireVariable<uint8_t>(varName);
+                    auto var1 = writer_io.InquireVariable<uint8_t>(varName);
                     reader.Get(var, hashing_value_1);
                     writer.Get(var1, hashing_value_2);
                     for(int i =0; i < hashing_value_1.size(); i++){
