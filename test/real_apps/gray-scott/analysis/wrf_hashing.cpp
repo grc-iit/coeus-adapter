@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
                             writer_io.DefineVariable<float>(varName); // Scalar variable
                         } else {
                             writer_io.DefineVariable<float>(varName, shape, std::vector<std::size_t>(shape.size(), 0), shape);
-                            std::string derived_name = "Hash_of_" + varName;
+                            std::string derived_name = "hash_of_" + varName;
                             std::string derived_expression = "x = " + varName + "\n" + " hash(x)";
                             writer_io.DefineDerivedVariable(derived_name, derived_expression, adios2::DerivedVarType::StoreData);
                         }
