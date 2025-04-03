@@ -1,3 +1,4 @@
+jarvis repo add /path/to/coeus_adaper/test/jarvis/jarvis_coeus
 jarvis pipeline create gray_scott_bp5 app
 jarvis cd ray_scott_bp5
 jarvis pipeline append adios2_gray_scott L=128 engine=bp5
