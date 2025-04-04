@@ -97,12 +97,12 @@ class Wrf(Application):
 
         :return: None
         """
-        Exec('./wrf.exe',
+        Exec('wrf.exe',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env,
-                         cwd=self.config['wrf_location']))
+                         env=self.mod_env
+                         ))
 
         pass
 
