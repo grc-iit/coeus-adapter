@@ -285,8 +285,7 @@ void HermesEngine::ComputeDerivedVariables() {
             }
 
             std::vector<std::string> varList2 = derivedVar2->VariableNameList();
-            //meta_logger_put->info("Derived Variable: {}", name);
-           // meta_logger_put->info("  - Dependent Variables: [{}]", fmt::join(varList2, ", "));
+
         }
 #endif
      for (const auto& [name, varPtr] : m_VariablesDerived) {
@@ -295,10 +294,7 @@ void HermesEngine::ComputeDerivedVariables() {
     std::vector<std::string> varList = derivedVar->VariableNameList();
 
 
-    for(auto i: varList) {
-        std::cout << "Compute Derived Variables: " << i << std::endl;
-        meta_logger_put->info("Loop: {}", i);
-    }
+
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
@@ -367,7 +363,7 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
-    meta_logger_put->info("endstep" );
+
     ComputeDerivedVariables();
 //  if (m_OpenMode == adios2::Mode::Write) {
 //    if (rank % ppn == 0) {
@@ -606,12 +602,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-#ifdef Meta_enabled
-  meta_logger_put->info("metadata: {}",variable.m_Name );
-    for (int i = 0; i < total_count; ++i) {
-        meta_logger_put->info("metadata: {}",static_cast<int>(values[i]));
-        }
-#endif
+
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
