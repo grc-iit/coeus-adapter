@@ -272,22 +272,9 @@ void HermesEngine::ComputeDerivedVariables() {
   if(rank == 0) {
       std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
                 << std::endl;
-#ifdef Meta_enabled
-      meta_logger_put->info("The size of m_VariableDerived: {}", m_VariablesDerived.size() );
-#endif
+
   }
-#ifdef Meta_enabled
-        for (const auto& [name, varPtr] : m_VariablesDerived) {
-            auto derivedVar2 = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
-            if (!derivedVar2) {
-                meta_logger_put->error("Failed to cast variable {} to VariableDerived", name);
-                continue;
-            }
 
-            std::vector<std::string> varList2 = derivedVar2->VariableNameList();
-
-        }
-#endif
      for (const auto& [name, varPtr] : m_VariablesDerived) {
     // identify the variables used in the derived variable
     auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
