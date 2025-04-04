@@ -101,8 +101,7 @@ class Wrf2(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env,
-                         cwd=self.config['wrf_location']))
+                         env=self.mod_env))
 
         pass
 
