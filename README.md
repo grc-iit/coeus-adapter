@@ -146,3 +146,9 @@ add this to the adios2.xml
 ```
 <parameter key="StatsLevel" value="0"/>
 ```
+
+
+## for wrf support adios2
+```
+cmake ../ -D ADIOS2_USE_Kokkos=ON  -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2 -D StateDiff_ROOT=/mnt/common/hxu40/install2 -D ADIOS2_USE_Derived_Variable=ON -D ADIOS2_USE_SST=OFF -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON -D BUILD_TESTING=ON -D ADIOS2_USE_Blosc2=ON -D ADIOS2_USE_MPI=ON -D ADIOS2_USE_HDF5=ON
+```
