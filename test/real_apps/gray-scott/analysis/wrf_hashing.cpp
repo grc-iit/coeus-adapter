@@ -99,6 +99,7 @@ int main(int argc, char **argv) {
                                 }
                                 start[0] = local_start;
                                 count[0] = local_count;
+                                std::cout << "local count : " << local_count << "  local start: " << local_start << std::endl;
                             }
 
                             writer_io.DefineVariable<float>(varName, shape, start, count);
