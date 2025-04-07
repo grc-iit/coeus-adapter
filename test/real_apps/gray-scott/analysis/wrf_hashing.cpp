@@ -79,9 +79,29 @@ int main(int argc, char **argv) {
                         std::cout << "]" << std::endl;
 
                         if (shape.empty()) {
-                            writer_io.DefineVariable<float>(varName); // Scalar variable
+                            // Scalar variable
+                            writer_io.DefineVariable<float>(varName);
                         } else {
-                            writer_io.DefineVariable<float>(varName, shape, std::vector<std::size_t>(shape.size(), 0), shape);
+                            // ====== Begin Decomposition ======
+                            std::vector<std::size_t> start(shape.size(), 0);
+                            std::vector<std::size_t> count = shape;
+
+                            if (shape.size() >= 1) {
+                                std::size_t dim0 = shape[0];
+                                std::size_t chunk = dim0 / comm_size;
+                                std::size_t remainder = dim0 % comm_size;
+
+                                std::size_t local_start = chunk * rank + std::min((std::size_t)rank, remainder);
+                                std::size_t local_count = chunk + (rank < remainder ? 1 : 0);
+
+                                start[0] = local_start;
+                                count[0] = local_count;
+                            }
+
+                            writer_io.DefineVariable<float>(varName, shape, start, count);
+                            // ====== End Decomposition ======
+
+                            // Optional: define derived variable
                             std::string derived_name = "hash_of_" + varName;
                             std::string derived_expression = "x = " + varName + "\n" + " hash(x)";
                             writer_io.DefineDerivedVariable(derived_name, derived_expression, adios2::DerivedVarType::StoreData);
@@ -91,6 +111,7 @@ int main(int argc, char **argv) {
             }
             firstStep = false;
         }
+
 
         writer.BeginStep();  // Begin step for all variables
 
