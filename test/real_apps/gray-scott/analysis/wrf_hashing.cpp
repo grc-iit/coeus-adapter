@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
     adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Write, comm);
 
     int stepAnalysis = 0;
-
+    std::size_t u_global_size, v_global_size;
+    std::size_t u_local_size, v_local_size;
     while (true) {
         adios2::StepStatus read_status = reader.BeginStep(adios2::StepMode::Read, 10.0f);
         if (read_status == adios2::StepStatus::NotReady) {
@@ -87,13 +88,16 @@ int main(int argc, char **argv) {
                             std::vector<std::size_t> count = shape;
 
                             if (shape.size() >= 1) {
-                                std::size_t dim0 = shape[0];
-                                std::size_t chunk = dim0 / comm_size;
-                                std::size_t remainder = dim0 % comm_size;
+                                //std::size_t dim0 = shape[0];
+                                u_global_size = shape[0] * shape[1] * shape[2];
+                                u_local_size = u_global_size / comm_size;
+                                local_count = shape[0] / comm_size;
+                                std::size_t local_start = local_count * rank;
 
-                                std::size_t local_start = chunk * rank + std::min((std::size_t)rank, remainder);
-                                std::size_t local_count = chunk + (rank < remainder ? 1 : 0);
-
+                                if (rank == comm_size - 1) {
+                                    // last process need to read all the rest of slices
+                                    local_count = shape[0] - count1 * (comm_size - 1);
+                                }
                                 start[0] = local_start;
                                 count[0] = local_count;
                             }

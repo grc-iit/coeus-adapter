@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
         } else if (read_status != adios2::StepStatus::OK) {
             break;
         }
+
         writer.BeginStep();
         auto availableVars = writer_io.AvailableVariables();
 
