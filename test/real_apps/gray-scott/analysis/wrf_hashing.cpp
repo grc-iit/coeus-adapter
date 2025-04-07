@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
                             std::vector<std::size_t> start(shape.size(), 0);
                             std::vector<std::size_t> count = shape;
 
-                            if (shape.size() >= 1) {
+                            if (shape.size() > 1) {
                                 //std::size_t dim0 = shape[0];
 
                                 std::size_t local_count = shape[0] / comm_size;
