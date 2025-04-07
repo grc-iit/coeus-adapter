@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 
                                 if (rank == comm_size - 1) {
                                     // last process need to read all the rest of slices
-                                    local_count = shape[0] - count1 * (comm_size - 1);
+                                    local_count = shape[0] - local_count * (comm_size - 1);
                                 }
                                 start[0] = local_start;
                                 count[0] = local_count;
