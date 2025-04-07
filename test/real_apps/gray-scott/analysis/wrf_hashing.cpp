@@ -89,9 +89,8 @@ int main(int argc, char **argv) {
 
                             if (shape.size() >= 1) {
                                 //std::size_t dim0 = shape[0];
-                                u_global_size = shape[0] * shape[1] * shape[2];
-                                u_local_size = u_global_size / comm_size;
-                                local_count = shape[0] / comm_size;
+
+                                std::size_t local_count = shape[0] / comm_size;
                                 std::size_t local_start = local_count * rank;
 
                                 if (rank == comm_size - 1) {
