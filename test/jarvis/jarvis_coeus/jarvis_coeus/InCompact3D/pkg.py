@@ -26,15 +26,41 @@ class Incompact3d(Application):
         """
         return [
             {
-                'name': None,  # The name of the parameter
-                'msg': '',  # Describe this parameter
-                'type': str,  # What is the parameter type?
-                'default': None,  # What is the default value if not required?
-                # Does this parameter have specific valid inputs?
-                'choices': [],
-                # When type is list, what do the entries of the list mean?
-                # A list of dicts just like this one.
-                'args': [],
+                'name': 'nprocs',
+                'msg': 'Number of processes',
+                'type': int,
+                'default': 1,
+            },
+            {
+                'name': 'ppn',
+                'msg': 'The number of processes per node',
+                'type': int,
+                'default': None,
+            },
+            {
+                'name': 'app_location',
+                'msg': 'The location of wrf.exe',
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'engine',
+                'msg': 'Engine to be used',
+                'choices': ['bp5', 'hermes'],
+                'type': str,
+                'default': 'bp5',
+            },
+            {
+                'name': 'Execution_order',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'db_path',
+                'msg': 'Path where the DB will be stored',
+                'type': str,
+                'default': 'benchmark_metadata.db',
             },
         ]
 
@@ -55,6 +81,12 @@ class Incompact3d(Application):
 
         :return: None
         """
+        Exec('incompact3D',
+             MpiExecInfo(nprocs=self.config['nprocs'],
+                         ppn=self.config['ppn'],
+                         hostfile=self.jarvis.hostfile,
+                         env=self.mod_env
+                         ))
         pass
 
     def stop(self):
