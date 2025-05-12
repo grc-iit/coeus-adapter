@@ -9,7 +9,7 @@ cmake -S . -B build
 ```
 
 
-### ADIOS2 I?O installation
+### ADIOS2 I/O installation
 
 ```
 git clone -b v2.0.4 https://github.com/2decomp-fft/2decomp-fft.git
