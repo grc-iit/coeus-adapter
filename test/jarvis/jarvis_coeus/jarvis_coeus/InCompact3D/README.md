@@ -21,6 +21,8 @@ cd build
 make install
 ```
 
+### adios2 BP5 modification
+In /2decomp-fft/src/io.f90, change all BP4 file to BP5 file. 
 ### run
 ```
 cd Incompact3D/examples/Channel
