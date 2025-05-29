@@ -35,10 +35,10 @@ class Incompact3d(Application):
                 'name': 'ppn',
                 'msg': 'The number of processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
-                'name': 'app_location',
+                'name': 'example_location',
                 'msg': 'The location of Incompact3D',
                 'type': str,
                 'default': None,
@@ -85,7 +85,8 @@ class Incompact3d(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env
+                         env=self.mod_env,
+                         cwd=self.config['example_location']
                          ))
         pass
 
