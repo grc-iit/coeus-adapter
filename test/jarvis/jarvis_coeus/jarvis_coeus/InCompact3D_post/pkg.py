@@ -1,14 +1,14 @@
 """
-This module provides classes and methods to launch the Incompact3d application.
-Incompact3d is ....
+This module provides classes and methods to launch the Incompact3dPost application.
+Incompact3dPost is ....
 """
 from jarvis_cd.basic.pkg import Application
 from jarvis_util import *
 
 
-class Incompact3d(Application):
+class Incompact3dPost(Application):
     """
-    This class provides methods to launch the Incompact3d application.
+    This class provides methods to launch the Incompact3dPost application.
     """
     def _init(self):
         """
@@ -24,6 +24,7 @@ class Incompact3d(Application):
 
         :return: List(dict)
         """
+
         return [
             {
                 'name': 'nprocs',
@@ -38,8 +39,8 @@ class Incompact3d(Application):
                 'default': None,
             },
             {
-                'name': 'app_location',
-                'msg': 'The location of Incompact3D',
+                'name': 'file_location',
+                'msg': 'The location of bp file',
                 'type': str,
                 'default': None,
             },
@@ -49,12 +50,6 @@ class Incompact3d(Application):
                 'choices': ['bp5', 'hermes'],
                 'type': str,
                 'default': 'bp5',
-            },
-            {
-                'name': 'Execution_order',
-                'msg': 'Path where the bp5 will be stored',
-                'type': str,
-                'default': None,
             },
             {
                 'name': 'db_path',
@@ -72,6 +67,18 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        if self.config['engine'].lower() == 'bp5':
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                                    f'{self.config["file_location"]}/adios2_config.xml')
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                    f'{self.config["file_location"]}/adios2_config.xml', replacements={
+                    'ppn': self.config['ppn'],
+                    'db_path': self.config['db_path'],
+                    'Order': self.config['Execution_order'],
+                })
+        else:
+            raise Exception('Engine not defined')
         pass
 
     def start(self):
@@ -81,7 +88,9 @@ class Incompact3d(Application):
 
         :return: None
         """
-        Exec('incompact3D',
+
+
+        Exec('wrf.exe',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
