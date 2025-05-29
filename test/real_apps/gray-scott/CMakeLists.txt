@@ -117,6 +117,27 @@ install(TARGETS wrf-comparison
         )
 
 
+add_executable(inCompact3D_analysis analysis/inCompact3D_analysis.cpp)
+
+# Link libraries to the executable
+target_link_libraries(inCompact3D_analysis
+        adios2::adios2
+        hermes_engine
+        ${Hermes_LIBRARIES}
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(inCompact3D_analysis PRIVATE
+        ${Hermes_INCLUDE_DIRS}
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS inCompact3D_analysis
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
 
 
 
