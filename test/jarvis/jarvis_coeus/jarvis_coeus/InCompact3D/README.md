@@ -30,7 +30,9 @@ spack load intel-oneapi-mkl
 spack load openmpi
 export MKL_DIR=${MKLROOT}/lib/cmake/mkl
 cmake -S . -B ./build -DIO_BACKEND=adios2 -Dadios2_DIR=/path/to/adios2/install/lib/cmake/adios2 -Ddecomp2d_DIR=/path/to/decomp2d/build
-
+cd build
+make -j8
+make install
 ```
 
  
