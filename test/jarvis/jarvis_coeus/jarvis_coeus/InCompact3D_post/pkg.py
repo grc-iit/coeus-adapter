@@ -67,10 +67,7 @@ class Incompact3dPost(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        if self.config['engine'].lower() == 'bp5':
-            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    f'{self.config["file_location"]}/adios2_config.xml')
-        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+        if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     f'{self.config["file_location"]}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
@@ -95,7 +92,7 @@ class Incompact3dPost(Application):
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=self.config['wrf_location']
+                         cwd=self.config['file_location']
                          ))
         pass
 
