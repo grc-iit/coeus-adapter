@@ -81,7 +81,7 @@ class Incompact3d(Application):
 
         :return: None
         """
-        Exec('incompact3D',
+        Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
