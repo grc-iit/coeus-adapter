@@ -36,6 +36,7 @@ make install
 ```
 Build Incompact3D with spack
 ```
+spack add /path/to/inCompact3D/spack
 spack install incompact3D io_backend=adios2 ^openmpi
 ```
  
