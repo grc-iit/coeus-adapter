@@ -38,7 +38,7 @@ class Incompact3d(Application):
                 'default': 16,
             },
             {
-                'name': 'example_location',
+                'name': 'incompact3D_location',
                 'msg': 'The location of Incompact3D',
                 'type': str,
                 'default': None,
@@ -87,7 +87,7 @@ class Incompact3d(Application):
         """
         if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{self.config["wrf_location"]}/adios2.xml', replacements={
+                                    f'{self.config["incompact3D_location"]}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
@@ -100,12 +100,13 @@ class Incompact3d(Application):
 
         :return: None
         """
+        execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=self.config['example_location']
+                         cwd=execute_location
                          ))
         pass
 
@@ -125,7 +126,12 @@ class Incompact3d(Application):
 
         :return: None
         """
-        output_file = self.config['example_location'] + '/data.bp5'
-        print(f'Removing {output_file}')
-        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
+        output_file= self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks'] +'/data.bp5'
+        output_files = [output_file,
+                       self.config['checkpoint_output'],
+                       self.config['db_path']
+                       ]
+
+        print(f'Removing {output_files}')
+        Rm(output_files, PsshExecInfo(hostfile=self.jarvis.hostfile))
         pass

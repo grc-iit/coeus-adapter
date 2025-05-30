@@ -34,7 +34,10 @@ cd build
 make -j8
 make install
 ```
-
+Build Incompact3D with spack
+```
+spack install incompact3D io_backend=adios2 ^openmpi
+```
  
 ### run
 ```
