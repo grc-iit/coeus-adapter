@@ -57,6 +57,25 @@ class Incompact3dPost(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'in_filename',
+                'msg': 'Input file location',
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'out_filename',
+                'msg': 'Output file location',
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'derived_variable type',
+                'msg': 'the type of derived variable in simulation',
+                'type': str,
+                'default': None,
+            },
+
         ]
 
     def _configure(self, **kwargs):
@@ -85,9 +104,10 @@ class Incompact3dPost(Application):
 
         :return: None
         """
+        in_file = self.config['in_filename']
+        out_file = self.config['out_filename']
 
-
-        Exec('xcompact3d',
+        Exec(f'inCompact3D_analysis {in_file} {out_file}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
@@ -112,4 +132,10 @@ class Incompact3dPost(Application):
 
         :return: None
         """
+        output_dir = [self.config['in_filename'],
+                      self.config['out_filename'],
+                      self.config['db_path']
+                      ]
+        print(f'Removing {output_dir}')
+        Rm(output_dir, PsshExecInfo(hostfile=self.jarvis.hostfile))
         pass

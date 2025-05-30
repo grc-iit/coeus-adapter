@@ -51,8 +51,8 @@ class Incompact3d(Application):
                 'default': 'bp5',
             },
             {
-                'name': 'Execution_order',
-                'msg': 'Path where the bp5 will be stored',
+                'name': 'benchmarks',
+                'msg': 'The name of benchmarks ',
                 'type': str,
                 'default': None,
             },
@@ -62,6 +62,19 @@ class Incompact3d(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'output_location',
+                'msg': 'Path where the output file will be stored',
+                'type': str,
+                'default': 'data.bp5',
+            },
+            {
+                'name': 'logs',
+                'msg': 'Path where the log file will be stored',
+                'type': str,
+                'default': 'logs.txt',
+            },
+
         ]
 
     def _configure(self, **kwargs):
@@ -72,6 +85,12 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                    f'{self.config["wrf_location"]}/adios2.xml', replacements={
+                    'ppn': self.config['ppn'],
+                    'db_path': self.config['db_path'],
+                })
         pass
 
     def start(self):
@@ -106,4 +125,7 @@ class Incompact3d(Application):
 
         :return: None
         """
+        output_file = self.config['example_location'] + '/data.bp5'
+        print(f'Removing {output_file}')
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
         pass
