@@ -22,7 +22,7 @@ cd build
 make -j8
 make install
 ```
-Build Incompact3D with adios2 support
+### Build Incompact3D manually
 ```
 git clone https://github.com/xcompact3d/Incompact3d
 cd Incompact3d
@@ -34,7 +34,7 @@ cd build
 make -j8
 make install
 ```
-Build Incompact3D with spack
+### Build Incompact3D with spack
 ```
 spack add /path/to/inCompact3D/spack
 spack install incompact3D io_backend=adios2 ^openmpi
