@@ -39,12 +39,6 @@ class Incompact3dPost(Application):
                 'default': None,
             },
             {
-                'name': 'file_location',
-                'msg': 'The location of bp file',
-                'type': str,
-                'default': None,
-            },
-            {
                 'name': 'engine',
                 'msg': 'Engine to be used',
                 'choices': ['bp5', 'hermes'],
