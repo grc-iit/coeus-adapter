@@ -86,8 +86,6 @@ class Incompact3dPost(Application):
                     'db_path': self.config['db_path'],
                     'Order': self.config['Execution_order'],
                 })
-        else:
-            raise Exception('Engine not defined')
         pass
 
     def start(self):
