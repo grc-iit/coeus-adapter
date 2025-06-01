@@ -41,7 +41,6 @@ class Incompact3dPost(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
                 'type': str,
                 'default': 'bp5',
             },
