@@ -51,7 +51,7 @@ mpirun -n 16 ../../build/bin/incompcat3d
 jarvis ppl create incompact3d
 spack load hermes@master
 spack load openmpi
-export PATH=/path/to/build/bin/incompact3d
+export PATH=/path/to/build/bin:$PATH
 jarvis ppl env build
 jarvis ppl append Incompact3d example_location=/path/to/examples/fold engine=bp5
 jarvis ppl run 

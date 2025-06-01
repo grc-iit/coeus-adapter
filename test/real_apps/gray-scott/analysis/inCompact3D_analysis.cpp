@@ -53,9 +53,7 @@ int main(int argc, char **argv) {
     }
 
     adios2::Engine reader = reader_io.Open(in_filename, adios2::Mode::Read, comm);
-    adios2::Engine writer = writer_io.Open(out_filename, adios2::Mode::Read, comm);
     std::vector<uint8_t> hashing_value_1;
-    std::vector<uint8_t> hashing_value_2;
     int stepAnalysis = 0;
 
     while (true) {
@@ -66,29 +64,19 @@ int main(int argc, char **argv) {
         } else if (read_status != adios2::StepStatus::OK) {
             break;
         }
-
-        writer.BeginStep();
-        auto availableVars = writer_io.AvailableVariables();
-
+        auto availableVars = reader_io.AvailableVariables();
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
-
             if (varEntry.second.at("Type") == "uint8_t") {
-
-                auto var = reader_io.InquireVariable<uint8_t>(varName);
-                auto var1 = writer_io.InquireVariable<uint8_t>(varName);
-                if(var and var1) {
-                    reader.Get(var, hashing_value_1);
-                    writer.Get(var1, hashing_value_2);
-                    std::cout << "the value is succesffuly retrived!" << std::endl;
-
+                reader.Get(var, hashing_value_1);
+                for (int i = 0; i < hashing_value_1.size(); i++) {
+                    std::cout << " value: " << static_cast<int>(hashing_value_1[i]);
+                }
+                std::cout << std::endl;
                 }
 
             }
-        }
 
-
-        writer.EndStep();  // End step for all variables
         reader.EndStep();
         ++stepAnalysis;
     }
