@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
             if (varEntry.second.at("Type") == "uint8_t") {
+                auto var = reader_io.InquireVariable<uint8_t>(varName);
                 reader.Get(var, hashing_value_1);
                 for (int i = 0; i < hashing_value_1.size(); i++) {
                     std::cout << " value: " << static_cast<int>(hashing_value_1[i]);
@@ -82,7 +83,6 @@ int main(int argc, char **argv) {
     }
 
     reader.Close();
-    writer.Close();
 
     auto app_end_time = std::chrono::high_resolution_clock::now();
     auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
