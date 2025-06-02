@@ -296,6 +296,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             self.define("ADIOS2_USE_Endian_Reverse", True),
             self.define("ADIOS2_USE_IME", False),
         ]
+        args.extend("-DADIOS2_USE_Derived_Variable=ON")
 
         if spec.satisfies("+sst"):
             args.extend(
