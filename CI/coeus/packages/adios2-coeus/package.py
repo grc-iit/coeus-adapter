@@ -265,6 +265,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         from_variant = self.define_from_variant
 
         args = [
+            self.define("ADIOS2_USE_Derived_Variable", True),
             from_variant("CMAKE_POSITION_INDEPENDENT_CODE", "pic"),
             from_variant("BUILD_SHARED_LIBS", "shared"),
             from_variant("ADIOS2_USE_AWSSDK", "aws"),
@@ -296,7 +297,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             self.define("ADIOS2_USE_Endian_Reverse", True),
             self.define("ADIOS2_USE_IME", False),
         ]
-        args.extend("-DADIOS2_USE_Derived_Variable=ON")
+
 
         if spec.satisfies("+sst"):
             args.extend(
