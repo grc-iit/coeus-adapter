@@ -20,7 +20,7 @@ def cmake_args(self):
         args = [
             self.define("ADIOS2_USE_Derived_Variable", True),
 ```
-Then install the adios2 with ```spack install adios2^openmpi```
+Then install the adios2 with ```spack install adios2@2.9.2^openmpi```
 
 2decomp-fft is responsible for domain decomposition and parallel I/O, Incompact3D relies on it for writing field data. </br>
 Here is the installation of 2decomp-fft with adios2 support
