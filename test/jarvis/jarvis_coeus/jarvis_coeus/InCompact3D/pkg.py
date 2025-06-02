@@ -86,6 +86,9 @@ class Incompact3d(Application):
         :return: None
         """
         execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
+        if self.config['engine'].lower() == 'bp5':
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                                    f'{execute_location}/adios2_config.xml')
         if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     f'{execute_location}/adios2_config.xml', replacements={
@@ -101,6 +104,7 @@ class Incompact3d(Application):
 
         :return: None
         """
+
         execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
