@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
                 auto var = reader_io.InquireVariable<uint8_t>(varName);
                 reader.Get(var, hashing_value_1);
                 for (int i = 0; i < hashing_value_1.size(); i++) {
-                    std::cout <<  << static_cast<int>(hashing_value_1[i]) << " , ";
+                    std::cout  << static_cast<int>(hashing_value_1[i]) << " , ";
                 }
 
                 }
