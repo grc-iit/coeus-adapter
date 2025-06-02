@@ -1,12 +1,17 @@
-# Copyright 2013-2024 Lawrence Livermore National Security, LLC and other
-# Spack Project Developers. See the top-level COPYRIGHT file for details.
+# Copyright Spack Project Developers. See COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
-import tempfile
+import sys
+
+from spack_repo.builtin.build_systems.cmake import CMakeBuilder, CMakePackage
+from spack_repo.builtin.build_systems.cuda import CudaPackage
+from spack_repo.builtin.build_systems.rocm import ROCmPackage
 
 from spack.package import *
+
+IS_WINDOWS = sys.platform == "win32"
 
 
 class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
@@ -26,10 +31,11 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
     version("master", branch="master")
     version(
-        "2.10.1",
-        sha256="ce776f3a451994f4979c6bd6d946917a749290a37b7433c0254759b02695ad85",
+        "2.10.2",
+        sha256="14cf0bcd94772194bce0f2c0e74dba187965d1cffd12d45f801c32929158579e",
         preferred=True,
     )
+    version("2.10.1", sha256="ce776f3a451994f4979c6bd6d946917a749290a37b7433c0254759b02695ad85")
     version("2.10.0", sha256="e5984de488bda546553dd2f46f047e539333891e63b9fe73944782ba6c2d95e4")
     version("2.9.2", sha256="78309297c82a95ee38ed3224c98b93d330128c753a43893f63bbe969320e4979")
     version("2.9.1", sha256="ddfa32c14494250ee8a48ef1c97a1bf6442c15484bbbd4669228a0f90242f4f9")
@@ -39,11 +45,10 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     version("2.8.1", sha256="3f515b442bbd52e3189866b121613fe3b59edb8845692ea86fad83d1eba35d93")
     version("2.8.0", sha256="5af3d950e616989133955c2430bd09bcf6bad3a04cf62317b401eaf6e7c2d479")
     version("2.7.1", sha256="c8e237fd51f49d8a62a0660db12b72ea5067512aa7970f3fcf80b70e3f87ca3e")
-    version("2.7.0", sha256="4b5df1a1f92d7ff380416dec7511cfcfe3dc44da27e486ed63c3e6cffb173924")
-    version("2.6.0", sha256="45b41889065f8b840725928db092848b8a8b8d1bfae1b92e72f8868d1c76216c")
-    version("2.5.0", sha256="7c8ff3bf5441dd662806df9650c56a669359cb0185ea232ecb3578de7b065329")
-    version("2.4.0", sha256="50ecea04b1e41c88835b4b3fd4e7bf0a0a2a3129855c9cc4ba6cf6a1575106e2")
-    version("2.3.1", sha256="3bf81ccc20a7f2715935349336a76ba4c8402355e1dc3848fcd6f4c3c5931893")
+    with default_args(deprecated=True):
+        version("2.7.0", sha256="4b5df1a1f92d7ff380416dec7511cfcfe3dc44da27e486ed63c3e6cffb173924")
+        version("2.6.0", sha256="45b41889065f8b840725928db092848b8a8b8d1bfae1b92e72f8868d1c76216c")
+        version("2.5.0", sha256="7c8ff3bf5441dd662806df9650c56a669359cb0185ea232ecb3578de7b065329")
 
     # There's not really any consistency about how static and shared libs are
     # implemented across spack.  What we're trying to support is specifically three
@@ -72,8 +77,8 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     variant("bzip2", default=True, when="@2.4:", description="Enable BZip2 compression")
     variant("zfp", default=True, description="Enable ZFP compression")
     variant("png", default=True, when="@2.4:", description="Enable PNG compression")
-    variant("sz", default=True, description="Enable SZ compression")
-    variant("mgard", default=True, when="@2.8:", description="Enable MGARD compression")
+    variant("sz", default=True, when="@2.6:", description="Enable SZ compression")
+    variant("mgard", default=not IS_WINDOWS, when="@2.8:", description="Enable MGARD compression")
 
     # Rransport engines
     variant("sst", default=True, description="Enable the SST staging engine")
@@ -95,7 +100,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     )
     variant(
         "libcatalyst",
-        default=True,
+        default=not IS_WINDOWS,
         when="@2.9:",
         description="Enable support for in situ visualization plugin using ParaView Catalyst",
     )
@@ -105,15 +110,17 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     variant("sycl", default=False, when="@2.10:", description="Enable SYCL support")
     variant("python", default=False, description="Enable the Python bindings")
     variant("fortran", default=True, description="Enable the Fortran bindings")
-    
-    variant("derived", default=True, description="Enable derived variables in adios2")
+
     # Requires mature C++11 implementations
     conflicts("%gcc@:4.7")
     conflicts("%intel@:15")
-    conflicts("%pgi@:14")
 
     # ifx does not support submodules in separate files
     conflicts("%oneapi@:2022.1.0", when="+fortran")
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+    depends_on("fortran", type="build")
 
     depends_on("cmake@3.12.0:", type="build")
 
@@ -138,7 +145,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         depends_on(
             "kokkos amdgpu_target=%s" % amdgpu_value,
             when="+kokkos +rocm amdgpu_target=%s" % amdgpu_value,
-        )
+            )
 
     conflicts("+cuda", when="@:2.7")
     conflicts("+rocm", when="@:2.8")
@@ -185,17 +192,25 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("libpng@1.6:", when="+png")
     depends_on("zfp@0.5.1:0.5", when="+zfp")
     depends_on("sz@2.0.2.0:", when="+sz")
-    depends_on("mgard", when="+mgard")
+    depends_on("mgard@2022-11-18:", when="+mgard")
+    depends_on("mgard@2023-01-10:", when="@2.9: +mgard")
 
     extends("python", when="+python")
-    depends_on("python@2.7:2.8,3.5:", when="@:2.4.0 +python", type=("build", "run"))
-    depends_on("python@2.7:2.8,3.5:", when="@:2.4.0", type="test")
-    depends_on("python@3.5:", when="@2.5.0: +python", type=("build", "run"))
-    depends_on("python@3.5:", when="@2.5.0:", type="test")
+    depends_on("python", when="+python", type=("build", "run"))
+    depends_on("python@2.7:2.8,3.5:3.10", when="@:2.4.0 +python", type=("build", "run"))
+    depends_on("python@3.5:3.10", when="@2.5.0:2.7 +python", type=("build", "run"))
+
+    depends_on("python", type="test")
+    depends_on("python@2.7:2.8,3.5:3.10", when="@:2.4.0", type="test")
+    depends_on("python@3.5:3.10", when="@2.5.0:2.7", type="test")
+
     depends_on("py-numpy@1.6.1:", when="+python", type=("build", "run"))
     depends_on("py-mpi4py@2.0.0:", when="+mpi +python", type=("build", "run"))
     depends_on("aws-sdk-cpp", when="+aws")
     depends_on("libcatalyst@2", when="+libcatalyst")
+
+    # error: invalid use of incomplete type 'PyFrameObject' {aka 'struct _frame'}
+    conflicts("^python@3.11:", when="@:2.7")
 
     # Fix findmpi when called by dependees
     # See https://github.com/ornladios/ADIOS2/pull/1632
@@ -208,7 +223,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
     # Fix an unnecessary python dependency when testing is disabled
     # See https://github.com/ornladios/ADIOS2/pull/2596
-    patch("2.7-fix-python-test-deps.patch", when="@2.5.0:2.7.0")
+    patch("2.7-fix-python-test-deps.patch", when="@2.7.0")
 
     # Fix unresolved symbols when built with gcc10.
     # See https://github.com/ornladios/ADIOS2/pull/2714
@@ -220,8 +235,8 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     # Add missing include <memory>
     # https://github.com/ornladios/adios2/pull/2710
     patch(
-        "https://github.com/ornladios/adios2/pull/2710.patch?full_index=1",
-        when="@:2.7.1",
+        "https://github.com/ornladios/adios2/commit/72363a5ed1015c2bbb1c057d4d6b2e5662de12ec.patch?full_index=1",
+        when="@2.5:2.7.1",
         sha256="8221073d1b2f8944395a88a5d60a15c7370646b62f5fc6309867bbb6a8c2096c",
     )
 
@@ -235,7 +250,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
     # ROCM: enable support for rocm >= 6
     # https://github.com/ornladios/ADIOS2/pull/4214
-    #patch("2.10-enable-rocm6.patch", when="@2.9.1:")
+    patch("2.10-enable-rocm6.patch", when="@2.9.1:2.10.1")
 
     @when("%fj")
     def patch(self):
@@ -245,11 +260,11 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         filter_file("mpc++_r)", "mpcc_r mpiFCC)", f, string=True)
         filter_file("mpf77_r", "mpf77_r mpifrt", f, string=True)
 
-    def setup_build_environment(self, env):
+    def setup_build_environment(self, env: EnvironmentModifications) -> None:
         # https://github.com/ornladios/ADIOS2/issues/2228
-        if self.spec.satisfies("%gcc@10: +fortran"):
+        if self.spec.satisfies("+fortran %gcc@10:"):
             env.set("FFLAGS", "-fallow-argument-mismatch")
-        elif self.spec.satisfies("%fj +fortran"):
+        elif self.spec.satisfies("+fortran %fj"):
             env.set("FFLAGS", "-Ccpp")
 
     def cmake_args(self):
@@ -268,6 +283,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             from_variant("ADIOS2_USE_DataSpaces", "dataspaces"),
             from_variant("ADIOS2_USE_Fortran", "fortran"),
             from_variant("ADIOS2_USE_HDF5", "hdf5"),
+            from_variant("ADIOS2_USE_MGARD", "mgard"),
             from_variant("ADIOS2_USE_MPI", "mpi"),
             from_variant("ADIOS2_USE_PNG", "png"),
             from_variant("ADIOS2_USE_Python", "python"),
@@ -286,10 +302,9 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             self.define("ADIOS2_BUILD_EXAMPLES", False),
             self.define("ADIOS2_USE_Endian_Reverse", True),
             self.define("ADIOS2_USE_IME", False),
-            self.define("ADIOS2_USE_MGARD", False),
         ]
-        args.extend("-DADIOS2_USE_Derived_Variable=ON")
-        if "+sst" in spec:
+        args.append("-DADIOS2_USE_Derived_Variable=ON")
+        if spec.satisfies("+sst"):
             args.extend(
                 [
                     # Broken dependency package
@@ -302,24 +317,16 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
                 ]
             )
 
-        if "+derived" in spec:
-            args.extend(
-                [
-                    "-DADIOS2_HAVE_Derived_Variable=TRUE",
-                    "-DADIOS2_HAVE_DERIVED_VARIABLE=TRUE",
-                ]
-            )
-
-        if "%fj" in spec:
+        if spec.satisfies("%fj"):
             args.extend(["-DCMAKE_Fortran_SUBMODULE_EXT=.smod", "-DCMAKE_Fortran_SUBMODULE_SEP=."])
 
         # hip support
-        if "+cuda" in spec:
-            args.append(self.builder.define_cuda_architectures(self))
+        if spec.satisfies("+cuda"):
+            args.append(CMakeBuilder.define_cuda_architectures(self))
 
         # hip support
-        if "+rocm" in spec:
-            args.append(self.builder.define_hip_architectures(self))
+        if spec.satisfies("+rocm"):
+            args.append(CMakeBuilder.define_hip_architectures(self))
 
         return args
 
@@ -328,18 +335,18 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         spec = self.spec
         libs_to_seek = set()
 
-        if "@2.6:" in spec:
+        if spec.satisfies("@2.6:"):
             libs_to_seek.add("libadios2_core")
             libs_to_seek.add("libadios2_c")
             libs_to_seek.add("libadios2_cxx11")
-            if "+fortran" in spec:
+            if spec.satisfies("+fortran"):
                 libs_to_seek.add("libadios2_fortran")
 
-            if "+mpi" in spec:
+            if spec.satisfies("+mpi"):
                 libs_to_seek.add("libadios2_core_mpi")
                 libs_to_seek.add("libadios2_c_mpi")
                 libs_to_seek.add("libadios2_cxx11_mpi")
-                if "+fortran" in spec:
+                if spec.satisfies("+fortran"):
                     libs_to_seek.add("libadios2_fortran_mpi")
 
             if "@2.7: +shared+hdf5" in spec and "@1.12:" in spec["hdf5"]:
@@ -347,14 +354,14 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
         else:
             libs_to_seek.add("libadios2")
-            if "+fortran" in spec:
+            if spec.satisfies("+fortran"):
                 libs_to_seek.add("libadios2_fortran")
 
         return find_libraries(
             list(libs_to_seek), root=self.spec.prefix, shared=("+shared" in spec), recursive=True
         )
 
-    def setup_run_environment(self, env):
+    def setup_run_environment(self, env: EnvironmentModifications) -> None:
         try:
             all_libs = self.libs
             idx = all_libs.basenames.index("libadios2_h5vol.so")
@@ -369,7 +376,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         install test subdirectory for use during `spack test run`.
         """
         extra_install_tests = [join_path("testing", "install", "C")]
-        self.cache_extra_test_sources(extra_install_tests)
+        cache_extra_test_sources(self, extra_install_tests)
 
     def test_run_executables(self):
         """Run installed adios2 executables"""
@@ -378,41 +385,36 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
         for cmd, opts in commands_and_args:
             with test_part(
-                self,
-                f"test_run_executables_{cmd}",
-                purpose=f"run installed adios2 executable {cmd}",
+                    self,
+                    f"test_run_executables_{cmd}",
+                    purpose=f"run installed adios2 executable {cmd}",
             ):
                 exe = which(join_path(self.prefix.bin, cmd))
                 exe(*opts)
 
-    def test_examples(self):
-        """Build and run an example program"""
-        src_dir = self.test_suite.current_test_cache_dir.testing.install.C
-        test_stage_dir = self.test_suite.test_dir_for_spec(self.spec)
+    def test_install(self):
+        """Build and run an install tests"""
+        srcdir = self.test_suite.current_test_cache_dir.testing.install.C
+        blddir = self.test_suite.current_test_cache_dir.build_dir
 
-        # Create the build tree within this spec's test stage dir so it gets
-        # cleaned up automatically
-        build_dir = tempfile.mkdtemp(dir=test_stage_dir)
+        cmake = Executable(self.spec["cmake"].prefix.bin.cmake)
+        cmake_args = []
 
-        std_cmake_args = []
-
-        if "+mpi" in self.spec:
+        if self.spec.satisfies("+mpi"):
             mpi_exec = join_path(self.spec["mpi"].prefix, "bin", "mpiexec")
-            std_cmake_args.append(f"-DMPIEXEC_EXECUTABLE={mpi_exec}")
+            cmake_args.append(f"-DMPIEXEC_EXECUTABLE={mpi_exec}")
 
-        built_programs = ["adios_c_mpi_test", "adios_adios2c_test", "adios_c_test"]
+        with working_dir(blddir, create=True):
+            with test_part(self, "test_install_build", purpose="ADIOS2 install test build app"):
+                cmake(srcdir, *cmake_args)
+                cmake(*(["--build", "."]))
 
-        with working_dir(build_dir):
-            with test_part(
-                self, "test_examples_build", purpose="build example against installed adios2"
-            ):
-                cmake(src_dir, *std_cmake_args)
-                make()
-
-            for p in built_programs:
-                exe = which(join_path(".", p))
+            for binary in ["adios_c_mpi_test", "adios_adios2c_test", "adios_c_test"]:
+                exe = which(join_path(".", binary))
                 if exe:
                     with test_part(
-                        self, f"test_examples_run_{p}", purpose=f"run built adios2 example {p}"
+                            self,
+                            f"test_install_run_{binary}",
+                            purpose=f"ADIOS2 install test run {binary}",
                     ):
                         exe()
