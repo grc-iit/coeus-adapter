@@ -92,12 +92,7 @@ variant(
     when="@2.9:",
     description="Enable support for S3 compatible storage using AWS SDK's S3 module",
 )
-variant(
-    "libcatalyst",
-    default=not IS_WINDOWS,
-    when="@2.9:",
-    description="Enable support for in situ visualization plugin using ParaView Catalyst",
-)
+
 
 # Optional language bindings, C++11 and C always provided
 variant("kokkos", default=False, when="@2.9:", description="Enable Kokkos support")
