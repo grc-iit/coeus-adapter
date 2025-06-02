@@ -288,7 +288,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             self.define("ADIOS2_USE_IME", False),
             self.define("ADIOS2_USE_MGARD", False),
         ]
-
+        args.extend("-DADIOS2_USE_Derived_Variable=ON")
         if "+sst" in spec:
             args.extend(
                 [

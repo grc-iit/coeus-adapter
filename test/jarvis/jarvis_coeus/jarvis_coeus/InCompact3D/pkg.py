@@ -39,7 +39,7 @@ class Incompact3d(Application):
             },
             {
                 'name': 'incompact3D_location',
-                'msg': 'The location of Incompact3D',
+                'msg': 'The location of incompact3D',
                 'type': str,
                 'default': None,
             },
