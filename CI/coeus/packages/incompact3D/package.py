@@ -18,11 +18,14 @@ class Incompact3d(CMakePackage):
     depends_on('adios2-coeus', when='io_backend=adios2')
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
-    patch('fix_download_repo.patch', when='@coeus')
+    # change the 2decomp-fft repo to cutomized repos
+    patch('add_path_command.patch', when='@coeus')
+    patch('patches/decomp_fix.patch', when='@coeus')
     variant('fft_backend', default='generic',
         description='FFT backend for 2DECOMP&FFT',
         values=('generic', 'mkl'), multi=False)
 
+   # the io_backend has adios2 and mpiio
     variant('io_backend', default='mpiio',
         description='IO backend',
         values=('mpiio', 'adios2'), multi=False)

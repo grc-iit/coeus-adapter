@@ -1,14 +1,14 @@
 --- a/cmake/decomp2d/downloadBuild2decomp.cmake.in
 +++ b/cmake/decomp2d/downloadBuild2decomp.cmake.in
-@@ -6,10 +6,10 @@
+@@ -6,8 +6,10 @@
  include(ExternalProject)
 
  ExternalProject_Add(downloadBuild2decomp
--    GIT_REPOSITORY    "https://github.com/xcompact3d/2decomp-fft"
--    GIT_TAG           "v2.0.4"
-+    GIT_REPOSITORY    "https://github.com/hxu65/2decomp-fft.git"
-+    GIT_TAG           "coeus"
+     GIT_REPOSITORY    "https://github.com/xcompact3d/2decomp-fft"
+     GIT_TAG           "v2.0.4"
      SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src"
      INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-opt"
++    PATCH_COMMAND     ${CMAKE_COMMAND} -E echo "Patching source" &&
++                      patch -N -p1 < ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch || true
      TEST_COMMAND      ""
  )
