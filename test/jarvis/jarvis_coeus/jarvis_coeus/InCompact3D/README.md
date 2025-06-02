@@ -10,6 +10,18 @@ cmake -S . -B build
 
 
 ### ADIOS2 I/O installation
+install adios2 with dervied variable:
+add ```self.define("ADIOS2_USE_Derived_Variable", True)``` and ```args.append("-DADIOS2_USE_Derived_Variable=ON")``` in spack/var/spack/repos/builtin/packages/adios2/package.py
+```
+def cmake_args(self):
+        spec = self.spec
+        from_variant = self.define_from_variant
+        args.append("-DADIOS2_USE_Derived_Variable=ON")
+        args = [
+            self.define("ADIOS2_USE_Derived_Variable", True),
+```
+Then install the adios2 with ```spack install adios2^openmpi```
+
 2decomp-fft is responsible for domain decomposition and parallel I/O, Incompact3D relies on it for writing field data. </br>
 Here is the installation of 2decomp-fft with adios2 support
 ```
@@ -35,14 +47,15 @@ make -j8
 make install
 ```
 ### Build Incompact3D with spack
+
 ```
-spack add /path/to/inCompact3D/spack
-spack install incompact3D io_backend=adios2 ^openmpi
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2@2.9.2
 ```
  
 ### run
 ```
 cd Incompact3D/examples/Channel
+cp script.i3d input.i3d
 mpirun -n 16 ../../build/bin/incompcat3d
 ```
 
@@ -51,7 +64,7 @@ mpirun -n 16 ../../build/bin/incompcat3d
 jarvis ppl create incompact3d
 spack load hermes@master
 spack load openmpi
-export PATH=/path/to/build/bin:$PATH
+export PATH=/incompact3D/to/build/bin:$PATH
 jarvis ppl env build
 jarvis ppl append Incompact3d example_location=/path/to/examples/fold engine=bp5
 jarvis ppl run 
