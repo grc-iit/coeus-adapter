@@ -1,11 +1,51 @@
 <?xml version="1.0"?>
 <adios-config>
-  <io name="wrfout_d01_2019-11-26_12:00:00">
+  <io name="solution-io">
     <engine type="BP5">
-      <parameter key="RendezvousReaderCount" value="0"/>
-      <parameter key="QueueLimit" value="1"/>
-      <parameter key="QueueFullPolicy" value="Discard"/>
-      <parameter key="OpenTimeoutSecs" value="30.0"/>
     </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+  </io>
+  <io name="in-outflow-io">
+    <engine type="BP5">
+    </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+  </io>
+  <io name="turb-io">
+    <engine type="BP5">
+    </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+  </io>
+  <io name="restart-io">
+    <engine type="BP5">
+    </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+  </io>
+  <io name="statistics-io">
+    <engine type="BP5">
+    </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+  </io>
+  <io name="restart-forces-io">
+    <engine type="BP5">
+    </engine>
+    <transport type="File">
+      <parameter key="Library" value="fstream"/>
+      <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
   </io>
 </adios-config>

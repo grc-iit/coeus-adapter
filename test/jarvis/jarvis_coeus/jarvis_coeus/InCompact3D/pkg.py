@@ -85,9 +85,10 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
         if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{self.config["incompact3D_location"]}/adios2_config.xml', replacements={
+                                    f'{execute_location}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
