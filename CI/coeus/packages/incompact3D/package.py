@@ -15,7 +15,7 @@ class Incompact3d(CMakePackage):
     depends_on('cmake@3.20:', type='build')
     depends_on('fftw', when='fft_backend=generic')
     depends_on('mkl', when='fft_backend=mkl')
-    depends_on('adios2', when='io_backend=adios2')
+    depends_on('adios2-coeus', when='io_backend=adios2')
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
 
