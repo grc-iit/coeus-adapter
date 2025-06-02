@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
         auto availableVars = reader_io.AvailableVariables();
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
-            std::cout << "values: "
+            std::cout << "values: ";
             if (varEntry.second.at("Type") == "uint8_t") {
                 auto var = reader_io.InquireVariable<uint8_t>(varName);
                 reader.Get(var, hashing_value_1);
