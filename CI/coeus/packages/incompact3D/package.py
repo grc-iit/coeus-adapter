@@ -2,8 +2,8 @@ class Incompact3d(CMakePackage):
     """Xcompact3d is a Fortran-based framework of high-order finite-difference
     flow solvers dedicated to the study of turbulent flows."""
 
-    homepage = "https://github.com/hxu65/Incompact3d.git"
-    git      = "https://github.com/hxu65/Incompact3d.git"
+    homepage = "https://github.com/xcompact3d/Incompact3d.git"
+    git      = "https://github.com/xcompact3d/Incompact3d.git"
 
     # Software license
     license('BSD-3-Clause')
@@ -18,7 +18,7 @@ class Incompact3d(CMakePackage):
     depends_on('adios2-coeus', when='io_backend=adios2')
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
-
+    patch('fix_download_repo.patch', when='@coeus')
     variant('fft_backend', default='generic',
         description='FFT backend for 2DECOMP&FFT',
         values=('generic', 'mkl'), multi=False)

@@ -9,18 +9,8 @@ cmake -S . -B build
 ```
 
 
-### ADIOS2 I/O installation
-install adios2 with dervied variable:
-add ```self.define("ADIOS2_USE_Derived_Variable", True)``` and ```args.append("-DADIOS2_USE_Derived_Variable=ON")``` in spack/var/spack/repos/builtin/packages/adios2/package.py
-```
-def cmake_args(self):
-        spec = self.spec
-        from_variant = self.define_from_variant
-        args.append("-DADIOS2_USE_Derived_Variable=ON")
-        args = [
-            self.define("ADIOS2_USE_Derived_Variable", True),
-```
-Then install the adios2 with ```spack install adios2@2.9.2^openmpi```
+
+
 
 2decomp-fft is responsible for domain decomposition and parallel I/O, Incompact3D relies on it for writing field data. </br>
 Here is the installation of 2decomp-fft with adios2 support
@@ -49,7 +39,9 @@ make install
 ### Build Incompact3D with spack
 
 ```
-spack install incompact3D io_backend=adios2 ^openmpi ^adios2@2.9.2
+git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
+spack repo add /coeus_adapter/CI/coeus
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ```
  
 ### run
