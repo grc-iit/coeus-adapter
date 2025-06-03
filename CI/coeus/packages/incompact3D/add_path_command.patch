@@ -5,6 +5,6 @@
      SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src"
      INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-opt"
 +    PATCH_COMMAND     ${CMAKE_COMMAND} -E echo "Patching source" &&
-+                      patch -N -p1 < ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch || true
++                      patch -p1 < ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch
      TEST_COMMAND      ""
  )
