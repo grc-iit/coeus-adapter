@@ -10,9 +10,11 @@ class Incompact3d(CMakePackage):
 
     version('coeus', branch='master')
     def edit(self, spec, prefix):
-        # Copy patch from Spack package dir to CMake source directory
+    # Path to patch in the Spack package
         patch_src = os.path.join(self.package_dir, 'patches', 'decomp_fix.patch')
-        patch_dst = os.path.join(self.stage.source_path, 'cmake', 'decomp2d', 'decomp_fix.patch')
+
+    # Path where CMake expects it (e.g., ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch)
+        patch_dst = os.path.join(self.stage.source_path, 'cmake', 'patches', 'decomp_fix.patch')
 
         mkdirp(os.path.dirname(patch_dst))
         shutil.copy(patch_src, patch_dst)
