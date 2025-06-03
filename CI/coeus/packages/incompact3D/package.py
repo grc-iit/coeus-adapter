@@ -9,15 +9,7 @@ class Incompact3d(CMakePackage):
     license('BSD-3-Clause')
 
     version('coeus', branch='master')
-    def edit(self, spec, prefix):
-    # Path to patch in the Spack package
-        patch_src = os.path.join(self.package_dir, 'patches', 'decomp_fix.patch')
 
-    # Path where CMake expects it (e.g., ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch)
-        patch_dst = os.path.join(self.stage.source_path, 'cmake', 'patches', 'decomp_fix.patch')
-
-        mkdirp(os.path.dirname(patch_dst))
-        shutil.copy(patch_src, patch_dst)
     # Dependencies
     depends_on('mpi')
     depends_on('cmake@3.20:', type='build')
@@ -27,6 +19,15 @@ class Incompact3d(CMakePackage):
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
     # change the 2decomp-fft repo to cutomized repos
+    def edit(self, spec, prefix):
+        # Path to patch in the Spack package
+        patch_src = os.path.join(self.package_dir, 'patches', 'decomp_fix.patch')
+
+        # Path where CMake expects it (e.g., ${CMAKE_SOURCE_DIR}/patches/decomp_fix.patch)
+        patch_dst = os.path.join(self.stage.source_path, 'cmake', 'patches', 'decomp_fix.patch')
+
+        mkdirp(os.path.dirname(patch_dst))
+        shutil.copy(patch_src, patch_dst)
     patch('add_path_command.patch', when='@coeus')
     variant('fft_backend', default='generic',
         description='FFT backend for 2DECOMP&FFT',
