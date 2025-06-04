@@ -11,7 +11,7 @@ index 8f2b359..c7f3c82 100644
 +project(decomp2d LANGUAGES C CXX Fortran)
  set(version 2.0.4)
  enable_testing()
-+find_package(adios2 REQUIRED)
++find_package(adios2_coeus REQUIRED)
  if (IO_BACKEND MATCHES "adios2")
    # Can be useful to also activate CXX, sometimes is needed by packages
    enable_language(C CXX)
