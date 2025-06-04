@@ -41,7 +41,7 @@ make install
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 spack repo add /coeus_adapter/CI/coeus
-spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
+spack install incompact3D --keep-stage io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ```
  
 ### run
