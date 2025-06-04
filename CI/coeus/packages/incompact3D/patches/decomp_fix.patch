@@ -11,7 +11,7 @@ index 8f2b359..c7f3c82 100644
 +project(decomp2d LANGUAGES C CXX Fortran)
  set(version 2.0.4)
  enable_testing()
-+find_package(adios2_coeus REQUIRED)
++find_package(adios2 REQUIRED)
  if (IO_BACKEND MATCHES "adios2")
    # Can be useful to also activate CXX, sometimes is needed by packages
    enable_language(C CXX)
@@ -25,9 +25,18 @@ index 8f2b359..c7f3c82 100644
  
  set(AUTHOR "Stefano Rolfo;Charles Moulinec;Paul Bartholomew")
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 2e80684..30b24e8 100644
+index 2e80684..6c84d17 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
+@@ -5,7 +5,7 @@ file(GLOB files_decomp factor.f90
+ 		       log.f90
+ 		       io.f90)
+ include_directories(${CMAKE_SOURCE_DIR}/src)
+-
++find_package(adios2 REQUIRED)
+ if(${BUILD_TARGET} MATCHES "gpu")
+   list(APPEND files_decomp decomp_2d_cumpi.f90)
+   if(ENABLE_NCCL)
 @@ -79,10 +79,10 @@ if (HALO_DEBUG)
    target_compile_definitions(decomp2d PUBLIC -DHALO_DEBUG)
  endif()
