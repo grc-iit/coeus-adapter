@@ -15,12 +15,13 @@ class Incompact3d(CMakePackage):
     depends_on('cmake@3.20:', type='build')
     depends_on('fftw', when='fft_backend=generic')
     depends_on('mkl', when='fft_backend=mkl')
-    depends_on('adios2', when='io_backend=adios2')
+    depends_on('adios2-coeus', when='io_backend=adios2')
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
     # change the 2decomp-fft repo to cutomized repos
 
     patch('add_path_command.patch', when='@coeus')
+    patch('change_cmake.patch', when='@coeus')
     variant('fft_backend', default='generic',
         description='FFT backend for 2DECOMP&FFT',
         values=('generic', 'mkl'), multi=False)
