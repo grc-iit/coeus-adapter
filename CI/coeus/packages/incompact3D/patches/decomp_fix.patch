@@ -52,3 +52,46 @@ index 2e80684..6c84d17 100644
  
  install(TARGETS decomp2d
    EXPORT decomp2d-targets
+diff --git a/src/io.f90 b/src/io.f90
+index a815244..1153aba 100644
+--- a/src/io.f90
++++ b/src/io.f90
+@@ -1395,6 +1395,7 @@ contains
+       type(adios2_variable) :: var_handle
+       integer, parameter :: ndims = 3
+       logical, parameter :: adios2_constant_dims = .true.
++
+       integer :: data_type
+       integer :: ierror
+ 
+@@ -1442,6 +1443,10 @@ contains
+             call adios2_define_variable(var_handle, io_handle, varname, data_type, &
+                                         ndims, int(sizes, kind=8), int(starts, kind=8), int(subsizes, kind=8), &
+                                         adios2_constant_dims, ierror)
++            derived_name = "add_of_" // trim(varname)
++            derived_expression = "x=" // trim(varname) // " add(x)"
++            call adios2_define_derived_variable(derived_variable, io_handle, derived_name, derived_expression, &
++                                                                adios2_derived_var_type_store_data, special_error)                                                     
+             if (ierror /= 0) then
+                call decomp_2d_abort(__FILE__, __LINE__, ierror, &
+                                     "adios2_define_variable, ERROR registering variable "//trim(varname))
+@@ -2026,17 +2031,12 @@ contains
+ #else
+       call adios2_at_io(io, adios, io_name, ierror)
+       if (ierror /= 0) call decomp_2d_abort(__FILE__, __LINE__, ierror, "adios2_at_io "//trim(io_name))
+-      if (io%engine_type == "BP4") then
+-         ext = ".bp4"
++      if (io%engine_type == "BP5") then
++         ext = ".bp5"
+       else if (io%engine_type == "HDF5") then
+          ext = ".hdf5"
+       else if (io%engine_type == "SST") then
+          ext = ""
+-      else
+-         print *, "ERROR: Unkown engine type! ", io%engine_type
+-         print *, "-  IO: ", io_name
+-         print *, "- DIR:", io_dir
+-         stop
+       end if
+       write (gen_iodir_name, "(A,A)") io_dir, trim(ext)
+ #endif
