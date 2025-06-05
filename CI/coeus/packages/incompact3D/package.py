@@ -36,17 +36,6 @@ class Incompact3d(CMakePackage):
     variant('full_testing', default=False,
             description='Enable full testing suite')
 
-    def patch(self):
-        """Dynamically patch the hardcoded path in add_path_command.patch."""
-        patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
-
-        # The old hardcoded path in the patch
-        old_path = '/path/to/decomp_fix.patch'
-        # The actual path to use (relative to the Spack package directory)
-        new_path = os.path.join(self.package_dir, 'patches', 'decomp_fix.patch')
-
-        # Use Spack's filter_file to perform in-place substitution
-        filter_file(old_path, new_path, patch_file, string=True)
 
 
     def cmake_args(self):
