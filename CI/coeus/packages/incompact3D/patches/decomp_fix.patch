@@ -53,18 +53,22 @@ index 2e80684..6c84d17 100644
  install(TARGETS decomp2d
    EXPORT decomp2d-targets
 diff --git a/src/io.f90 b/src/io.f90
-index a815244..1153aba 100644
+index a815244..6c4ba04 100644
 --- a/src/io.f90
 +++ b/src/io.f90
-@@ -1395,6 +1395,7 @@ contains
+@@ -1395,6 +1395,11 @@ contains
        type(adios2_variable) :: var_handle
        integer, parameter :: ndims = 3
        logical, parameter :: adios2_constant_dims = .true.
-+
++      type(adios2_derived_variable)                :: derived_variable
++      type(adios2_derived_variable)                :: derived_variable2
++      character(len=256)                           :: derived_name
++      character(len=256)                           :: derived_expression
++      integer                                      :: special_error
        integer :: data_type
        integer :: ierror
  
-@@ -1442,6 +1443,10 @@ contains
+@@ -1442,6 +1447,10 @@ contains
              call adios2_define_variable(var_handle, io_handle, varname, data_type, &
                                          ndims, int(sizes, kind=8), int(starts, kind=8), int(subsizes, kind=8), &
                                          adios2_constant_dims, ierror)
@@ -75,7 +79,7 @@ index a815244..1153aba 100644
              if (ierror /= 0) then
                 call decomp_2d_abort(__FILE__, __LINE__, ierror, &
                                      "adios2_define_variable, ERROR registering variable "//trim(varname))
-@@ -2026,17 +2031,12 @@ contains
+@@ -2026,17 +2035,12 @@ contains
  #else
        call adios2_at_io(io, adios, io_name, ierror)
        if (ierror /= 0) call decomp_2d_abort(__FILE__, __LINE__, ierror, "adios2_at_io "//trim(io_name))
