@@ -1,5 +1,6 @@
 import os
 from spack.package import *
+
 class Incompact3d(CMakePackage):
     """Xcompact3d is a Fortran-based framework of high-order finite-difference
     flow solvers dedicated to the study of turbulent flows."""
@@ -7,7 +8,6 @@ class Incompact3d(CMakePackage):
     homepage = "https://github.com/xcompact3d/Incompact3d.git"
     git      = "https://github.com/xcompact3d/Incompact3d.git"
 
-    # Software license
     license('BSD-3-Clause')
 
     version('coeus', branch='master')
@@ -20,48 +20,42 @@ class Incompact3d(CMakePackage):
     depends_on('adios2-coeus', when='io_backend=adios2')
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
-    # Read the file content
 
-    # Replace the old path with the dynamic one
-
-
-    # Write the modified content back
-
-
-
-
+    # Patch directives (Spack applies these automatically)
     patch('add_path_command.patch', when='@coeus')
     patch('change_cmake.patch', when='@coeus')
-    variant('fft_backend', default='generic',
-        description='FFT backend for 2DECOMP&FFT',
-        values=('generic', 'mkl'), multi=False)
 
-   # the io_backend has adios2 and mpiio
+    variant('fft_backend', default='generic',
+            description='FFT backend for 2DECOMP&FFT',
+            values=('generic', 'mkl'), multi=False)
+
     variant('io_backend', default='mpiio',
-        description='IO backend',
-        values=('mpiio', 'adios2'), multi=False)
+            description='IO backend',
+            values=('mpiio', 'adios2'), multi=False)
 
     variant('full_testing', default=False,
-        description='Enable full testing suite')
-def patch(self):
-    """Dynamically replace hardcoded path in the patch file before applying."""
-    patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
+            description='Enable full testing suite')
 
-    # Define the old and new path
-    old_path = '/path/to/decomp_fix.patch'
-    new_path = self.package_dir + '/patches/decomp_fix.patch'  # Ensure trailing slash
+    def patch(self):
+        """Dynamically replace hardcoded path in the patch file before applying."""
+        patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
 
-    # Read and replace content
-    with open(patch_file, 'r') as f:
-        content = f.read()
-    content = content.replace(old_path, new_path)
-    with open(patch_file, 'w') as f:
-        f.write(content)
-def cmake_args(self):
-    return [
-        self.define_from_variant('FFT_BACKEND', 'fft_backend'),
-        self.define_from_variant('IO_BACKEND', 'io_backend'),
-    ]
+        # Define the old and new path
+        old_path = '/path/to/decomp_fix.patch'
+        new_path = os.path.join(self.package_dir, 'patches', 'decomp_fix.patch')
 
-def setup_build_environment(self, env):
-    env.set('FC', self.spec['mpi'].mpifc)
+        # Read and replace content
+        with open(patch_file, 'r') as f:
+            content = f.read()
+        content = content.replace(old_path, new_path)
+        with open(patch_file, 'w') as f:
+            f.write(content)
+
+    def cmake_args(self):
+        return [
+            self.define_from_variant('FFT_BACKEND', 'fft_backend'),
+            self.define_from_variant('IO_BACKEND', 'io_backend'),
+        ]
+
+    def setup_build_environment(self, env):
+        env.set('FC', self.spec['mpi'].mpifc)
