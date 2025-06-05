@@ -1,3 +1,5 @@
+import os
+from spack.package import *
 class Incompact3d(CMakePackage):
     """Xcompact3d is a Fortran-based framework of high-order finite-difference
     flow solvers dedicated to the study of turbulent flows."""
