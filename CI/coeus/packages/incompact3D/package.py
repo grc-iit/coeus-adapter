@@ -19,7 +19,22 @@ class Incompact3d(CMakePackage):
 
     conflicts('%gcc@:8.99', msg='Requires GCC 9 or higher')
     # change the 2decomp-fft repo to cutomized repos
+    patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
 
+    # Define the old and new path
+    old_path = '/path/to/decomp_fix.patch'
+    new_path = self.package_dir + '/patches/decomp_fix.patch'  # Ensure trailing slash
+
+    # Read the file content
+    with open(patch_file, 'r') as f:
+        content = f.read()
+
+    # Replace the old path with the dynamic one
+    content = content.replace(old_path, new_path)
+
+    # Write the modified content back
+    with open(patch_file, 'w') as f:
+        f.write(content)
     patch('add_path_command.patch', when='@coeus')
     patch('change_cmake.patch', when='@coeus')
     variant('fft_backend', default='generic',

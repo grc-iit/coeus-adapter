@@ -5,6 +5,6 @@
      SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src"
      INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-opt"
 +    PATCH_COMMAND     ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src
-+                      patch -p1 < /mnt/common/hxu40/coeus/derived/coeus-adapter/CI/coeus/packages/incompact3D/patches/decomp_fix.patch
++                      patch -p1 < /path/to/decomp_fix.patch
      TEST_COMMAND      ""
  )
