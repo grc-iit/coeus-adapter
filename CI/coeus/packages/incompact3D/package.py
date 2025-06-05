@@ -27,20 +27,7 @@ class Incompact3d(CMakePackage):
 
     # Write the modified content back
 
-    def patch(self):
-        """Dynamically replace hardcoded path in the patch file before applying."""
-        patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
 
-        # Define the old and new path
-        old_path = '/path/to/decomp_fix.patch'
-        new_path = self.package_dir + '/patches/decomp_fix.patch'  # Ensure trailing slash
-
-        # Read and replace content
-        with open(patch_file, 'r') as f:
-            content = f.read()
-        content = content.replace(old_path, new_path)
-        with open(patch_file, 'w') as f:
-            f.write(content)
 
 
     patch('add_path_command.patch', when='@coeus')
@@ -56,7 +43,20 @@ class Incompact3d(CMakePackage):
 
     variant('full_testing', default=False,
         description='Enable full testing suite')
+def patch(self):
+    """Dynamically replace hardcoded path in the patch file before applying."""
+    patch_file = os.path.join(self.package_dir, 'add_path_command.patch')
 
+    # Define the old and new path
+    old_path = '/path/to/decomp_fix.patch'
+    new_path = self.package_dir + '/patches/decomp_fix.patch'  # Ensure trailing slash
+
+    # Read and replace content
+    with open(patch_file, 'r') as f:
+        content = f.read()
+    content = content.replace(old_path, new_path)
+    with open(patch_file, 'w') as f:
+        f.write(content)
 def cmake_args(self):
     return [
         self.define_from_variant('FFT_BACKEND', 'fft_backend'),
