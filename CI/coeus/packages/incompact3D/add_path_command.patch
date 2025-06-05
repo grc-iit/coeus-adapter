@@ -23,3 +23,4 @@
 +                      patch -p1 < ${CMAKE_CURRENT_BINARY_DIR}/decomp_fix.patch
      TEST_COMMAND      ""
  )
+
