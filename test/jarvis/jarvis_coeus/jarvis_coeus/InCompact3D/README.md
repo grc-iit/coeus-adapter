@@ -41,7 +41,7 @@ make install
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 spack repo add /coeus_adapter/CI/coeus
-spack install incompact3D --keep-stage io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ```
  
 ### run
@@ -55,10 +55,11 @@ mpirun -n 16 ../../build/bin/incompcat3d
 ```
 jarvis ppl create incompact3d
 spack load hermes@master
+spack load incompact3D@coeus
 spack load openmpi
-export PATH=/incompact3D/to/build/bin:$PATH
+export PATH=/incompact3D/bin:$PATH
 jarvis ppl env build
-jarvis ppl append Incompact3d example_location=/path/to/examples/fold engine=bp5
+jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
 jarvis ppl run 
 
 ```
