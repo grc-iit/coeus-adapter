@@ -41,7 +41,7 @@ step 2: Build environment
 spack load hermes@master
 spack load incompact3D@coeus
 spack load openmpi
-export PATH=export PATH=/incompact3D/bin:$PATH
+export PATH=/incompact3D/bin:$PATH
 ```
 step 3: add jarvis repo
 ```
@@ -84,7 +84,7 @@ step 2: Build environment
 spack load hermes@master
 spack load incompact3D@coeus
 spack load openmpi
-export PATH=export PATH=/incompact3D/bin:$PATH
+export PATH=/incompact3D/bin:$PATH
 export PATH=~/coeus-adapter/build/bin:$PATH
 export LD_LIBRARY_PATH=~/coeus-adapter/build/bin:LD_LIBRARY_PATH
 ```
