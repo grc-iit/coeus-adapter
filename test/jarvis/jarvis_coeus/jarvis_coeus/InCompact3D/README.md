@@ -60,6 +60,15 @@ step 5: Run with jarvis
 jarvis ppl run
 ```
 
+Step 6: post-processing<br>
+please refer this jarvis packages for post-processing:
+https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
+<br>
+Step 7: visualization<br>
+The visualization of bp5 file requires ParaView. <br>
+Please refer this jarvis packages for ParaView. <br>
+https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/paraview
+
 
 ### Jarvis (Hermes)
 This is the procedure for running the application with Hermes as the I/O engine.<br>
@@ -101,9 +110,7 @@ please refer this jarvis packages for post-processing:
 https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
 
 Step 7: visualization<br>
-The visualization of bp5 file requires Paraview. 
-Please refer this jarvis packages for ParaView.
-
+Currently, Hermes does not support the visualization. 
 ## Install without spack
 
 ### installation as ADIOS2 I/O as backup
