@@ -17,7 +17,7 @@ step 2: Clone the coeus-adapter repos
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 ```
-step 3: Add CI for spack repo
+step 3: Add Coeus repo packages for spack
 ```
 spack repo add /coeus_adapter/CI/coeus
 ```
