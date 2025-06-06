@@ -72,7 +72,7 @@ https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_
 
 ### Jarvis (Hermes)
 This is the procedure for running the application with Hermes as the I/O engine.<br>
-Step 1: Place the run scripts in the example folder and copy an existing script as input.i3d.
+step 1: Place the run scripts in the example folder and copy an existing script as input.i3d.
 The following example demonstrates this setup for the Pipe-Flow benchmark.
 ```
 cd Incompact3d/examples/Pipe-Flow
@@ -114,7 +114,7 @@ Currently, Hermes does not support the visualization.
 ## Install without spack
 
 ### installation as ADIOS2 I/O as backup
-Step 1: 2decomp-fft handles domain decomposition and parallel I/O, which Incompact3D depends on for writing field data.<br>
+step 1: 2decomp-fft handles domain decomposition and parallel I/O, which Incompact3D depends on for writing field data.<br>
 Below is the installation process for 2decomp-fft with ADIOS2 support
 ```
 git clone -b coeus https://github.com/hxu65/2decomp-fft.git
