@@ -41,6 +41,7 @@ step 2: Build environment
 spack load incompact3D@coeus
 spack load openmpi
 export PATH=/incompact3D/bin:$PATH
+jarvis ppl env build
 ```
 step 3: add jarvis repo
 ```
