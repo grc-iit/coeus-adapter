@@ -43,8 +43,11 @@ spack load incompact3D@coeus
 spack load openmpi
 export PATH=export PATH=/incompact3D/bin:$PATH
 ```
-
-step 3: Set up the jarvis packages
+step 3: add jarvis repo
+```
+jarvis repo add coeus_adapter/test/jarvis/jarvis_coeus
+```
+step 4: Set up the jarvis packages
 ```
 jarvis ppl create incompact3d
 jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
@@ -52,7 +55,7 @@ jarvis ppl env build
 
 ```
 
-step 4: Run with jarvis
+step 5: Run with jarvis
 ```
 jarvis ppl run
 ```
@@ -76,8 +79,11 @@ export PATH=export PATH=/incompact3D/bin:$PATH
 export PATH=~/coeus-adapter/build/bin:$PATH
 export LD_LIBRARY_PATH=~/coeus-adapter/build/bin:LD_LIBRARY_PATH
 ```
-
-step 3: Set up the jarvis packages
+step 3: add jarvis repo
+```
+jarvis repo add coeus_adapter/test/jarvis/jarvis_coeus
+```
+step 4: Set up the jarvis packages
 ```
 jarvis ppl create incompact3d
 jarvis ppl append hermes_run provider=sockets
@@ -85,11 +91,18 @@ jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine
 jarvis ppl env build
 ```
 
-step 4: Run with jarvis
+step 5: Run with jarvis
 ```
 jarvis ppl run
 ```
 
+Step 6: post-processing<br>
+please refer this jarvis packages for post-processing:
+https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
+
+Step 7: visualization<br>
+The visualization of bp5 file requires Paraview. 
+Please refer this jarvis packages for ParaView.
 
 ## Install without spack
 
