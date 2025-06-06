@@ -1,7 +1,7 @@
 
 ## The Incompact3D tutorial
 
-### MPI I/O installation
+### installation as MPI I/O as backup 
 ```
 git clone https://github.com/xcompact3d/Incompact3d
 export FC=my_mpif90
@@ -11,7 +11,7 @@ cmake -S . -B build
 
 
 
-
+### installation as ADIOS2 I/O as backup
 2decomp-fft is responsible for domain decomposition and parallel I/O, Incompact3D relies on it for writing field data. </br>
 Here is the installation of 2decomp-fft with adios2 support
 ```
