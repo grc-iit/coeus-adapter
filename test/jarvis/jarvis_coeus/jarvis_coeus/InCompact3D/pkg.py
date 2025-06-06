@@ -53,6 +53,9 @@ class Incompact3d(Application):
             {
                 'name': 'benchmarks',
                 'msg': 'The name of benchmarks ',
+                'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
+                            'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
+                            'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
                 'type': str,
                 'default': None,
             },

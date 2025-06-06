@@ -36,30 +36,76 @@ cd build
 make -j8
 make install
 ```
-### Build Incompact3D with spack
 
+## install the Incompact3D with adios2 derived variables<br>
+After the installation, please save the incompact3D location in spack
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 spack repo add /coeus_adapter/CI/coeus
 spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ```
- 
-### run
+## Build and run Incompact3D with spack
+
+### step 1: set the running scripts
+go into example folder and copy the existed script as input.i3d.
+This the the example for Pipe-Flow benchmark
 ```
-cd Incompact3D/examples/Channel
-cp script.i3d input.i3d
-mpirun -n 16 ../../build/bin/incompcat3d
+cd Incompact3d/examples/Pipe-Flow
+cp input_DNS_Re1000_LR.i3d input.i3d
 ```
 
-### Run with jarvis
+### step 2: Bulid environment
 ```
-jarvis ppl create incompact3d
 spack load hermes@master
 spack load incompact3D@coeus
 spack load openmpi
-export PATH=/incompact3D/bin:$PATH
-jarvis ppl env build
-jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
-jarvis ppl run 
+export PATH=export PATH=/incompact3D/bin:$PATH
+```
 
+
+### step 3: set up the jarvis packages
+```
+jarvis ppl create incompact3d
+jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
+jarvis ppl env build
+
+```
+
+### step 4: Run with jarvis
+```
+jarvis ppl run
+```
+
+
+## Run the incompact3D with hermes
+
+### step 1: set the running scripts
+go into example folder and copy the existed script as input.i3d.
+This the the example for Pipe-Flow benchmark
+```
+cd Incompact3d/examples/Pipe-Flow
+cp input_DNS_Re1000_LR.i3d input.i3d
+```
+
+### step 2: Bulid environment
+```
+spack load hermes@master
+spack load incompact3D@coeus
+spack load openmpi
+export PATH=export PATH=/incompact3D/bin:$PATH
+export PATH=~/coeus-adapter/build/bin:$PATH
+export LD_LIBRARY_PATH=~/coeus-adapter/build/bin:LD_LIBRARY_PATH
+```
+
+### step 3: set up the jarvis packages
+```
+jarvis ppl create incompact3d
+jarvis ppl append hermes_run provider=sockets
+jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=hermes nprocs=16 ppn=16 benchmarks=Pipe-Flow
+jarvis ppl env build
+```
+
+### step 4: Run with jarvis
+```
+jarvis ppl run
 ```
