@@ -37,8 +37,8 @@ make -j8
 make install
 ```
 
-## install the Incompact3D with adios2 derived variables<br>
-After the installation, please save the incompact3D location in spack
+## install the Incompact3D with spack
+After the installation, please save the incompact3D location
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 spack repo add /coeus_adapter/CI/coeus
