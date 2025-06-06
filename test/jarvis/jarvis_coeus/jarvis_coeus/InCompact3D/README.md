@@ -13,30 +13,30 @@ git checkout tags/v0.22.2
 echo ". ${PWD}/share/spack/setup-env.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
-Stpe 2: Clone the coeus-adapter repos
+step 2: Clone the coeus-adapter repos
 ```
 git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
 ```
-Step 3: Add CI for spack repo
+step 3: Add CI for spack repo
 ```
 spack repo add /coeus_adapter/CI/coeus
 ```
-Step 4: Install the incompact3D with spack
+step 4: Install the incompact3D with spack
 ```
 spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ```
 
 ##  Run incompact3D 
 ### Jarvis(ADIOS2)
- step 1: set the running scripts
-go into example folder and copy the existed script as input.i3d.
-This the the example for Pipe-Flow benchmark
+This is the procedure for running the application with ADIOS2 as the I/O engine.<br>
+Step 1: Place the run scripts in the example folder and copy an existing script as input.i3d.
+The following example demonstrates this setup for the Pipe-Flow benchmark.
 ```
 cd Incompact3d/examples/Pipe-Flow
 cp input_DNS_Re1000_LR.i3d input.i3d
 ```
 
- step 2: Bulid environment
+step 2: Build environment
 ```
 spack load hermes@master
 spack load incompact3D@coeus
@@ -44,8 +44,7 @@ spack load openmpi
 export PATH=export PATH=/incompact3D/bin:$PATH
 ```
 
-
-step 3: set up the jarvis packages
+step 3: Set up the jarvis packages
 ```
 jarvis ppl create incompact3d
 jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
@@ -68,7 +67,7 @@ cd Incompact3d/examples/Pipe-Flow
 cp input_DNS_Re1000_LR.i3d input.i3d
 ```
 
-step 2: Bulid environment
+step 2: Build environment
 ```
 spack load hermes@master
 spack load incompact3D@coeus
@@ -78,7 +77,7 @@ export PATH=~/coeus-adapter/build/bin:$PATH
 export LD_LIBRARY_PATH=~/coeus-adapter/build/bin:LD_LIBRARY_PATH
 ```
 
-step 3: set up the jarvis packages
+step 3: Set up the jarvis packages
 ```
 jarvis ppl create incompact3d
 jarvis ppl append hermes_run provider=sockets
@@ -95,8 +94,8 @@ jarvis ppl run
 ## Install without spack
 
 ### installation as ADIOS2 I/O as backup
-step 1: 2decomp-fft is responsible for domain decomposition and parallel I/O, Incompact3D relies on it for writing field data. </br>
-Here is the installation of 2decomp-fft with adios2 support
+Step 1: 2decomp-fft handles domain decomposition and parallel I/O, which Incompact3D depends on for writing field data.<br>
+Below is the installation process for 2decomp-fft with ADIOS2 support
 ```
 git clone -b coeus https://github.com/hxu65/2decomp-fft.git
 spack load intel-oneapi-mkl
