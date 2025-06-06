@@ -38,7 +38,6 @@ cp input_DNS_Re1000_LR.i3d input.i3d
 
 step 2: Build environment
 ```
-spack load hermes@master
 spack load incompact3D@coeus
 spack load openmpi
 export PATH=/incompact3D/bin:$PATH
