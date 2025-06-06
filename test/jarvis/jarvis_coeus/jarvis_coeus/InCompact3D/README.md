@@ -1,5 +1,5 @@
 
-## How to install it
+## The Incompact3D tutorial
 
 ### MPI I/O installation
 ```
