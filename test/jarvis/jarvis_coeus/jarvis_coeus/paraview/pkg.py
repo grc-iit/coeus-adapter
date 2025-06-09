@@ -39,7 +39,7 @@ class Paraview(Application):
             },
             {
                 'name': 'multi-clients',
-                'msg': 'The number of processes per node',
+                'msg': 'is the paraview support multi-client',
                 'type': bool,
                 'default': False,
             },
@@ -84,8 +84,6 @@ class Paraview(Application):
         port_Id = self.config["port_id"]
         time_out = self.config["timeout"]
         condition = ''
-        if self.config["multi-clients"]:
-            condition += ' --multi-clients'
         if self.config['force-offscreen-rendering']:
             condition += ' --force-offscreen-rendering'
 
