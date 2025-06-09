@@ -44,7 +44,7 @@ class Paraview(Application):
                 'default': 10000,
             },
             {
-                'name': 'force-offscreen-rendering',
+                'name': 'force_offscreen_rendering',
                 'msg': 'Useful for headless environments (no display)',
                 'type': bool,
                 'default': False,
@@ -78,7 +78,7 @@ class Paraview(Application):
         port_Id = self.config["port_id"]
         time_out = self.config["timeout"]
         condition = ''
-        if self.config['force-offscreen-rendering']:
+        if self.config['force_offscreen_rendering']:
             condition += ' --force-offscreen-rendering'
 
         Exec(f'pvserver --server-port={port_Id} --timeout={time_out}{condition}',
