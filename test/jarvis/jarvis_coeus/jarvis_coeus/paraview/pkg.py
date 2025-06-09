@@ -38,12 +38,6 @@ class Paraview(Application):
                 'default': 16,
             },
             {
-                'name': 'multi-clients',
-                'msg': 'is the paraview support multi-client',
-                'type': bool,
-                'default': False,
-            },
-            {
                 'name': 'time_out',
                 'msg': 'Set a timeout period for idle client sessions',
                 'type': int,
