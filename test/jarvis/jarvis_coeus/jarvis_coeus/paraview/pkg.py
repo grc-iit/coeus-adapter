@@ -74,28 +74,28 @@ class Paraview(Application):
 
         pass
 
-def start(self):
-    """
-    Launch an application. E.g., OrangeFS will launch the servers, clients,
-    and metadata services on all necessary pkgs.
+    def start(self):
+        """
+        Launch an application. E.g., OrangeFS will launch the servers, clients,
+        and metadata services on all necessary pkgs.
 
-    :return: None
-    """
-    port_Id = self.config["port_id"]
-    time_out = self.config["timeout"]
-    condition = ''
-    if self.config["multi-clients"]:
-        condition += ' --multi-clients'
-    if self.config['force-offscreen-rendering']:
-        condition += ' --force-offscreen-rendering'
+        :return: None
+        """
+        port_Id = self.config["port_id"]
+        time_out = self.config["timeout"]
+        condition = ''
+        if self.config["multi-clients"]:
+            condition += ' --multi-clients'
+        if self.config['force-offscreen-rendering']:
+            condition += ' --force-offscreen-rendering'
 
-    Exec(f'pvserver --server-port={port_Id} --timeout={time_out}{condition}',
-         MpiExecInfo(nprocs=self.config['nprocs'],
-                     ppn=self.config['ppn'],
-                     env=self.mod_env
-                    ))
+        Exec(f'pvserver --server-port={port_Id} --timeout={time_out}{condition}',
+             MpiExecInfo(nprocs=self.config['nprocs'],
+                         ppn=self.config['ppn'],
+                         env=self.mod_env
+                        ))
 
-    pass
+        pass
 
     def stop(self):
         """
