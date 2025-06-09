@@ -76,7 +76,7 @@ class Paraview(Application):
         :return: None
         """
         port_Id = self.config["port_id"]
-        time_out = self.config["timeout"]
+        time_out = self.config["time_out"]
         condition = ''
         if self.config['force_offscreen_rendering']:
             condition += ' --force-offscreen-rendering'
