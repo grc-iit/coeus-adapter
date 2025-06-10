@@ -4,7 +4,7 @@ Incompact3d is ....
 """
 from jarvis_cd.basic.pkg import Application
 from jarvis_util import *
-
+import os
 
 class Incompact3d(Application):
     """
@@ -38,7 +38,7 @@ class Incompact3d(Application):
                 'default': 16,
             },
             {
-                'name': 'incompact3D_location',
+                'name': 'output_folder',
                 'msg': 'The location of incompact3D',
                 'type': str,
                 'default': None,
@@ -56,6 +56,12 @@ class Incompact3d(Application):
                 'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
                             'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
                             'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
+                'type': str,
+                'default': None,
+            },
+            {
+                'name': 'script_file_name',
+                'msg': 'The name of script file',
                 'type': str,
                 'default': None,
             },
@@ -88,7 +94,15 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
+        execute_location = os.path.join(
+            self.config['output_folder'],
+            'examples',
+            self.config['benchmarks']
+        )
+
+# Explicitly check if the directory exists, then create it
+        if not os.path.exists(execute_location):
+            os.makedirs(execute_location)
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     f'{execute_location}/adios2_config.xml')
@@ -98,6 +112,9 @@ class Incompact3d(Application):
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
+        input_i3d = {self.pkg_dir} + '/examples' + self.config['benchmarks'] + self.config['script_file_name']
+        self.copy_template_file(f'{input_i3d}',
+                                f'{execute_location}/input.i3d')
         pass
 
     def start(self):
@@ -108,7 +125,7 @@ class Incompact3d(Application):
         :return: None
         """
 
-        execute_location=self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks']
+        execute_location=self.config['output_folder']+ '/examples/' + self.config['benchmarks']
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
