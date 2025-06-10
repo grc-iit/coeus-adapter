@@ -112,7 +112,7 @@ class Incompact3d(Application):
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
-        input_i3d = {self.pkg_dir} + '/examples' + self.config['benchmarks'] + self.config['script_file_name']
+        input_i3d = f"{self.pkg_dir}/examples/{self.config['benchmarks']}/{self.config['script_file_name']}"
         self.copy_template_file(f'{input_i3d}',
                                 f'{execute_location}/input.i3d')
         pass
