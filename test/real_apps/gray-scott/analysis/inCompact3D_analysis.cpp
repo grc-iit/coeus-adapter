@@ -69,38 +69,38 @@ int main(int argc, char **argv) {
             const std::string &varName = varEntry.first;
 
             // Check if varName starts with "add"
-            if (varName.rfind("add", 0) == 0) {
+            if (varName.rfind("add", 0) == 0) {  // rfind with pos = 0 = startsWith
                 const std::string &typeStr = varEntry.second.at("Type");
                 std::cout << "Variable: " << varName << " | Type: " << typeStr << " | Values: ";
 
                 if (typeStr == "int") {
                     auto var = reader_io.InquireVariable<int>(varName);
                     std::vector<int> data(var.Shape()[0]);
-                    reader.Get(var, data);
+                    reader.Get(var, data, adios2::Mode::Sync);
                     for (int val : data) std::cout << val << ", ";
                 }
                 else if (typeStr == "uint8_t") {
                     auto var = reader_io.InquireVariable<uint8_t>(varName);
                     std::vector<uint8_t> data(var.Shape()[0]);
-                    reader.Get(var, data);
+                    reader.Get(var, data, adios2::Mode::Sync);
                     for (uint8_t val : data) std::cout << static_cast<int>(val) << ", ";
                 }
                 else if (typeStr == "string" || typeStr == "std::string") {
                     auto var = reader_io.InquireVariable<std::string>(varName);
                     std::string value;
-                    reader.Get(var, value);
+                    reader.Get(var, value, adios2::Mode::Sync);
                     std::cout << value;
                 }
                 else if (typeStr == "float") {
                     auto var = reader_io.InquireVariable<float>(varName);
                     std::vector<float> data(var.Shape()[0]);
-                    reader.Get(var, data);
+                    reader.Get(var, data, adios2::Mode::Sync);
                     for (float val : data) std::cout << val << ", ";
                 }
                 else if (typeStr == "double") {
                     auto var = reader_io.InquireVariable<double>(varName);
                     std::vector<double> data(var.Shape()[0]);
-                    reader.Get(var, data);
+                    reader.Get(var, data, adios2::Mode::Sync);
                     for (double val : data) std::cout << val << ", ";
                 }
                 else {
