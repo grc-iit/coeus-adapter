@@ -51,6 +51,12 @@ class Incompact3d(Application):
                 'default': 'bp5',
             },
             {
+                'name': 'Incompact3D_location',
+                'msg': 'The location of incompact3D',
+                'type': str,
+                'default': None,
+            },
+            {
                 'name': 'benchmarks',
                 'msg': 'The name of benchmarks ',
                 'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
@@ -112,7 +118,7 @@ class Incompact3d(Application):
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
-        input_i3d = f"{self.pkg_dir}/examples/{self.config['benchmarks']}/{self.config['script_file_name']}"
+        input_i3d = f"{self.config['Incompact3D_location']}/examples/{self.config['benchmarks']}/{self.config['script_file_name']}"
         self.copy_template_file(f'{input_i3d}',
                                 f'{execute_location}/input.i3d')
         pass
