@@ -11,8 +11,7 @@ of the ADIOS plugins interface.
 
 
 ## Install
-please refer the [install](install.md) to install coeus-adapter and related dependence.  
-
+Read the guide on [Building coeus-adapter](install.md). 
 
 ## Supported applications for coeus-adapter
 
