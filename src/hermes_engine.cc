@@ -276,18 +276,19 @@ void HermesEngine::ComputeDerivedVariables() {
                 << std::endl;
 
   }
-
+  std::cout << "flag1" << std::endl;
      for (const auto& [name, varPtr] : m_VariablesDerived) {
     // identify the variables used in the derived variable
     auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
     std::vector<std::string> varList = derivedVar->VariableNameList();
 
 
-
+         std::cout << "flag2" << std::endl;
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
     for (auto varName : varList) {
+        std::cout << "flag3" << std::endl;
       auto itVariable = m_Variables.find(varName);
           if (itVariable == m_Variables.end())
             std::cout <<"throw error commented" <<std::endl;
@@ -299,7 +300,7 @@ void HermesEngine::ComputeDerivedVariables() {
                                 itVariable->second.get()->m_Count.data(),
                                 adios2::MinMaxStruct(), blob.data()});
 
-
+        std::cout << "flag4" << std::endl;
         // if this is the first block for the variable
       auto entry = nameToVarInfo.find(varName);
       if (entry == nameToVarInfo.end()) {
@@ -317,6 +318,7 @@ void HermesEngine::ComputeDerivedVariables() {
     // ExpressionString
     std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
         DerivedBlockData;
+         std::cout << "flag5" << std::endl;
     if (derivedVar->GetDerivedType() !=
         adios2::DerivedVarType::ExpressionString) {
         std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
@@ -325,7 +327,7 @@ void HermesEngine::ComputeDerivedVariables() {
         }
       DerivedBlockData = derivedVar->ApplyExpression(NameToMVI);
     }
-
+         std::cout << "flag6" << std::endl;
     for (auto derivedBlock : DerivedBlockData) {
 #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
@@ -352,14 +354,15 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
-
-   // ComputeDerivedVariables();
+    std::cout << "flag12" << std::endl;
+    ComputeDerivedVariables();
 //  if (m_OpenMode == adios2::Mode::Write) {
 //    if (rank % ppn == 0) {
 //      DbOperation db_op(uid, currentStep);
 //      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
 //    }
 //  }
+    std::cout << "flag13" << std::endl;
   delete Hermes->bkt;
 
 }
