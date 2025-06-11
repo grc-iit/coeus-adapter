@@ -69,7 +69,7 @@ class Incompact3dPost(Application):
                             'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
                             'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
                 'type': str,
-                'default': None,
+                'default': 'Cavity',
             },
             {
                 'name': 'out_filename',
