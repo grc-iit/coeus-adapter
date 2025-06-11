@@ -93,7 +93,7 @@ jarvis repo add coeus_adapter/test/jarvis/jarvis_coeus
 ```
 step 4: Set up the jarvis packages
 ```
-jarvis ppl create incompact3d
+jarvis ppl create incompact3d_hermes
 jarvis ppl append hermes_run provider=sockets
 jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=hermes nprocs=16 ppn=16 benchmarks=Pipe-Flow
 jarvis ppl env build

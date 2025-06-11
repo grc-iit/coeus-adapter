@@ -107,7 +107,6 @@ class Incompact3dPost(Application):
                                     f'{execute_location}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
-                    'Order': self.config['Execution_order'],
                 })
         pass
 
