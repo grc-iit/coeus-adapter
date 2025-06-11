@@ -128,7 +128,8 @@ class Incompact3dPost(Application):
         #                  env=self.mod_env,
         #                  cwd=execute_location
         #                  ))
-        Exec(f'inCompact3D_analysis {in_file} {out_file}',cwd=execute_location)
+        os.chdir(execute_location)
+        Exec(f'inCompact3D_analysis {in_file} {out_file}')
         pass
 
     def stop(self):
