@@ -1,6 +1,6 @@
 ## install with spack
 
-### Install ADIOS2
+### 1.Install ADIOS2
 please follow these steps to install the adios2 with derived variables
 step 1: Install Spack
 ```
@@ -20,17 +20,17 @@ step 3: install the adios2
 spack install adios2-coeus@2.10.0
 ```
 
-### install the hermes
+### 2. Install the Hermes
 Please follow this [link](https://grc.iit.edu/docs/hermes/building-hermes/) for the hermes installation.
 
-### install coeus-adapter
-load environment variables
+### 3. Install Coeus-adapter
+1. load environment variables
 ```
 spack load hermes@master
 spack load adios2-coeus
 spack load openmpi
 ```
-install the coeus-adapter
+2. install the coeus-adapter
 ```
 git clone https://github.com/grc-iit/coeus-adapter.git
 cd coeus-adapter
@@ -47,7 +47,7 @@ cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ## Hermes Info log
 The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
 
-## disbale adios2 metadata
+## Disbale adios2 metadata
 add this to the adios2.xml
 ```
 <parameter key="StatsLevel" value="0"/>
