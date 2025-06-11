@@ -121,13 +121,14 @@ class Incompact3dPost(Application):
         in_file = self.config['in_filename']
         out_file = self.config['out_filename']
         execute_location=self.config['output_folder']+ '/examples/' + self.config['benchmarks']
-        Exec(f'inCompact3D_analysis {in_file} {out_file}',
-             MpiExecInfo(nprocs=self.config['nprocs'],
-                         ppn=self.config['ppn'],
-                         hostfile=self.jarvis.hostfile,
-                         env=self.mod_env,
-                         cwd=execute_location
-                         ))
+        # Exec(f'inCompact3D_analysis {in_file} {out_file}',
+        #      MpiExecInfo(nprocs=self.config['nprocs'],
+        #                  ppn=self.config['ppn'],
+        #                  hostfile=self.jarvis.hostfile,
+        #                  env=self.mod_env,
+        #                  cwd=execute_location
+        #                  ))
+        Exec(f'inCompact3D_analysis {in_file} {out_file}',cwd=execute_location)
         pass
 
     def stop(self):
