@@ -17,7 +17,7 @@ Read the guide on [Building coeus-adapter](install.md).
 | LAMMPS (molecular dynamics)     | [test/jarvis/jarvis_coeus/jarvis_coeus/lammps](./test/jarvis/jarvis_coeus/jarvis_coeus/lammps)                       | hash                     |   |   |
 | Grey-Scott (Reaction Diffusion) | [test/jarvis/jarvis_coeus/jarvis_coeus/adios2_gray_scott](./test/jarvis/jarvis_coeus/jarvis_coeus/adios2_gray_scott) | curl, add, hash          |   |   |
 | IO (hdf5 benchmark)             | [test/jarvis/jarvis_coeus/jarvis_coeus/io_comp](./test/jarvis/jarvis_coeus/jarvis_coeus/io_comp)                     | add                      |   |   |
-| Incompact3D                     | [test/jarvis/jarvis_coeus/jarvis_coeus/inCompact3D ](./test/jarvis/jarvis_coeus/jarvis_coeus/inCompact3D)            | Qcrit                    |   |   |
+| Incompact3D                     | [test/jarvis/jarvis_coeus/jarvis_coeus/inCompact3D ](./test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D)            | Qcrit                    |   |   |
 | Openfoam                        | [test/jarvis/jarvis_coeus/jarvis_coeus/openform](./test/jarvis/jarvis_coeus/jarvis_coeus/openform)                                                                 |                          |   |   | 
 
 
