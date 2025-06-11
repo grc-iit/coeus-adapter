@@ -91,6 +91,18 @@ int main(int argc, char **argv) {
                     reader.Get(var, value, adios2::Mode::Sync);
                     std::cout << value;
                 }
+                else if (typeStr == "float") {
+                    auto var = reader_io.InquireVariable<float>(varName);
+                    std::vector<float> data(var.Shape()[0]);
+                    reader.Get(var, data, adios2::Mode::Sync);
+                    for (float val : data) std::cout << val << ", ";
+                }
+                else if (typeStr == "double") {
+                    auto var = reader_io.InquireVariable<double>(varName);
+                    std::vector<double> data(var.Shape()[0]);
+                    reader.Get(var, data, adios2::Mode::Sync);
+                    for (double val : data) std::cout << val << ", ";
+                }
                 else {
                     std::cout << "[Unsupported type: " << typeStr << "]";
                 }
