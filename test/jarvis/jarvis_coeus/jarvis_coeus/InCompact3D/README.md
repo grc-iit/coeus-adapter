@@ -99,10 +99,10 @@ jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine
 jarvis ppl env build
 ```
 Note: The current derived variable in coeus only support hash() opeartions.
-```
+```text
 [ADIOS2 ERROR] <Helper> <adiosSystem> <ExceptionToError> : adios2_end_step: std::bad_array_new_length
 ```
-This error is common for some other operations.
+This error is common for some other operations.<br>
 step 5: Run with jarvis
 ```
 jarvis ppl run
