@@ -14,7 +14,7 @@ of the ADIOS plugins interface.
 please refer the [install](install.md) to install coeus-adapter and related dependence.  
 
 
-## supported applications for coeus-adapter
+## Supported applications for coeus-adapter
 
 | application                     | directory                                               | derived quantity example | query session examples  | notes  |
 |---------------------------------|---------------------------------------------------------|--------------------------|---|---|
