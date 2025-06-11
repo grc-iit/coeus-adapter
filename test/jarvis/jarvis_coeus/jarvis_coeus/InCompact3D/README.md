@@ -47,8 +47,9 @@ jarvis repo add coeus_adapter/test/jarvis/jarvis_coeus
 ```
 step 4: Set up the jarvis packages
 ```
+location=$(spack location -i incompact3D@coeus)
 jarvis ppl create incompact3d
-jarvis ppl append InCompact3D benchmarks=Pipe-Flow output_folder=/output_fold/location script_file_name=input_DNS_Re1000_LR.i3d ppn=16 nprocs=16 engine=bp5
+jarvis ppl append InCompact3D benchmarks=Pipe-Flow Incompact3D_location=$location output_folder=/output_fold/location script_file_name=input_DNS_Re1000_LR.i3d ppn=16 nprocs=16 engine=bp5
 jarvis ppl env build
 
 ```

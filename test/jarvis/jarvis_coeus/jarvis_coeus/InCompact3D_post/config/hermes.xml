@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <adios-config>
     <io name="solution-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
@@ -9,7 +13,11 @@
         </transport>
     </io>
     <io name="in-outflow-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
@@ -17,7 +25,11 @@
         </transport>
     </io>
     <io name="turb-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
@@ -25,7 +37,11 @@
         </transport>
     </io>
     <io name="restart-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
@@ -33,7 +49,11 @@
         </transport>
     </io>
     <io name="statistics-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
@@ -41,7 +61,11 @@
         </transport>
     </io>
     <io name="restart-forces-io">
-        <engine type="BP5">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##ppn##"/>
+            <parameter key="db_file" value="##db_path##"/>
         </engine>
         <transport type="File">
             <parameter key="Library" value="fstream"/>
