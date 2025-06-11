@@ -1,5 +1,9 @@
 ## install with spack
 
+# Dependencies
+* [Hermes](https://github.com/HDFGroup/hermes): a multi-tiered I/O buffering platform.
+* [ADIOS2](https://github.com/ornladios/ADIOS2): an I/O library
+
 ### 1.Install ADIOS2
 please follow these steps to install the adios2 with derived variables
 step 1: Install Spack
