@@ -38,6 +38,7 @@ step 2: Build environment
 ```
 spack load incompact3D@coeus
 spack load openmpi
+export PATH=~/coeus-adapter/build/bin:$PATH
 jarvis ppl env build
 ```
 step 3: add jarvis repo
@@ -58,17 +59,17 @@ jarvis ppl run
 ```
 
 Step 6: post-processing<br>
-please refer this jarvis packages for post-processing:
-https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
-<br>
+please refer this [jarvis packages](../InCompact3D_post) for post-processing.
+Add InCompact3D_post to jarvis pipeline
 ```
-jarvis ppl append InCompact3D_post benchmarks=Pipe-Flow output_folder=/output_fold/location  
+jarvis ppl append InCompact3D_post benchmarks=Pipe-Flow output_folder=/output_fold/location engine=bp5 nprocs=1 ppn=16  
 ```
+Jarvis will execute the test and generate output for the derived variables. <br>
+Note: The current operation applied to derived variables is add, which may produce a large volume of output.
+
 Step 7: visualization<br>
 The visualization of bp5 file requires ParaView. <br>
-Please refer this jarvis packages for ParaView. <br>
-https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/paraview
-
+Please refer this [jarvis packages](../paraview) for ParaView. <br>
 
 ### Jarvis (Hermes)
 This is the procedure for running the application with Hermes as the I/O engine.<br>
@@ -103,11 +104,14 @@ jarvis ppl run
 ```
 
 Step 6: post-processing<br>
-please refer this jarvis packages for post-processing:
-https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
-
+please refer this [jarvis packages](../InCompact3D_post) for post-processing.
+Add InCompact3D_post to jarvis pipeline
+```
+jarvis ppl append InCompact3D_post benchmarks=Pipe-Flow output_folder=/output_fold/location engine=hermes nprocs=1 ppn=16  
+```
 Step 7: visualization<br>
 Currently, Hermes does not support the visualization. 
+
 ## Install without spack
 
 ### installation as ADIOS2 I/O as backup
