@@ -75,33 +75,33 @@ int main(int argc, char **argv) {
 
                 if (typeStr == "int") {
                     auto var = reader_io.InquireVariable<int>(varName);
-                    std::vector<int> data(1);
-                    reader.Get(var, data.data());
-                    std::cout << data[0];
+                    std::vector<int> data(var.Shape()[0]);
+                    reader.Get(var, data);
+                    for (int val : data) std::cout << val << ", ";
                 }
                 else if (typeStr == "uint8_t") {
                     auto var = reader_io.InquireVariable<uint8_t>(varName);
-                    std::vector<uint8_t> data(1);
-                    reader.Get(var, data.data());
-                    std::cout << static_cast<int>(data[0]);
-                }
-                else if (typeStr == "float") {
-                    auto var = reader_io.InquireVariable<float>(varName);
-                    std::vector<float> data(1);
-                    reader.Get(var, data.data());
-                    std::cout << data[0];
-                }
-                else if (typeStr == "double") {
-                    auto var = reader_io.InquireVariable<double>(varName);
-                    std::vector<double> data(1);
-                    reader.Get(var, data.data());
-                    std::cout << data[0];
+                    std::vector<uint8_t> data(var.Shape()[0]);
+                    reader.Get(var, data);
+                    for (uint8_t val : data) std::cout << static_cast<int>(val) << ", ";
                 }
                 else if (typeStr == "string" || typeStr == "std::string") {
                     auto var = reader_io.InquireVariable<std::string>(varName);
                     std::string value;
                     reader.Get(var, value);
                     std::cout << value;
+                }
+                else if (typeStr == "float") {
+                    auto var = reader_io.InquireVariable<float>(varName);
+                    std::vector<float> data(var.Shape()[0]);
+                    reader.Get(var, data);
+                    for (float val : data) std::cout << val << ", ";
+                }
+                else if (typeStr == "double") {
+                    auto var = reader_io.InquireVariable<double>(varName);
+                    std::vector<double> data(var.Shape()[0]);
+                    reader.Get(var, data);
+                    for (double val : data) std::cout << val << ", ";
                 }
                 else {
                     std::cout << "[Unsupported type: " << typeStr << "]";
