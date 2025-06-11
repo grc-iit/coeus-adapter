@@ -246,7 +246,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     }
     LoadMetadata();
   }
-    std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+    std::string bucket_name = "step_" + std::to_string(currentStep)
+                              + "_rank" + std::to_string(rank);
+  //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
     Hermes->GetBucket(bucket_name);
 // derived part
 //  if(m_OpenMode == adios2::Mode::Read){
@@ -595,29 +597,29 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     // switch the bucket
 
-    int current_bucket = stoi(adiosOutput);
-    if (current_bucket > 2) {
-        // time here
-        T* values2 = new T[total_count];
-        std::string previous_bucket_name =
-                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
-                std::to_string(rank);
-        if (db->FindVariable(currentStep, rank, name,previous_bucket_name)) {
-
-            Hermes->GetBucket(previous_bucket_name);
-            auto blob = Hermes->bkt->Get(name);
-            memcpy(values2, blob.data(), blob.size());
-            for (int i = 0; i < total_count; ++i) {
-                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
-                    auto app_end_time = std::chrono::system_clock::now();
-                    std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
-                    engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
-                }
-            }
-        }
-
-
-    }
+//    int current_bucket = stoi(adiosOutput);
+//    if (current_bucket > 2) {
+//        // time here
+//        T* values2 = new T[total_count];
+//        std::string previous_bucket_name =
+//                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
+//                std::to_string(rank);
+//        if (db->FindVariable(currentStep, rank, name,previous_bucket_name)) {
+//
+//            Hermes->GetBucket(previous_bucket_name);
+//            auto blob = Hermes->bkt->Get(name);
+//            memcpy(values2, blob.data(), blob.size());
+//            for (int i = 0; i < total_count; ++i) {
+//                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
+//                    auto app_end_time = std::chrono::system_clock::now();
+//                    std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
+//                    engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
+//                }
+//            }
+//        }
+//
+//
+//    }
 
 
 }
