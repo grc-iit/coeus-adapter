@@ -54,11 +54,20 @@ class Incompact3dPost(Application):
                 'name': 'in_filename',
                 'msg': 'Input file location',
                 'type': str,
+                'default': 'data.bp5',
+            },
+            {
+                'name': 'output_folder',
+                'msg': 'Input file location',
+                'type': str,
                 'default': None,
             },
             {
-                'name': 'file_location',
-                'msg': 'Input file location',
+                'name': 'benchmarks',
+                'msg': 'The name of benchmarks ',
+                'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
+                            'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
+                            'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
                 'type': str,
                 'default': None,
             },
@@ -66,7 +75,7 @@ class Incompact3dPost(Application):
                 'name': 'out_filename',
                 'msg': 'Output file location',
                 'type': str,
-                'default': None,
+                'default': 'out.bp5',
             },
             {
                 'name': 'derived_variable_type',
@@ -85,9 +94,17 @@ class Incompact3dPost(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        execute_location = os.path.join(
+            self.config['output_folder'],
+            'examples',
+            self.config['benchmarks']
+        )
+        if self.config['engine'].lower() == 'bp5':
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                                    f'{execute_location}/adios2_config.xml')
         if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{self.config["file_location"]}/adios2_config.xml', replacements={
+                                    f'{execute_location}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                     'Order': self.config['Execution_order'],
@@ -103,13 +120,13 @@ class Incompact3dPost(Application):
         """
         in_file = self.config['in_filename']
         out_file = self.config['out_filename']
-
+        execute_location=self.config['output_folder']+ '/examples/' + self.config['benchmarks']
         Exec(f'inCompact3D_analysis {in_file} {out_file}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=self.config['file_location']
+                         cwd=execute_location
                          ))
         pass
 

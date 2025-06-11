@@ -61,6 +61,9 @@ Step 6: post-processing<br>
 please refer this jarvis packages for post-processing:
 https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D_post
 <br>
+```
+jarvis ppl append InCompact3D_post benchmarks=Pipe-Flow output_folder=/output_fold/location  
+```
 Step 7: visualization<br>
 The visualization of bp5 file requires ParaView. <br>
 Please refer this jarvis packages for ParaView. <br>
