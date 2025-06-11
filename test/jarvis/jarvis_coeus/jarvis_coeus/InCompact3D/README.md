@@ -98,7 +98,11 @@ jarvis ppl append hermes_run provider=sockets
 jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=hermes nprocs=16 ppn=16 benchmarks=Pipe-Flow
 jarvis ppl env build
 ```
-
+Note: The current derived variable in coeus only support hash() opeartions.
+```
+[ADIOS2 ERROR] <Helper> <adiosSystem> <ExceptionToError> : adios2_end_step: std::bad_array_new_length
+```
+This error is common for some other operations.
 step 5: Run with jarvis
 ```
 jarvis ppl run
