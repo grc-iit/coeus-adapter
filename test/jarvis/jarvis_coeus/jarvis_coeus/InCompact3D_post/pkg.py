@@ -69,7 +69,7 @@ class Incompact3dPost(Application):
                 'default': None,
             },
             {
-                'name': 'derived_variable type',
+                'name': 'derived_variable_type',
                 'msg': 'the type of derived variable in simulation',
                 'type': str,
                 'default': None,
