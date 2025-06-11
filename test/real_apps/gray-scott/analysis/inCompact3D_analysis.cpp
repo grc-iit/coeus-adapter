@@ -68,17 +68,36 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
 
-            if (varEntry.second.at("Type") == "uint8_t") {
-                std::cout << "values: ";
-                auto var = reader_io.InquireVariable<uint8_t>(varName);
-                reader.Get(var, hashing_value_1);
-                for (int i = 0; i < hashing_value_1.size(); i++) {
-                    std::cout  << static_cast<int>(hashing_value_1[i]) << " , ";
+            // Check if varName starts with "derive"
+            if (varName.rfind("add", 0) == 0) {  // rfind with pos = 0 = startsWith
+                const std::string &typeStr = varEntry.second.at("Type");
+                std::cout << "Variable: " << varName << " | Type: " << typeStr << " | Values: ";
+
+                if (typeStr == "int") {
+                    auto var = reader_io.InquireVariable<int>(varName);
+                    std::vector<int> data(var.Shape()[0]);
+                    reader.Get(var, data, adios2::Mode::Sync);
+                    for (int val : data) std::cout << val << ", ";
+                }
+                else if (typeStr == "uint8_t") {
+                    auto var = reader_io.InquireVariable<uint8_t>(varName);
+                    std::vector<uint8_t> data(var.Shape()[0]);
+                    reader.Get(var, data, adios2::Mode::Sync);
+                    for (uint8_t val : data) std::cout << static_cast<int>(val) << ", ";
+                }
+                else if (typeStr == "string" || typeStr == "std::string") {
+                    auto var = reader_io.InquireVariable<std::string>(varName);
+                    std::string value;
+                    reader.Get(var, value, adios2::Mode::Sync);
+                    std::cout << value;
+                }
+                else {
+                    std::cout << "[Unsupported type: " << typeStr << "]";
                 }
 
-                }
-            std::cout << std::endl;
+                std::cout << std::endl;
             }
+        }
 
         reader.EndStep();
         ++stepAnalysis;

@@ -29,18 +29,15 @@ spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 ##  Run incompact3D 
 ### Jarvis(ADIOS2)
 This is the procedure for running the application with ADIOS2 as the I/O engine.<br>
-Step 1: Place the run scripts in the example folder and copy an existing script as input.i3d.
-The following example demonstrates this setup for the Pipe-Flow benchmark.
+Step 1: find the benchmarks and its scripts file you want to run
 ```
-cd Incompact3d/examples/Pipe-Flow
-cp input_DNS_Re1000_LR.i3d input.i3d
+jarvis_coeus/Incompact3D/examples/benchmarks/scripts.i3d
 ```
 
 step 2: Build environment
 ```
 spack load incompact3D@coeus
 spack load openmpi
-export PATH=/incompact3D/bin:$PATH
 jarvis ppl env build
 ```
 step 3: add jarvis repo
@@ -50,7 +47,7 @@ jarvis repo add coeus_adapter/test/jarvis/jarvis_coeus
 step 4: Set up the jarvis packages
 ```
 jarvis ppl create incompact3d
-jarvis ppl append Incompact3d example_location=/path/to/incompact3D-coeus engine=bp5 nprocs=16 ppn=16 benchmarks=Pipe-Flow
+jarvis ppl append InCompact3D benchmarks=Pipe-Flow output_folder=/output_fold/location script_file_name=input_DNS_Re1000_LR.i3d ppn=16 nprocs=16 engine=bp5
 jarvis ppl env build
 
 ```
@@ -72,11 +69,9 @@ https://github.com/grc-iit/coeus-adapter/tree/derived_merged/test/jarvis/jarvis_
 
 ### Jarvis (Hermes)
 This is the procedure for running the application with Hermes as the I/O engine.<br>
-step 1: Place the run scripts in the example folder and copy an existing script as input.i3d.
-The following example demonstrates this setup for the Pipe-Flow benchmark.
+Step 1: find the benchmarks and its scripts file you want to run
 ```
-cd Incompact3d/examples/Pipe-Flow
-cp input_DNS_Re1000_LR.i3d input.i3d
+jarvis_coeus/Incompact3D/examples/benchmarks/scripts.i3d
 ```
 
 step 2: Build environment
@@ -84,7 +79,6 @@ step 2: Build environment
 spack load hermes@master
 spack load incompact3D@coeus
 spack load openmpi
-export PATH=/incompact3D/bin:$PATH
 export PATH=~/coeus-adapter/build/bin:$PATH
 export LD_LIBRARY_PATH=~/coeus-adapter/build/bin:LD_LIBRARY_PATH
 ```
