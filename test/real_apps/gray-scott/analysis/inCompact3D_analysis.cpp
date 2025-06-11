@@ -68,40 +68,40 @@ int main(int argc, char **argv) {
         for (const auto &varEntry : availableVars) {
             const std::string &varName = varEntry.first;
 
-            // Check if varName starts with "derive"
-            if (varName.rfind("add", 0) == 0) {  // rfind with pos = 0 = startsWith
+            // Check if varName starts with "add"
+            if (varName.rfind("add", 0) == 0) {
                 const std::string &typeStr = varEntry.second.at("Type");
                 std::cout << "Variable: " << varName << " | Type: " << typeStr << " | Values: ";
 
                 if (typeStr == "int") {
                     auto var = reader_io.InquireVariable<int>(varName);
-                    std::vector<int> data(var.Shape()[0]);
-                    reader.Get(var, data, adios2::Mode::Sync);
-                    for (int val : data) std::cout << val << ", ";
+                    std::vector<int> data(1);
+                    reader.Get(var, data.data());
+                    std::cout << data[0];
                 }
                 else if (typeStr == "uint8_t") {
                     auto var = reader_io.InquireVariable<uint8_t>(varName);
-                    std::vector<uint8_t> data(var.Shape()[0]);
-                    reader.Get(var, data, adios2::Mode::Sync);
-                    for (uint8_t val : data) std::cout << static_cast<int>(val) << ", ";
+                    std::vector<uint8_t> data(1);
+                    reader.Get(var, data.data());
+                    std::cout << static_cast<int>(data[0]);
+                }
+                else if (typeStr == "float") {
+                    auto var = reader_io.InquireVariable<float>(varName);
+                    std::vector<float> data(1);
+                    reader.Get(var, data.data());
+                    std::cout << data[0];
+                }
+                else if (typeStr == "double") {
+                    auto var = reader_io.InquireVariable<double>(varName);
+                    std::vector<double> data(1);
+                    reader.Get(var, data.data());
+                    std::cout << data[0];
                 }
                 else if (typeStr == "string" || typeStr == "std::string") {
                     auto var = reader_io.InquireVariable<std::string>(varName);
                     std::string value;
-                    reader.Get(var, value, adios2::Mode::Sync);
+                    reader.Get(var, value);
                     std::cout << value;
-                }
-                else if (typeStr == "float") {
-                    auto var = reader_io.InquireVariable<float>(varName);
-                    std::vector<float> data(var.Shape()[0]);
-                    reader.Get(var, data, adios2::Mode::Sync);
-                    for (float val : data) std::cout << val << ", ";
-                }
-                else if (typeStr == "double") {
-                    auto var = reader_io.InquireVariable<double>(varName);
-                    std::vector<double> data(var.Shape()[0]);
-                    reader.Get(var, data, adios2::Mode::Sync);
-                    for (double val : data) std::cout << val << ", ";
                 }
                 else {
                     std::cout << "[Unsupported type: " << typeStr << "]";
