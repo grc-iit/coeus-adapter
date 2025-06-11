@@ -31,7 +31,7 @@ spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
 This is the procedure for running the application with ADIOS2 as the I/O engine.<br>
 Step 1: find the benchmarks and its scripts file you want to run
 ```
-jarvis_coeus/Incompact3D/examples/benchmarks/scripts.i3d
+Incompact3D/examples/benchmarks/scripts.i3d
 ```
 
 step 2: Build environment
