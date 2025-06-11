@@ -57,12 +57,6 @@ class Incompact3dPost(Application):
                 'default': None,
             },
             {
-                'name': 'file_location',
-                'msg': 'Input file location',
-                'type': str,
-                'default': None,
-            },
-            {
                 'name': 'out_filename',
                 'msg': 'Output file location',
                 'type': str,
