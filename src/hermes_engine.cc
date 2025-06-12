@@ -89,7 +89,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
@@ -99,7 +99,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "Name, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, ShapeID, steps, stepstart, blockID");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
 #endif
 
   //Merge Log
@@ -246,6 +246,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     }
     LoadMetadata();
   }
+
     std::string bucket_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
   //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
@@ -253,14 +254,16 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 // derived part
 //  if(m_OpenMode == adios2::Mode::Read){
 //      for(int i = 0; i < num_layers; i++) {
-//          Promote(currentStep + lookahead + i);
+ //         Promote(currentStep + lookahead + i);
 //      }
 //  }
 //  if(m_OpenMode == adios2::Mode::Write){
 //      for(int i = 0; i < num_layers; i++) {
 //          Demote(currentStep - lookahead - i);
-//      }
+ //     }
 //  }
+
+
   return adios2::StepStatus::OK;
 }
 
@@ -508,12 +511,11 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
   // add spdlog method to extract the variable metadata
-  metaInfo metaInfo(variable, adiosOpType::get);
-  meta_logger_get->info("metadata: {}", metaInfoToString(metaInfo));
-  globalData.insertGet(name);
-  meta_logger_get->info("order: {}", globalData.GetMapToString());
+
+    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
-  //finish metadata extraction
+
   memcpy(values, blob.data(), blob.size());
 
 }
@@ -525,12 +527,18 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-    TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-    auto blob = Hermes->bkt->Get(variable.m_Name);
-    std::string name = variable.m_Name;
 
-    //finish metadata extraction
-    memcpy(values, blob.data(), blob.size());
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
+  auto blob = Hermes->bkt->Get(variable.m_Name);
+  std::string name = variable.m_Name;
+#ifdef Meta_enabled
+  // add spdlog method to extract the variable metadata
+    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
+#endif
+  //finish metadata extraction
+  memcpy(values, blob.data(), blob.size());
+
 }
 
 //    }
@@ -545,33 +553,36 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
 
+
 #ifdef Meta_enabled
   metaInfo metaInfo(variable, adiosOpType::put);
   meta_logger_put->info("metadata sync: {}", metaInfoToString(metaInfo));
 
 #endif
+
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
+
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-   
+
+#ifdef Meta_enabled
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
+#endif
 }
 
 
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
-
+  TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
 
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-#ifdef Meta_enabled
-  metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("metadata: {}", metaInfoToString(metaInfo));
-#endif
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
@@ -579,6 +590,10 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+#ifdef Meta_enabled
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
+#endif
 
 
 }
