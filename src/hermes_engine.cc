@@ -22,16 +22,17 @@ namespace coeus {
  * */
 
 
+
 HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const std::string &name,
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = std::make_shared<coeus::Hermes>();
-//  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
+  //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-  TRACE_FUNC("Init HermesEngine");
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+
 
 }
 
@@ -40,32 +41,44 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
  * */
 HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
                            std::shared_ptr<coeus::MPI> mpi,
-                           adios2::core::IO &io,
-                           const std::string &name,
-                           const adios2::Mode mode,
-                           adios2::helper::Comm comm)
+                           adios2::core::IO &io, const std::string &name,
+                           const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   Hermes = h;
   Init_();
-  TRACE_FUNC("hermes engine construction");
   engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
+
 }
 
 /**
-* Initialize the engine.
-* */
+ * Initialize the engine.
+ * */
 void HermesEngine::Init_() {
+
   // initiate the trace manager
+   std::random_device rd;  // Obtain a random seed
+    std::mt19937 gen(rd()); // Mersenne Twister generator
+    std::uniform_int_distribution<> dis(1, 10000);
+    // Generate a random number
+    int randomNumber = dis(gen);
+    // Step 2: Convert the random number to a string
+    std::string randomNumberStr = std::to_string(randomNumber);
+
+    // Step 3: Add the random number to a base string
+    std::string baseString = "logs/engine_test_";
+    std::string logname = baseString + randomNumberStr + ".txt";
+
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::trace);
   console_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
 
-  //File log
+  // File log
   auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-      "logs/engine_test.txt", true);
+      logname, true);
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
-
+ 
+  
   // File log for metadata collection
   #ifdef Meta_enabled
   auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
@@ -90,9 +103,11 @@ void HermesEngine::Init_() {
 #endif
 
   //Merge Log
+
   spdlog::logger logger("debug_logger", {console_sink, file_sink});
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
+
 
   // hermes setup
   if (!Hermes->connect()) {
@@ -101,8 +116,6 @@ void HermesEngine::Init_() {
   }
   if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
 
-
-
   // add rank with consensus
   rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
   rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
@@ -110,41 +123,58 @@ void HermesEngine::Init_() {
   char buffer[bufferSize];         // Create a buffer to hold the hostname
   // Get the hostname
 
-
   comm_size = m_Comm.Size();
   pid_t processId = getpid();
 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
-  //Configuration Setup through the Adios xml configuration
+  // Configuration Setup through the Adios xml configuration
   auto params = m_IO.m_Parameters;
   if (params.find("OPFile") != params.end()) {
     std::string opFile = params["OPFile"];
-    if (rank == 0)std::cout << "OPFile: " << opFile << std::endl;
+    if (rank == 0)
+      std::cout << "OPFile: " << opFile << std::endl;
     try {
       operationMap = YAMLParser(opFile).parse();
-    }
-    catch (std::exception &e) {
+    } catch (std::exception &e) {
       engine_logger->warn("Could not parse operation file", rank);
       throw e;
     }
   }
   if (params.find("ppn") != params.end()) {
     ppn = stoi(params["ppn"]);
-    if (rank == 0) std::cout << "PPN: " << ppn << std::endl;
+    if (rank == 0)
+      std::cout << "PPN: " << ppn << std::endl;
   }
+
+    if (params.find("limit") != params.end()) {
+        limit = stoi(params["limit"]);
+        if (rank == 0)
+            std::cout << "limit: " << limit << std::endl;
+    }
+
+  if (params.find("lookahead") != params.end()) {
+    lookahead = stoi(params["lookahead"]);
+    if (rank == 0)
+      std::cout << "lookahead: " << lookahead << std::endl;
+  }
+  else{
+    lookahead = 2;
+  }
+
   if (params.find("VarFile") != params.end()) {
     std::string varFile = params["VarFile"];
-    if (rank == 0)std::cout << "varFile: " << varFile << std::endl;
+    if (rank == 0)
+      std::cout << "varFile: " << varFile << std::endl;
     try {
       variableMap = YAMLParser(varFile).parse();
-    }
-    catch (std::exception &e) {
+    } catch (std::exception &e) {
       engine_logger->warn("Could not parse variable file", rank);
       throw e;
     }
   }
+
   //Hermes setup
 
   if (params.find("db_file") != params.end()) {
@@ -157,10 +187,10 @@ void HermesEngine::Init_() {
   } else {
     throw std::invalid_argument("db_file not found in parameters");
   }
-
+  if(params.find("execution_order") != params.end()) {
+      adiosOutput = params["execution_order"];
+  }
   open = true;
-
-
 
 }
 
@@ -169,8 +199,8 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
-  open = false;
 
+  open = false;
 }
 
 HermesEngine::~HermesEngine() {
@@ -183,46 +213,158 @@ HermesEngine::~HermesEngine() {
  * Handle step operations.
  * */
 
+bool HermesEngine::Promote(int step){
+    bool success = true;
+    if(step < total_steps) {
+        auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
+        for (const auto &location : var_locations) {
+            success &= Hermes->Prefetch(location.bucket_name, location.blob_name);
+        }
+    }
+    return success;
+}
+
+bool HermesEngine::Demote(int step){
+    bool success = true;
+    if (step > 0) {
+        auto var_locations = db->getAllBlobs(step, rank);
+        for (const auto &location: var_locations) {
+            success &= Hermes->Demote(location.bucket_name, location.blob_name);
+        }
+}
+    return success;
+}
+
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
-
-  TRACE_FUNC(std::to_string(currentStep));
-
   IncrementCurrentStep();
-
   if (m_OpenMode == adios2::Mode::Read) {
-    if (total_steps == -1) total_steps = db->GetTotalSteps(uid);
-
+    if (total_steps == -1)
+      total_steps = db->GetTotalSteps(uid);
     if (currentStep > total_steps) {
       return adios2::StepStatus::EndOfStream;
     }
     LoadMetadata();
   }
-  std::string bucket_name = "step_" + std::to_string(currentStep)
-      + "_rank" + std::to_string(rank);
-  Hermes->GetBucket(bucket_name);
+
+    std::string bucket_name = "step_" + std::to_string(currentStep)
+                              + "_rank" + std::to_string(rank);
+  //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+    Hermes->GetBucket(bucket_name);
+// derived part
+//  if(m_OpenMode == adios2::Mode::Read){
+//      for(int i = 0; i < num_layers; i++) {
+ //         Promote(currentStep + lookahead + i);
+//      }
+//  }
+//  if(m_OpenMode == adios2::Mode::Write){
+//      for(int i = 0; i < num_layers; i++) {
+//          Demote(currentStep - lookahead - i);
+ //     }
+//  }
+
 
   return adios2::StepStatus::OK;
 }
 
+
+
+//derived part
+void HermesEngine::ComputeDerivedVariables() {
+    auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
+  auto const &m_Variables = m_IO.GetVariables();
+        // parse all derived variables
+  if(rank == 0) {
+      std::cout << " Parsing " << m_VariablesDerived.size() << " derived variables"
+                << std::endl;
+
+  }
+
+     for (const auto& [name, varPtr] : m_VariablesDerived) {
+    // identify the variables used in the derived variable
+    auto derivedVar = dynamic_cast<adios2::core::VariableDerived *>(varPtr.get());
+    std::vector<std::string> varList = derivedVar->VariableNameList();
+
+
+
+    // to create a mapping between variable name and the varInfo (dim and data
+    // pointer)
+      std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
+    for (auto varName : varList) {
+
+      auto itVariable = m_Variables.find(varName);
+          if (itVariable == m_Variables.end())
+            std::cout <<"throw error commented" <<std::endl;
+      // extract the dimensions and data for each variable
+      adios2::core::VariableBase *varBase = itVariable->second.get();
+      auto blob = Hermes->bkt->Get(varName);
+
+      adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
+                                itVariable->second.get()->m_Count.data(),
+                                adios2::MinMaxStruct(), blob.data()});
+
+
+        // if this is the first block for the variable
+      auto entry = nameToVarInfo.find(varName);
+      if (entry == nameToVarInfo.end()) {
+        // create an mvi structure and add the new block to it
+        int varDim = itVariable->second.get()->m_Shape.size();
+        adios2::MinVarInfo mvi(varDim,
+                               itVariable->second.get()->m_Shape.data());
+        mvi.BlocksInfo.push_back(blk);
+        nameToVarInfo.insert({varName, mvi});
+      } else {
+        // otherwise add the current block to the existing mvi
+        entry->second.BlocksInfo.push_back(blk);
+      }
+    }
+    // ExpressionString
+    std::vector<std::tuple<void *, adios2::Dims, adios2::Dims>>
+        DerivedBlockData;
+
+    if (derivedVar->GetDerivedType() !=
+        adios2::DerivedVarType::ExpressionString) {
+        std::map<std::string, std::unique_ptr<adios2::MinVarInfo>> NameToMVI;
+        for (auto &pair : nameToVarInfo) {
+            NameToMVI[pair.first] = std::make_unique<adios2::MinVarInfo>(std::move(pair.second));
+        }
+      DerivedBlockData = derivedVar->ApplyExpression(NameToMVI);
+    }
+
+    for (auto derivedBlock : DerivedBlockData) {
+#define DEFINE_VARIABLE_PUT(T)       \
+  if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
+    T* data = static_cast<T *>(std::get<0>(derivedBlock));\
+    PutDerived(*derivedVar, data);   \
+  }
+  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
+#undef DEFINE_VARIABLE_PUT
+      free(std::get<0>(derivedBlock));
+    }
+
+  }
+
+    }
+
+
+
 void HermesEngine::IncrementCurrentStep() {
-  TRACE_FUNC(std::to_string(currentStep));
   currentStep++;
 }
 
 size_t HermesEngine::CurrentStep() const {
-  TRACE_FUNC(std::to_string(currentStep));
   return currentStep;
 }
 
 void HermesEngine::EndStep() {
-  TRACE_FUNC(std::to_string(currentStep));
-  if (m_OpenMode == adios2::Mode::Write) {
-    if (rank % ppn == 0) {
-      DbOperation db_op(uid, currentStep);
-      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-    }
-  }
+
+    ComputeDerivedVariables();
+//  if (m_OpenMode == adios2::Mode::Write) {
+//    if (rank % ppn == 0) {
+//      DbOperation db_op(uid, currentStep);
+//      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+//    }
+//  }
 
   delete Hermes->bkt;
 
@@ -234,22 +376,23 @@ void HermesEngine::EndStep() {
 bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
                                   const size_t Step,
                                   adios2::MinMaxStruct &MinMax) {
-  TRACE_FUNC(Var.m_Name);
+
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
   // Obtain the blob from Hermes using the filename and variable name
   hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
 
-#define DEFINE_VARIABLE(T) \
-      if (adios2::helper::GetDataType<T>()  ==  Var.m_Type) { \
-          size_t dataSize = blob.size() / sizeof(T);                               \
-          const T *data = reinterpret_cast<const T *>(blob.data());               \
-          for (size_t i = 0; i < dataSize; ++i) {               \
-                  void *elementPtr = const_cast<void *>(static_cast<const void *>(&data[i]));     \
-                  ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                   \
-              }              \
-      }
+#define DEFINE_VARIABLE(T)                                                     \
+  if (adios2::helper::GetDataType<T>() == Var.m_Type) {                        \
+    size_t dataSize = blob.size() / sizeof(T);                                 \
+    const T *data = reinterpret_cast<const T *>(blob.data());                  \
+    for (size_t i = 0; i < dataSize; ++i) {                                    \
+      void *elementPtr =                                                       \
+          const_cast<void *>(static_cast<const void *>(&data[i]));             \
+      ApplyElementMinMax(MinMax, Var.m_Type, elementPtr);                      \
+    }                                                                          \
+  }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
   return true;
@@ -259,42 +402,53 @@ void HermesEngine::ApplyElementMinMax(adios2::MinMaxStruct &MinMax,
                                       adios2::DataType Type, void *Element) {
 
   switch (Type) {
-    case adios2::DataType::Int8:ElementMinMax<int8_t>(MinMax, Element);
-      break;
-    case adios2::DataType::Int16:ElementMinMax<int16_t>(MinMax, Element);
-      break;
-    case adios2::DataType::Int32:ElementMinMax<int32_t>(MinMax, Element);
-      break;
-    case adios2::DataType::Int64:ElementMinMax<int64_t>(MinMax, Element);
-      break;
-    case adios2::DataType::UInt8:ElementMinMax<uint8_t>(MinMax, Element);
-      break;
-    case adios2::DataType::UInt16:ElementMinMax<uint16_t>(MinMax, Element);
-      break;
-    case adios2::DataType::UInt32:ElementMinMax<uint32_t>(MinMax, Element);
-      break;
-    case adios2::DataType::UInt64:ElementMinMax<uint64_t>(MinMax, Element);
-      break;
-    case adios2::DataType::Float:ElementMinMax<float>(MinMax, Element);
-      break;
-    case adios2::DataType::Double:ElementMinMax<double>(MinMax, Element);
-      break;
-    case adios2::DataType::LongDouble:ElementMinMax<long double>(MinMax, Element);
-      break;
-    default:
-      /*
-       *     case adios2::DataType::None
-       *     adios2::DataType::Char
-       *     case adios2::DataType::FloatComplex
-       *     case adios2::DataType::DoubleComplex
-       *     case adios2::DataType::String
-       *     case adios2::DataType::Struct
-       */
-      break;
+  case adios2::DataType::Int8:
+    ElementMinMax<int8_t>(MinMax, Element);
+    break;
+  case adios2::DataType::Int16:
+    ElementMinMax<int16_t>(MinMax, Element);
+    break;
+  case adios2::DataType::Int32:
+    ElementMinMax<int32_t>(MinMax, Element);
+    break;
+  case adios2::DataType::Int64:
+    ElementMinMax<int64_t>(MinMax, Element);
+    break;
+  case adios2::DataType::UInt8:
+    ElementMinMax<uint8_t>(MinMax, Element);
+    break;
+  case adios2::DataType::UInt16:
+    ElementMinMax<uint16_t>(MinMax, Element);
+    break;
+  case adios2::DataType::UInt32:
+    ElementMinMax<uint32_t>(MinMax, Element);
+    break;
+  case adios2::DataType::UInt64:
+    ElementMinMax<uint64_t>(MinMax, Element);
+    break;
+  case adios2::DataType::Float:
+    ElementMinMax<float>(MinMax, Element);
+    break;
+  case adios2::DataType::Double:
+    ElementMinMax<double>(MinMax, Element);
+    break;
+  case adios2::DataType::LongDouble:
+    ElementMinMax<long double>(MinMax, Element);
+    break;
+  default:
+    /*
+     *     case adios2::DataType::None
+     *     adios2::DataType::Char
+     *     case adios2::DataType::FloatComplex
+     *     case adios2::DataType::DoubleComplex
+     *     case adios2::DataType::String
+     *     case adios2::DataType::Struct
+     */
+    break;
   }
 }
 
-template<typename T>
+template <typename T>
 T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
   TRACE_FUNC();
   return reinterpret_cast<T *>(&u);
@@ -302,7 +456,7 @@ T *HermesEngine::SelectUnion(adios2::PrimitiveStdtypeUnion &u) {
 
 }
 
-template<typename T>
+template <typename T>
 void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
   TRACE_FUNC("MinMax operation");
   T *min = SelectUnion<T>(MinMax.MinUnion);
@@ -317,7 +471,7 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-  TRACE_FUNC(rank);
+
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
     DefineVariable(variableMetadata);
@@ -332,25 +486,21 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
     m_IO.RemoveVariable(variableMetadata.name);
   }
 
-#define DEFINE_VARIABLE(T) \
-    if (adios2::helper::GetDataType<T>() == adios2::helper::GetDataTypeFromString(variableMetadata.dataType)) { \
-         adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>( \
-                      variableMetadata.name, \
-                      variableMetadata.shape, \
-                      variableMetadata.start, \
-                      variableMetadata.count, \
-                      variableMetadata.constantShape));                         \
-         variable->m_AvailableStepsCount = 1;                                   \
-         variable->m_SingleValue = false;                                       \
-         variable->m_Min = std::numeric_limits<T>::max();                       \
-         variable->m_Max = std::numeric_limits<T>::min();                       \
-         variable->m_Engine = this;                                             \
-          }
+#define DEFINE_VARIABLE(T)                                                     \
+  if (adios2::helper::GetDataType<T>() ==                                      \
+      adios2::helper::GetDataTypeFromString(variableMetadata.dataType)) {      \
+    adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>(            \
+        variableMetadata.name, variableMetadata.shape, variableMetadata.start, \
+        variableMetadata.count, variableMetadata.constantShape));              \
+    variable->m_AvailableStepsCount = 1;                                       \
+    variable->m_SingleValue = false;                                           \
+    variable->m_Min = std::numeric_limits<T>::max();                           \
+    variable->m_Max = std::numeric_limits<T>::min();                           \
+    variable->m_Engine = this;                                                 \
+  }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
 #undef DEFINE_VARIABLE
 }
-
-
 
 
 template<typename T>
@@ -368,12 +518,16 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 
   memcpy(values, blob.data(), blob.size());
 
-
 }
+
+
+
+
 
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
+
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = Hermes->bkt->Get(variable.m_Name);
   std::string name = variable.m_Name;
@@ -385,43 +539,35 @@ void HermesEngine::DoGetDeferred_(
   //finish metadata extraction
   memcpy(values, blob.data(), blob.size());
 
-
 }
+
+//    }
+
+
 
 template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
+
   std::string name = variable.m_Name;
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+
+
+#ifdef Meta_enabled
+  metaInfo metaInfo(variable, adiosOpType::put);
+  meta_logger_put->info("metadata sync: {}", metaInfoToString(metaInfo));
+
+#endif
+
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(),
+                      variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
 
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-
-  #ifdef POSIX_as_engine
-const char *filename = "output.txt";
- int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  if (fd == -1) {
-        perror("open");
-        exit(EXIT_FAILURE);
-    }
-   size_t dataSize = variable.SelectionSize() * sizeof(T);
-    ssize_t bytesWritten = write(fd, values, dataSize);
-    if (bytesWritten == -1) {
-        perror("write");
-        close(fd);
-        exit(EXIT_FAILURE);
-    }
-    if (close(fd) == -1) {
-        perror("close");
-        exit(EXIT_FAILURE);
-    }
-#endif
 
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
@@ -429,15 +575,17 @@ const char *filename = "output.txt";
 #endif
 }
 
+
 template<typename T>
 void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
+
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
-                      variable.m_Count, variable.IsConstantDims(),
+                      variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
@@ -447,20 +595,117 @@ void HermesEngine::DoPutDeferred_(
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
+
 }
 
-}  // namespace coeus
+
+
+
+template <typename T>
+void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
+                                  T *values) {
+    std::string name = variable.m_Name;
+    int total_count = 1;
+    for (auto count: variable.m_Count) {
+        total_count *= count;
+    }
+
+    Hermes->bkt->Put(name, total_count * sizeof(T), values);
+    DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
+    client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+    // switch the bucket
+
+//    int current_bucket = stoi(adiosOutput);
+//    if (current_bucket > 2) {
+//        // time here
+//        T* values2 = new T[total_count];
+//        std::string previous_bucket_name =
+//                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
+//                std::to_string(rank);
+//        if (db->FindVariable(currentStep, rank, name,previous_bucket_name)) {
+//
+//            Hermes->GetBucket(previous_bucket_name);
+//            auto blob = Hermes->bkt->Get(name);
+//            memcpy(values2, blob.data(), blob.size());
+//            for (int i = 0; i < total_count; ++i) {
+//                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
+//                    auto app_end_time = std::chrono::system_clock::now();
+//                    std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
+//                    engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
+//                }
+//            }
+//        }
+//
+//
+//    }
+
+
+}
+
+
+
+
+
+
+
+template<typename T>
+DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                      variable.m_Count, variable.IsConstantDims(), true,
+                      adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+}
+
+DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variable, float *values, int total_count) {
+  VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
+                     variable.m_Count, variable.IsConstantDims(), true,
+                     adios2::ToString(variable.m_Type));
+  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+
+//  if(total_count < 1) {
+//    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+//  }
+//
+//  float min = std::numeric_limits<float>::max();
+//  float max = std::numeric_limits<float>::lowest();
+//
+//  for (size_t i = 0; i < total_count; i++) {
+//    // Calculate the address of the current element
+//    char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
+//    // Cast the element to the correct type
+//    float element = *reinterpret_cast<float*>(elementPtr);
+//
+//    // Update min and max
+//    if (element < min) min = element;
+//    if (element > max) max = element;
+//  }
+//  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
+//    std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
+//              << " total count " << total_count << std::endl;
+//  }
+//  derivedSemantics derived_semantics(min, max);
+//
+//  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
+//  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
+    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
+
+}
+
+
+
+} // namespace coeus
 /**
  * This is how ADIOS figures out where to dynamically load the engine.
  * */
 extern "C" {
 
 /** C wrapper to create engine */
-coeus::HermesEngine *EngineCreate(adios2::core::IO &io,//NOLINT
+coeus::HermesEngine *EngineCreate(adios2::core::IO &io, // NOLINT
                                   const std::string &name,
                                   const adios2::Mode mode,
                                   adios2::helper::Comm comm) {
-  (void) mode;
+  (void)mode;
   return new coeus::HermesEngine(io, name, mode, comm.Duplicate());
 }
 

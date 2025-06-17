@@ -19,7 +19,7 @@
 #include "common/MetadataStructs.h"
 #include <vector>
 #include <string>
-
+#include <comms/MPI.h>
 #include <vector>
 #include <string>
 #include <comms/MPI.h>

@@ -16,9 +16,9 @@
 #include <string>
 #include <thread>
 
-#include "../../../../external_libraries/spdlog/include/spdlog/logger.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/basic_file_sink.h"
+#include "spdlog/logger.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 #include "adios2.h"
 

@@ -54,10 +54,11 @@ void define_bpvtk_attribute(const Settings &s, adios2::IO &io)
     // TODO extend to other formats e.g. structured
 }
 
-Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
+Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bool derived)
 : settings(settings), io(io)
 {
     io.DefineAttribute<double>("F", settings.F);
+
     io.DefineAttribute<double>("k", settings.k);
     io.DefineAttribute<double>("dt", settings.dt);
     io.DefineAttribute<double>("Du", settings.Du);
@@ -80,7 +81,9 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
     std::vector<std::string> varList = {"U", "V"};
     std::vector<std::string> assocList = {"points", "points"};
     io.DefineAttribute<std::string>("Fides_Variable_List", varList.data(), varList.size());
+
     io.DefineAttribute<std::string>("Fides_Variable_Associations", assocList.data(), assocList.size());
+
 
     var_u =
         io.DefineVariable<double>("U", {settings.L, settings.L, settings.L},
@@ -91,6 +94,25 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io)
         io.DefineVariable<double>("V", {settings.L, settings.L, settings.L},
                                   {sim.offset_z, sim.offset_y, sim.offset_x},
                                   {sim.size_z, sim.size_y, sim.size_x});
+
+
+    if(derived == 1) {
+        std::cout << "use derived variables" << std::endl;
+        auto PDFU = io.DefineDerivedVariable("derive/hashU",
+                                             "x = U \n"
+                                             "hash(x)",
+                                             adios2::DerivedVarType::StoreData);
+
+        auto PDFV = io.DefineDerivedVariable("derive/hashV",
+                                             "x = V \n"
+                                             "hash(x)",
+                                             adios2::DerivedVarType::StoreData);
+
+    }
+
+
+
+
 
     if (settings.adios_memory_selection)
     {
@@ -115,6 +137,9 @@ void Writer::open(const std::string &fname, bool append)
 
 void Writer::write(int step, const GrayScott &sim, int rank)
 {
+
+
+
     if (!sim.size_x || !sim.size_y || !sim.size_z)
     {
         writer.BeginStep();
@@ -132,11 +157,10 @@ void Writer::write(int step, const GrayScott &sim, int rank)
       std::cout << var_u.SelectionSize() << " " << var_v.SelectionSize() <<std::endl;
 
       writer.BeginStep();
-        writer.Put<int>(var_step, &step);
-        writer.Put<double>(var_u, u.data());
-
-        writer.Put<double>(var_v, v.data());
-        writer.EndStep();
+      writer.Put<int>(var_step, &step);
+      writer.Put<double>(var_u, u.data());
+      writer.Put<double>(var_v, v.data());
+      writer.EndStep();
     }
     else if (settings.adios_span)
     {

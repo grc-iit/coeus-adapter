@@ -124,3 +124,50 @@ To clean data produced by Hermes + Gray-Scott:
 ```bash
 jarvis pipeline clean
 ```
+
+# Adios2 Write engine for a BP5 file copy
+
+## 1. Add this package to the Jarvis package folder
+Compile the Coeus-adapter with OpenMPI.
+## 2. Specify the location where you want the BP5 file copy:
+```
+jarvis pipeline append adios2_gray_scott engine=hermes bp_file_copy=/path/to/file
+```
+## 3. Run Gray-Scott
+```
+jarvis pipeline run
+```
+
+## example
+```
+jarvis pipeline create gray_scott_hermes
+spack load hermes@master
+module load orangefs/2.10
+module load openmpi
+export PATH=~/coeus/derived/coeus-adapter/build/bin/:$PATH
+export LD_LIBRARY_PATH=~/coeus/derived/coeus-adapter/build/bin/:$LD_LIBRARY_PATH
+jarvis pipeline env build
+jarvis pipeline append hermes_run --sleep=10 --provider=sockets
+jarvis pipeline append adios2_gray_scott L=128 engine=hermes_derived out_file=/mnt/ssd/hxu40/out1.bp bp_file_copy=1 ppn=8 nprocs=16 steps=12800
+jarvis pipeline append adios2_gray_scott_2 L=128 engine=hermes_derived out_file=/mnt/ssd/hxu40/out2.bp bp_file_copy=2 ppn=8 nprocs=16 steps=12800
+jarvis ppl run
+
+```
+
+```
+jarvis pkg config adios2_gray_scott out_file=/mnt/ssd/hxu40/out1.bp ppn=16 nprocs=2 steps=400 L=128
+jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 nprocs=2 steps=400 L=128
+
+jarvis pkg config adios2_gray_scott out_file=/mnt/ssd/hxu40/out1.bp ppn=16 nprocs=4 steps=800
+jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 nprocs=4 steps=800
+
+
+jarvis pkg config adios2_gray_scott out_file=/mnt/ssd/hxu40/out1.bp ppn=16 nprocs=8 steps=1600
+jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 nprocs=8 steps=1600
+
+
+jarvis pkg config adios2_gray_scott out_file=/mnt/ssd/hxu40/out1.bp ppn=16 nprocs=16 steps=3200
+jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 nprocs=16 steps=3200
+
+
+```

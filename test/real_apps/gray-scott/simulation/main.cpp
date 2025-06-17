@@ -7,9 +7,9 @@
 #include <adios2.h>
 #include <mpi.h>
 
-#include "../../../../external_libraries/spdlog/include/spdlog/logger.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/stdout_color_sinks.h"
-#include "../../../../external_libraries/spdlog/include/spdlog/sinks/basic_file_sink.h"
+#include "spdlog/logger.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 #include "../../gray-scott/common/timer.hpp"
 #include "../../gray-scott/simulation/gray-scott.h"
@@ -63,8 +63,6 @@ void print_simulator_settings(const GrayScott &s)
 
 int main(int argc, char **argv)
 {
-    auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
-
     int provided;
     MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     int rank, procs, wrank;
@@ -103,6 +101,7 @@ int main(int argc, char **argv)
     }
 
     Settings settings = Settings::from_json(argv[1]);
+    bool derived = atoi(argv[2]);
 
     GrayScott sim(settings, comm);
     sim.init();
@@ -110,7 +109,6 @@ int main(int argc, char **argv)
     adios2::ADIOS adios(settings.adios_config, comm);
     adios2::IO io_main = adios.DeclareIO("SimulationOutput");
     adios2::IO io_ckpt = adios.DeclareIO("SimulationCheckpoint");
-
     int restart_step = 0;
     if (settings.restart)
     {
@@ -120,8 +118,11 @@ int main(int argc, char **argv)
                              std::to_string(restart_step / settings.plotgap));
     }
 
-    Writer writer_main(settings, sim, io_main);
+    Writer writer_main(settings, sim, io_main, derived);
+
     writer_main.open(settings.output, (restart_step > 0));
+
+    auto app_start_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
 
     if (rank == 0)
     {
@@ -197,11 +198,11 @@ int main(int argc, char **argv)
 
     log.close();
 #endif
+    MPI_Barrier(comm);
+
     auto app_end_time = std::chrono::high_resolution_clock::now(); // Record end time of the application
     auto app_duration = std::chrono::duration_cast<std::chrono::milliseconds>(app_end_time - app_start_time);
-   // std::cout << "###########################################################" << std::endl;
-   // std::cout << "Simulation Total Execution Time Process " << rank << ": " << app_duration.count() << " milliseconds" << std::endl;
-   // std::cout << "###########################################################" << std::endl;
     logger.info("Rank {} - ET {} - milliseconds", rank, app_duration.count());
+
     MPI_Finalize();
 }

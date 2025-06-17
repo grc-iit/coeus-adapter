@@ -50,7 +50,7 @@ TEST_F(SQLiteWrapperTest, TestInsertAndGetBlobLocation) {
 }
 
 TEST_F(SQLiteWrapperTest, TestInsertAndGetVariableMetadata) {
-  VariableMetadata metadata("TestVar", {4, 4}, {0, 0}, {4, 4}, true, "int");
+  VariableMetadata metadata("TestVar", {4, 4}, {0, 0}, {4, 4}, true, false, "int");
   db.InsertVariableMetadata(1, 0, metadata);
   VariableMetadata retrievedMetadata = db.GetVariableMetadata(1, 0, "TestVar");
   ASSERT_EQ(retrievedMetadata.name, "TestVar");
@@ -90,7 +90,7 @@ TEST_F(SQLiteWrapperTest, TestInsertBlobLocationWithEmptyVarName) {
 }
 
 TEST_F(SQLiteWrapperTest, TestInsertVariableMetadataWithEmptyVarName) {
-  VariableMetadata metadata("", {4, 4}, {0, 0}, {4, 4}, true, "int");
+  VariableMetadata metadata("", {4, 4}, {0, 0}, {4, 4}, true, false, "int");
   db.InsertVariableMetadata(1, 0, metadata);
   VariableMetadata retrievedMetadata = db.GetVariableMetadata(1, 0, "");
   ASSERT_TRUE(retrievedMetadata.name.empty());
@@ -98,7 +98,7 @@ TEST_F(SQLiteWrapperTest, TestInsertVariableMetadataWithEmptyVarName) {
 
 TEST_F(SQLiteWrapperTest, TestInsertAndGetVariableMetadataWithLargeData) {
   std::vector<size_t> largeVector(100000, 1);  // A large vector for testing
-  VariableMetadata metadata("LargeVar", largeVector, largeVector, largeVector, true, "int");
+  VariableMetadata metadata("LargeVar", largeVector, largeVector, largeVector, true,false, "int");
   db.InsertVariableMetadata(1, 0, metadata);
   VariableMetadata retrievedMetadata = db.GetVariableMetadata(1, 0, "LargeVar");
   ASSERT_EQ(retrievedMetadata.name, "LargeVar");
@@ -114,7 +114,7 @@ TEST_F(SQLiteWrapperTest, TestInsertBlobLocationWithSpecialCharacters) {
 }
 
 TEST_F(SQLiteWrapperTest, TestInsertVariableMetadataWithSpecialCharacters) {
-  VariableMetadata metadata("VarWithSpecialChars!@#$%^&*()", {4, 4}, {0, 0}, {4, 4}, true, "int");
+  VariableMetadata metadata("VarWithSpecialChars!@#$%^&*()", {4, 4}, {0, 0}, {4, 4}, true, false, "int");
   db.InsertVariableMetadata(1, 0, metadata);
   VariableMetadata retrievedMetadata = db.GetVariableMetadata(1, 0, "VarWithSpecialChars!@#$%^&*()");
   ASSERT_EQ(retrievedMetadata.name, "VarWithSpecialChars!@#$%^&*()");

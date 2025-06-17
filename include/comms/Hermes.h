@@ -20,51 +20,53 @@
 namespace coeus {
 class Hermes : public IHermes {
  public:
-  float promote_weight = 0.5;
-  float demote_weight = -0.5;
+  float promote_weight = 0.25;
+  float demote_weight = -0.25;
 
   Hermes() = default;
 
   bool connect() override {
-      TRACE_FUNC();
+
+
     std::cout << "Entering connect" << std::endl;
     std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
+
     TRANSPARENT_HERMES();
-    std::cout << "transparent done" << std::endl;
     hermes = HERMES;
-    std::cout << "hermes assigment" << std::endl;
     HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
+
     HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetLocal(), "rankConsensus");
     std::cout << "Registered task" << std::endl;
     return hermes->IsInitialized();
   };
 
     bool GetBucket(const std::string &bucket_name) override {
-        TRACE_FUNC();
+
     bkt = (IBucket*) new coeus::Bucket(bucket_name, this);
     return true;
   }
 
   bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
-      TRACE_FUNC();
+
+
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
     hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
     float blob_score = bkt.GetBlobScore(blob_id);
 
-    bkt.ReorganizeBlob(blob_id, blob_score + demote_weight, 0, ctx);
+    bkt.ReorganizeBlob(blob_id, blob_score + demote_weight, blob_score, ctx);
   }
 
   bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
-      TRACE_FUNC();
+
     hapi::Context ctx;
     auto bkt = hermes->GetBucket(bucket_name);
 
     hermes::BlobId blob_id = bkt.GetBlobId(blob_name);
     float blob_score = bkt.GetBlobScore(blob_id);
 
-    bkt.ReorganizeBlob(blob_id, blob_score + promote_weight, 0, ctx);
+    bkt.ReorganizeBlob(blob_id, 1, blob_score + promote_weight, ctx);
   }
 };
 

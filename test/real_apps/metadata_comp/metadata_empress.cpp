@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     auto startInsertMetadataLocked = std::chrono::high_resolution_clock::now();
     lock.lock();
     auto startInsertMetadata = std::chrono::high_resolution_clock::now();
-    VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, "int");
+    VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, false, "int");
     db.InsertVariableMetadata(step, rank, metadata);
     auto endInsertMetadata = std::chrono::high_resolution_clock::now();
     localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();

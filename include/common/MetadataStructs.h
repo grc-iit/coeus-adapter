@@ -5,6 +5,34 @@
 #ifndef COEUS_INCLUDE_COMMON_METADATASTRUCTS_H_
 #define COEUS_INCLUDE_COMMON_METADATASTRUCTS_H_
 
+enum semantics{
+  MIN,
+  MAX
+};
+
+constexpr std::string_view semantics_to_string(semantics s) {
+  switch (s) {
+    case semantics::MIN: return "min";
+    case semantics::MAX: return "max";
+      // handle more enum values as needed
+    default: return "unknown";
+  }
+}
+
+struct derivedSemantics {
+  float min_value;
+  float max_value;
+
+ public:
+  derivedSemantics(float min, float max) : min_value(min), max_value(max) { }
+  derivedSemantics() = default;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(min_value, max_value);
+    }
+};
+
 struct BlobInfo {
   std::string bucket_name;
   std::string blob_name;
@@ -26,16 +54,17 @@ struct VariableMetadata {
   std::vector<size_t> shape;
   std::vector<size_t> start;
   std::vector<size_t> count;
+  bool derived;
   bool constantShape;
   std::string dataType;
 
   VariableMetadata() = default;
   VariableMetadata(const std::string &name, const std::vector<size_t> &shape,
                    const std::vector<size_t> &start,
-                   const std::vector<size_t> &count, bool constantShape,
+                   const std::vector<size_t> &count, bool constantShape, bool derived,
                    const std::string &dataType)
       : name(name), shape(shape), start(start), count(count),
-        constantShape(constantShape), dataType(dataType) {}
+        constantShape(constantShape), derived(derived), dataType(dataType) {}
 
   static std::string serializeVector(const std::vector<size_t>& vec) {
     std::ostringstream oss;
@@ -69,7 +98,7 @@ struct VariableMetadata {
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(name, shape, start, count, constantShape, dataType);
+    ar(name, shape, start, count, constantShape, derived, dataType);
   }
 };
 

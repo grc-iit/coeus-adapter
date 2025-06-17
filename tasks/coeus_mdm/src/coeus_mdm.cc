@@ -30,9 +30,13 @@ private:
     task->SetModuleComplete();
   }
 
+
+
   void Destruct(DestructTask *task, RunContext &rctx) {
     task->SetModuleComplete();
   }
+
+
 
   void Mdm_insert(Mdm_insertTask *task, RunContext &rctx) {
     DbOperation db_op = task->GetDbOp();
@@ -46,9 +50,23 @@ private:
       db->UpdateTotalSteps(db_op.uid, db_op.currentStep);
 
     }
-
+    else if (db_op.type == OperationType::InsertDerivedData){
+      db->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
+      db->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);\
+      db->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, "min",
+                                        db_op.blobInfo.blob_name, db_op.blobInfo.bucket_name,
+                                        db_op.derived_semantics.min_value);
+      db->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, "max",
+                                        db_op.blobInfo.blob_name, db_op.blobInfo.bucket_name,
+                                        db_op.derived_semantics.max_value);
+    }
+//int step, const std::string& variable,
+//                                     const std::string& operation, const std::string& blob_name,
+//                                     const std::string& bucket_name, float value
     task->SetModuleComplete();
   }
+
+
 
  public:
 #include "coeus_mdm/coeus_mdm_lib_exec.h"

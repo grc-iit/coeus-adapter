@@ -21,9 +21,12 @@
 #include <string>
 
 #include <vector>
-
+#include <map>
+#include <random>
 #include <adios2.h>
 #include <adios2/engine/plugin/PluginEngineInterface.h>
+#include <adios2/core/VariableDerived.h>
+#include "adios2/helper/adiosType.h"
 #include "ContainerManager.h"
 #include "rankConsensus/rankConsensus.h"
 #include "coeus/MetadataSerializer.h"
@@ -42,17 +45,23 @@
 #include "common/Tracer.h"
 
 namespace coeus {
+
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   std::shared_ptr<coeus::IHermes> Hermes;
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;
+  std::string adiosOutput;
+  int lookahead;
+  int index = 0;
   hrun::coeus_mdm::Client client;
+  int num_layers = 4;
+  int ppn;
+  int limit = 0;
   hrun::rankConsensus::Client rank_consensus;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
-  int ppn;
   GlobalVariable globalData;
   /** Construct the HermesEngine */
   HermesEngine(adios2::core::IO &io, //NOLINT
@@ -103,6 +112,12 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   int currentStep = 0;
   int total_steps = -1;
+//  int reader_get_time = 0;
+//  int compare_time = 0;
+//  int inintial_time = 0;
+//  int begin_step_time = 0 ;
+//  int compute_derived_time = 0;
+//  int put_time = 0;
 
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
@@ -127,7 +142,9 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void LoadMetadata();
 
   void DefineVariable(const VariableMetadata& variableMetadata);
-
+//adios.defineVariable()
+//adios.put(variable) -> PutDefereed()
+//adios.put( variable, "U+V") -> CalculateDerivedQuantity() -> Put(varaible)
  protected:
   /** Initialize (wrapper around Init_)*/
   void Init() override { Init_(); }
@@ -148,20 +165,34 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   void DoPutDeferred_(const adios2::core::Variable<T> &variable,
                       const T *values);
 
+  void ComputeDerivedVariables();
+
+  template<typename T>
+  DbOperation generateMetadata(adios2::core::Variable<T> variable);
+  DbOperation generateMetadata(adios2::core::VariableDerived variable,
+                               float *values, int total_count);
+
+  template<typename T>
+  void PutDerived(adios2::core::VariableDerived variable, T *values);
+
   /** Get data from Hermes (sync) */
   template<typename T>
   void DoGetSync_(const adios2::core::Variable<T> &variable,
                   T *values);
-
+//  void HermesEngine::DoGetDerivedVariableSync_(const adios2::core::Variable<T> &variable,
+//                                                     T *values);
   /** Get data from Hermes (async) */
   template<typename T>
   void DoGetDeferred_(const adios2::core::Variable<T> &variable,
                       T *values);
-
+//  void DoGetDerivedVariableDeferred_(const adios2::core::Variable<T> &variable,
+//                            T *values);
   /** Calls to support Adios native queries */
   void ApplyElementMinMax(adios2::MinMaxStruct &MinMax, adios2::DataType Type,
                                  void *Element);
 
+    bool Demote(int step);
+    bool Promote(int step);
   /**
    * Declares DoPutSync and DoPutDeferred for a number of predefined types.
    * ADIOS2_FOREACH_STDTYPE_1ARG is a macro which iterates over every

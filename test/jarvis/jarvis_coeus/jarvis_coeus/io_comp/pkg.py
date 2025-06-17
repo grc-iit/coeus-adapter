@@ -7,7 +7,7 @@ from jarvis_cd.basic.pkg import Application
 from jarvis_util import *
 import pathlib
 
-
+# adios_derived
 class IoComp(Application):
     """
     This class provides methods to launch the GrayScott application.
@@ -39,7 +39,7 @@ class IoComp(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'N',
@@ -62,7 +62,7 @@ class IoComp(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp5', 'hermes', 'bp5_derived', 'hermes_derived'],
                 'type': str,
                 'default': 'bp5',
             },
@@ -77,7 +77,7 @@ class IoComp(Application):
                 'msg': 'producer (0) consumer (1)',
                 'type': int,
                 'default': -1,
-            }
+            },
         ]
 
     def _configure(self, **kwargs):
@@ -88,7 +88,7 @@ class IoComp(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        self.update_config(kwargs, rebuild=False)
+        # self.update_config(kwargs, rebuild=False)
         if self.config['out_file'] is None:
             adios_dir = os.path.join(self.shared_dir, 'io-comp')
             self.config['out_file'] = os.path.join(adios_dir,
@@ -100,18 +100,24 @@ class IoComp(Application):
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
+
         ppn = self.config['ppn']
-        if self.config['engine'].lower() == 'bp5':
+        replacements = [
+            ('PPN', f'{ppn}'),
+            ('VARFILE', self.var_json_path),
+            ('OPFILE', self.operator_json_path),
+            ('DBFILE', self.config['db_path']),
+        ]
+
+        print(f"Using engine {self.config['engine']}")
+        if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
+            replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path)
-        elif self.config['engine'].lower() == 'hermes':
-            replacements = [
-                ('PPN', f'{ppn}'),
-                ('VARFILE', self.var_json_path),
-                ('OPFILE', self.operator_json_path),
-                ('DBFILE', self.config['db_path']),
-            ]
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                                self.adios2_xml_path, replacements)
+
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+            replacements.append(('ENGINE', 'plugin'))
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
@@ -133,11 +139,25 @@ class IoComp(Application):
         out_file = self.config['out_file']
         role = self.config['role']
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'io_comp {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
+        if self.config['do_dbg']:
+            cmd = "derived_debug"
+        elif self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+            cmd = "adios_derived"
+            print("Running adios_derived")
+        else:
+            cmd = "io_comp"
+            print("Running io_comp")
+
+
+        Exec(f'{cmd} {num_steps} {size_io} {self.adios2_xml_path} {out_file} {role}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.env))
+                         env=self.env,
+                         # do_dbg=self.config['do_dbg'],
+                         dbg_port=self.config['dbg_port']
+                         )
+             )
 
     def stop(self):
         """

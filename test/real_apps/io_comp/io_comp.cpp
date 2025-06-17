@@ -68,9 +68,8 @@ int main(int argc, char *argv[]) {
   std::string config_path = argv[3];
   std::string out_file = argv[4];
   int role = std::stoi(argv[5]);
-  int derived = std::stoi(argv[6]);
 
-  if(rank==0) {
+  if(rank==0) { // bucket: rank_n_step_m    blob:U,V,pdfU,pdfV    U, u_mag,  U_mag2
     std::cout << "Running I/O comparison with " << N << " steps, "
               << B << " bytes per step, and " << size << " processes."
               << " with role as " << role << std::endl;

@@ -1,0 +1,101 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8f2b359..c7f3c82 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,10 +1,10 @@
+ cmake_minimum_required(VERSION 3.20)                        
+ cmake_policy(SET CMP0074 NEW)
+ 
+-project(decomp2d
+-  LANGUAGES Fortran)
++project(decomp2d LANGUAGES C CXX Fortran)
+ set(version 2.0.4)
+ enable_testing()
++find_package(adios2 REQUIRED)
+ if (IO_BACKEND MATCHES "adios2")
+   # Can be useful to also activate CXX, sometimes is needed by packages
+   enable_language(C CXX)
+@@ -34,7 +34,7 @@ option(ENABLE_INPLACE "Enable in-place operation of FFT" OFF)
+ option(HALO_DEBUG "Enable halo debugging options" OFF)
+ option(EVEN "Padded alltoall transpose operations" OFF)
+ option(BUILD_SHARED_LIBS "Set ON to build a shared library" OFF)
+-set (IO_BACKEND "mpi" CACHE STRING "Default IO backend (mpi (default) or adios2)")
++set(IO_BACKEND "adios2" CACHE STRING "Default IO backend (mpi or adios2)" FORCE)
+ set_property(CACHE IO_BACKEND PROPERTY STRINGS mpi adios2)
+ 
+ set(AUTHOR "Stefano Rolfo;Charles Moulinec;Paul Bartholomew")
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 2e80684..6c84d17 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -5,7 +5,7 @@ file(GLOB files_decomp factor.f90
+ 		       log.f90
+ 		       io.f90)
+ include_directories(${CMAKE_SOURCE_DIR}/src)
+-
++find_package(adios2 REQUIRED)
+ if(${BUILD_TARGET} MATCHES "gpu")
+   list(APPEND files_decomp decomp_2d_cumpi.f90)
+   if(ENABLE_NCCL)
+@@ -79,10 +79,10 @@ if (HALO_DEBUG)
+   target_compile_definitions(decomp2d PUBLIC -DHALO_DEBUG)
+ endif()
+ 
+-if (IO_BACKEND MATCHES "adios2")
+-  target_compile_definitions(decomp2d PUBLIC -DADIOS2)
+-  target_link_libraries(decomp2d PUBLIC adios2::fortran_mpi adios2::fortran)
+-endif (IO_BACKEND MATCHES "adios2")
++#if (IO_BACKEND MATCHES "adios2")
++target_compile_definitions(decomp2d PUBLIC -DADIOS2)
++target_link_libraries(decomp2d PUBLIC adios2::fortran_mpi adios2::fortran)
++  #endif (IO_BACKEND MATCHES "adios2")
+ 
+ install(TARGETS decomp2d
+   EXPORT decomp2d-targets
+diff --git a/src/io.f90 b/src/io.f90
+index a815244..6c4ba04 100644
+--- a/src/io.f90
++++ b/src/io.f90
+@@ -1395,6 +1395,11 @@ contains
+       type(adios2_variable) :: var_handle
+       integer, parameter :: ndims = 3
+       logical, parameter :: adios2_constant_dims = .true.
++      type(adios2_derived_variable)                :: derived_variable
++      type(adios2_derived_variable)                :: derived_variable2
++      character(len=256)                           :: derived_name
++      character(len=256)                           :: derived_expression
++      integer                                      :: special_error
+       integer :: data_type
+       integer :: ierror
+ 
+@@ -1442,6 +1447,10 @@ contains
+             call adios2_define_variable(var_handle, io_handle, varname, data_type, &
+                                         ndims, int(sizes, kind=8), int(starts, kind=8), int(subsizes, kind=8), &
+                                         adios2_constant_dims, ierror)
++            derived_name = "add_of_" // trim(varname)
++            derived_expression = "x=" // trim(varname) // " add(x)"
++            call adios2_define_derived_variable(derived_variable, io_handle, derived_name, derived_expression, &
++                                                                adios2_derived_var_type_store_data, special_error)                                                     
+             if (ierror /= 0) then
+                call decomp_2d_abort(__FILE__, __LINE__, ierror, &
+                                     "adios2_define_variable, ERROR registering variable "//trim(varname))
+@@ -2026,17 +2035,12 @@ contains
+ #else
+       call adios2_at_io(io, adios, io_name, ierror)
+       if (ierror /= 0) call decomp_2d_abort(__FILE__, __LINE__, ierror, "adios2_at_io "//trim(io_name))
+-      if (io%engine_type == "BP4") then
+-         ext = ".bp4"
++      if (io%engine_type == "BP5") then
++         ext = ".bp5"
+       else if (io%engine_type == "HDF5") then
+          ext = ".hdf5"
+       else if (io%engine_type == "SST") then
+          ext = ""
+-      else
+-         print *, "ERROR: Unkown engine type! ", io%engine_type
+-         print *, "-  IO: ", io_name
+-         print *, "- DIR:", io_dir
+-         stop
+       end if
+       write (gen_iodir_name, "(A,A)") io_dir, trim(ext)
+ #endif

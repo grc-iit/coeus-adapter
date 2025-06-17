@@ -52,11 +52,18 @@ class Wrf(Application):
                 'default': 'bp5',
             },
             {
+                'name': 'Execution_order',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': None,
+            },
+            {
                 'name': 'db_path',
                 'msg': 'Path where the DB will be stored',
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+
 
         ]
 
@@ -68,13 +75,16 @@ class Wrf(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        if self.config['engine'].lower() == 'bp4':
+        if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                            f'{self.config["wrf_location"]}/adios_config.xml')
-        elif  self.config['engine'].lower == 'hermes':
-            replacement = [("ppn", self.config['ppn']), ("db_path", self.config['db_file'])]
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                        f'{self.config["wrf_location"]}/adios_config.xml', replacement)
+                            f'{self.config["wrf_location"]}/adios2.xml')
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+                self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+                        f'{self.config["wrf_location"]}/adios2.xml', replacements={
+                    'ppn': self.config['ppn'],
+                    'db_path': self.config['db_path'],
+                    'Order': self.config['Execution_order'],
+                    })
         else:
             raise Exception('Engine not defined')
 
@@ -87,12 +97,13 @@ class Wrf(Application):
 
         :return: None
         """
-        Exec('./wrf.exe',
+        Exec('wrf.exe',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=self.config['wrf_location']))
+                         cwd=self.config['wrf_location']
+                         ))
 
         pass
 

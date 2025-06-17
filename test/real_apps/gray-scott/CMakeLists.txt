@@ -16,24 +16,129 @@ add_executable(adios2-gray-scott
   simulation/writer.cpp
   simulation/restart.cpp
 )
+
 target_link_libraries(adios2-gray-scott adios2::adios2
         hermes_engine hermes_engine ${Hermes_LIBRARIES} MPI::MPI_C)
 target_include_directories(adios2-gray-scott PRIVATE
-        ${Hermes_INCLUDE_DIRS}
         ${ADIOS2_INCLUDE_DIR}
         )
 install(TARGETS adios2-gray-scott 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 add_executable(adios2-pdf-calc analysis/pdf-calc.cpp)
+
 target_link_libraries(adios2-pdf-calc
         adios2::adios2 hermes_engine ${Hermes_LIBRARIES} MPI::MPI_C)
 target_include_directories(adios2-pdf-calc PRIVATE
-        ${Hermes_INCLUDE_DIRS}
         ${ADIOS2_INCLUDE_DIR}
         )
 install(TARGETS adios2-pdf-calc 
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_executable(adios2-hashing analysis/hashing.cpp)
+
+# Link libraries to the executable
+target_link_libraries(adios2-hashing
+        adios2::adios2
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(adios2-hashing PRIVATE
+        ${CMAKE_SOURCE_DIR}/external_libraries/spdlog/include
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS adios2-hashing
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+add_executable(wrf-hashing analysis/wrf_hashing.cpp)
+
+# Link libraries to the executable
+target_link_libraries(wrf-hashing
+        adios2::adios2
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(wrf-hashing PRIVATE
+        ${CMAKE_SOURCE_DIR}/external_libraries/spdlog/include
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS wrf-hashing
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
+add_executable(hashing-comparison analysis/compare.cpp)
+
+# Link libraries to the executable
+target_link_libraries(hashing-comparison
+        adios2::adios2
+        hermes_engine
+        ${Hermes_LIBRARIES}
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(hashing-comparison PRIVATE
+        ${Hermes_INCLUDE_DIRS}
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS hashing-comparison
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
+add_executable(wrf-comparison analysis/wrf_compare.cpp)
+
+# Link libraries to the executable
+target_link_libraries(wrf-comparison
+        adios2::adios2
+        hermes_engine
+        ${Hermes_LIBRARIES}
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(wrf-comparison PRIVATE
+        ${Hermes_INCLUDE_DIRS}
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS wrf-comparison
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
+add_executable(inCompact3D_analysis analysis/inCompact3D_analysis.cpp)
+
+# Link libraries to the executable
+target_link_libraries(inCompact3D_analysis
+        adios2::adios2
+        hermes_engine
+        ${Hermes_LIBRARIES}
+        MPI::MPI_C
+        )
+
+# Include necessary directories for compilation
+target_include_directories(inCompact3D_analysis PRIVATE
+        ${Hermes_INCLUDE_DIRS}
+        ${ADIOS2_INCLUDE_DIR}
+        )
+
+# Install the executable
+install(TARGETS inCompact3D_analysis
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
+
+
 
 
 install(FILES "adios2.xml" "adios2-inline-plugin.xml" "adios2-fides-staging.xml"

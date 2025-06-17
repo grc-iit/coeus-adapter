@@ -17,9 +17,8 @@ class Adios2GrayScottPost(Application):
         Initialize paths
         """
         self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
-        self.settings_json_path = f'{self.shared_dir}/settings-files.json'
-        self.var_json_path = f'{self.shared_dir}/var.json'
-        self.operator_json_path = f'{self.shared_dir}/operator.json'
+        self.var_json_path = f'{self.shared_dir}/var.yaml'
+        self.operator_json_path = f'{self.shared_dir}/operator.yaml'
 
     def _configure_menu(self):
         """
@@ -40,7 +39,7 @@ class Adios2GrayScottPost(Application):
                 'name': 'ppn',
                 'msg': 'Processes per node',
                 'type': int,
-                'default': None,
+                'default': 16,
             },
             {
                 'name': 'in_filename',
@@ -70,7 +69,7 @@ class Adios2GrayScottPost(Application):
             {
                 'name': 'engine',
                 'msg': 'Engine to be used',
-                'choices': ['bp5', 'hermes'],
+                'choices': ['bp5', 'hermes', 'bp5_derived', 'hermes_derived'],
                 'type': str,
                 'default': "bp5",
             },
@@ -80,6 +79,12 @@ class Adios2GrayScottPost(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'limit',
+                'msg': 'Limit the value of data to track',
+                'type': int,
+                'default': 5,
+            }
         ]
     # jarvis pkg config adios2_gray_scott_post ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db in_filename=gs.bp out_filename=post.bp nprocs=1
 
@@ -91,7 +96,6 @@ class Adios2GrayScottPost(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        self.update_config(kwargs, rebuild=False)
         if self.config['out_filename'] is None:
             adios_dir = os.path.join(self.shared_dir, 'post-gray-scott-output')
             self.config['out_filename'] = os.path.join(adios_dir, 'data/post.bp')
@@ -103,12 +107,25 @@ class Adios2GrayScottPost(Application):
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env))
 
-        if self.config['engine'].lower() == 'bp5':
+        ppn = self.config['ppn']
+        replacements = [
+            ('PPN', f'{ppn}'),
+            ('VARFILE', self.var_json_path),
+            ('OPFILE', self.operator_json_path),
+            ('DBFILE', self.config['db_path']),
+            ('LIMIT', self.config['limit']),
+        ]
+
+        print(f"Using engine {self.config['engine']}")
+        if self.config['engine'].lower() in  ['bp5', 'bp5_derived']:
+            replacements.append(('ENGINE', 'bp5'))
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                self.adios2_xml_path)
-        elif self.config['engine'].lower() == 'hermes':
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    self.adios2_xml_path)
+                                self.adios2_xml_path, replacements)
+
+        elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+            replacements.append(('ENGINE', 'plugin'))
+            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
+                                    self.adios2_xml_path, replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',
@@ -130,13 +147,22 @@ class Adios2GrayScottPost(Application):
         write_inputbars = self.config['write_inputvars']
 
         cwd = os.path.dirname(self.adios2_xml_path)
+        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
+            derived = 1
+        elif self.config['engine'].lower() in ['hermes', 'bp5']:
+            derived = 0
+        else:
+            raise Exception('Engine not defined')
         # print(self.env['HERMES_CLIENT_CONF'])
-        Exec(f'adios2-pdf-calc {in_file} {out_file} {nbins} {write_inputbars}',
+        Exec(f'adios2-pdf-calc {in_file} {out_file} {nbins} {write_inputbars} {derived}',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=cwd))
+                         cwd=cwd,
+                         do_dbg=self.config['do_dbg'],
+                         dbg_port=self.config['dbg_port']
+                         ))
         # cmd_an = f"mpirun -n {num_processes} --hosts {hosts_str} -ppn 20 --wdir \
         #         {self.GRAY_SCOTT_PATH} {self.INSTALL_PATH}/adios2-pdf-calc \
         #         /mnt/hdd/jmendezbenegassimarq/client/gs.bp pdf.bp 100"

@@ -213,7 +213,10 @@ function(jarvis_test test_type test_name)
     add_test(NAME ${test_name}
             COMMAND jarvis pipeline run yaml "${JARVIS_PIPELINES}/${test_type}/${test_name}.yaml")
 endfunction()
-
+#add_custom_target(
+#        jarvis_repo
+#        COMMAND jarvis repo add
+#)
 add_subdirectory(test)
 
 #------------------------------------------------------------------------------

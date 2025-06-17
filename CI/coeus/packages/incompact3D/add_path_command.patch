@@ -1,0 +1,26 @@
+--- a/cmake/decomp2d/downloadBuild2decomp.cmake.in
++++ b/cmake/decomp2d/downloadBuild2decomp.cmake.in
+@@ -6,11 +6,23 @@ project(downloadBuild2decomp NONE)
+
+ include(ExternalProject)
+
++# --- Download the patch file ---
++file(DOWNLOAD
++    "https://github.com/grc-iit/coeus-adapter/raw/derived_merged/CI/coeus/packages/incompact3D/patches/decomp_fix.patch"
++    "${CMAKE_CURRENT_BINARY_DIR}/decomp_fix.patch"
++    # EXPECTED_HASH SHA256=your_sha256_hash_here  # Optional: Add if you want hash verification
++    TLS_VERIFY ON
++    SHOW_PROGRESS
++)
++
++# --- Add the external project ---
+ ExternalProject_Add(downloadBuild2decomp
+     GIT_REPOSITORY    "https://github.com/xcompact3d/2decomp-fft"
+     GIT_TAG           "v2.0.4"
+     SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src"
+     INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/decomp2d-opt"
++    PATCH_COMMAND     ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/decomp2d-src
++                      patch -p1 < ${CMAKE_CURRENT_BINARY_DIR}/decomp_fix.patch
+     TEST_COMMAND      ""
+ )
+

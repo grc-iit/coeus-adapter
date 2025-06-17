@@ -175,6 +175,13 @@ class Adios2GrayScott(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'Execution_order',
+                'msg': 'Path where the bp5 will be stored',
+                'type': str,
+                'default': '1',
+            },
+
         ]
 
     # jarvis pkg config adios2_gray_scott ppn=20 full_run=true engine=hermes db_path=/mnt/nvme/jcernudagarcia/metadata.db out_file=gs.bp nprocs=1
@@ -233,6 +240,7 @@ class Adios2GrayScott(Application):
                                         'VARFILE': self.var_json_path,
                                         'OPFILE': self.operator_json_path,
                                         'DBFILE': self.config['db_path'],
+                                        'Order': self.config['Execution_order'],
                                     })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
@@ -260,11 +268,14 @@ class Adios2GrayScott(Application):
                              dbg_port=self.config['dbg_port']
                              ))
         elif self.config['engine'].lower() in ['hermes', 'bp5']:
-            Exec(f'adios2-gray-scott {self.settings_json_path}',
-                MpiExecInfo(nprocs=self.config['nprocs'],
-                         ppn=self.config['ppn'],
-                         hostfile=self.jarvis.hostfile,
-                         env=self.mod_env))
+
+            derived = 0
+            Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
+                 MpiExecInfo(nprocs=self.config['nprocs'],
+                             ppn=self.config['ppn'],
+                             hostfile=self.jarvis.hostfile,
+                             env=self.mod_env))
+
 
     def stop(self):
         """

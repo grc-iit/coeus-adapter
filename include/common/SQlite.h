@@ -57,6 +57,7 @@ class SQLiteWrapper {
     createAppsTable();
     createBlobLocationsTable();
     createVariableMetadataTable();
+    CreateDerivedTargetsTable();
   }
 
   ~SQLiteWrapper() {
@@ -145,7 +146,29 @@ class SQLiteWrapper {
 
   }
 
-  BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
+    bool FindVariable(int step, int mpi_rank, const std::string& varName, const std::string& bucketName) {
+        sqlite3_stmt* stmt;
+        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ? AND bucket_name = ?;";
+        sqlite3_prepare_v2(db, findVariable.c_str(), -1, &stmt, 0);
+        sqlite3_bind_int(stmt, 1, step);
+       sqlite3_bind_int(stmt, 2, mpi_rank);
+        sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
+       sqlite3_bind_text(stmt, 4, bucketName.c_str(), -1, SQLITE_STATIC);
+
+        bool exists = false;
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            int count = sqlite3_column_int(stmt, 0);
+            exists = (count > 0);
+        }
+
+        sqlite3_finalize(stmt);
+        return exists;
+    }
+
+
+
+
+    BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
     const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
@@ -161,6 +184,33 @@ class SQLiteWrapper {
     return blobInfo;
   }
 
+  std::vector<BlobInfo> getAllBlobs(int step, int mpi_rank) {
+    if (step < 0) {
+      return {}; // Return an empty vector if step is invalid
+    }
+
+    std::vector<BlobInfo> allBlobInfos;
+    sqlite3_stmt* stmt;
+    const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ?;";
+
+    if (sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+      // Handle error...
+    }
+
+    sqlite3_bind_int(stmt, 1, step);
+    sqlite3_bind_int(stmt, 2, mpi_rank);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      BlobInfo blobInfo;
+      blobInfo.bucket_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      blobInfo.blob_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+      allBlobInfos.push_back(blobInfo);
+    }
+
+    sqlite3_finalize(stmt);
+    return allBlobInfos;
+  }
+
   /***************************************
 * MetaData Location
 ****************************************/
@@ -174,6 +224,7 @@ class SQLiteWrapper {
                                        "start TEXT,"
                                        "count TEXT,"
                                        "constantShape BOOLEAN,"
+                                       "derived BOOLEAN,"
                                        "dataType TEXT,"
                                        "PRIMARY KEY (step, mpi_rank, name));";
     return execute(createTableSQL);
@@ -182,7 +233,7 @@ class SQLiteWrapper {
   void InsertVariableMetadata(int step, int mpi_rank, const VariableMetadata& metadata) {
 
     sqlite3_stmt* stmt;
-    const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+    const std::string insertOrUpdateSQL = "INSERT INTO VariableMetadataTable (step, mpi_rank, name, shape, start, count, constantShape, derived, dataType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
     auto shape = VariableMetadata::serializeVector(metadata.shape);
     auto start = VariableMetadata::serializeVector(metadata.start);
     auto count = VariableMetadata::serializeVector(metadata.count);
@@ -195,14 +246,15 @@ class SQLiteWrapper {
     sqlite3_bind_text(stmt, 5, start.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 6, count.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 7, metadata.constantShape);
-    sqlite3_bind_text(stmt, 8, metadata.dataType.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 8, metadata.derived);
+    sqlite3_bind_text(stmt, 9, metadata.dataType.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
   }
 
   VariableMetadata GetVariableMetadata(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
+    const std::string selectSQL = "SELECT shape, start, count, constantShape, derived, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ? AND name = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
@@ -214,7 +266,8 @@ class SQLiteWrapper {
       metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1)));
       metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
       metadata.constantShape = sqlite3_column_int(stmt, 3);
-      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+      metadata.derived = sqlite3_column_int(stmt, 4);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
     }
     sqlite3_finalize(stmt);
     return metadata;
@@ -222,7 +275,7 @@ class SQLiteWrapper {
 
   std::vector<VariableMetadata> GetAllVariableMetadata(int step, int mpi_rank) {
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT name, shape, start, count, constantShape, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ?;";
+    const std::string selectSQL = "SELECT name, shape, start, count, constantShape, derived, dataType FROM VariableMetadataTable WHERE step = ? AND mpi_rank = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
@@ -237,7 +290,8 @@ class SQLiteWrapper {
       metadata.start = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2)));
       metadata.count = VariableMetadata::deserializeVector(reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3)));
       metadata.constantShape = sqlite3_column_int(stmt, 4);
-      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+      metadata.derived = sqlite3_column_int(stmt, 5);
+      metadata.dataType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 6));
 
       allMetadata.push_back(metadata);
     }
@@ -246,6 +300,54 @@ class SQLiteWrapper {
     return allMetadata;
   }
 
+
+  bool CreateDerivedTargetsTable() {
+    const std::string sqlCreateTable = "CREATE TABLE IF NOT EXISTS derived_targets ("
+                                       "step INTEGER,"
+                                       "variable TEXT,"
+                                       "operation TEXT,"
+                                       "blob_name TEXT,"
+                                       "bucket_name TEXT,"
+                                       "value REAL,"
+                                       "PRIMARY KEY (step, variable, operation));";
+
+    return execute(sqlCreateTable);
+  }
+
+  void insertOrUpdateDerivedQuantity(int step, const std::string& variable,
+                                     const std::string& operation, const std::string& blob_name,
+                                     const std::string& bucket_name, float value) {
+    sqlite3_stmt* stmt;
+    std::string sqlInsertOrUpdate = R"(
+        INSERT INTO derived_targets (step, variable, operation, blob_name, bucket_name, value)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(step, variable, operation) DO UPDATE SET
+            blob_name = excluded.blob_name,
+            bucket_name = excluded.bucket_name,
+            value = CASE
+                WHEN operation = 'min' AND excluded.value < value THEN excluded.value
+                WHEN operation = 'max' AND excluded.value > value THEN excluded.value
+                ELSE value
+            END;
+    )";
+
+    if (sqlite3_prepare_v2(db, sqlInsertOrUpdate.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+      sqlite3_bind_int(stmt, 1, step);
+      sqlite3_bind_text(stmt, 2, variable.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 3, operation.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 4, blob_name.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 5, bucket_name.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_double(stmt, 6, static_cast<double>(value));
+
+      if (sqlite3_step(stmt) != SQLITE_DONE) {
+        // Handle error: You can use sqlite3_errmsg(db) to get the text of the error message
+      }
+
+      sqlite3_finalize(stmt);
+    } else {
+      // Handle error: You can use sqlite3_errmsg(db) to get the text of the error message
+    }
+  }
 
 };
 

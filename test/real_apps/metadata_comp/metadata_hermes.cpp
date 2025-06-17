@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     auto startInsertMetadata = std::chrono::high_resolution_clock::now();
     {
       std::string bucket_name_metadata = "step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
-      VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, "int");
+      VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, false, "int");
 
       std::string serializedMetadata = MetadataSerializer::SerializeMetadata(metadata);
 

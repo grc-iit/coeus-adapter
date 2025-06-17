@@ -30,6 +30,7 @@ void WriteCkpt(MPI_Comm comm, const int step, const Settings &settings,
 
             var_u = io.DefineVariable<double>("U", {N, X, Y, Z}, {R, 0, 0, 0},
                                             {1, X, Y, Z});
+
             var_v = io.DefineVariable<double>("V", {N, X, Y, Z}, {R, 0, 0, 0},
                                             {1, X, Y, Z});
 
