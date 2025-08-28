@@ -25,7 +25,4 @@ mpirun -n 4 build/adios2_simulations_gray-scott simulation/settings-inline.json
 
 This video shows how to use the Paraview GUI with the catalyst setup:
 
-<video width="640" controls>
-	<source src="catalyst_video.webm" type="video/webm">
-	Your browser does not support the video tag.
-</video>
+**[Watch the demonstration video on YouTube](https://youtu.be/FD0nAeOLC8s)**
