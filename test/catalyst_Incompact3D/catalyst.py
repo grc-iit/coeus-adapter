@@ -67,40 +67,61 @@ def SetupFidesReader(json, bp, sst):
 
 
 # takes in a producer and view and sets up the visualization pipeline for Incompact3D
-def SetupVisPipeline(producer, view):
+def SetupVisPipeline(producer, view, field="vel_mag"):
+    """
+    Sets up the visualization pipeline for Incompact3D/TGV.
+    field: 'vel_mag' (default) or 'vort' (vorticity magnitude, if available)
+    """
     Show(producer, view, 'UniformGridRepresentation')
     view.ResetCamera()
 
-    # Compute velocity magnitude (sqrt(u^2 + v^2 + w^2))
+    if field == "vort":
+        # Try to use the vorticity field if available (written by Fortran as 'vort')
+        # If not available, fallback to velocity magnitude
+        try:
+            vortLUT = GetColorTransferFunction("vort")
+            vortLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
+            vortLUT.RescaleOnVisibilityChange = 1
+            contour1 = Contour(registrationName="Contour1", Input=producer)
+            contour1.ContourBy = ["POINTS", "vort"]
+            contour1.Isosurfaces = [0.1, 0.3, 0.5, 0.7]
+            contour1.PointMergeMethod = "Uniform Binning"
+            contour1Display = Show(contour1, view, "GeometryRepresentation")
+            contour1Display.Representation = "Surface"
+            contour1Display.ColorArrayName = ["POINTS", "vort"]
+            contour1Display.SetScaleArray = ["POINTS", "vort"]
+            contour1Display.ScaleTransferFunction = "PiecewiseFunction"
+            contour1Display.LookupTable = vortLUT
+            Hide(producer, view)
+            vortLUTColorBar = GetScalarBar(vortLUT, view)
+            vortLUTColorBar.Title = "|ω|"
+            vortLUTColorBar.ComponentTitle = ""
+            contour1Display.SetScalarBarVisibility(view, True)
+            return contour1, contour1Display
+        except Exception as e:
+            print_info(f"Could not find 'vort' field, falling back to velocity magnitude: {e}")
+
+    # Default: velocity magnitude
     calc = Calculator(registrationName="VelocityMagnitude", Input=producer)
     calc.ResultArrayName = "vel_mag"
     calc.Function = "sqrt(u*u + v*v + w*w)"
-
-    # get color transfer function/color map for 'vel_mag'
     velLUT = GetColorTransferFunction("vel_mag")
     velLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
     velLUT.RescaleOnVisibilityChange = 1
-
-    # Create isosurface of velocity magnitude
     contour1 = Contour(registrationName="Contour1", Input=calc)
     contour1.ContourBy = ["POINTS", "vel_mag"]
     contour1.Isosurfaces = [0.1, 0.3, 0.5, 0.7]
     contour1.PointMergeMethod = "Uniform Binning"
-
     contour1Display = Show(contour1, view, "GeometryRepresentation")
     contour1Display.Representation = "Surface"
     contour1Display.ColorArrayName = ["POINTS", "vel_mag"]
     contour1Display.SetScaleArray = ["POINTS", "vel_mag"]
     contour1Display.ScaleTransferFunction = "PiecewiseFunction"
     contour1Display.LookupTable = velLUT
-
     Hide(producer, view)
-
     velLUTColorBar = GetScalarBar(velLUT, view)
     velLUTColorBar.Title = "|u|"
     velLUTColorBar.ComponentTitle = ""
-
-    # show color legend
     contour1Display.SetScalarBarVisibility(view, True)
     return contour1, contour1Display
 
@@ -128,13 +149,17 @@ def catalyst_execute(info):
     display.RescaleTransferFunctionToDataRange()
 
     print_info("executing (cycle={}, time={})".format(info.cycle, info.time))
-    # Print velocity component ranges if available
+    # Print velocity and vorticity component ranges if available
     try:
         print_info("ux-range: {}".format(producer.PointData["u"].GetRange(0)))
         print_info("uy-range: {}".format(producer.PointData["v"].GetRange(0)))
         print_info("uz-range: {}".format(producer.PointData["w"].GetRange(0)))
     except Exception as e:
         print_info("Could not get velocity component ranges: {}".format(e))
+    try:
+        print_info("vort-range: {}".format(producer.PointData["vort"].GetRange(0)))
+    except Exception:
+        pass
 
 
 def ParseArgs():
@@ -150,6 +175,9 @@ def ParseArgs():
         "-b", "--bp_filename", help="path to bp file", type=str, required=True
     )
     parser.add_argument("--staging", help="use SST engine", action="store_true")
+    parser.add_argument(
+        "-f", "--field", help="Field to visualize: 'vel_mag' (default) or 'vort' (vorticity)", type=str, default="vel_mag"
+    )
     args = parser.parse_args()
     return args
 
@@ -177,7 +205,7 @@ def StreamingVis(args):
             return
         if step == 0:
             # set up the pipeline on the first step
-            pipeline, display = SetupVisPipeline(fides, view)
+            pipeline, display = SetupVisPipeline(fides, view, field=args.field)
 
         # need to update the pipeline and then save the output
         pipeline.UpdatePipeline()
@@ -194,9 +222,10 @@ if __name__ == "__main__":
     StreamingVis(args)
 else:
     # in this case we're running from Catalyst
+    # Default to velocity magnitude for in situ
     view = SetupRenderView()
     producer = SetupCatalystProducer()
-    pipeline, display = SetupVisPipeline(producer, view)
+    pipeline, display = SetupVisPipeline(producer, view, field="vel_mag")
 
     # normally not needed, but a bug fix is in progress to fix an issue
     # when using ParaView Live with extractors
