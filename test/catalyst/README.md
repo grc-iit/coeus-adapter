@@ -18,7 +18,7 @@ $ export CATALYST_IMPLEMENTATION_PATHS=/path/to/paraview-build/lib/catalyst
 ## run the experiment
 
 ```
-mpirun -n 4 build/adios2_simulations_gray-scott simulation/settings-inline.json
+mpirun -n 4 adios2-gray-scott settings.json
 ```
 
 # Paraview GUI setup
