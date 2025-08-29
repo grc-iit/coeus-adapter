@@ -1,6 +1,8 @@
+for the installation, please refer to jarvis Incompact3D
+
 This is the instrmentation on how to use catalyst for adios2 as I/O engine
 
-ADIOS2 installation
+Paraview installation
 
 ```
 spack install paraview@5.13.3 +adios2^python + qt +fides +mpi +libcatalyst +python ^py-mpi4py ^python-venv
@@ -16,15 +18,6 @@ $ export CATALYST_IMPLEMENTATION_PATHS=/path/to/paraview-build/lib/catalyst
 ```
 
 ## run the experiment
-
 ```
-mpirun -n 4 adios2-gray-scott settings.json
+mpirun -n 4 xcompact3D
 ```
-
-# Paraview GUI setup
-
-This video shows how to use the Paraview GUI with the catalyst setup:
-
-**[Watch the demonstration video on YouTube](https://youtu.be/FD0nAeOLC8s)**
-
-
