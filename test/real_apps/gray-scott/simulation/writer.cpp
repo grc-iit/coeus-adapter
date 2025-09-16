@@ -98,14 +98,14 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 
     if(derived == 1) {
         std::cout << "use derived variables" << std::endl;
-        auto PDFU = io.DefineDerivedVariable("derive/hashU",
+        auto PDFU = io.DefineDerivedVariable("derive/AddU",
                                              "x = U \n"
-                                             "hash(x)",
+                                             "add(x)",
                                              adios2::DerivedVarType::StoreData);
 
-        auto PDFV = io.DefineDerivedVariable("derive/hashV",
+        auto PDFV = io.DefineDerivedVariable("derive/AddV",
                                              "x = V \n"
-                                             "hash(x)",
+                                             "add(x)",
                                              adios2::DerivedVarType::StoreData);
 
     }
