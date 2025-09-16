@@ -21,6 +21,8 @@ target_include_directories(hermes_engine PUBLIC
         ${CMAKE_SOURCE_DIR}/tasks/coeus_mdm/include
         ${CMAKE_SOURCE_DIR}/tasks/rankConsensus/include
         )
+target_link_directories(hermes_engine PUBLIC
+        ${Hermes_DIR}/lib)
 target_link_libraries(hermes_engine LINK_PUBLIC
         ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
@@ -29,6 +31,8 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         rapidjson
         ${SQLite3_LIBRARIES}
         coeus_mdm)
+message(STATUS "Hermes_INCLUDE_DIR_2: ${Hermes_INCLUDE_DIR}")
+message(STATUS "Hermes_LIBRARIES_2 : ${Hermes_DIR}")
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

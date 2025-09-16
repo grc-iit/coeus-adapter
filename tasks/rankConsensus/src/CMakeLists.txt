@@ -3,8 +3,15 @@
 #------------------------------------------------------------------------------
 add_library(rankConsensus SHARED
         rankConsensus.cc)
-target_link_libraries(rankConsensus ${Hermes_RUNTIME_LIBRARIES})
-
+target_link_directories(rankConsensus PRIVATE
+        ${Hermes_DIR}/lib)
+target_link_libraries(rankConsensus 
+        ${Hermes_RUNTIME_LIBRARIES}
+        hermes
+        hrun_runtime)
+target_include_directories(rankConsensus PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${Hermes_DIR}/include)
 #------------------------------------------------------------------------------
 # Install Small Message Task Library
 #------------------------------------------------------------------------------
