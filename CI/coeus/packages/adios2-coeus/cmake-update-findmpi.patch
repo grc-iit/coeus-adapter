@@ -4,7 +4,7 @@ index b1bcb97..2244878 100644
 +++ b/cmake/FindMPI.cmake
 @@ -4,7 +4,7 @@
  #------------------------------------------------------------------------------#
-
+ 
  # This module is already included in new versions of CMake
 -if(CMAKE_VERSION VERSION_LESS 4.0)
 +if(CMAKE_VERSION VERSION_LESS 3.15.1)
@@ -18,7 +18,7 @@ index 6a874b3..8551821 100644
 @@ -1,252 +1,263 @@
  # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
  # file Copyright.txt or https://cmake.org/licensing for details.
-
+ 
 -#.rst:
 -# FindMPI
 -# -------
@@ -502,10 +502,10 @@ index 6a874b3..8551821 100644
 +``MPIEXEC``
 +  Use ``MPIEXEC_EXECUTABLE`` instead.
 +#]=======================================================================]
-
+ 
  cmake_policy(PUSH)
  cmake_policy(SET CMP0057 NEW) # if IN_LIST
-
+ 
 -include(FindPackageHandleStandardArgs)
 +include(${CMAKE_ROOT}/Modules/FindPackageHandleStandardArgs.cmake)
 +
@@ -518,12 +518,12 @@ index 6a874b3..8551821 100644
 +else()
 +  set(_sep_args_type NATIVE_COMMAND)
 +endif()
-
+ 
  # Generic compiler names
  set(_MPI_C_GENERIC_COMPILER_NAMES          mpicc    mpcc      mpicc_r mpcc_r)
 @@ -331,16 +342,10 @@ endforeach()
  unset(_MPIEXEC_NAMES_BASE)
-
+ 
  function (_MPI_check_compiler LANG QUERY_FLAG OUTPUT_VARIABLE RESULT_VARIABLE)
 -  # Helper variable for command seperation
 -  if(WIN32)
@@ -548,7 +548,7 @@ index 6a874b3..8551821 100644
 +      separate_arguments(MPI_ALL_INCLUDE_PATHS ${_sep_args_type} "${MPI_INCDIRS_CMDLINE}")
      endif()
    endif()
-
+ 
 @@ -696,7 +701,7 @@ function (_MPI_interrogate_compiler LANG)
    if (NOT MPI_ALL_LINK_PATHS)
      _MPI_check_compiler(${LANG} "-showme:libdirs" MPI_LIBDIRS_CMDLINE MPI_LIBDIRS_COMPILER_RETURN)
@@ -557,10 +557,10 @@ index 6a874b3..8551821 100644
 +      separate_arguments(MPI_ALL_LINK_PATHS ${_sep_args_type} "${MPI_LIBDIRS_CMDLINE}")
      endif()
    endif()
-
+ 
 @@ -775,18 +780,20 @@ function (_MPI_interrogate_compiler LANG)
    endforeach()
-
+ 
    # Add the link directories given explicitly that we haven't used back as linker directories.
 -  foreach(_MPI_LINK_DIRECTORY IN LISTS MPI_LINK_DIRECTORIES_LEFTOVER)
 -    file(TO_NATIVE_PATH "${_MPI_LINK_DIRECTORY}" _MPI_LINK_DIRECTORY_ACTUAL)
@@ -588,13 +588,13 @@ index 6a874b3..8551821 100644
 +      endif()
 +    endforeach()
 +  endif()
-
+ 
    # Deal with the libraries given with full path next
    unset(MPI_DIRECT_LIB_NAMES_WORK)
 @@ -1137,23 +1144,29 @@ macro(_MPI_create_imported_target LANG)
      add_library(MPI::MPI_${LANG} INTERFACE IMPORTED)
    endif()
-
+ 
 -  set_property(TARGET MPI::MPI_${LANG} PROPERTY INTERFACE_COMPILE_OPTIONS "${MPI_${LANG}_COMPILE_OPTIONS}")
 +  if(NOT CMAKE_VERSION VERSION_LESS 3.12)
 +    # When this is consumed for compiling CUDA, use '-Xcompiler' to wrap '-pthread'.
@@ -605,7 +605,7 @@ index 6a874b3..8551821 100644
 +  unset(_MPI_${LANG}_COMPILE_OPTIONS)
 +
    set_property(TARGET MPI::MPI_${LANG} PROPERTY INTERFACE_COMPILE_DEFINITIONS "${MPI_${LANG}_COMPILE_DEFINITIONS}")
-
+ 
 -  set_property(TARGET MPI::MPI_${LANG} PROPERTY INTERFACE_LINK_LIBRARIES "")
    if(MPI_${LANG}_LINK_FLAGS)
 -    set_property(TARGET MPI::MPI_${LANG} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${MPI_${LANG}_LINK_FLAGS}")
@@ -620,7 +620,7 @@ index 6a874b3..8551821 100644
    # Given the new design of FindMPI, INCLUDE_DIRS will always be located, even under implicit linking.
    set_property(TARGET MPI::MPI_${LANG} PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${MPI_${LANG}_INCLUDE_DIRS}")
  endmacro()
-
+ 
 -function(_MPI_try_staged_settings LANG MPI_TEST_FILE_NAME MODE RUN_BINARY)
 +function(_MPI_try_staged_settings LANG MPI_TEST_FILE_NAME MODE RUN_BINARY SUPPRESS_ERRORS)
    set(WORK_DIR "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/FindMPI")
@@ -653,7 +653,7 @@ index 6a874b3..8551821 100644
 +    endif()
    endif()
  endfunction()
-
+ 
 -macro(_MPI_check_lang_works LANG)
 +macro(_MPI_check_lang_works LANG SUPPRESS_ERRORS)
    # For Fortran we may have by the MPI-3 standard an implementation that provides:
@@ -669,9 +669,9 @@ index 6a874b3..8551821 100644
 +      _MPI_try_staged_settings(${LANG} test_mpi F77_HEADER FALSE ${SUPPRESS_ERRORS})
 +      _MPI_try_staged_settings(${LANG} test_mpi F90_MODULE FALSE ${SUPPRESS_ERRORS})
 +      _MPI_try_staged_settings(${LANG} test_mpi F08_MODULE FALSE ${SUPPRESS_ERRORS})
-
+ 
        set(MPI_${LANG}_WORKS FALSE)
-
+ 
 @@ -1219,14 +1243,14 @@ macro(_MPI_check_lang_works LANG)
        # However, MPI-1 also did not define the Fortran 90 and 08 modules, so we only try the F77 header.
        unset(MPI_Fortran_INTEGER_LINE)
@@ -695,7 +695,7 @@ index 6a874b3..8551821 100644
          _MPI_create_imported_target(${LANG})
 -        _MPI_check_lang_works(${LANG})
 +        _MPI_check_lang_works(${LANG} TRUE)
-
+ 
          # If the compiler can build MPI code on its own, it functions as an MPI compiler and we'll set the variable to point to it.
          if(MPI_${LANG}_WORKS)
 @@ -1440,7 +1464,7 @@ foreach(LANG IN ITEMS C CXX Fortran)
@@ -705,16 +705,16 @@ index 6a874b3..8551821 100644
 -              _MPI_check_lang_works(${LANG})
 +              _MPI_check_lang_works(${LANG} TRUE)
              endif()
-
+ 
              # Should the MPI compiler not work implicitly for MPI, still interrogate it.
 @@ -1486,7 +1510,7 @@ foreach(LANG IN ITEMS C CXX Fortran)
      _MPI_create_imported_target(${LANG})
-
+ 
      if(NOT MPI_${LANG}_WORKS)
 -      _MPI_check_lang_works(${LANG})
 +      _MPI_check_lang_works(${LANG} FALSE)
      endif()
-
+ 
      # Next, we'll initialize the MPI variables that have not been previously set.
 @@ -1505,7 +1529,7 @@ foreach(LANG IN ITEMS C CXX Fortran)
      if(MPI_${LANG}_WORKS)
@@ -770,7 +770,7 @@ index be9d19d..d89328a 100644
 +++ b/cmake/upstream/FindMPI/libver_mpi.c
 @@ -1,9 +1,9 @@
  #include <mpi.h>
-
+ 
  #ifdef __cplusplus
 -#include <cstdio>
 +#  include <cstdio>
@@ -778,7 +778,7 @@ index be9d19d..d89328a 100644
 -#include <stdio.h>
 +#  include <stdio.h>
  #endif
-
+ 
  int main(int argc, char* argv[])
 @@ -16,4 +16,5 @@ int main(int argc, char* argv[])
  #else
@@ -792,7 +792,7 @@ index b8a308a..7c96d54 100644
 +++ b/cmake/upstream/FindMPI/test_mpi.c
 @@ -1,9 +1,9 @@
  #include <mpi.h>
-
+ 
  #ifdef __cplusplus
 -#include <cstdio>
 +#  include <cstdio>
@@ -800,7 +800,7 @@ index b8a308a..7c96d54 100644
 -#include <stdio.h>
 +#  include <stdio.h>
  #endif
-
+ 
  #if defined(MPI_VERSION) && defined(MPI_SUBVERSION)
 @@ -21,11 +21,11 @@ const char mpiver_str[] = { 'I', 'N',
  int main(int argc, char* argv[])
@@ -830,7 +830,8 @@ index 72199b5..e2a73f3 100644
 @@ -79,7 +79,6 @@ TEST_F(CommonReadTest, ADIOS2CommonRead1D8)
      {
          size_t writerSize;
-
+ 
 -
          auto var1 = io1.InquireVariable<double>(varname1);
          auto var2 = io2.InquireVariable<double>(varname2);
+ 

@@ -13,7 +13,6 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     """The Adaptable Input Output System version 2,
     developed in the Exascale Computing Program"""
 
-
     homepage = "https://csmd.ornl.gov/software/adios2"
     url = "https://github.com/ornladios/ADIOS2/archive/v2.8.0.tar.gz"
     git = "https://github.com/hxu65/ADIOS2.git"
@@ -142,7 +141,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
         depends_on(
             "kokkos amdgpu_target=%s" % amdgpu_value,
             when="+kokkos +rocm amdgpu_target=%s" % amdgpu_value,
-            )
+        )
 
     conflicts("+cuda", when="@:2.7")
     conflicts("+rocm", when="@:2.8")
@@ -298,7 +297,6 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
             self.define("ADIOS2_USE_IME", False),
         ]
 
-
         if spec.satisfies("+sst"):
             args.extend(
                 [
@@ -380,9 +378,9 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
         for cmd, opts in commands_and_args:
             with test_part(
-                    self,
-                    f"test_run_executables_{cmd}",
-                    purpose=f"run installed adios2 executable {cmd}",
+                self,
+                f"test_run_executables_{cmd}",
+                purpose=f"run installed adios2 executable {cmd}",
             ):
                 exe = which(join_path(self.prefix.bin, cmd))
                 exe(*opts)
@@ -406,7 +404,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
         with working_dir(build_dir):
             with test_part(
-                    self, "test_examples_build", purpose="build example against installed adios2"
+                self, "test_examples_build", purpose="build example against installed adios2"
             ):
                 cmake(src_dir, *std_cmake_args)
                 make()
@@ -415,6 +413,6 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
                 exe = which(join_path(".", p))
                 if exe:
                     with test_part(
-                            self, f"test_examples_run_{p}", purpose=f"run built adios2 example {p}"
+                        self, f"test_examples_run_{p}", purpose=f"run built adios2 example {p}"
                     ):
                         exe()
