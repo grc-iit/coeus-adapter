@@ -6,12 +6,12 @@
 
 ### 1.Install ADIOS2
 please follow these steps to install the adios2 with derived variables
-step 1: Install Spack
+step 1: Install Spack. We recommend Spack v0.23.1 (or earlier) — Spack v1.0.0 does not support installing ADIOS2 or Hermes.
 ```
 cd ${HOME}
 git clone https://github.com/spack/spack.git
 cd spack
-git checkout tags/v0.22.2
+git checkout tags/v0.23.1
 echo ". ${PWD}/share/spack/setup-env.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
@@ -21,16 +21,20 @@ spack repo add /coeus_adapter/CI/coeus
 ```
 step 3: install the adios2
 ```
-spack install adios2-coeus@2.10.0
+spack install adios2-coeus@master
 ```
 
 ### 2. Install the Hermes
-Please follow this [link](https://grc.iit.edu/docs/hermes/building-hermes/) for the hermes installation.
-
+```
+cd ${HOME}
+git clone https://github.com/grc-iit/grc-repo
+spack repo add grc-repo
+spack install hermes
+```
 ### 3. Install Coeus-adapter
 1. load environment variables
 ```
-spack load hermes@master
+spack load hermes
 spack load adios2-coeus
 spack load openmpi
 ```
