@@ -16,7 +16,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
 
     homepage = "https://csmd.ornl.gov/software/adios2"
     url = "https://github.com/ornladios/ADIOS2/archive/v2.8.0.tar.gz"
-    git = "https://github.com/ornladios/ADIOS2.git"
+    git = "https://github.com/hxu65/ADIOS2.git"
     test_requires_compiler = True
 
     maintainers("ax3l", "vicentebolea", "williamfgc")
