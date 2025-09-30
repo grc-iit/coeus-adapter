@@ -17,7 +17,7 @@ source ~/.bashrc
 ```
 step 2: Add Coeus repo packages for spack
 ```
-spack repo add /coeus_adapter/CI/coeus
+spack repo add /coeus-adapter/CI/coeus
 ```
 step 3: install the adios2
 ```
