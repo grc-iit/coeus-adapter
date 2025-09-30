@@ -73,25 +73,23 @@ spack load py-jarvis-cd
     Building a Resource Graph
 
 ### Incompact3D installation
+The installation, which includes the 2DECOMP&FFT library, enables both slab and pencil decompositions along with FFT support.
+
+In this setup, we apply a patch to the 2DECOMP&FFT library to add the derived variable for the Q-criterion.
+
+The incompact3D application will use ADIOS2 for I/O, with the BP5 engine enabled through an additional patch. Note: The default incompact3D will use MPI as I/O.
 ```
 spack load adios2-coeus@master
 spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@master
 ```
 
 ### Pyincompact3D installation(the post-processing tool for raw output)
-
+The raw simulation output for adios2 bp5 file will be used this program to calculate the q-criterion. 
 ```
 git clone https://github.com/xcompact3d/Py4Incompact3D.git
 cd Py4Incompact3D
 pip install
 ```
 
-## Hermes Info log
-The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
 
-## Disbale adios2 metadata
-add this to the adios2.xml
-```
-<parameter key="StatsLevel" value="0"/>
-```
 
