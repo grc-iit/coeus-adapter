@@ -6,7 +6,7 @@
 
 +# --- Download the patch file ---
 +file(DOWNLOAD
-+    "https://github.com/grc-iit/coeus-adapter/raw/derived_merged/CI/coeus/packages/incompact3D/patches/decomp_fix.patch"
++    "https://github.com/grc-iit/coeus-adapter/raw/developed/CI/coeus/packages/incompact3D/patches/decomp_fix.patch"
 +    "${CMAKE_CURRENT_BINARY_DIR}/decomp_fix.patch"
 +    # EXPECTED_HASH SHA256=your_sha256_hash_here  # Optional: Add if you want hash verification
 +    TLS_VERIFY ON

@@ -15,7 +15,7 @@ source ~/.bashrc
 ```
 step 2: Clone the coeus-adapter repos
 ```
-git clone -b derived-merged https://github.com/grc-iit/coeus-adapter.git
+git clone -b developed https://github.com/grc-iit/coeus-adapter.git
 ```
 step 3: Add Coeus repo packages for spack
 ```
@@ -23,7 +23,7 @@ spack repo add /coeus_adapter/CI/coeus
 ```
 step 4: Install the incompact3D with spack
 ```
-spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@2.10.0
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus
 ```
 
 ##  Run incompact3D 

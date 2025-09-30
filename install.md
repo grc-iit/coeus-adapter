@@ -1,4 +1,4 @@
-## install with spack
+## Coeus-adapter installation guide
 
 # Dependencies
 * [Hermes](https://github.com/HDFGroup/hermes): a multi-tiered I/O buffering platform.
@@ -23,7 +23,8 @@ step 3: install the adios2
 ```
 spack install adios2-coeus@master
 ```
-
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus
+```
 ### 2. Install the Hermes
 ```
 cd ${HOME}
@@ -31,6 +32,7 @@ git clone https://github.com/grc-iit/grc-repo
 spack repo add grc-repo
 spack install hermes
 ```
+
 ### 3. Install Coeus-adapter
 1. load environment variables
 ```
@@ -52,6 +54,30 @@ To enable the metadata and function trace features, please add the appropriate f
 ```
 cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ```
+
+### install jarvis(unified platform for deploying various applications)
+1. jarvis installation
+```
+spack external find python
+spack install py-jarvis-cd
+spack load py-jarvis-cd
+```
+2. jarvis initilization(Please follow this [link](https://grc.iit.edu/docs/jarvis/jarvis-cd/index/#initialize-jarvis-configuration)) for the following steps: 
+
+    Initialize jarvis configuration.
+
+    Set or Change the active Hostfile
+
+    Set Up Passwordless SSH. 
+
+    Building a Resource Graph
+
+### Incompact3D installation
+```
+
+```
+
+
 ## Hermes Info log
 The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
 
@@ -61,60 +87,3 @@ add this to the adios2.xml
 <parameter key="StatsLevel" value="0"/>
 ```
 
-# coeus-adapter with Hash()
-
-## Manually install adios2 for derived variables
-
-1. install kokkos:
-```
-  git clone -b develop  https://github.com/kokkos/kokkos.git
-  cd kokkos
-  mkdir build
-  cmake ../ -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2  -D Kokkos_ENABLE_SERIAL=ON -D CMAKE_CXX_STANDARD=17 -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON -D 
-  Kokkos_ENABLE_THREAD=ON
-  make -j8
-  make install
-
-```
-
-2. install state-diff
-  ```
- mkdir build
-  cmake ../ -D CMAKE_BUILD_TYPE=RelWithDebInfo  -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2 -D Kokkos_ROOT=/mnt/common/hxu40/install2 -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON
-  make -j8
-  make install
-  ```
-
-3. install adios2@coeus_hash:
-```
-git clone -b coeus-hash https://github.com/lizdulac/ADIOS2.git
-cd ADIOS2
-mkdir build
-cd build
-cmake ../ -D ADIOS2_USE_Kokkos=ON  -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2 -D StateDiff_ROOT=/mnt/common/hxu40/install2 -D ADIOS2_USE_Derived_Variable=ON -D ADIOS2_USE_SST=OFF -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON -D BUILD_TESTING=ON
-make -j8
-make isntall
- ```
-Note: if there is error message relate to BISON, please
- comment out the source/adios2/Cmakefile.txt from line from line 144 to 162
-```
-   find_package(BISON "3.8.2")
-  find_package(FLEX)
-
-if(NOT BISON_FOUND OR NOT FLEX_FOUND)
-    include(ADIOSBisonFlexSub)
-    SETUP_ADIOS_BISON_FLEX_SUB()
- else()
-   BISON_TARGET(MyParser
-     toolkit/derived/parser/parser.y
-     ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp
-     COMPILE_FLAGS "-o parser.cpp --header=parser.h"
-     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.h)
- FLEX_TARGET(MyScanner
-    toolkit/derived/parser/lexer.l
-    COMPILE_FLAGS "-o lexer.cpp --header-file=lexer.h" 
-     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
-      DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
-   ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
- endif()
-``` 
