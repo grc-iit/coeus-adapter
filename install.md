@@ -17,14 +17,14 @@ source ~/.bashrc
 ```
 step 2: Add Coeus repo packages for spack
 ```
+git clone -b developed https://github.com/grc-iit/coeus-adapter.git
 spack repo add /coeus-adapter/CI/coeus
 ```
 step 3: install the adios2
 ```
 spack install adios2-coeus@master
 ```
-spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus
-```
+
 ### 2. Install the Hermes
 ```
 cd ${HOME}
@@ -42,7 +42,7 @@ spack load openmpi
 ```
 2. install the coeus-adapter
 ```
-git clone https://github.com/grc-iit/coeus-adapter.git
+git clone -b developed https://github.com/grc-iit/coeus-adapter.git
 cd coeus-adapter
 mkdir build
 cd build
@@ -55,7 +55,7 @@ To enable the metadata and function trace features, please add the appropriate f
 cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
 ```
 
-### install jarvis(unified platform for deploying various applications)
+### Jarvis installation(unified platform for deploying various applications)
 1. jarvis installation
 ```
 spack external find python
@@ -74,9 +74,17 @@ spack load py-jarvis-cd
 
 ### Incompact3D installation
 ```
-
+spack load adios2-coeus@master
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@master
 ```
 
+### Pyincompact3D installation(the post-processing tool for raw output)
+
+```
+git clone https://github.com/xcompact3d/Py4Incompact3D.git
+cd Py4Incompact3D
+pip install
+```
 
 ## Hermes Info log
 The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
