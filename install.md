@@ -84,7 +84,7 @@ spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@master
 ```
 
 ### Pyincompact3D installation(the post-processing tool for raw output)
-The raw simulation output for adios2 bp5 file will be used this program to calculate the q-criterion. 
+The raw simulation output for adios2 bp5 file will be used this program to calculate the Q-criterion. 
 ```
 git clone https://github.com/xcompact3d/Py4Incompact3D.git
 cd Py4Incompact3D
