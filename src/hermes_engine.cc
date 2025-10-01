@@ -111,7 +111,7 @@ void HermesEngine::Init_() {
 
   // hermes setup
   if (!Hermes->connect()) {
-    engine_logger->warn("Could not connect to Hermes", rank);
+    engine_logger->warn("Could not connect to Hermes (rank {})", rank);
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
   if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
@@ -119,13 +119,7 @@ void HermesEngine::Init_() {
   // add rank with consensus
   rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
   rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
-  const size_t bufferSize = 1024;  // Define the buffer size
-  char buffer[bufferSize];         // Create a buffer to hold the hostname
-  // Get the hostname
-
-  comm_size = m_Comm.Size();
-  pid_t processId = getpid();
-
+ 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
@@ -142,6 +136,7 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
+  // find the ppn
   if (params.find("ppn") != params.end()) {
     ppn = stoi(params["ppn"]);
     if (rank == 0)
@@ -199,14 +194,12 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
-
   open = false;
 }
 
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
   delete db;
-
 }
 
 /**
@@ -247,8 +240,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     LoadMetadata();
   }
 
-    std::string bucket_name = "step_" + std::to_string(currentStep)
+  std::string bucket_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
+  // if two same run happened in one pipeline
   //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
     Hermes->GetBucket(bucket_name);
 // derived part
@@ -262,14 +256,12 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 //          Demote(currentStep - lookahead - i);
  //     }
 //  }
-
-
   return adios2::StepStatus::OK;
 }
 
 
 
-//derived part
+//compute the derived variable
 void HermesEngine::ComputeDerivedVariables() {
     auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
   auto const &m_Variables = m_IO.GetVariables();
@@ -344,7 +336,7 @@ void HermesEngine::ComputeDerivedVariables() {
 
   }
 
-    }
+}
 
 
 
@@ -357,7 +349,6 @@ size_t HermesEngine::CurrentStep() const {
 }
 
 void HermesEngine::EndStep() {
-
     ComputeDerivedVariables();
 //  if (m_OpenMode == adios2::Mode::Write) {
 //    if (rank % ppn == 0) {
@@ -471,13 +462,10 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
     DefineVariable(variableMetadata);
   }
-
-
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
@@ -609,36 +597,9 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-
     Hermes->bkt->Put(name, total_count * sizeof(T), values);
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-    // switch the bucket
-
-//    int current_bucket = stoi(adiosOutput);
-//    if (current_bucket > 2) {
-//        // time here
-//        T* values2 = new T[total_count];
-//        std::string previous_bucket_name =
-//                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
-//                std::to_string(rank);
-//        if (db->FindVariable(currentStep, rank, name,previous_bucket_name)) {
-//
-//            Hermes->GetBucket(previous_bucket_name);
-//            auto blob = Hermes->bkt->Get(name);
-//            memcpy(values2, blob.data(), blob.size());
-//            for (int i = 0; i < total_count; ++i) {
-//                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
-//                    auto app_end_time = std::chrono::system_clock::now();
-//                    std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
-//                    engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
-//                }
-//            }
-//        }
-//
-//
-//    }
-
 
 }
 
@@ -662,32 +623,6 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
                      variable.m_Count, variable.IsConstantDims(), true,
                      adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
-
-//  if(total_count < 1) {
-//    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
-//  }
-//
-//  float min = std::numeric_limits<float>::max();
-//  float max = std::numeric_limits<float>::lowest();
-//
-//  for (size_t i = 0; i < total_count; i++) {
-//    // Calculate the address of the current element
-//    char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
-//    // Cast the element to the correct type
-//    float element = *reinterpret_cast<float*>(elementPtr);
-//
-//    // Update min and max
-//    if (element < min) min = element;
-//    if (element > max) max = element;
-//  }
-//  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
-//    std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
-//              << " total count " << total_count << std::endl;
-//  }
-//  derivedSemantics derived_semantics(min, max);
-//
-//  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
-//  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 
 }
