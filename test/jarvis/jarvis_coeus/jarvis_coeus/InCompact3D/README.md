@@ -9,7 +9,7 @@ step 1: Install Spack
 cd ${HOME}
 git clone https://github.com/spack/spack.git
 cd spack
-git checkout tags/v0.22.2
+git checkout tags/v0.23.1
 echo ". ${PWD}/share/spack/setup-env.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
