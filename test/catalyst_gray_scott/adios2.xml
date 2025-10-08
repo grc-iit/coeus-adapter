@@ -6,13 +6,16 @@
         ============================================-->
 
     <io name="SimulationOutput">
-        <engine type="plugin">
-            <!-- general plugin engine parameters -->
-            <parameter key="PluginName" value="fides"/>
-            <parameter key="PluginLibrary" value="ParaViewADIOSInSituEngine"/>
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
             <!-- ParaViewFides engine parameters -->
-            <parameter key="DataModel" value="catalyst/gs-fides.json"/>
-            <parameter key="Script" value="catalyst/gs-pipeline.py"/>
+            <parameter key="ppn" value='16'/>
+            <parameter key="VarFile" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/var.yaml"/>
+            <parameter key="OPFile" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/operator.yaml"/>
+            <parameter key="db_file" value="benchmark_metadata.db"/>
+            <parameter key="DataModel" value='/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/gs-fides.json'/>
+            <parameter key="Script" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/gs-catalyst.py"/>
         </engine>
     </io>
 
