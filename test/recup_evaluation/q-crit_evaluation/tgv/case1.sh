@@ -17,5 +17,4 @@ for i in ${!io_time[@]}; do
   jarvis ppl run > ${report}/${nprocs}process/result.txt
 
 
-
 done

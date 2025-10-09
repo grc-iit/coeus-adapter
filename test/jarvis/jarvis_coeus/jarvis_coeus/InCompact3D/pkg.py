@@ -39,7 +39,7 @@ class Incompact3d(Application):
             },
             {
                 'name': 'output_folder',
-                'msg': 'The location of incompact3D',
+                'msg': 'The location of output',
                 'type': str,
                 'default': None,
             },
@@ -51,25 +51,12 @@ class Incompact3d(Application):
                 'default': 'bp5',
             },
             {
-                'name': 'Incompact3D_location',
-                'msg': 'The location of incompact3D',
-                'type': str,
-                'default': None,
-            },
-            {
                 'name': 'benchmarks',
                 'msg': 'The name of benchmarks ',
-                'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
-                            'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
-                            'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
+                'choices': ['ABL', 'cavity', 'channel', 'cylinder', 'Pipe_Flow',
+                            'TBL',  'TGV'],
                 'type': str,
                 'default': 'Cavity',
-            },
-            {
-                'name': 'script_file_name',
-                'msg': 'The name of script file',
-                'type': str,
-                'default': None,
             },
             {
                 'name': 'db_path',
@@ -112,7 +99,7 @@ class Incompact3d(Application):
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     f'{execute_location}/adios2_config.xml')
-        if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
+        if self.config['engine'].lower() in ['hermes']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
                                     f'{execute_location}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
@@ -136,8 +123,7 @@ class Incompact3d(Application):
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env,
-                         cwd=execute_location
+                         env=self.mod_env
                          ))
         pass
 

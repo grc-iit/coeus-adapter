@@ -1,0 +1,30 @@
+config:
+  name: Incompact3d
+  env: 
+  pkgs:
+    - pkg_type: mm_kmeans_df
+      pkg_name: mm_kmeans_df
+      window_size: 4g
+      df_size: 4g
+      nprocs: 1
+      ppn: 16
+      type: parquet
+      k: 1000
+    - pkg_type: mm_kmeans
+      pkg_name: mm_kmeans
+      path: ${HOME}/mm_data/parquet/*
+      window_size: 30g
+      api: spark
+      max_iter: 4
+      k: 8
+      do_dbg: False
+      dbg_port: 4001
+vars:
+  mm_kmeans_df.window_size: [16m, 64m, 128m, 1g, 2g, 4g]
+  mm_kmeans_df.df_size: [16m, 64m, 128m, 1g, 2g, 4g]
+  spark_cluster.num_nodes: [4]
+loop:
+  - [mm_kmeans_df.window_size, mm_kmeans_df.df_size]
+  - [spark_cluster.num_nodes]
+repeat: 1
+output: "${SHARED_DIR}/output_multi"
