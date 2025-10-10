@@ -38,12 +38,6 @@ class Incompact3d(Application):
                 'default': 16,
             },
             {
-                'name': 'output_folder',
-                'msg': 'The location of output',
-                'type': str,
-                'default': None,
-            },
-            {
                 'name': 'engine',
                 'msg': 'Engine to be used',
                 'choices': ['bp5', 'hermes'],
@@ -64,6 +58,18 @@ class Incompact3d(Application):
                 'type': str,
                 'default': 'benchmark_metadata.db',
             },
+            {
+                'name': 'total_step',
+                'msg': 'Total number of steps to be simulated',
+                'type': int,
+                'default': 1000,
+            },
+            {
+                'name': 'io_frequency',
+                'msg': 'Frequency of I/O operations',
+                'type': int,
+                'default': 1,
+            }
             {
                 'name': 'output_location',
                 'msg': 'Path where the output file will be stored',
@@ -87,27 +93,23 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        execute_location = os.path.join(
-            self.config['output_folder'],
-            'examples',
-            self.config['benchmarks']
-        )
+        
 
 # Explicitly check if the directory exists, then create it
-        if not os.path.exists(execute_location):
-            os.makedirs(execute_location)
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    f'{execute_location}/adios2_config.xml')
+                                    f'{self.config['output_location']}/adios2_config.xml')
         if self.config['engine'].lower() in ['hermes']:
             self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{execute_location}/adios2_config.xml', replacements={
+                                    f'{self.config['output_location']}/adios2_config.xml', replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
-        input_i3d = f"{self.config['Incompact3D_location']}/examples/{self.config['benchmarks']}/{self.config['script_file_name']}"
+        input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks']}/input.i3d"
         self.copy_template_file(f'{input_i3d}',
-                                f'{execute_location}/input.i3d')
+                                f'{self.config['output_location']}/input.i3d', replacements={
+                'total_step': self.config['total_step'],
+                'io_frequency': self.config['io_frequency'],})
         pass
 
     def start(self):
@@ -117,13 +119,12 @@ class Incompact3d(Application):
 
         :return: None
         """
-
-        execute_location=self.config['output_folder']+ '/examples/' + self.config['benchmarks']
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
-                         env=self.mod_env
+                         env=self.mod_env,
+                         cwd=sself.config['output_location']
                          ))
         pass
 
