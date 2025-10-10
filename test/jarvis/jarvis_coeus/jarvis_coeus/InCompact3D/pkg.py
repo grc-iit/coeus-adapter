@@ -6,7 +6,7 @@ from jarvis_cd.basic.pkg import Application
 from jarvis_util import *
 import os
 
-class Incompact3d(Application):
+class InCompact3D(Application):
     """
     This class provides methods to launch the Incompact3d application.
     """

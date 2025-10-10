@@ -1,7 +1,7 @@
 name: incompact3D
 env: incompact3D_env
 pkgs:
-  - pkg_type: incompact3d
+  - pkg_type: InCompact3D
     pkg_name: InCompact3D
     db_path: benchmark_metadata.db
     dbg_port: 4000
