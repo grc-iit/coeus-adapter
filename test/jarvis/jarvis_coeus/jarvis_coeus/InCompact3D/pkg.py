@@ -69,7 +69,7 @@ class Incompact3d(Application):
                 'msg': 'Frequency of I/O operations',
                 'type': int,
                 'default': 1,
-            }
+            },
             {
                 'name': 'output_location',
                 'msg': 'Path where the output file will be stored',
