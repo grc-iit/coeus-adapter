@@ -46,11 +46,11 @@ class Incompact3d(Application):
             },
             {
                 'name': 'benchmarks',
-                'msg': 'The name of benchmarks ',
-                'choices': ['ABL', 'cavity', 'channel', 'cylinder', 'Pipe_Flow',
+                'msg': 'The name of benchmarks',
+                'choices': ['ABL', 'cavity', 'channel', 'cylinder', 'pipe_flow',
                             'TBL',  'TGV'],
                 'type': str,
-                'default': 'Cavity',
+                'default': 'TGV',
             },
             {
                 'name': 'db_path',
@@ -105,7 +105,7 @@ class Incompact3d(Application):
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
-        input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks']}/input.i3d"
+        input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
         self.copy_template_file(f'{input_i3d}',
                                 f'{self.config['output_location']}/input.i3d', replacements={
                 'total_step': self.config['total_step'],
