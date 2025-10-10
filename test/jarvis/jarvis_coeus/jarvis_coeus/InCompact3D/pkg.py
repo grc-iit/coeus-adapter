@@ -93,9 +93,7 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        
-
-# Explicitly check if the directory exists, then create it
+        # Explicitly check if the directory exists, then create it
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                     f'{self.config['output_location']}/adios2_config.xml')
@@ -124,7 +122,7 @@ class Incompact3d(Application):
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
-                         cwd=sself.config['output_location']
+                         cwd=self.config['output_location']
                          ))
         pass
 
@@ -144,9 +142,8 @@ class Incompact3d(Application):
 
         :return: None
         """
-        output_file= self.config['incompact3D_location']+ '/examples/' + self.config['benchmarks'] +'/data.bp5'
+        output_file = self.config['output_location'] + '/data.bp5'
         output_files = [output_file,
-                       self.config['checkpoint_output'],
                        self.config['db_path']
                        ]
 
