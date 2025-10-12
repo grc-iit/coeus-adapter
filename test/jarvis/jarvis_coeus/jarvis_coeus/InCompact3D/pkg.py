@@ -93,19 +93,24 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        # Explicitly check if the directory exists, then create it
+        # Create output directory if it doesn't exist
+        os.makedirs(self.config['output_location'], exist_ok=True)
+        
+        # Copy configuration files based on engine type
         if self.config['engine'].lower() == 'bp5':
-            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    f'{self.config['output_location']}/adios2_config.xml')
+            self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
+                        f"{self.config['output_location']}/adios2_config.xml")
         if self.config['engine'].lower() in ['hermes']:
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{self.config['output_location']}/adios2_config.xml', replacements={
+            self.copy_template_file(f"{self.pkg_dir}/config/hermes.xml",
+                                    f"{self.config['output_location']}/adios2_config.xml", replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
+        
+        # Copy input file template
         input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
         self.copy_template_file(f'{input_i3d}',
-                                f'{self.config['output_location']}/input.i3d', replacements={
+                                f"{self.config['output_location']}/input.i3d", replacements={
                 'total_step': self.config['total_step'],
                 'io_frequency': self.config['io_frequency'],})
         pass
@@ -142,7 +147,7 @@ class Incompact3d(Application):
 
         :return: None
         """
-        output_file = self.config['output_location'] + '/data.bp5'
+        output_file = f"{self.config['output_location']}/data.bp5"
         output_files = [output_file,
                        self.config['db_path']
                        ]
