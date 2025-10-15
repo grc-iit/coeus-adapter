@@ -107,7 +107,7 @@ class Adios2Coeus(CMakePackage, CudaPackage, ROCmPackage):
     # Optional language bindings, C++11 and C always provided
     variant("kokkos", default=False, when="@2.9:", description="Enable Kokkos support")
     variant("sycl", default=False, when="@2.10:", description="Enable SYCL support")
-    variant("python", default=True, description="Enable the Python bindings")
+    variant("python", default=False, description="Enable the Python bindings")
     variant("fortran", default=True, description="Enable the Fortran bindings")
 
     # Requires mature C++11 implementations
