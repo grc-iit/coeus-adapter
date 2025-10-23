@@ -3,7 +3,7 @@
 # Define variables
 io_time=(2 4 8 16 32 64 128 256 512)
 nprocs_values=(1 2 4 8 16 32 64 128 256)
-location="/path/to/storage"
+location="/mnt/ssd/hxu40/"
 report="/path/to/report/file"
 for i in ${!io_time[@]}; do
   nprocs=${nprocs_values[$i]}
