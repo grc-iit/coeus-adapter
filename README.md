@@ -6,7 +6,7 @@ An ADIOS plugin adapter that seamlessly connects ADIOS2 to Hermes, enabling enha
 
 COEUS-Adapter bridges ADIOS2 and Hermes through the ADIOS plugin interface, providing advanced multi-tiered I/O capabilities with support for in-situ derived variable computation. It enables applications to leverage Hermes's multi-tiered buffering system while benefiting from ADIOS2's I/O abstractions.
 
-![Architecture](./assets/images/architecture.png)
+<img src="./assets/images/architecture.png" alt="Architecture" width="400">
 
 ## Features
 
@@ -22,7 +22,7 @@ COEUS-Adapter bridges ADIOS2 and Hermes through the ADIOS plugin interface, prov
 
 - Spack v0.23.1 or earlier (v1.0.0+ not supported)
 - Hermes
-- ADIOS2 with COEUS extensions
+- ADIOS2 
 
 ### Installation
 
@@ -31,11 +31,6 @@ For detailed installation instructions, see the [installation guide](install.md)
 **Quick Install:**
 
 ```bash
-# Install ADIOS2 with COEUS extensions
-spack install adios2
-
-# Install Hermes
-spack install hermes
 
 # Load dependencies
 spack load hermes
@@ -51,11 +46,8 @@ make -j8
 
 ## Usage
 
-COEUS-Adapter works automatically as an ADIOS2 plugin. Applications using ADIOS2 can leverage COEUS by configuring it in their ADIOS2 XML or programmatically setting the engine type.
+COEUS-Adapter works automatically as an ADIOS2 plugin. Applications using ADIOS2 can leverage COEUS by configuring it in their ADIOS2 XML.
 
-### Example Configuration
-
-Configure your ADIOS2 application to use the COEUS engine by simplily specifying it in your ADIOS2 XML configuration.
 
 ## Supported Applications
 
@@ -69,12 +61,7 @@ COEUS-Adapter has been tested with the following scientific computing applicatio
 | Incompact3D                    | [test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D](./test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D)           | Q-criterion                  |
 | OpenFOAM                       | [test/jarvis/jarvis_coeus/jarvis_coeus/openform](./test/jarvis/jarvis_coeus/jarvis_coeus/openform)                 | -                            |
 
-## Configuration
 
-COEUS-Adapter can be configured through CMake options:
-
-- `-Dmeta_enabled=ON`: Enable metadata features
-- `-Ddebug_mode=ON`: Enable debug mode with detailed logging
 
 ## Documentation
 
