@@ -122,6 +122,13 @@ class Incompact3d(Application):
 
         :return: None
         """
+        # Set OpenMPI MCA parameters as environment variables
+        os.environ['OMPI_MCA_pml'] = 'ob1'
+        os.environ['OMPI_MCA_btl'] = 'tcp,self'
+        os.environ['OMPI_MCA_osc'] = '^ucx'
+        os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
+        os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+        
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
@@ -129,7 +136,6 @@ class Incompact3d(Application):
                          env=self.mod_env,
                          cwd=self.config['output_location']
                          ))
-        pass
 
     def stop(self):
         """
