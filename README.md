@@ -6,7 +6,7 @@ An ADIOS plugin adapter that seamlessly connects ADIOS2 to Hermes, enabling enha
 
 COEUS-Adapter bridges ADIOS2 and Hermes through the ADIOS plugin interface, providing advanced multi-tiered I/O capabilities with support for in-situ derived variable computation. It enables applications to leverage Hermes's multi-tiered buffering system while benefiting from ADIOS2's I/O abstractions.
 
-![Architecture](./assets/images/Architecture.png)
+![Architecture](./assets/images/architecture.png)
 
 ## Features
 
