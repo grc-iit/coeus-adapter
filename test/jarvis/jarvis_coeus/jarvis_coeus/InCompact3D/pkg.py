@@ -47,10 +47,10 @@ class Incompact3d(Application):
             {
                 'name': 'benchmarks',
                 'msg': 'The name of benchmarks',
-                'choices': ['ABL', 'cavity', 'channel', 'cylinder', 'pipe_flow',
-                            'TBL',  'TGV'],
+                'choices': ['abl', 'cavity', 'channel', 'cylinder', 'pipe_flow',
+                            'tbl',  'tgv', 'mdh', 'periodic', 'partical', 'mixing_layer'],
                 'type': str,
-                'default': 'TGV',
+                'default': 'tgv',
             },
             {
                 'name': 'db_path',
