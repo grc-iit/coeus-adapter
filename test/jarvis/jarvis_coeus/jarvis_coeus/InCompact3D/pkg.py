@@ -44,6 +44,7 @@ class Incompact3d(Application):
                 'type': str,
                 'default': 'bp5',
             },
+            # Note: 'partical' is kept as-is to match existing directory name
             {
                 'name': 'benchmarks',
                 'msg': 'The name of benchmarks',
@@ -72,9 +73,9 @@ class Incompact3d(Application):
             },
             {
                 'name': 'output_location',
-                'msg': 'Path where the output file will be stored',
+                'msg': 'Path where the output directory will be stored',
                 'type': str,
-                'default': 'data.bp5',
+                'default': 'output',
             },
             {
                 'name': 'logs',
@@ -100,7 +101,7 @@ class Incompact3d(Application):
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
                         f"{self.config['output_location']}/adios2_config.xml")
-        if self.config['engine'].lower() in ['hermes']:
+        elif self.config['engine'].lower() == 'hermes':
             self.copy_template_file(f"{self.pkg_dir}/config/hermes.xml",
                                     f"{self.config['output_location']}/adios2_config.xml", replacements={
                     'ppn': self.config['ppn'],
@@ -126,6 +127,8 @@ class Incompact3d(Application):
         os.environ['OMPI_MCA_pml'] = 'ob1'
         os.environ['OMPI_MCA_btl'] = 'tcp,self'
         os.environ['OMPI_MCA_osc'] = '^ucx'
+        # Note: Network interface 'eno1' is hardcoded - may need to be configurable
+        # for different systems. Consider adding network_interface parameter to config.
         os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
         os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
         
@@ -154,9 +157,12 @@ class Incompact3d(Application):
         :return: None
         """
         output_file = f"{self.config['output_location']}/data.bp5"
-        output_files = [output_file,
-                       self.config['db_path']
-                       ]
+        output_files = [
+            output_file,
+            f"{self.config['output_location']}/adios2_config.xml",
+            f"{self.config['output_location']}/input.i3d",
+            self.config['db_path']
+        ]
 
         print(f'Removing {output_files}')
         Rm(output_files, PsshExecInfo(hostfile=self.jarvis.hostfile))
