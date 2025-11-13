@@ -546,7 +546,13 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
 
   std::string name = variable.m_Name;
+  auto start_time = std::chrono::high_resolution_clock::now();
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+  if (rank == 0) {
+    std::cout << "Rank 0 - Hermes->bkt->Put (DoPutSync) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+  }
 
 
 #ifdef Meta_enabled
@@ -583,22 +589,28 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
 
+  auto start_time = std::chrono::high_resolution_clock::now();
   Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+  if (rank == 0) {
+    std::cout << "Rank 0 - Hermes->bkt->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+  }
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(Hermes->bkt->name, name);
-  auto start_time = std::chrono::high_resolution_clock::now();
+  auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
        client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+  auto end_time_md = std::chrono::high_resolution_clock::now();
+  auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
   if (rank == 0) {
-    std::cout << "Rank 0 - Mdm_insertRoot (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    std::cout << "Rank 0 - Mdm_insertRoot (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processo r_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
@@ -616,8 +628,14 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-    Hermes->bkt->Put(name, total_count * sizeof(T), values);
     auto start_time = std::chrono::high_resolution_clock::now();
+    Hermes->bkt->Put(name, total_count * sizeof(T), values);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+    if (rank == 0) {
+      std::cout << "Rank 0 - Hermes->bkt->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
+    }
+    start_time = std::chrono::high_resolution_clock::now();
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
     auto end_time = std::chrono::high_resolution_clock::now();
