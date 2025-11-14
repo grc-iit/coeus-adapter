@@ -5,55 +5,58 @@
 !===================
 
 ! Flow type (1=Lock-exchange, 2=TGV, 3=Channel, 4=Periodic hill, 5=Cylinder, 6=dbg-schemes)
-itype = 3
+itype = 2
 
 ! Domain decomposition
-p_row=0                ! Row partition
+p_row=0               ! Row partition
 p_col=0               ! Column partition
 
 ! Mesh
-nx=256                ! X-direction nodes
-ny=129                ! Y-direction nodes
-nz=192                ! Z-direction nodes
-istret = 2            ! y mesh refinement (0:no, 1:center, 2:both sides, 3:bottom)
+nx=512                ! X-direction nodes
+ny=512                ! Y-direction nodes
+nz=512                ! Z-direction nodes
+istret = 0            ! y mesh refinement (0:no, 1:center, 2:both sides, 3:bottom)
 beta = 0.259065151    ! Refinement parameter (beta)
 
 ! Domain
-xlx = 12.56637        ! Lx (Size of the box in x-direction)
-yly = 2.0             ! Ly (Size of the box in y-direction)
-zlz = 6.2831853       ! Lz (Size of the box in z-direction)
+xlx = 6.28318530717958 ! Lx (Size of the box in x-direction)
+yly = 6.28318530717958 ! Ly (Size of the boy in y-direction)
+zlz = 6.28318530717958 ! Lz (Size of the boz in z-direction)
+
+! Boundary conditions
+nclx1 = 0 
+nclxn = 0 
+ncly1 = 0 
+nclyn = 0 
+nclz1 = 0 
+nclzn = 0 
 
 ! Flow parameters
-re  = 3457.5          ! nu=1/re (Kinematic Viscosity)
-cpg = F               ! if cpg=T, then re is friction Reynolds number
+iin = 1               ! Inflow conditions (1: classic, 2: turbinit)
+re = 1600.             ! nu=1/re (Kinematic Viscosity)
+u1 = 8.               ! u1 (max velocity) (for inflow condition)
+u2 = 8.               ! u2 (min velocity) (for inflow condition)
+init_noise  = 0.0     ! Turbulence intensity (1=100%) !! Initial condition
+inflow_noise = 0.0    ! Turbulence intensity (1=100%) !! Inflow condition
 
 ! Time stepping
-dt = 0.005            ! Time step
-ifirst = 1            ! First iteration
-ilast  = ##total_step##        ! Last iteration
+dt = 0.001            ! Time step
+ifirst= 1            ! First iteration
+ilast = ##total_step##         ! Last iteration
 
 ! Enable modelling tools
 ilesmod=0             ! if 0 then DNS
-numscalar = 0         ! How many scalars? (Set to zero to disable scalars)
+iscalar=0             ! If iscalar=0 (no scalar), if iscalar=1 (scalar)
 iibm=0                ! Flag for immersed boundary method
 
-! Boundary and initial conditions
-iin = 4               ! Inflow conditions (1: classic, 2: turbinit, 4: SEM)
-u1  = 1.              ! u1 (max velocity) (for inflow condition)
-u2  = 1.              ! u2 (min velocity) (for inflow condition)
-init_noise = 0.03     ! Turbulence intensity (1=100%) !! Initial condition
-inflow_noise = 0.0    ! Turbulence intensity (1=100%) !! Inflow condition
-idir_stream  = 1      ! Index of the streamwise direction (1=X, 3=Z, 2 not available)
+! Enable io
+ivisu=1               ! Store snapshots
+ipost=1               ! Do online postprocessing
 
-nclx1 = 0
-nclxn = 0
-ncly1 = 2
-nclyn = 2
-nclz1 = 0
-nclzn = 0
+ifilter=0
+C_filter=0.49
 
-mhd_active = .false.
-particle_active =.true.
+particle_active=.true.
 /End
 
 !====================
@@ -63,15 +66,9 @@ particle_active =.true.
 ! Spatial derivatives
 ifirstder = 4         ! (1->2nd central, 2->4th central, 3->4th compact, 4-> 6th compact)
 isecondder = 5        ! (1->2nd central, 2->4th central, 3->4th compact, 4-> 6th compact, 5->hyperviscous 6th)
-ipinter = 3           ! interpolation scheme (1: classic, 2: optimized, 3: optimized agressive)
 
 ! Time scheme
-iimplicit = 0
-itimescheme = 5       ! Time integration scheme (1->Euler,2->AB2, 3->AB3, 4->AB4,5->RK3,6->RK4, 7-->CN2+AB3)
-
-! Dissipation control
-nu0nu = 4.0           ! Ratio between hyperviscosity/viscosity at nu
-cnu = 0.44            ! Ratio between hypervisvosity at k_m=2/3pi and k_c= pi
+itimescheme = 5       ! Time integration scheme (1->Euler,2->AB2, 3->AB3, 4->AB4,5->RK3,6->RK4)
 
 /End
 
@@ -80,11 +77,11 @@ cnu = 0.44            ! Ratio between hypervisvosity at k_m=2/3pi and k_c= pi
 !=================
 
 ! Basic I/O
-irestart = 0           ! Read initial flow field 
-icheckpoint = 10000    ! Frequency for writing backup file
-ioutput = ##io_frequency##          ! Frequency for visualization
-ilist    = 1        ! Frequency for the output to screen
-nvisu = 1              ! Size for visualisation collection
+irestart = 0          ! Read initial flow field ?
+icheckpoint = 1000     ! Frequency for writing backup file
+ioutput = ##io_frequency##         ! Frequency for visualization
+ilist = 1             ! Frequency for the output
+nvisu = 1             ! Size for visualisation collection
 
 /End
 
@@ -92,29 +89,7 @@ nvisu = 1              ! Size for visualisation collection
 &Statistics
 !=================
 
-wrotation = 0.d0       ! rotation speed to trigger turbulence
-spinup_time = 0        ! number of time steps with a rotation to trigger turbulence
-nstat = 1              ! Size arrays for statistic collection
-initstat = 10000000    ! Time steps after which statistics are collected
-
-/End
-
-!########################
-! OPTIONAL PARAMETERS
-!#######################
-
-!================
-&ScalarParam
-!================
-
-Sc(1) = 1.0            ! Schmidt number
-
-nclxS1 = 0
-nclxSn = 0
-nclyS1 = 2
-nclySn = 2
-nclzS1 = 0
-nclzSn = 0
+nstat = 1             ! Size arrays for statistic collection
 
 /End
 
@@ -122,8 +97,10 @@ nclzSn = 0
 &MHDParam
 !====================
 
-mhd_equation = .false.
-hartmann = 4.d0
+mhd_active = .false.
+mhd_equation=.true.
+Stuart = 100.d0
+Rem    = 100.d0
 
 /End
 
@@ -131,34 +108,27 @@ hartmann = 4.d0
 &ParTrack
 !====================
 
-bc_particle = 'outflow','outflow','reflective','reflective','periodic','periodic'
+bc_particle = 'periodic','periodic','periodic','periodic','periodic','periodic' 
 initype_particle = 'uniform'
-n_particles = 64
-particle_inject_period = 0.01
+n_particles = 512
+particle_inject_period = 0.0
 
 /End
 
+!#######################
+! OPTIONAL PARAMETERS
+!#######################
 
-!================
+!=================
 &LESModel
-!================
-
-iles = 0              ! LES Model (1: Phys Smag, 2: Phys WALE, 3: Phys dyn. Smag, 4: iSVV, 5: dyn SEV)
-smagcst = 0.14        ! Smagorinsky constant
-walecst = 0.5         ! WALES Model Coefficient
-iwall = 0             ! Enable wall modeling
-
+!=================
+jles=0
+smagcst=0.1
+walecst=0.5 
+iwall=0
 /End
 
-!================
-&WallModel
-!================
-
-SmagWallDamp = 0      ! Smagorinsky damping function for ABL if 1
-
-/End
-
+!=================
 &CASE
+!=================
 /End
-
-
