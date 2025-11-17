@@ -64,12 +64,11 @@ class Incompact3dPost(Application):
             },
             {
                 'name': 'benchmarks',
-                'msg': 'The name of benchmarks ',
-                'choices': ['ABL-Atmospheric-Boundary-Layer', 'Channel', 'Cylinder-wake', 'Mixing-layer', 'Pipe-Flow',
-                            'TBL-Turbulent-Boundary-Layer', 'Gravity-current',  'Particle-Tracking', 'Sandbox', 'TGV-Taylor-Green-vortex',
-                            'Cavity', 'MHD', 'Periodic-hill', 'Sphere',  'Wind-Turbine'],
+                'msg': 'The name of benchmarks',
+                'choices': ['abl', 'cavity', 'channel', 'cylinder', 'pipe_flow',
+                            'tbl',  'tgv', 'mdh', 'periodic', 'partical', 'mixing_layer'],
                 'type': str,
-                'default': 'Cavity',
+                'default': 'tgv',
             },
             {
                 'name': 'out_filename',
@@ -77,12 +76,7 @@ class Incompact3dPost(Application):
                 'type': str,
                 'default': 'out.bp5',
             },
-            {
-                'name': 'derived_variable_type',
-                'msg': 'the type of derived variable in simulation',
-                'type': str,
-                'default': None,
-            },
+            
 
         ]
 
@@ -94,17 +88,13 @@ class Incompact3dPost(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        execute_location = os.path.join(
-            self.config['output_folder'],
-            'examples',
-            self.config['benchmarks']
-        )
+        
         if self.config['engine'].lower() == 'bp5':
-            self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
-                                    f'{execute_location}/adios2_config.xml')
-        if self.config['engine'].lower() in ['hermes', 'hermes_derived']:
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
-                                    f'{execute_location}/adios2_config.xml', replacements={
+            self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
+                        f"{self.config['in_filename']}/adios2_config.xml")
+        elif self.config['engine'].lower() == 'hermes':
+            self.copy_template_file(f"{self.pkg_dir}/config/hermes.xml",
+                                    f"{self.config['in_filename']}/adios2_config.xml", replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
@@ -117,18 +107,24 @@ class Incompact3dPost(Application):
 
         :return: None
         """
-        in_file = self.config['in_filename']
-        out_file = self.config['out_filename']
-        execute_location=self.config['output_folder']+ '/examples/' + self.config['benchmarks']
-        # Exec(f'inCompact3D_analysis {in_file} {out_file}',
-        #      MpiExecInfo(nprocs=self.config['nprocs'],
-        #                  ppn=self.config['ppn'],
-        #                  hostfile=self.jarvis.hostfile,
-        #                  env=self.mod_env,
-        #                  cwd=execute_location
-        #                  ))
-        os.chdir(execute_location)
-        Exec(f'inCompact3D_analysis {in_file} {out_file}')
+        os.environ['OMPI_MCA_pml'] = 'ob1'
+        os.environ['OMPI_MCA_btl'] = 'tcp,self'
+        os.environ['OMPI_MCA_osc'] = '^ucx'
+        # Note: Network interface 'eno1' is hardcoded - may need to be configurable
+        # for different systems. Consider adding network_interface parameter to config.
+        os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
+        os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+        in_file = self.config['in_filename'] + '/.bp5'
+        out_file = self.config['out_filename'] + '/.bp5'
+        execute_location=self.config['in_filename']
+        Exec(f'inCompact3D_analysis {in_file} {out_file}',
+             MpiExecInfo(nprocs=self.config['nprocs'],
+                         ppn=self.config['ppn'],
+                         hostfile=self.jarvis.hostfile,
+                         env=self.mod_env,
+                         cwd=execute_location
+                         ))
+        
         pass
 
     def stop(self):
