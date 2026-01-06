@@ -3,10 +3,9 @@ This module provides classes and methods to launch the Gray Scott application.
 Gray Scott is a 3D 7-point stencil code for modeling the diffusion of two
 substances.
 """
-from jarvis_cd.core.pkg import Application
-from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm
-import json
-import os
+from jarvis_cd.basic.pkg import Application
+from jarvis_util import *
+import pathlib
 
 
 class Adios2GrayScott(Application):
@@ -201,7 +200,7 @@ class Adios2GrayScott(Application):
             self.config['out_file'] = os.path.join(adios_dir,
                                                  'data/out.bp')
             Mkdir(adios_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                          env=self.env)).run()
+                                          env=self.env))
         settings_json = {
             'L': self.config['L'],
             'Du': self.config['Du'],
@@ -226,11 +225,9 @@ class Adios2GrayScott(Application):
         output_dir = os.path.dirname(self.config['out_file'])
         db_dir = os.path.dirname(self.config['db_path'])
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                       env=self.env)).run()
+                                       env=self.env))
 
-        # Save settings JSON file
-        with open(self.settings_json_path, 'w') as f:
-            json.dump(settings_json, f, indent=2)
+        JsonFile(self.settings_json_path).save(settings_json)
         print(f"Using engine {self.config['engine']}")
         if self.config['engine'].lower() in ['bp5', 'bp5_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
@@ -267,16 +264,17 @@ class Adios2GrayScott(Application):
                              ppn=self.config['ppn'],
                              hostfile=self.jarvis.hostfile,
                              env=self.mod_env,
-                             do_dbg=self.config.get('do_dbg', False),
-                             dbg_port=self.config.get('dbg_port', None)
-                             )).run()
+                             do_dbg=self.config['do_dbg'],
+                             dbg_port=self.config['dbg_port']
+                             ))
         elif self.config['engine'].lower() in ['hermes', 'bp5']:
+
             derived = 0
             Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
                  MpiExecInfo(nprocs=self.config['nprocs'],
                              ppn=self.config['ppn'],
                              hostfile=self.jarvis.hostfile,
-                             env=self.mod_env)).run()
+                             env=self.mod_env))
 
 
     def stop(self):
@@ -301,4 +299,4 @@ class Adios2GrayScott(Application):
                        ]
 
         print(f'Removing {output_file}')
-        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile)).run()
+        Rm(output_file, PsshExecInfo(hostfile=self.jarvis.hostfile))
