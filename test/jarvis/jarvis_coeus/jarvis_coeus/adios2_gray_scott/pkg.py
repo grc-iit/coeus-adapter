@@ -99,9 +99,9 @@ class Adios2GrayScott(Application):
             },
             {
                 'name': 'out_file',
-                'msg': 'Absolute path to output file',
+                'msg': 'Absolute path to output file (optional, defaults to shared_dir/gray-scott-output/data/out.bp)',
                 'type': str,
-                'default': None,
+                'default': '',
             },
             {
                 'name': 'checkpoint',
@@ -196,7 +196,7 @@ class Adios2GrayScott(Application):
         :return: None
         """
         self.update_config(kwargs, rebuild=False)
-        if self.config['out_file'] is None:
+        if not self.config.get('out_file') or self.config['out_file'] == '':
             adios_dir = os.path.join(self.shared_dir, 'gray-scott-output')
             self.config['out_file'] = os.path.join(adios_dir,
                                                  'data/out.bp')
