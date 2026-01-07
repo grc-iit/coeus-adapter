@@ -15,12 +15,12 @@ class Adios2GrayScott(Application):
     """
     def _init(self):
         """
-        Initialize paths
+        Initialize paths (will be set in _configure when directories are available)
         """
-        self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
-        self.settings_json_path = f'{self.shared_dir}/settings-files.json'
-        self.var_json_path = f'{self.shared_dir}/var.json'
-        self.operator_json_path = f'{self.shared_dir}/operator.json'
+        self.adios2_xml_path = None
+        self.settings_json_path = None
+        self.var_json_path = None
+        self.operator_json_path = None
 
     def _configure_menu(self):
         """
@@ -195,6 +195,16 @@ class Adios2GrayScott(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
+        # Ensure directories are set up before using them
+        self._ensure_directories()
+        
+        # Initialize paths now that shared_dir is available
+        if self.adios2_xml_path is None:
+            self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
+            self.settings_json_path = f'{self.shared_dir}/settings-files.json'
+            self.var_json_path = f'{self.shared_dir}/var.json'
+            self.operator_json_path = f'{self.shared_dir}/operator.json'
+        
         self.update_config(kwargs, rebuild=False)
         if not self.config.get('out_file') or self.config['out_file'] == '':
             adios_dir = os.path.join(self.shared_dir, 'gray-scott-output')
