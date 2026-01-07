@@ -4,7 +4,7 @@ Gray Scott is a 3D 7-point stencil code for modeling the diffusion of two
 substances.
 """
 from jarvis_cd.core.pkg import Application
-from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm
+from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm, PscpExec, PscpExecInfo
 import json
 import os
 
@@ -238,9 +238,36 @@ class Adios2GrayScott(Application):
         Mkdir([output_dir, db_dir], PsshExecInfo(hostfile=self.jarvis.hostfile,
                                        env=self.env)).run()
 
+        # Ensure shared_dir exists before writing JSON file
+        Mkdir(self.shared_dir, PsshExecInfo(hostfile=self.jarvis.hostfile,
+                                           env=self.env)).run()
+
         # Save settings JSON file
-        with open(self.settings_json_path, 'w') as f:
-            json.dump(settings_json, f, indent=2)
+        try:
+            with open(self.settings_json_path, 'w') as f:
+                json.dump(settings_json, f, indent=2)
+                f.flush()  # Ensure data is written to disk
+                os.fsync(f.fileno())  # Force write to disk
+        except Exception as e:
+            raise IOError(f"Failed to write settings JSON file to {self.settings_json_path}: {e}")
+        
+        # Verify the file was created and has content
+        if not os.path.exists(self.settings_json_path):
+            raise FileNotFoundError(f"Failed to create settings JSON file: {self.settings_json_path}")
+        
+        # Check file size to ensure it's not empty
+        file_size = os.path.getsize(self.settings_json_path)
+        if file_size == 0:
+            raise ValueError(f"Settings JSON file is empty: {self.settings_json_path}")
+        
+        # Verify JSON is valid by trying to read it back
+        try:
+            with open(self.settings_json_path, 'r') as f:
+                json.load(f)  # Validate JSON syntax
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Settings JSON file contains invalid JSON: {self.settings_json_path}. Error: {e}")
+        
+        print(f"Created settings JSON file: {self.settings_json_path} ({file_size} bytes)")
         print(f"Using engine {self.config['engine']}")
         if self.config['engine'].lower() in ['bp5', 'bp5_derived']:
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
@@ -269,6 +296,26 @@ class Adios2GrayScott(Application):
 
         :return: None
         """
+        # Ensure paths are initialized
+        if self.settings_json_path is None:
+            self._ensure_directories()
+            self.adios2_xml_path = f'{self.shared_dir}/adios2.xml'
+            self.settings_json_path = f'{self.shared_dir}/settings-files.json'
+        
+        # Verify JSON file exists before running
+        if not os.path.exists(self.settings_json_path):
+            raise FileNotFoundError(
+                f"Settings JSON file not found: {self.settings_json_path}. "
+                f"Please run 'jarvis ppl env build' or configure the package first."
+            )
+        
+        # Verify JSON file is not empty
+        if os.path.getsize(self.settings_json_path) == 0:
+            raise ValueError(
+                f"Settings JSON file is empty: {self.settings_json_path}. "
+                f"Please reconfigure the package."
+            )
+        
         # print(self.env['HERMES_CLIENT_CONF'])
         if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
             derived = 1
