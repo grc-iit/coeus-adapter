@@ -106,17 +106,7 @@ RUN /home/iowarp/miniconda3/bin/conda tos accept --override-channels --channel h
     nlohmann_json \
     && /home/iowarp/miniconda3/bin/conda clean -ya
 
-# ------------------------------------------------------------
-# Install runtime-deployment
-# ------------------------------------------------------------
-#RUN cd /home/iowarp \
-#    && git clone https://github.com/iowarp/runtime-deployment.git \
-#    && cd runtime-deployment \
-#    && source /home/iowarp/miniconda3/etc/profile.d/conda.sh \
-#   && conda activate base \
-#    && pip install -e . -r requirements.txt \
-#    && jarvis init \
-#    && jarvis rg build
+
 
 # ------------------------------------------------------------
 # Python venv (optional)
@@ -184,12 +174,35 @@ RUN export SPACK_ROOT=/opt/spack && \
     spack spec wrf %gcc ^openmpi ^netcdf-c ^netcdf-fortran
 
 # ------------------------------------------------------------
+# Install runtime-deployment
+# ------------------------------------------------------------
+RUN cd /home/iowarp \
+    && git clone https://github.com/iowarp/runtime-deployment.git \
+    && cd runtime-deployment \
+    && bash -c " \
+        source /home/iowarp/miniconda3/etc/profile.d/conda.sh && \
+        conda activate base && \
+        pip install -e . -r requirements.txt && \
+        jarvis init && \
+        jarvis rg build \
+    "
 # Install adios via Spack
 # ------------------------------------------------------------
 RUN export SPACK_ROOT=/opt/spack && \
     . ${SPACK_ROOT}/share/spack/setup-env.sh && \
     spack install adios2
-
+# -------------------------------
+# Gray-Scott build with Spack
+# -------------------------------
+RUN cd /home/iowarp \
+    && git clone https://github.com/hxu65/gray-scott.git \
+    && source /opt/spack/share/spack/setup-env.sh \
+    && spack load adios2 \
+    && cd gray-scott \
+    && mkdir -p build \
+    && cd build \
+    && cmake ../ \
+    && make -j8
 # ------------------------------------------------------------
 # Final setup
 # ------------------------------------------------------------
