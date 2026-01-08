@@ -87,7 +87,14 @@ endif()
 # This is for compatability with SPACK
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Hermes
+# Chimaera (Context-Runtime) - for task management
+find_package(chimaera-core REQUIRED)
+find_package(chimaera-admin REQUIRED)
+message(STATUS "found Chimaera-core at ${chimaera-core_DIR}")
+include_directories(${chimaera-core_INCLUDE_DIRS})
+include_directories(${chimaera-admin_INCLUDE_DIRS})
+
+# Hermes - still needed for storage backend (but not for task management)
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")

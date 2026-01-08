@@ -26,17 +26,17 @@ class Hermes : public IHermes {
   Hermes() = default;
 
   bool connect() override {
-
-
     std::cout << "Entering connect" << std::endl;
     std::cout << "HERMES_CONF: " << getenv("HERMES_CONF") << std::endl;
 
+    // Initialize Hermes storage backend (not task management)
     TRANSPARENT_HERMES();
     hermes = HERMES;
-    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetGlobal(), "coeus_mdm");
-
-    HRUN_ADMIN->RegisterTaskLibRoot(hrun::DomainId::GetLocal(), "rankConsensus");
-    std::cout << "Registered task" << std::endl;
+    
+    // Note: Task management is now handled by Chimaera (Context-Runtime)
+    // Module registration is done via chimaera_mod.yaml files, not here
+    
+    std::cout << "Connected to Hermes storage backend" << std::endl;
     return hermes->IsInitialized();
   };
 

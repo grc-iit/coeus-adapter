@@ -28,7 +28,10 @@
 #include <adios2/core/VariableDerived.h>
 #include "adios2/helper/adiosType.h"
 #include "ContainerManager.h"
-#include "rankConsensus/rankConsensus.h"
+#include <chimaera/chimaera.h>
+#include <chimaera/admin/admin_client.h>
+#include "chimaera/coeus_mdm/coeus_mdm_client.h"
+#include "chimaera/rankConsensus/rankConsensus_client.h"
 #include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -36,7 +39,6 @@
 #include "common/YAMLParser.h"
 #include <common/ErrorCodes.h>
 #include "common/DbOperation.h"
-#include "coeus_mdm/coeus_mdm.h"
 #include "common/VariableMetadata.h"
 #include <comms/Bucket.h>
 #include <comms/Hermes.h>
@@ -55,11 +57,13 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string adiosOutput;
   int lookahead;
   int index = 0;
-  hrun::coeus_mdm::Client client;
+  chimaera::coeus_mdm::Client client;
   int num_layers = 4;
   int ppn;
   int limit = 0;
-  hrun::rankConsensus::Client rank_consensus;
+  chimaera::rankConsensus::Client rank_consensus;
+  chi::PoolId coeus_mdm_pool_id_;
+  chi::PoolId rankConsensus_pool_id_;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
   GlobalVariable globalData;

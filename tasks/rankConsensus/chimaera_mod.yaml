@@ -1,0 +1,18 @@
+# rankConsensus ChiMod Configuration
+# Rank assignment module for Coeus adapter
+
+module_name: rankConsensus
+namespace: chimaera
+version: 1.0.0
+
+# Inherited Methods
+kCreate: 0        # 0 - Create the container
+kDestroy: 1       # 1 - Destroy the container
+kNodeFailure: -1  # 2 - Not implemented
+kRecover: -1      # 3 - Not implemented
+kMigrate: -1      # 4 - Not implemented
+kUpgrade: -1      # 5 - Not implemented
+
+# Custom Methods (start from 10)
+kGetRank: 10      # Get rank assignment
+

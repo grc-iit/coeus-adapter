@@ -1,13 +1,83 @@
 #------------------------------------------------------------------------------
-# Build Hrun Admin Task Library
+# Build coeus_mdm Chimaera Module
 #------------------------------------------------------------------------------
-include_directories(
-    include
-    ${Hermes_DIR}/include
-)
-add_subdirectory(src)
 
-#-----------------------------------------------------------------------------
-# Install HRUN Admin Task Library Headers
-#-----------------------------------------------------------------------------
-install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
+cmake_minimum_required(VERSION 3.10)
+
+# Find Chimaera packages
+find_package(chimaera-core REQUIRED)
+find_package(chimaera-admin REQUIRED)
+
+# Find SQLite3
+find_package(SQLite3 REQUIRED)
+
+# Get the include directory for coeus_mdm
+set(COEUS_MDM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+#------------------------------------------------------------------------------
+# Create client library
+#------------------------------------------------------------------------------
+add_library(chimaera_coeus_mdm_client SHARED
+    src/coeus_mdm_client.cc
+)
+
+target_include_directories(chimaera_coeus_mdm_client PUBLIC
+    ${COEUS_MDM_INCLUDE_DIR}
+    ${chimaera-core_INCLUDE_DIRS}
+    ${chimaera-admin_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/include  # For common headers like DbOperation.h
+)
+
+target_link_libraries(chimaera_coeus_mdm_client
+    chimaera::cxx
+    chimaera::admin_client
+)
+
+#------------------------------------------------------------------------------
+# Create runtime library
+#------------------------------------------------------------------------------
+add_library(chimaera_coeus_mdm_runtime SHARED
+    src/coeus_mdm_runtime.cc
+    src/autogen/coeus_mdm_lib_exec.cc
+)
+
+target_include_directories(chimaera_coeus_mdm_runtime PUBLIC
+    ${COEUS_MDM_INCLUDE_DIR}
+    ${chimaera-core_INCLUDE_DIRS}
+    ${chimaera-admin_INCLUDE_DIRS}
+    ${SQLite3_INCLUDE_DIRS}
+    ${PROJECT_SOURCE_DIR}/include  # For common headers like DbOperation.h, SQlite.h
+)
+
+target_link_libraries(chimaera_coeus_mdm_runtime
+    chimaera::cxx
+    chimaera::admin_client
+    SQLite3::SQLite3
+)
+
+#------------------------------------------------------------------------------
+# Install libraries and headers
+#------------------------------------------------------------------------------
+install(
+    TARGETS
+    chimaera_coeus_mdm_client
+    chimaera_coeus_mdm_runtime
+    EXPORT
+    ${COEUS_EXPORTED_TARGETS}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+    RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+)
+
+install(
+    DIRECTORY include/
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+    FILES_MATCHING
+    PATTERN "*.h"
+)
+
+# Install chimaera_mod.yaml
+install(
+    FILES chimaera_mod.yaml
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/chimaera/modules/coeus_mdm
+)

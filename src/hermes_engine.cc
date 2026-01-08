@@ -11,6 +11,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/HermesEngine.h"
+#include <chimaera/chimaera.h>
+#include <chimaera/admin/admin_client.h>
 #include <chrono>
 
 namespace coeus {
@@ -55,6 +57,9 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
  * Initialize the engine.
  * */
 void HermesEngine::Init_() {
+  // Initialize rank to 0 (will be set by rank consensus)
+  rank = 0;
+  comm_size = 0;  // Initialize comm_size as well
 
   // initiate the trace manager
    std::random_device rd;  // Obtain a random seed
@@ -109,17 +114,25 @@ void HermesEngine::Init_() {
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-
-  // hermes setup
-  if (!Hermes->connect()) {
-    engine_logger->warn("Could not connect to Hermes (rank {})", rank);
+  // Initialize Chimaera (Context-Runtime) for task management
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+    engine_logger->error("Could not initialize Chimaera");
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
-  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+  std::cout << "Initialized Chimaera" << std::endl;
 
-  // add rank with consensus
-  rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
-  rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
+  // Create admin client (required for pool management)
+  chimaera::admin::Client admin_client(chi::kAdminPoolId);
+  admin_client.Create(chi::PoolQuery::Local(), "admin", chi::kAdminPoolId);
+
+  // Initialize rank consensus pool first to get rank
+  // Note: rank is initialized to 0 by default, but we'll get the actual rank from consensus
+  rankConsensus_pool_id_ = chi::PoolId(8001, 0);
+  rank_consensus = chimaera::rankConsensus::Client(rankConsensus_pool_id_);
+  rank_consensus.Create(chi::PoolQuery::Local(), "rankConsensus", rankConsensus_pool_id_);
+  rank = rank_consensus.GetRank(chi::PoolQuery::Local());
+  
+  std::cout << "Rank consensus initialized, assigned rank: " << rank << std::endl;
  
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
@@ -171,12 +184,17 @@ void HermesEngine::Init_() {
     }
   }
 
-  //Hermes setup
+  // Chimaera setup for metadata management
 
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
+    
+    // Create coeus_mdm pool
+    coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
+    client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
+    client.Create(chi::PoolQuery::Local(), "db_operation", coeus_mdm_pool_id_, db_file);
+    
     if (rank % ppn == 0) {
       db->createTables();
     }
@@ -569,11 +587,11 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+  client.Mdm_insert(chi::PoolQuery::Local(), db_op);
   auto end_time_md = std::chrono::high_resolution_clock::now();
   auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
-  if (rank == 0) {
-    std::cout << "Rank 0 - Mdm_insertRoot (DoPutSync) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    if (rank == 0) {
+    std::cout << "Rank 0 - Mdm_insert (DoPutSync) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 
 #ifdef Meta_enabled
@@ -603,11 +621,11 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(Hermes->bkt->name, name);
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+  client.Mdm_insert(chi::PoolQuery::Local(), db_op);
   auto end_time_md = std::chrono::high_resolution_clock::now();
   auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
   if (rank == 0) {
-    std::cout << "Rank 0 - Mdm_insertRoot (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processo r_name(), static_cast<int>(getpid()));
@@ -637,11 +655,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     }
     auto start_time_md = std::chrono::high_resolution_clock::now();
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
-    client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
+    client.Mdm_insert(chi::PoolQuery::Local(), db_op);
     auto end_time_md = std::chrono::high_resolution_clock::now();
     auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
     if (rank == 0) {
-      std::cout << "Rank 0 - Mdm_insertRoot (PutDerived) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
+      std::cout << "Rank 0 - Mdm_insert (PutDerived) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
     }
 
 }
