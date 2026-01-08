@@ -94,6 +94,10 @@ message(STATUS "found Chimaera-core at ${chimaera-core_DIR}")
 include_directories(${chimaera-core_INCLUDE_DIRS})
 include_directories(${chimaera-admin_INCLUDE_DIRS})
 
+# Context-Transfer-Engine (CTE) - for I/O placement
+find_package(wrp_cte_core REQUIRED)
+message(STATUS "found wrp_cte_core at ${wrp_cte_core_DIR}")
+
 # Hermes - still needed for storage backend (but not for task management)
 find_package(Hermes CONFIG REQUIRED)
 message(STATUS "found Hermes at ${Hermes_DIR}")

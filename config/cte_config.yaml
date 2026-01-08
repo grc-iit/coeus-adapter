@@ -1,0 +1,59 @@
+# Context-Transfer-Engine Configuration for Coeus-Adapter
+# This configuration defines storage targets and data placement strategies
+
+# Worker thread configuration
+worker_count: 4
+
+# Target management settings
+targets:
+  max_targets: 100
+  default_target_timeout_ms: 30000
+  auto_unregister_failed: true
+
+# Performance tuning
+performance:
+  target_stat_interval_ms: 5000      # Target statistics update interval
+  blob_cache_size_mb: 512            # Cache size for blob operations
+  max_concurrent_operations: 64     # Max concurrent I/O operations
+  score_threshold: 0.7               # Threshold for blob reorganization
+
+# Queue configuration for different operation types
+queues:
+  target_management:
+    lane_count: 2
+    priority: "low_latency"
+  
+  tag_management:
+    lane_count: 2
+    priority: "low_latency"
+  
+  blob_operations:
+    lane_count: 4
+    priority: "high_latency"
+  
+  stats:
+    lane_count: 1
+    priority: "high_latency"
+
+# Storage device configuration
+# Define multiple storage tiers for intelligent data placement
+storage:
+  # Primary high-performance storage (NVMe/SSD)
+  # Adjust path based on your system
+  - path: "/tmp/cte_primary"
+    bdev_type: "file"
+    capacity_limit: "10GB"
+    score: 0.9                # High tier for frequently accessed data
+  
+  # RAM-based cache (highest tier)
+  # Adjust path based on your system
+  - path: "/tmp/cte_cache"
+    bdev_type: "ram"
+    capacity_limit: "2GB"
+    score: 1.0                # Highest tier for fastest access
+
+# Data Placement Engine configuration
+# Options: "random", "round_robin", "max_bw"
+dpe:
+  dpe_type: "max_bw"  # Use maximum bandwidth target for optimal performance
+

@@ -4,7 +4,8 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Set sources
 #------------------------------------------------------------------------------
 set(HERMES_ENGINE_SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc)
+        ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/CTEBucket.cc)
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -39,7 +40,8 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         chimaera_coeus_mdm_client
         chimaera_coeus_mdm_runtime
         chimaera_rankConsensus_client
-        chimaera_rankConsensus_runtime)
+        chimaera_rankConsensus_runtime
+        wrp_cte::core_client)
 message(STATUS "Hermes_INCLUDE_DIR_2: ${Hermes_INCLUDE_DIR}")
 message(STATUS "Hermes_LIBRARIES_2 : ${Hermes_DIR}")
 #-----------------------------------------------------------------------------
