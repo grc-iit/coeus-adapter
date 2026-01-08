@@ -1,0 +1,145 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * Distributed under BSD 3-Clause license.                                   *
+ * Copyright by The HDF Group.                                               *
+ * Copyright by the Illinois Institute of Technology.                        *
+ * All rights reserved.                                                      *
+ *                                                                           *
+ * This file is part of Hermes. The full Hermes copyright notice, including  *
+ * terms governing use, modification, and redistribution, is contained in    *
+ * the COPYING file, which can be found at the top directory. If you do not  *
+ * have access to the file, you may request a copy from help@hdfgroup.org.   *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef HSHM_TYPES_HASH_H_
+#define HSHM_TYPES_HASH_H_
+
+#include "hermes_shm/constants/macros.h"
+#include <cstddef>
+#include <cstdint>
+
+namespace hshm {
+
+/**
+ * GPU-compatible hash template
+ * Uses std::hash on CPU, custom implementation on GPU
+ */
+template <typename T>
+struct hash {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(const T &key) const {
+#ifdef HSHM_IS_GPU
+    // GPU-compatible FNV-1a hash for basic types
+    return fnv1a_hash(reinterpret_cast<const unsigned char*>(&key), sizeof(T));
+#else
+    // Use std::hash on CPU
+    return std::hash<T>{}(key);
+#endif
+  }
+
+ private:
+  // FNV-1a hash constants
+  static constexpr std::size_t FNV_OFFSET_BASIS = 14695981039346656037ULL;
+  static constexpr std::size_t FNV_PRIME = 1099511628211ULL;
+
+  HSHM_INLINE_CROSS_FUN
+  static std::size_t fnv1a_hash(const unsigned char* data, std::size_t size) {
+    std::size_t hash = FNV_OFFSET_BASIS;
+    for (std::size_t i = 0; i < size; ++i) {
+      hash ^= static_cast<std::size_t>(data[i]);
+      hash *= FNV_PRIME;
+    }
+    return hash;
+  }
+};
+
+// Specializations for common types to ensure std::hash compatibility on CPU
+template <>
+struct hash<uint8_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(uint8_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<uint8_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<uint16_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(uint16_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<uint16_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<uint32_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(uint32_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<uint32_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<uint64_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(uint64_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<uint64_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<int8_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(int8_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<int8_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<int16_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(int16_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<int16_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<int32_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(int32_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<int32_t>{}(key);
+#endif
+  }
+};
+
+template <>
+struct hash<int64_t> {
+  HSHM_INLINE_CROSS_FUN std::size_t operator()(int64_t key) const {
+#ifdef HSHM_IS_GPU
+    return static_cast<std::size_t>(key);
+#else
+    return std::hash<int64_t>{}(key);
+#endif
+  }
+};
+
+}  // namespace hshm
+
+#endif  // HSHM_TYPES_HASH_H_

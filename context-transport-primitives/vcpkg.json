@@ -1,0 +1,20 @@
+{
+    "name": "hermes-shm",
+    "version-string": "2.0.0",
+    "description": "Hermes shared memory library for HPC applications.",
+    "homepage": "https://github.com/lukemartinlogan/hermes_shm/wiki",
+    "dependencies": [
+        "catch2",
+        "cereal",
+        "pkgconf",
+        "yaml-cpp"
+    ],
+    "features": {
+        "cereal": {
+            "description": "Build with cereal support.",
+            "dependencies": [
+                "cereal"
+            ]
+        }
+    }
+}

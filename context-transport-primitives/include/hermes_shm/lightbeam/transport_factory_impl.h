@@ -1,0 +1,115 @@
+#pragma once
+#include "lightbeam.h"
+#if HSHM_ENABLE_ZMQ
+#include "zmq_transport.h"
+#endif
+#if HSHM_ENABLE_THALLIUM
+#include "thallium_transport.h"
+#endif
+#if HSHM_ENABLE_LIBFABRIC
+#include "libfabric_transport.h"
+#endif
+
+namespace hshm::lbm {
+
+inline std::unique_ptr<Client> TransportFactory::GetClient(
+    const std::string& addr, Transport t, const std::string& protocol,
+    int port) {
+  switch (t) {
+#if HSHM_ENABLE_ZMQ
+    case Transport::kZeroMq:
+      return std::make_unique<ZeroMqClient>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 8192 : port);
+#endif
+#if HSHM_ENABLE_THALLIUM
+    case Transport::kThallium:
+      return std::make_unique<ThalliumClient>(
+          addr, protocol.empty() ? "ofi+sockets" : protocol,
+          port == 0 ? 8200 : port);
+#endif
+#if HSHM_ENABLE_LIBFABRIC
+    case Transport::kLibfabric:
+      return std::make_unique<LibfabricClient>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 9222 : port);
+#endif
+    default:
+      return nullptr;
+  }
+}
+
+inline std::unique_ptr<Client> TransportFactory::GetClient(
+    const std::string& addr, Transport t, const std::string& protocol, int port,
+    const std::string& domain) {
+  switch (t) {
+#if HSHM_ENABLE_ZMQ
+    case Transport::kZeroMq:
+      return std::make_unique<ZeroMqClient>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 8192 : port);
+#endif
+#if HSHM_ENABLE_THALLIUM
+    case Transport::kThallium:
+      return std::make_unique<ThalliumClient>(
+          addr, protocol.empty() ? "ofi+sockets" : protocol,
+          port == 0 ? 8200 : port, domain);
+#endif
+#if HSHM_ENABLE_LIBFABRIC
+    case Transport::kLibfabric:
+      return std::make_unique<LibfabricClient>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 9222 : port);
+#endif
+    default:
+      return nullptr;
+  }
+}
+
+inline std::unique_ptr<Server> TransportFactory::GetServer(
+    const std::string& addr, Transport t, const std::string& protocol,
+    int port) {
+  switch (t) {
+#if HSHM_ENABLE_ZMQ
+    case Transport::kZeroMq:
+      return std::make_unique<ZeroMqServer>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 8192 : port);
+#endif
+#if HSHM_ENABLE_THALLIUM
+    case Transport::kThallium:
+      return std::make_unique<ThalliumServer>(
+          addr, protocol.empty() ? "ofi+sockets" : protocol,
+          port == 0 ? 8200 : port);
+#endif
+#if HSHM_ENABLE_LIBFABRIC
+    case Transport::kLibfabric:
+      return std::make_unique<LibfabricServer>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 9222 : port);
+#endif
+    default:
+      return nullptr;
+  }
+}
+
+inline std::unique_ptr<Server> TransportFactory::GetServer(
+    const std::string& addr, Transport t, const std::string& protocol, int port,
+    const std::string& domain) {
+  switch (t) {
+#if HSHM_ENABLE_ZMQ
+    case Transport::kZeroMq:
+      return std::make_unique<ZeroMqServer>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 8192 : port);
+#endif
+#if HSHM_ENABLE_THALLIUM
+    case Transport::kThallium:
+      return std::make_unique<ThalliumServer>(
+          addr, protocol.empty() ? "ofi+sockets" : protocol,
+          port == 0 ? 8200 : port, domain);
+#endif
+#if HSHM_ENABLE_LIBFABRIC
+    case Transport::kLibfabric:
+      return std::make_unique<LibfabricServer>(
+          addr, protocol.empty() ? "tcp" : protocol, port == 0 ? 9222 : port);
+#endif
+    default:
+      return nullptr;
+  }
+}
+
+}  // namespace hshm::lbm
