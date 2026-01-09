@@ -21,11 +21,8 @@ RUN apt-get update && apt-get install -y \
 # Add Docker's official GPG key and repository
 RUN install -m 0755 -d /etc/apt/keyrings \
     && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
-    && chmod a+r /etc/apt/keyrings/docker.gpg
-
-RUN echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    && chmod a+r /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Install Docker Engine
 RUN apt-get update && apt-get install -y \
@@ -85,7 +82,9 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86
 # Set CUDA environment variables for runtime execution
 ENV CUDA_HOME=/usr/local/cuda-12.6
 ENV PATH=${CUDA_HOME}/bin:${PATH}
-ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${CUDA_HOME}/lib64/stubs:/usr/lib/x86_64-linux-gnu
+# Set LD_LIBRARY_PATH to include Conda, CUDA, and system paths
+# Note: /home/iowarp/miniconda3 will be set after conda installation, but we set it early for consistency
+ENV LD_LIBRARY_PATH=/home/iowarp/miniconda3/lib:${CUDA_HOME}/lib64:${CUDA_HOME}/lib64/stubs:/usr/lib/x86_64-linux-gnu
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
@@ -95,12 +94,12 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 USER iowarp
 WORKDIR /home/iowarp
 
-# Add CUDA paths to bashrc
-# Note: conda is inherited from base image with all dev dependencies pre-installed
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
+# Install Miniconda (skip if already installed in base image)
+RUN if [ ! -d "/home/iowarp/miniconda3" ]; then \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh \
     && bash /tmp/miniconda.sh -b -p /home/iowarp/miniconda3 \
-    && rm /tmp/miniconda.sh
+    && rm /tmp/miniconda.sh; \
+    fi
 
 # Initialize conda for bash
 RUN /home/iowarp/miniconda3/bin/conda init bash \
@@ -112,7 +111,7 @@ RUN /home/iowarp/miniconda3/bin/conda init bash \
 # Dependencies installed:
 #   - Build tools: cmake, ninja, conda-build, pkg-config
 #   - Core libraries: boost, hdf5, yaml-cpp, zeromq, cppzmq, cereal
-#   - Testing: catch2
+#   - Testing: catch2, pytest
 #   - Network: libcurl, openssl
 #   - Compression libraries: zlib, bzip2, lzo, zstd, lz4, xz (lzma), brotli, snappy
 #   - Lossy compression: sz3, zfp (scientific compressors, available via conda)
@@ -121,80 +120,96 @@ RUN /home/iowarp/miniconda3/bin/conda init bash \
 RUN /home/iowarp/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main \
     && /home/iowarp/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r \
     && /home/iowarp/miniconda3/bin/conda install -y \
-        conda-build \
-        cmake \
-        ninja \
-        pkg-config \
-        boost \
-        hdf5 \
-        yaml-cpp \
-        zeromq \
-        cppzmq \
-        cereal \
-        catch2 \
-        libcurl \
-        openssl \
-        zlib \
-        bzip2 \
-        lzo \
-        zstd \
-        lz4-c \
-        xz \
-        brotli \
-        snappy \
-        sz3 \
-        zfp \
-        poco \
-        nlohmann_json \
+    conda-build \
+    cmake \
+    ninja \
+    pkg-config \
+    boost \
+    hdf5 \
+    yaml-cpp \
+    zeromq \
+    cppzmq \
+    cereal \
+    catch2 \
+    libcurl \
+    openssl \
+    zlib \
+    bzip2 \
+    lzo \
+    zstd \
+    lz4-c \
+    xz \
+    brotli \
+    snappy \
+    zfp \
+    poco \
+    nlohmann_json \
+    pytest \
     && /home/iowarp/miniconda3/bin/conda clean -ya
 
-# Create Python virtual environment in user's home directory
-# Note: Users can choose between conda environments or venv
-# Install Python packages for data analysis and benchmarking
-RUN python3 -m venv /home/iowarp/venv \
-    && /home/iowarp/venv/bin/pip install --upgrade pip setuptools wheel \
-    && /home/iowarp/venv/bin/pip install pyyaml nanobind \
-    && /home/iowarp/venv/bin/pip install pandas matplotlib seaborn numpy
-
-# Switch back to root for libpressio installation
+# Switch to root to install lossy compression libraries from source
+# Add conda's cmake to PATH for root user
 USER root
+ENV PATH="/home/iowarp/miniconda3/bin:${PATH}"
 
-# Install lossy compression libraries and LibPressio
-# This provides scientific data compression capabilities for IOWarp Core
+# Install FPZIP (fast floating-point compressor)
 RUN cd /tmp \
-    # Install FPZIP library (fast floating-point compressor)
     && git clone https://github.com/LLNL/fpzip.git fpzip_src \
     && cd fpzip_src \
     && mkdir -p build && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_INSTALL_PREFIX=/usr/local \
-                -DCMAKE_POLICY_DEFAULT_CMP0025=NEW \
-                -DBUILD_SHARED_LIBS=ON \
-                -DBUILD_TESTING=OFF \
-                -DBUILD_UTILITIES=OFF \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DBUILD_UTILITIES=OFF \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     && make -j$(nproc) \
     && make install \
     && ldconfig \
-    # Install LibPressio with compression plugins enabled (only working compressors)
-    && cd /tmp \
-    && git clone https://github.com/robertu94/libpressio.git libpressio_src \
-    && cd libpressio_src \
+    && cd /tmp && rm -rf fpzip_src
+
+# Install SZ3 (fast error-bounded lossy compressor for scientific data)
+RUN cd /tmp \
+    && git clone https://github.com/szcompressor/SZ3.git sz3_src \
+    && cd sz3_src \
     && mkdir -p build && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_INSTALL_PREFIX=/usr/local \
-                -DLIBPRESSIO_HAS_ZFP=ON \
-                -DLIBPRESSIO_HAS_SZ3=ON \
-                -DLIBPRESSIO_HAS_FPZIP=ON \
-                -DBUILD_TESTING=OFF \
-    && make -j$(nproc) libpressio \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    && make -j$(nproc) \
     && make install \
     && ldconfig \
-    # Cleanup temporary build files
-    && cd /tmp \
-    && rm -rf fpzip_src libpressio_src
+    && cd /tmp && rm -rf sz3_src
+
+# Install ADIOS2 from source with HDF5 and ZeroMQ support
+# Uses conda's HDF5 and ZeroMQ libraries (CMAKE_PREFIX_PATH points to conda)
+# RPATH configuration ensures gray-scott binaries work without wrapper scripts
+RUN cd /tmp \
+    && git clone https://github.com/ornladios/ADIOS2.git ADIOS2 \
+    && mkdir -p adios2-build && cd adios2-build \
+    && cmake ../ADIOS2 \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DADIOS2_BUILD_EXAMPLES=ON \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTING=OFF \
+    -DADIOS2_USE_MPI=ON \
+    -DADIOS2_USE_HDF5=ON \
+    -DADIOS2_USE_ZeroMQ=ON \
+    -DADIOS2_USE_Python=OFF \
+    -DCMAKE_PREFIX_PATH="/home/iowarp/miniconda3" \
+    && make -j$(nproc) \
+    && make install \
+    && ldconfig \
+    && cd /tmp && rm -rf ADIOS2 adios2-build
 
 # Switch back to iowarp user
 USER iowarp
+
+# Note: LibPressio is not installed by default due to dependency issues (requires std_compat)
+# It can be installed separately if needed for advanced compression plugin support
 
 # Add conda activation and CUDA paths to bashrc
 # Conda base environment is auto-activated to ensure all conda dependencies are available
@@ -202,7 +217,7 @@ RUN echo '' >> /home/iowarp/.bashrc \
     && echo '# CUDA environment variables for GPU execution' >> /home/iowarp/.bashrc \
     && echo 'export CUDA_HOME=/usr/local/cuda-12.6' >> /home/iowarp/.bashrc \
     && echo 'export PATH=/usr/local/cuda-12.6/bin:$PATH' >> /home/iowarp/.bashrc \
-    && echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.6/lib64:/usr/local/cuda-12.6/lib64/stubs:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH' >> /home/iowarp/.bashrc \
+    && echo 'export LD_LIBRARY_PATH=/home/iowarp/miniconda3/lib:/usr/local/cuda-12.6/lib64:/usr/local/cuda-12.6/lib64/stubs:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH' >> /home/iowarp/.bashrc \
     && echo 'export NVIDIA_VISIBLE_DEVICES=all' >> /home/iowarp/.bashrc \
     && echo 'export NVIDIA_DRIVER_CAPABILITIES=compute,utility' >> /home/iowarp/.bashrc
 
@@ -223,25 +238,23 @@ RUN cd /home/iowarp \
     && jarvis init \
     && jarvis rg build
 
-    && echo 'export NVIDIA_DRIVER_CAPABILITIES=compute,utility' >> /home/iowarp/.bashrc \
+# Add conda initialization and environment info to bashrc
+RUN echo 'export NVIDIA_DRIVER_CAPABILITIES=compute,utility' >> /home/iowarp/.bashrc \
     && echo '' >> /home/iowarp/.bashrc \
     && echo '# >>> conda initialize >>>' >> /home/iowarp/.bashrc \
     && echo '# Conda base environment is auto-activated with all dev dependencies' >> /home/iowarp/.bashrc \
-    && echo '# This includes: boost, hdf5, yaml-cpp, zeromq, cereal, catch2, etc.' >> /home/iowarp/.bashrc \
-    && echo '# Compression libraries: zlib, bzip2, lzo, zstd, lz4, xz, brotli, snappy, sz3, zfp' >> /home/iowarp/.bashrc \
-    && echo '# Lossy compression: ZFP, SZ3, FPZIP (via LibPressio)' >> /home/iowarp/.bashrc \
+    && echo '# This includes: boost, hdf5, yaml-cpp, zeromq, cereal, catch2, pytest, etc.' >> /home/iowarp/.bashrc \
+    && echo '# Compression libraries: zlib, bzip2, lzo, zstd, lz4, xz, brotli, snappy (via conda)' >> /home/iowarp/.bashrc \
+    && echo '# Lossy compression: ZFP (via conda), SZ3, FPZIP (built from source)' >> /home/iowarp/.bashrc \
+    && echo '# ADIOS2: Built from source (installed in /usr/local)' >> /home/iowarp/.bashrc \
     && echo '# Create custom environments if needed: conda create -n myenv' >> /home/iowarp/.bashrc \
     && echo 'eval "$(/home/iowarp/miniconda3/bin/conda shell.bash hook)"' >> /home/iowarp/.bashrc \
     && echo '# <<< conda initialize <<<' >> /home/iowarp/.bashrc \
-    && echo '' >> /home/iowarp/.bashrc \
-    && echo '# Python virtual environment (alternative to conda)' >> /home/iowarp/.bashrc \
-    && echo '# Note: venv is NOT recommended when using conda dependencies' >> /home/iowarp/.bashrc \
-    && echo '# Uncomment to auto-activate venv instead of conda (use at your own risk):' >> /home/iowarp/.bashrc \
-    && echo '# if [ -f /home/iowarp/venv/bin/activate ]; then' >> /home/iowarp/.bashrc \
-    && echo '#     source /home/iowarp/venv/bin/activate' >> /home/iowarp/.bashrc \
-    && echo '# fi' >> /home/iowarp/.bashrc
+    && echo '' >> /home/iowarp/.bashrc
 
 WORKDIR /workspace
+
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/bin/bash"]
