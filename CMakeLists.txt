@@ -88,19 +88,18 @@ endif()
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Chimaera (Context-Runtime) - for task management
-find_package(chimaera-core REQUIRED)
-find_package(chimaera-admin REQUIRED)
-message(STATUS "found Chimaera-core at ${chimaera-core_DIR}")
-include_directories(${chimaera-core_INCLUDE_DIRS})
-include_directories(${chimaera-admin_INCLUDE_DIRS})
+#find_package(chimaera-core REQUIRED)
+#find_package(chimaera-admin REQUIRED)
+#message(STATUS "found Chimaera-core at ${chimaera-core_DIR}")
+#include_directories(${chimaera-core_INCLUDE_DIRS})
+#include_directories(${chimaera-admin_INCLUDE_DIRS})
 
 # Context-Transfer-Engine (CTE) - for I/O placement
-find_package(wrp_cte_core REQUIRED)
-message(STATUS "found wrp_cte_core at ${wrp_cte_core_DIR}")
+#find_package(wrp_cte_core REQUIRED)
+#message(STATUS "found wrp_cte_core at ${wrp_cte_core_DIR}")
 
 # Hermes - still needed for storage backend (but not for task management)
-find_package(Hermes CONFIG REQUIRED)
-message(STATUS "found Hermes at ${Hermes_DIR}")
+
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_definitions(HERMES_LOG_VERBOSITY=1)
 endif()

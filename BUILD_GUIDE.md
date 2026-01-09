@@ -196,6 +196,26 @@ Set `CMAKE_PREFIX_PATH` to include all dependency installation paths:
 export CMAKE_PREFIX_PATH="/usr/local:/path/to/hermes-shm:/path/to/other/deps"
 ```
 
+**Important for Hermes-Shm**: If you built hermes-shm from `context-transport-primitives`, make sure to:
+1. Install it first: `cd ~/core/context-transport-primitives/build && make install`
+2. Add its install location to CMAKE_PREFIX_PATH:
+   ```bash
+   # If installed to /usr/local (default)
+   export CMAKE_PREFIX_PATH="/usr/local:$CMAKE_PREFIX_PATH"
+   
+   # Or if installed to custom location
+   export CMAKE_PREFIX_PATH="/path/to/hermes-shm/install:$CMAKE_PREFIX_PATH"
+   ```
+3. Also set LD_LIBRARY_PATH for runtime:
+   ```bash
+   export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+   ```
+
+**Alternative**: Point directly to HermesShm CMake config:
+```bash
+cmake .. -DHermesShm_DIR=/path/to/install/lib/cmake/HermesShm
+```
+
 If using Spack:
 ```bash
 # Spack automatically sets CMAKE_PREFIX_PATH when loading packages
