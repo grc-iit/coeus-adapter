@@ -50,6 +50,16 @@ target_link_libraries(chimaera_coeus_mdm_runtime
     SQLite3::SQLite3
 )
 
+# Enable C++20 coroutines for runtime (required for TaskResume return type)
+set_target_properties(chimaera_coeus_mdm_runtime PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)
+# Add coroutines flag for GCC/Clang
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(chimaera_coeus_mdm_runtime PRIVATE -fcoroutines)
+endif()
+
 #------------------------------------------------------------------------------
 # Install libraries and headers
 #------------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 #include "autogen/coeus_mdm_methods.h"
 #include "coeus_mdm_client.h"
 
-#include "../../../../include/common/SQlite.h"
+#include "common/SQlite.h"
 
 namespace chimaera::coeus_mdm {
 

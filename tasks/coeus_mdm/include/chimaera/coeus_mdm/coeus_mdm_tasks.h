@@ -6,7 +6,7 @@
 // Include admin tasks for GetOrCreatePoolTask
 #include <chimaera/admin/admin_tasks.h>
 
-#include "../../../../include/common/DbOperation.h"
+#include "common/DbOperation.h"
 
 /**
  * Task struct definitions for coeus_mdm ChiMod
