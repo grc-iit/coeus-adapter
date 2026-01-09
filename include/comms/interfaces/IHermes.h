@@ -12,14 +12,14 @@
 
 #ifndef COEUS_INCLUDE_COMMS_INTERFACES_IHERMES_H_
 #define COEUS_INCLUDE_COMMS_INTERFACES_IHERMES_H_
-#include <hermes/hermes.h>
 
 #include "IBucket.h"
 
 namespace coeus {
 class IHermes {
  public:
-  hermes::Hermes* hermes;
+  // Note: hermes::Hermes* pointer removed - no longer using Hermes storage backend
+  // I/O is now handled by CTE (Context-Transfer-Engine)
   coeus::IBucket* bkt;
   virtual ~IHermes() = default;
 

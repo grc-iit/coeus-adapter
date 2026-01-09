@@ -23,14 +23,16 @@ Complete guide for building coeus-adapter with Chimaera Runtime and Context-Tran
 
 ### Required Dependencies
 
-1. **HermesShm** - Shared memory framework
-2. **Chimaera Core** - Context-Runtime framework
-3. **Chimaera Admin** - Admin ChiMod for pool management
-4. **Context-Transfer-Engine (CTE)** - I/O placement engine
-5. **Hermes** - Storage backend (legacy, still needed)
-6. **ADIOS2** - I/O library
-7. **yaml-cpp** - YAML configuration parsing
-8. **SQLite3** - Database support
+1. **iowarp-core** - Unified package that includes:
+   - HermesShm (shared memory framework)
+   - Chimaera (Context-Runtime framework)
+   - Chimaera Admin (Admin ChiMod)
+   - Context-Transfer-Engine (CTE) - I/O placement engine
+   - All ChiMods (bdev, etc.)
+2. **Hermes** - Storage backend (legacy, still needed for backward compatibility)
+3. **ADIOS2** - I/O library
+4. **yaml-cpp** - YAML configuration parsing
+5. **SQLite3** - Database support
 
 ## Installing Dependencies
 
@@ -80,71 +82,40 @@ make -j$(nproc)
 sudo make install
 ```
 
-#### 2. Install Chimaera Runtime
+#### 2. Install iowarp-core (Unified Package)
 
+The `iowarp-core` package is a unified package that includes HermesShm, Chimaera, CTE, and all ChiMods. You need to build and install the entire iowarp ecosystem.
+
+**Option A: Build from iowarp repository (if available)**
 ```bash
-# Navigate to context-runtime directory (if in coeus-adapter repo)
-cd context-runtime
-
-# Or clone separately:
-# git clone https://github.com/iowarp/iowarp-runtime.git
-# cd iowarp-runtime
-
-# Configure with CMake preset
-cmake --preset release
-# Or manually:
+# Clone iowarp repository (if separate repo exists)
+# git clone <iowarp-repository-url>
+# cd iowarp
 # mkdir build && cd build
 # cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-
-# Build
-cmake --build build --parallel $(nproc)
-
-# Install
-cmake --install build --prefix /usr/local
-# Or with sudo if needed:
-# sudo cmake --install build --prefix /usr/local
+# make -j$(nproc)
+# sudo make install
 ```
 
-**Verify Chimaera Installation:**
+**Option B: Build components separately and install to same prefix**
+
+Since iowarp-core is a unified package, you may need to build the components (context-runtime, context-transfer-engine, context-transport-primitives) and install them all to the same prefix so CMake can find them as `iowarp-core`.
+
+**Verify iowarp-core Installation:**
 ```bash
+# Check if CMake config exists
+ls /usr/local/lib/cmake/iowarp-core/
+
+# Should see:
+# iowarp-coreConfig.cmake
+# iowarp-coreTargets.cmake
+
 # Check if libraries are installed
 ls /usr/local/lib/libchimaera*.so
-ls /usr/local/lib/libchimaera_admin*.so
-
-# Check if headers are available
-ls /usr/local/include/chimaera/
-```
-
-#### 3. Install Context-Transfer-Engine (CTE)
-
-```bash
-# Navigate to context-transfer-engine directory (if in coeus-adapter repo)
-cd context-transfer-engine
-
-# Or clone separately:
-# git clone <cte-repository-url>
-# cd context-transfer-engine
-
-# Configure with CMake
-mkdir build && cd build
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
-    -DCMAKE_PREFIX_PATH=/usr/local
-
-# Build
-make -j$(nproc)
-
-# Install
-sudo make install
-```
-
-**Verify CTE Installation:**
-```bash
-# Check if libraries are installed
 ls /usr/local/lib/libwrp_cte_core*.so
 
 # Check if headers are available
+ls /usr/local/include/chimaera/
 ls /usr/local/include/wrp_cte/core/
 ```
 
@@ -249,9 +220,7 @@ cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     -DCMAKE_PREFIX_PATH="/usr/local:/custom/path/to/deps" \
-    -Dchimaera-core_DIR=/path/to/chimaera-core/lib/cmake/chimaera-core \
-    -Dchimaera-admin_DIR=/path/to/chimaera-admin/lib/cmake/chimaera-admin \
-    -Dwrp_cte_core_DIR=/path/to/wrp_cte_core/lib/cmake/wrp_cte_core
+    -Diowarp-core_DIR=/path/to/iowarp-core/lib/cmake/iowarp-core
 ```
 
 **CMake Configuration Options:**
@@ -408,7 +377,7 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
 ### CMake Cannot Find Packages
 
-**Problem**: `find_package(chimaera-core REQUIRED)` fails
+**Problem**: `find_package(iowarp-core REQUIRED)` fails
 
 **Solution**:
 ```bash
@@ -416,7 +385,10 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 export CMAKE_PREFIX_PATH="/usr/local:$CMAKE_PREFIX_PATH"
 
 # Or specify directly in CMake
-cmake .. -Dchimaera-core_DIR=/usr/local/lib/cmake/chimaera-core
+cmake .. -Diowarp-core_DIR=/usr/local/lib/cmake/iowarp-core
+
+# Verify iowarp-core is installed
+ls /usr/local/lib/cmake/iowarp-core/
 ```
 
 ### Missing Libraries at Runtime
@@ -502,9 +474,8 @@ sudo make install
 
 ### Verification Checklist
 
-- [ ] Chimaera Core installed and found by CMake
-- [ ] Chimaera Admin installed and found by CMake
-- [ ] CTE Core installed and found by CMake
+- [ ] iowarp-core installed and found by CMake
+- [ ] All iowarp-core components available (Chimaera, CTE, HermesShm)
 - [ ] All libraries build successfully
 - [ ] CTE configuration file exists and is valid
 - [ ] Runtime libraries are in LD_LIBRARY_PATH

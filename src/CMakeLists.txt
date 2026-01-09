@@ -18,32 +18,27 @@ add_dependencies(hermes_engine chimaera_rankConsensus_client)
 add_dependencies(hermes_engine chimaera_rankConsensus_runtime)
 target_include_directories(hermes_engine PUBLIC
         ../include
-        ${Hermes_INCLUDE_DIR}
         ${ADIOS2_INCLUDE_DIR}
         ${SQLite3_INCLUDE_DIRS}
-        ${chimaera-core_INCLUDE_DIRS}
-        ${chimaera-admin_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/tasks/coeus_mdm/include
         ${CMAKE_SOURCE_DIR}/tasks/rankConsensus/include
         )
-target_link_directories(hermes_engine PUBLIC
-        ${Hermes_DIR}/lib)
 target_link_libraries(hermes_engine LINK_PUBLIC
-        ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
         spdlog
         cereal
         rapidjson
         ${SQLite3_LIBRARIES}
-        chimaera::cxx
-        chimaera::admin_client
+        # Unified iowarp-core targets (provided by iowarp-core package)
+        chimaera::cxx              # Core Chimaera library
+        chimaera::admin_client    # Admin ChiMod (always available)
+        chimaera::bdev_client     # Block device ChiMod (always available)
+        wrp_cte::core_client      # CTE client for I/O placement
+        # Local ChiMods
         chimaera_coeus_mdm_client
         chimaera_coeus_mdm_runtime
         chimaera_rankConsensus_client
-        chimaera_rankConsensus_runtime
-        wrp_cte::core_client)
-message(STATUS "Hermes_INCLUDE_DIR_2: ${Hermes_INCLUDE_DIR}")
-message(STATUS "Hermes_LIBRARIES_2 : ${Hermes_DIR}")
+        chimaera_rankConsensus_runtime)
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

@@ -4,9 +4,8 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-# Find Chimaera packages
-find_package(chimaera-core REQUIRED)
-find_package(chimaera-admin REQUIRED)
+# Unified iowarp-core package - includes HermesShm, Chimaera, and all ChiMods
+find_package(iowarp-core REQUIRED)
 
 # Find SQLite3
 find_package(SQLite3 REQUIRED)
@@ -23,8 +22,6 @@ add_library(chimaera_coeus_mdm_client SHARED
 
 target_include_directories(chimaera_coeus_mdm_client PUBLIC
     ${COEUS_MDM_INCLUDE_DIR}
-    ${chimaera-core_INCLUDE_DIRS}
-    ${chimaera-admin_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include  # For common headers like DbOperation.h
 )
 
@@ -43,8 +40,6 @@ add_library(chimaera_coeus_mdm_runtime SHARED
 
 target_include_directories(chimaera_coeus_mdm_runtime PUBLIC
     ${COEUS_MDM_INCLUDE_DIR}
-    ${chimaera-core_INCLUDE_DIRS}
-    ${chimaera-admin_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include  # For common headers like DbOperation.h, SQlite.h
 )

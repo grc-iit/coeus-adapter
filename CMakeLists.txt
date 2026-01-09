@@ -87,23 +87,13 @@ endif()
 # This is for compatability with SPACK
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Chimaera (Context-Runtime) - for task management
-#find_package(chimaera-core REQUIRED)
-#find_package(chimaera-admin REQUIRED)
-#message(STATUS "found Chimaera-core at ${chimaera-core_DIR}")
-#include_directories(${chimaera-core_INCLUDE_DIRS})
-#include_directories(${chimaera-admin_INCLUDE_DIRS})
+# Unified iowarp-core package - includes HermesShm, Chimaera, CTE, and all ChiMods
+find_package(iowarp-core REQUIRED)
+message(STATUS "found iowarp-core at ${iowarp-core_DIR}")
 
-# Context-Transfer-Engine (CTE) - for I/O placement
-#find_package(wrp_cte_core REQUIRED)
-#message(STATUS "found wrp_cte_core at ${wrp_cte_core_DIR}")
-
-# Hermes - still needed for storage backend (but not for task management)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_definitions(HERMES_LOG_VERBOSITY=1)
-endif()
-include_directories(${HermesShm_INCLUDE_DIRS})
+# Note: Hermes types (hermes::Blob, hermes::BlobId) come from HermesShm 
+# which is included in iowarp-core. The full Hermes package is no longer needed
+# since I/O has been migrated to CTE.
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "Found Adios2")
