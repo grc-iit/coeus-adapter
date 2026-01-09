@@ -44,11 +44,21 @@ target_include_directories(chimaera_coeus_mdm_runtime PUBLIC
     ${PROJECT_SOURCE_DIR}/include  # For common headers like DbOperation.h, SQlite.h
 )
 
-target_link_libraries(chimaera_coeus_mdm_runtime
-    chimaera::cxx
-    chimaera::admin_client
-    SQLite3::SQLite3
-)
+# Link SQLite3 - use imported target if available, otherwise use variables
+if(TARGET SQLite3::SQLite3)
+    target_link_libraries(chimaera_coeus_mdm_runtime
+        chimaera::cxx
+        chimaera::admin_client
+        SQLite3::SQLite3
+    )
+else()
+    # Fallback to variables if imported target not available
+    target_link_libraries(chimaera_coeus_mdm_runtime
+        chimaera::cxx
+        chimaera::admin_client
+        ${SQLite3_LIBRARIES}
+    )
+endif()
 
 # Enable C++20 coroutines for runtime (required for TaskResume return type)
 set_target_properties(chimaera_coeus_mdm_runtime PROPERTIES
