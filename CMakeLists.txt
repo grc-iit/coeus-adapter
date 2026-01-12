@@ -121,6 +121,7 @@ add_subdirectory(external_libraries/cereal)
 add_subdirectory(external_libraries/rapidjson)
 
 #Gtest
+# Fix: Prevent system GoogleTest (e.g., from miniconda3) from conflicting with CMake-fetched version
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -129,19 +130,53 @@ FetchContent_Declare(
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# Prevent installation of GoogleTest (we're using it as subdirectory)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+
+# Get GoogleTest source directory before MakeAvailable to configure include paths
+FetchContent_GetProperties(googletest)
+if(NOT googletest_POPULATED)
+    FetchContent_Populate(googletest)
+    # Set GoogleTest to use its own include directory first
+    # This prevents system GoogleTest from being found during compilation
+    set(GTEST_INCLUDE_DIR "${googletest_SOURCE_DIR}/googletest/include")
+    set(GMOCK_INCLUDE_DIR "${googletest_SOURCE_DIR}/googlemock/include")
+    # Add to CMAKE_CXX_FLAGS to ensure fetched headers are found first
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I${GTEST_INCLUDE_DIR} -I${GMOCK_INCLUDE_DIR}")
+endif()
+
 FetchContent_MakeAvailable(googletest)
 
-# Suppress GoogleTest warnings about undefined macros (common with multiple installations)
+# Configure all GoogleTest targets to prioritize fetched headers
+# Use SYSTEM BEFORE to ensure fetched headers are searched before system paths
 if(TARGET gtest)
+    # Get include directories from the target
+    get_target_property(GTEST_INCLUDE_DIRS gtest INTERFACE_INCLUDE_DIRECTORIES)
+    if(GTEST_INCLUDE_DIRS)
+        # Set as SYSTEM BEFORE to prioritize over system includes
+        target_include_directories(gtest SYSTEM BEFORE PRIVATE ${GTEST_INCLUDE_DIRS})
+    endif()
     target_compile_options(gtest PRIVATE -Wno-undef)
 endif()
 if(TARGET gtest_main)
+    get_target_property(GTEST_INCLUDE_DIRS gtest_main INTERFACE_INCLUDE_DIRECTORIES)
+    if(GTEST_INCLUDE_DIRS)
+        target_include_directories(gtest_main SYSTEM BEFORE PRIVATE ${GTEST_INCLUDE_DIRS})
+    endif()
     target_compile_options(gtest_main PRIVATE -Wno-undef)
 endif()
 if(TARGET gmock)
+    get_target_property(GMOCK_INCLUDE_DIRS gmock INTERFACE_INCLUDE_DIRECTORIES)
+    if(GMOCK_INCLUDE_DIRS)
+        target_include_directories(gmock SYSTEM BEFORE PRIVATE ${GMOCK_INCLUDE_DIRS})
+    endif()
     target_compile_options(gmock PRIVATE -Wno-undef)
 endif()
 if(TARGET gmock_main)
+    get_target_property(GMOCK_INCLUDE_DIRS gmock_main INTERFACE_INCLUDE_DIRECTORIES)
+    if(GMOCK_INCLUDE_DIRS)
+        target_include_directories(gmock_main SYSTEM BEFORE PRIVATE ${GMOCK_INCLUDE_DIRS})
+    endif()
     target_compile_options(gmock_main PRIVATE -Wno-undef)
 endif()
 #------------------------------------------------------------------------------
