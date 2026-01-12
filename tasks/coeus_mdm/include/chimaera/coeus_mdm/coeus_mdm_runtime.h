@@ -12,8 +12,8 @@
 namespace chimaera::coeus_mdm {
 
 // Forward declarations
-struct CreateTask;
-struct Mdm_insertTask;
+// Note: CreateTask is a type alias (not a struct), so no forward declaration needed
+// Mdm_insertTask is fully defined in coeus_mdm_tasks.h which is included above
 
 /**
  * Runtime implementation for coeus_mdm container

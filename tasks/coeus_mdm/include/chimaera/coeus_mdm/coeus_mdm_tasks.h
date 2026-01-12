@@ -57,6 +57,12 @@ struct CreateParams {
 using CreateTask = chimaera::admin::GetOrCreatePoolTask<CreateParams>;
 
 /**
+ * DestroyTask - Destroy the coeus_mdm container
+ * Type alias for DestroyPoolTask from admin namespace
+ */
+using DestroyTask = chimaera::admin::DestroyPoolTask;
+
+/**
  * Mdm_insertTask - Insert metadata operation
  */
 struct Mdm_insertTask : public chi::Task {
