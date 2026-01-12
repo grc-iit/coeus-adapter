@@ -102,7 +102,7 @@ struct VariableMetadata {
   }
 };
 
-std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
+inline std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
   out << "Name: " << data.name << "\n";
   out << "Shape: ";
   for (const auto &s : data.shape) {
