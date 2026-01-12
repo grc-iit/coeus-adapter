@@ -68,19 +68,54 @@ This provides the most reliable solution by ensuring GoogleTest is completely is
 
 ## Implementation Applied
 
-The fix implements the following strategy:
+The fix implements a **two-tier strategy**:
 
-1. **Early Include Path Configuration**: Before `FetchContent_MakeAvailable`, we populate GoogleTest and add its include directories to `CMAKE_CXX_FLAGS` to ensure they're found first.
+### Strategy 1: Prefer System GoogleTest (If Available)
+- First tries to find system GoogleTest using `find_package(GTest)`
+- If found and compatible, uses system version (avoids all conflicts)
+- This is the cleanest solution when system GoogleTest is available
 
-2. **Target-Specific Configuration**: After GoogleTest is configured, we set `SYSTEM BEFORE` include directories on all GoogleTest targets to prioritize the fetched version over system installations.
-
-3. **Warning Suppression**: Added `-Wno-undef` to suppress warnings about undefined macros (common with multiple installations).
+### Strategy 2: Isolate Fetched GoogleTest (Fallback)
+- If system GoogleTest not found, uses FetchContent
+- Uses `-I` flags to prioritize fetched GoogleTest headers
+- Sets include directories with `BEFORE` to ensure priority
+- Suppresses warnings with `-Wno-undef`
 
 ### Key Changes:
-- Use `FetchContent_GetProperties` and `FetchContent_Populate` before `MakeAvailable` to configure include paths early
-- Add fetched GoogleTest include directories to `CMAKE_CXX_FLAGS` so they're searched before system paths
-- Set `SYSTEM BEFORE` on all GoogleTest target include directories to ensure priority
-- Suppress `-Wno-undef` warnings that occur with multiple GoogleTest installations
+1. **Try system GoogleTest first**: `find_package(GTest QUIET)` before FetchContent
+2. **Use `-I` flags**: Explicitly add fetched GoogleTest include directory with `-I` (searched before system paths)
+3. **Set `BEFORE` include directories**: Ensures fetched headers are searched first
+4. **Warning suppression**: `-Wno-undef` for macro warnings
+
+### If Issues Persist:
+
+**Option A: Use System GoogleTest Only**
+```bash
+# Before building, ensure system GoogleTest is available
+sudo apt-get install libgtest-dev  # Ubuntu/Debian
+# Or
+conda install -c conda-forge gtest  # If using conda
+
+# Then rebuild - CMake will detect and use system version
+```
+
+**Option B: Exclude miniconda3 from Build Environment**
+```bash
+# Temporarily remove conda from PATH during build
+export PATH=$(echo $PATH | tr ':' '\n' | grep -v miniconda3 | tr '\n' ':')
+export CPLUS_INCLUDE_PATH=""
+export C_INCLUDE_PATH=""
+cmake .. && make
+```
+
+**Option C: Clean Build with Isolated Environment**
+```bash
+rm -rf build
+mkdir build && cd build
+# Build without conda in environment
+env -u CONDA_PREFIX -u MINICONDA3 cmake ..
+make
+```
 
 ### Testing:
 After applying this fix, rebuild from scratch:
@@ -91,8 +126,7 @@ cmake ..
 make
 ```
 
-If issues persist, consider:
-- Removing miniconda3 from `CMAKE_PREFIX_PATH` during build
-- Using `-DCMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES=OFF` to exclude system paths
-- Or switching to `find_package(GTest)` if system version is compatible
+The build should now either:
+- Use system GoogleTest (if available) - **no conflicts**
+- Or use fetched GoogleTest with proper isolation - **minimal conflicts**
 
