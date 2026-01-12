@@ -12,8 +12,8 @@
 namespace chimaera::rankConsensus {
 
 // Forward declarations
-struct CreateTask;
-struct GetRankTask;
+// Note: CreateTask is a type alias (not a struct), so no forward declaration needed
+// GetRankTask and DestroyTask are fully defined in rankConsensus_tasks.h which is included above
 
 /**
  * Runtime implementation for rankConsensus container

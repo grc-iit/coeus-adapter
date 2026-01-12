@@ -51,6 +51,12 @@ struct CreateParams {
 using CreateTask = chimaera::admin::GetOrCreatePoolTask<CreateParams>;
 
 /**
+ * DestroyTask - Destroy the rankConsensus container
+ * Type alias for DestroyPoolTask from admin namespace
+ */
+using DestroyTask = chimaera::admin::DestroyPoolTask;
+
+/**
  * GetRankTask - Get rank assignment
  */
 struct GetRankTask : public chi::Task {
