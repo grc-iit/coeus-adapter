@@ -130,6 +130,20 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+# Suppress GoogleTest warnings about undefined macros (common with multiple installations)
+if(TARGET gtest)
+    target_compile_options(gtest PRIVATE -Wno-undef)
+endif()
+if(TARGET gtest_main)
+    target_compile_options(gtest_main PRIVATE -Wno-undef)
+endif()
+if(TARGET gmock)
+    target_compile_options(gmock PRIVATE -Wno-undef)
+endif()
+if(TARGET gmock_main)
+    target_compile_options(gmock_main PRIVATE -Wno-undef)
+endif()
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
