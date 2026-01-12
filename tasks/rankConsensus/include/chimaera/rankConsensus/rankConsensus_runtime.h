@@ -57,6 +57,56 @@ class Runtime : public chi::Container {
    */
   void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
 
+  /**
+   * Serialize task parameters for network transfer
+   */
+  void SaveTask(chi::u32 method, chi::SaveTaskArchive& archive,
+                hipc::FullPtr<chi::Task> task_ptr) override;
+
+  /**
+   * Deserialize task parameters into an existing task from network transfer
+   */
+  void LoadTask(chi::u32 method, chi::LoadTaskArchive& archive,
+                hipc::FullPtr<chi::Task> task_ptr) override;
+
+  /**
+   * Allocate and deserialize task parameters from network transfer
+   */
+  hipc::FullPtr<chi::Task> AllocLoadTask(chi::u32 method, chi::LoadTaskArchive& archive) override;
+
+  /**
+   * Deserialize task input parameters into an existing task using LocalSerialize
+   */
+  void LocalLoadTask(chi::u32 method, chi::LocalLoadTaskArchive& archive,
+                     hipc::FullPtr<chi::Task> task_ptr) override;
+
+  /**
+   * Allocate and deserialize task input parameters using LocalSerialize
+   */
+  hipc::FullPtr<chi::Task> LocalAllocLoadTask(chi::u32 method, chi::LocalLoadTaskArchive& archive) override;
+
+  /**
+   * Serialize task output parameters using LocalSerialize (for local transfers)
+   */
+  void LocalSaveTask(chi::u32 method, chi::LocalSaveTaskArchive& archive,
+                     hipc::FullPtr<chi::Task> task_ptr) override;
+
+  /**
+   * Create a new copy of a task (deep copy for distributed execution)
+   */
+  hipc::FullPtr<chi::Task> NewCopyTask(chi::u32 method, hipc::FullPtr<chi::Task> orig_task_ptr, bool deep) override;
+
+  /**
+   * Create a new task of the specified method type
+   */
+  hipc::FullPtr<chi::Task> NewTask(chi::u32 method) override;
+
+  /**
+   * Aggregate replica results into origin task
+   */
+  void Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> origin_task_ptr,
+                 hipc::FullPtr<chi::Task> replica_task_ptr) override;
+
   //===========================================================================
   // Method implementations
   //===========================================================================
