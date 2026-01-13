@@ -5,7 +5,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 #------------------------------------------------------------------------------
 set(HERMES_ENGINE_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/CTEBucket.cc)
+        ${CMAKE_CURRENT_SOURCE_DIR}/CTETag.cc)
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -39,6 +39,12 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         chimaera_coeus_mdm_runtime
         chimaera_rankConsensus_client
         chimaera_rankConsensus_runtime)
+
+# Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)
+set_target_properties(hermes_engine PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON)
+target_compile_options(hermes_engine PRIVATE -fcoroutines)
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

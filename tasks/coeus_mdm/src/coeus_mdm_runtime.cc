@@ -56,10 +56,10 @@ void Runtime::Mdm_insert(hipc::FullPtr<Mdm_insertTask> task, chi::RunContext& rc
     db_->InsertVariableMetadata(db_op.step, db_op.rank, db_op.metadata);
     db_->InsertBlobLocation(db_op.step, db_op.rank, db_op.name, db_op.blobInfo);
     db_->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, "min",
-                                       db_op.blobInfo.blob_name, db_op.blobInfo.bucket_name,
+                                       db_op.blobInfo.blob_name, db_op.blobInfo.tag_name,
                                        db_op.derived_semantics.min_value);
     db_->insertOrUpdateDerivedQuantity(db_op.step, db_op.name, "max",
-                                       db_op.blobInfo.blob_name, db_op.blobInfo.bucket_name,
+                                       db_op.blobInfo.blob_name, db_op.blobInfo.tag_name,
                                        db_op.derived_semantics.max_value);
   }
 

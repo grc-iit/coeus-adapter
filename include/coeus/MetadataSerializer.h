@@ -13,11 +13,12 @@
 #ifndef COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
 #define COEUS_INCLUDE_COEUS_METADATASERIALIZER_H_
 
-#include <hermes/hermes_types.h>
 #include "common/MetadataStructs.h"
 
 #include <vector>
 #include <string>
+#include <sstream>
+#include <cstdint>
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
@@ -36,11 +37,11 @@ class MetadataSerializer{
     return ss.str();
   }
 
-  static BlobInfo DeserializeBlobInfo(const hermes::Blob &blob) {
+  static BlobInfo DeserializeBlobInfo(const std::vector<uint8_t> &blob_data) {
     BlobInfo blob_info;
     std::stringstream ss;
     {
-      ss.write(reinterpret_cast<char*>(blob.data()), blob.size());
+      ss.write(reinterpret_cast<const char*>(blob_data.data()), blob_data.size());
       cereal::BinaryInputArchive iarchive(ss);
       iarchive(blob_info);
     }
@@ -68,11 +69,11 @@ class MetadataSerializer{
         return SerializeMetadata(variableMetadata);
     }
 
-    static VariableMetadata DeserializeMetadata(const hermes::Blob &blob) {
+    static VariableMetadata DeserializeMetadata(const std::vector<uint8_t> &blob_data) {
       VariableMetadata variableMetadata;
       std::stringstream ss;
       {
-          ss.write(reinterpret_cast<char*>(blob.data()), blob.size());
+          ss.write(reinterpret_cast<const char*>(blob_data.data()), blob_data.size());
           cereal::BinaryInputArchive iarchive(ss);
           iarchive(variableMetadata);
       }

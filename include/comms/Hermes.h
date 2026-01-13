@@ -14,7 +14,7 @@
 #define COEUS_INCLUDE_COMMS_HERMES_H_
 
 #include "interfaces/IHermes.h"
-#include "CTEBucket.h"
+#include "CTETag.h"
 #include "common/Tracer.h"
 #include <wrp_cte/core/core_client.h>
 #include <cstdlib>
@@ -24,7 +24,7 @@ class Hermes : public IHermes {
  public:
   float promote_weight = 0.25;
   float demote_weight = -0.25;
-  bool use_cte_ = true;  // Flag to use CTE instead of Hermes I/O
+  bool use_cte_ = true;  // Using CTE for I/O operations
 
   Hermes() = default;
 
@@ -52,26 +52,26 @@ class Hermes : public IHermes {
     return true;
   };
 
-    bool GetBucket(const std::string &bucket_name) override {
-    // Always use CTE-based bucket (Hermes I/O has been migrated to CTE)
-    bkt = (IBucket*) new coeus::CTEBucket(bucket_name);
+    bool GetTag(const std::string &tag_name) override {
+    // Create CTE tag for blob storage
+    tag = (ITag*) new coeus::CTETag(tag_name);
     return true;
   }
 
-  bool Demote(const std::string &bucket_name, const std::string &blob_name) override {
+  bool Demote(const std::string &tag_name, const std::string &blob_name) override {
     // CTE handles data placement automatically based on access patterns
     // Demote operation is handled by CTE's data placement engine
     // This is a no-op for now - CTE will automatically demote based on scoring
-    std::cout << "Demote called for " << bucket_name << "/" << blob_name 
+    std::cout << "Demote called for " << tag_name << "/" << blob_name 
               << " - CTE handles placement automatically" << std::endl;
     return true;
   }
 
-  bool Prefetch(const std::string &bucket_name, const std::string &blob_name) override {
+  bool Prefetch(const std::string &tag_name, const std::string &blob_name) override {
     // CTE handles data placement automatically based on access patterns
     // Prefetch operation is handled by CTE's data placement engine
     // This is a no-op for now - CTE will automatically promote based on scoring
-    std::cout << "Prefetch called for " << bucket_name << "/" << blob_name 
+    std::cout << "Prefetch called for " << tag_name << "/" << blob_name 
               << " - CTE handles placement automatically" << std::endl;
     return true;
   }

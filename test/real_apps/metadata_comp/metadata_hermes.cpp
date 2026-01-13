@@ -99,8 +99,10 @@ int main(int argc, char* argv[]) {
     auto startQueryApps = std::chrono::high_resolution_clock::now();
     {
       Hermes->GetBucket("total_steps");
-      hermes::Blob blob = Hermes->bkt->Get("total_steps_" + io.Name());
-      auto total_steps = *reinterpret_cast<const int *>(blob.data());
+      auto blob = Hermes->bkt->Get("total_steps_" + io.Name());
+      if (!blob.empty()) {
+        auto total_steps = *reinterpret_cast<const int *>(blob.data());
+      }
     }
     auto endQueryApps = std::chrono::high_resolution_clock::now();
     localQueryAppsTime += std::chrono::duration<double>(endQueryApps - startQueryApps).count();
@@ -111,11 +113,13 @@ int main(int argc, char* argv[]) {
       std::string bucket_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
 
       Hermes->GetBucket(bucket_name);
-      std::vector<hermes::BlobId> blobIds = Hermes->bkt->GetContainedBlobIds();
-      for (const auto &blobId : blobIds) {
-        hermes::Blob blob = Hermes->bkt->Get(blobId);
-        BlobInfo blob_info =
-            MetadataSerializer::DeserializeBlobInfo(blob);
+      std::vector<std::string> blob_names = Hermes->bkt->GetContainedBlobNames();
+      for (const auto &blob_name : blob_names) {
+        auto blob = Hermes->bkt->Get(blob_name);
+        if (!blob.empty()) {
+          BlobInfo blob_info =
+              MetadataSerializer::DeserializeBlobInfo(blob);
+        }
       }
     }
     auto endQueryBlobs = std::chrono::high_resolution_clock::now();
@@ -128,11 +132,13 @@ int main(int argc, char* argv[]) {
           "_rank_" + std::to_string(rank);
 
       Hermes->GetBucket(filename);
-      std::vector<hermes::BlobId> blobIds = Hermes->bkt->GetContainedBlobIds();
-      for (const auto &blobId : blobIds) {
-        hermes::Blob blob = Hermes->bkt->Get(blobId);
-        VariableMetadata variableMetadata =
-            MetadataSerializer::DeserializeMetadata(blob);
+      std::vector<std::string> blob_names = Hermes->bkt->GetContainedBlobNames();
+      for (const auto &blob_name : blob_names) {
+        auto blob = Hermes->bkt->Get(blob_name);
+        if (!blob.empty()) {
+          VariableMetadata variableMetadata =
+              MetadataSerializer::DeserializeMetadata(blob);
+        }
       }
     }
     auto endQueryMetadata = std::chrono::high_resolution_clock::now();

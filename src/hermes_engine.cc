@@ -95,7 +95,7 @@ void HermesEngine::Init_() {
   logger2.set_level(spdlog::level::trace);
   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
   meta_logger_get->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
 
   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
@@ -105,7 +105,7 @@ void HermesEngine::Init_() {
   logger3.set_level(spdlog::level::trace);
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
 #endif
 
   //Merge Log
@@ -230,7 +230,7 @@ bool HermesEngine::Promote(int step){
     if(step < total_steps) {
         auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
         for (const auto &location : var_locations) {
-            success &= Hermes->Prefetch(location.bucket_name, location.blob_name);
+            success &= Hermes->Prefetch(location.tag_name, location.blob_name);
         }
     }
     return success;
@@ -241,7 +241,7 @@ bool HermesEngine::Demote(int step){
     if (step > 0) {
         auto var_locations = db->getAllBlobs(step, rank);
         for (const auto &location: var_locations) {
-            success &= Hermes->Demote(location.bucket_name, location.blob_name);
+            success &= Hermes->Demote(location.tag_name, location.blob_name);
         }
 }
     return success;
@@ -259,11 +259,11 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     LoadMetadata();
   }
 
-  std::string bucket_name = "step_" + std::to_string(currentStep)
+  std::string tag_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
   // if two same run happened in one pipeline
-  //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-    Hermes->GetBucket(bucket_name);
+  //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+    Hermes->GetTag(tag_name);
 // derived part
 //  if(m_OpenMode == adios2::Mode::Read){
 //      for(int i = 0; i < num_layers; i++) {
@@ -308,11 +308,11 @@ void HermesEngine::ComputeDerivedVariables() {
             std::cout <<"throw error commented" <<std::endl;
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
-      auto blob = Hermes->bkt->Get(varName);
+      auto blob = Hermes->tag->Get(varName);
 
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
-                                adios2::MinMaxStruct(), blob.data()});
+                                adios2::MinMaxStruct(), blob.empty() ? nullptr : blob.data()});
 
 
         // if this is the first block for the variable
@@ -376,7 +376,7 @@ void HermesEngine::EndStep() {
 //    }
 //  }
 
-  delete Hermes->bkt;
+  delete Hermes->tag;
 
 }
 
@@ -390,8 +390,11 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
-  // Obtain the blob from Hermes using the filename and variable name
-  hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
+  // Obtain the blob from CTE using the filename and variable name
+  auto blob = Hermes->tag->Get(Var.m_Name);
+  if (blob.empty()) {
+    return false; // Blob not found
+  }
 
 #define DEFINE_VARIABLE(T)                                                     \
   if (adios2::helper::GetDataType<T>() == Var.m_Type) {                        \
@@ -520,16 +523,18 @@ template<typename T>
 void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
                               T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = Hermes->bkt->Get(variable.m_Name);
+  auto blob = Hermes->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
   // add spdlog method to extract the variable metadata
 
-    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::get, Hermes->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
-  memcpy(values, blob.data(), blob.size());
+  if (!blob.empty()) {
+    memcpy(values, blob.data(), blob.size());
+  }
 
 }
 
@@ -542,15 +547,17 @@ void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
 
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = Hermes->bkt->Get(variable.m_Name);
+  auto blob = Hermes->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
   // add spdlog method to extract the variable metadata
-    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::get, Hermes->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
   //finish metadata extraction
-  memcpy(values, blob.data(), blob.size());
+  if (!blob.empty()) {
+    memcpy(values, blob.data(), blob.size());
+  }
 
 }
 
@@ -565,11 +572,11 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 
   std::string name = variable.m_Name;
   auto start_time = std::chrono::high_resolution_clock::now();
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  Hermes->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
   if (rank == 0) {
-    std::cout << "Rank 0 - Hermes->bkt->Put (DoPutSync) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    std::cout << "Rank 0 - Hermes->tag->Put (DoPutSync) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 
 
@@ -583,7 +590,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
+  BlobInfo blobInfo(Hermes->tag->name, name);
 
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
@@ -595,7 +602,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   }
 
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::put, Hermes->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 }
@@ -608,17 +615,17 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  Hermes->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
   if (rank == 0) {
-    std::cout << "Rank 0 - Hermes->bkt->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    std::cout << "Rank 0 - Hermes->tag->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
+  BlobInfo blobInfo(Hermes->tag->name, name);
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);

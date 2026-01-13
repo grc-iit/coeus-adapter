@@ -12,7 +12,9 @@ namespace coeus::testing {
 class MockHermes : public coeus::IHermes {
  public:
   MOCK_METHOD(bool, connect, (), (override));
-  MOCK_METHOD(std::unique_ptr<IBucket>, GetBucket, (const std::string &bucket_name), (override));
+  MOCK_METHOD(bool, GetTag, (const std::string &tag_name), (override));
+  MOCK_METHOD(bool, Demote, (const std::string &tag_name, const std::string &blob_name), (override));
+  MOCK_METHOD(bool, Prefetch, (const std::string &tag_name, const std::string &blob_name), (override));
 };
 }
 #endif //COEUS_TEST_MOCKS_MOCKHERMES_H_

@@ -9,7 +9,7 @@
  * If you do not have access to the file, you may request a copy             *
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+/*
 #ifndef COEUS_INCLUDE_COMMS_BUCKET_H_
 #define COEUS_INCLUDE_COMMS_BUCKET_H_
 #include <hermes/bucket.h>
@@ -80,3 +80,4 @@ class Bucket : public IBucket {
 
 }
 #endif //COEUS_INCLUDE_COMMS_BUCKET_H_
+*/
