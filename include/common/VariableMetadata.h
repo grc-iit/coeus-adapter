@@ -106,14 +106,14 @@ struct metaInfo {
 
     template<typename T>
     explicit metaInfo(const adios2::Variable<T> variable, adiosOpType operationType,  std::string blob,
-                      std::string bucket, std::string processor_name, int process_No  ) {
+                      std::string CTXtag, std::string processor_name, int process_No  ) {
         name = variable.Name();
         shape = variable.Shape();
         processor = processor_name;
         operation = operationType;
         blob_name = blob;
         processNo = process_No;
-        tag_name = tag;
+        tag_name = CTXtag;
         std::time_t currentTime = std::time(nullptr);
         std::tm* localTime = std::localtime(&currentTime);
         time = std::to_string(localTime->tm_hour) + ":" + std::to_string(localTime->tm_min)+ ":" + std::to_string(localTime->tm_sec);
