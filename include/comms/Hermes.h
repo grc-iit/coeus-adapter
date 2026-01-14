@@ -15,9 +15,10 @@
 
 #include "interfaces/IHermes.h"
 #include "CTETag.h"
-#include "CTEInitializer.h"
 #include "common/Tracer.h"
 #include <wrp_cte/core/core_client.h>
+#include <wrp_cte/core/core_tasks.h>
+#include <chimaera/chimaera.h>
 #include <cstdlib>
 
 namespace coeus {
@@ -35,40 +36,55 @@ class Hermes : public IHermes {
     // Initialize Context-Transfer-Engine for I/O operations
     std::cout << "Initializing Context-Transfer-Engine (CTE) for I/O" << std::endl;
     
+    // Initialize Chimaera runtime first
+    if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+      std::cerr << "ERROR: Failed to initialize Chimaera runtime" << std::endl;
+      return false;
+    }
+    
     // Get CTE config path from environment or use default
     std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
     if (cte_config.empty()) {
       cte_config = "config/cte_config.yaml"; // Default config path
     }
     
-    // Use CTEInitializer for proper initialization following CTE best practices
-    // This ensures:
-    // 1. Chimaera is initialized first
-    // 2. CTE subsystem is initialized
-    // 3. CTE client pool is created
-    bool cte_init = CTEInitializer::Initialize(cte_config, chi::PoolQuery::Dynamic());
-    if (!cte_init) {
-      std::cerr << "ERROR: Failed to initialize CTE. CTE is required for I/O operations." << std::endl;
+    // Initialize CTE subsystem
+    if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
+      std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
       return false;
     }
     
-    // Optionally register storage targets if specified in environment
-    // This can be done here or left to configuration file
-    const char* storage_path = getenv("CTE_STORAGE_PATH");
-    if (storage_path) {
-      chi::u64 storage_size = 100ULL * 1024 * 1024 * 1024; // Default 100GB
-      const char* storage_size_str = getenv("CTE_STORAGE_SIZE");
-      if (storage_size_str) {
-        storage_size = std::stoull(storage_size_str);
-      }
-      
-      if (!CTEInitializer::RegisterStorageTarget(
-          storage_path, 
-          chimaera::bdev::BdevType::kFile, 
-          storage_size)) {
-        std::cerr << "WARNING: Failed to register storage target: " << storage_path << std::endl;
-        // Continue anyway - CTE may have targets configured via config file
-      }
+    // Get CTE client and create container
+    auto* cte_client = WRP_CTE_CLIENT;
+    if (!cte_client) {
+      std::cerr << "ERROR: CTE client is null after initialization" << std::endl;
+      return false;
+    }
+    
+    // Create CTE container
+    wrp_cte::core::CreateParams params;
+    auto create_task = cte_client->AsyncCreate(
+        chi::PoolQuery::Dynamic(),
+        wrp_cte::core::kCtePoolName,
+        wrp_cte::core::kCtePoolId,
+        params);
+    create_task.Wait();
+    if (create_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to create CTE container" << std::endl;
+      return false;
+    }
+    cte_client->Init(create_task->new_pool_id_);
+    
+    // Register storage target (100MB file-based)
+    auto reg_task = cte_client->AsyncRegisterTarget(
+        "/tmp/cte_storage",
+        chimaera::bdev::BdevType::kFile,
+        100 * 1024 * 1024);
+    reg_task.Wait();
+    if (reg_task->GetReturnCode() != 0) {
+      // Warning only - target may already be registered or configured via config file
+      std::cerr << "WARNING: Failed to register storage target (code: " 
+                << reg_task->GetReturnCode() << ")" << std::endl;
     }
     
     std::cout << "CTE initialized successfully with config: " << cte_config << std::endl;

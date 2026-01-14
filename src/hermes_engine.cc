@@ -11,9 +11,10 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/HermesEngine.h"
-#include "comms/CTEInitializer.h"
 #include <chimaera/chimaera.h>
 #include <chimaera/admin/admin_client.h>
+#include <wrp_cte/core/core_client.h>
+#include <wrp_cte/core/core_tasks.h>
 #include <chrono>
 
 namespace coeus {
@@ -32,15 +33,50 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // Initialize CTE directly using proper initialization pattern
+  // Initialize Chimaera runtime first
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+    throw std::runtime_error("Failed to initialize Chimaera runtime");
+  }
+  
+  // Initialize CTE subsystem
   std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
   if (cte_config.empty()) {
     cte_config = "config/cte_config.yaml";
   }
   
-  // Use CTEInitializer for proper initialization
-  if (!coeus::CTEInitializer::Initialize(cte_config, chi::PoolQuery::Dynamic())) {
-    throw std::runtime_error("Failed to initialize CTE in HermesEngine constructor");
+  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
+    throw std::runtime_error("Failed to initialize CTE subsystem");
+  }
+  
+  // Get CTE client and create container
+  auto* cte_client = WRP_CTE_CLIENT;
+  if (!cte_client) {
+    throw std::runtime_error("CTE client is null after initialization");
+  }
+  
+  // Create CTE container
+  wrp_cte::core::CreateParams params;
+  auto create_task = cte_client->AsyncCreate(
+      chi::PoolQuery::Dynamic(),
+      wrp_cte::core::kCtePoolName,
+      wrp_cte::core::kCtePoolId,
+      params);
+  create_task.Wait();
+  if (create_task->GetReturnCode() != 0) {
+    throw std::runtime_error("Failed to create CTE container");
+  }
+  cte_client->Init(create_task->new_pool_id_);
+  
+  // Register storage target (100MB file-based)
+  auto reg_task = cte_client->AsyncRegisterTarget(
+      "/tmp/cte_storage",
+      chimaera::bdev::BdevType::kFile,
+      100 * 1024 * 1024);
+  reg_task.Wait();
+  if (reg_task->GetReturnCode() != 0) {
+    // Warning only - target may already be registered or configured via config file
+    std::cerr << "WARNING: Failed to register storage target (code: " 
+              << reg_task->GetReturnCode() << ")" << std::endl;
   }
   
   //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
@@ -58,15 +94,51 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
   // For testing: initialize CTE if not already initialized
-  std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
-  if (cte_config.empty()) {
-    cte_config = "config/cte_config.yaml";
-  }
-  
-  // Use CTEInitializer for proper initialization
-  if (!coeus::CTEInitializer::IsInitialized()) {
-    if (!coeus::CTEInitializer::Initialize(cte_config, chi::PoolQuery::Dynamic())) {
-      throw std::runtime_error("Failed to initialize CTE in HermesEngine test constructor");
+  if (!WRP_CTE_CLIENT) {
+    // Initialize Chimaera runtime first
+    if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+      throw std::runtime_error("Failed to initialize Chimaera runtime");
+    }
+    
+    // Initialize CTE subsystem
+    std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
+    if (cte_config.empty()) {
+      cte_config = "config/cte_config.yaml";
+    }
+    
+    if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
+      throw std::runtime_error("Failed to initialize CTE subsystem");
+    }
+    
+    // Get CTE client and create container
+    auto* cte_client = WRP_CTE_CLIENT;
+    if (!cte_client) {
+      throw std::runtime_error("CTE client is null after initialization");
+    }
+    
+    // Create CTE container
+    wrp_cte::core::CreateParams params;
+    auto create_task = cte_client->AsyncCreate(
+        chi::PoolQuery::Dynamic(),
+        wrp_cte::core::kCtePoolName,
+        wrp_cte::core::kCtePoolId,
+        params);
+    create_task.Wait();
+    if (create_task->GetReturnCode() != 0) {
+      throw std::runtime_error("Failed to create CTE container");
+    }
+    cte_client->Init(create_task->new_pool_id_);
+    
+    // Register storage target (100MB file-based)
+    auto reg_task = cte_client->AsyncRegisterTarget(
+        "/tmp/cte_storage",
+        chimaera::bdev::BdevType::kFile,
+        100 * 1024 * 1024);
+    reg_task.Wait();
+    if (reg_task->GetReturnCode() != 0) {
+      // Warning only - target may already be registered or configured via config file
+      std::cerr << "WARNING: Failed to register storage target (code: " 
+                << reg_task->GetReturnCode() << ")" << std::endl;
     }
   }
   
