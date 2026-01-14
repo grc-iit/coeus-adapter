@@ -40,16 +40,18 @@
 #include <common/ErrorCodes.h>
 #include "common/DbOperation.h"
 #include "common/VariableMetadata.h"
-#include <comms/Hermes.h>
+#include <comms/CTETag.h>
 #include <comms/MPI.h>
 #include "common/globalVariable.h"
 #include "common/Tracer.h"
+#include <wrp_cte/core/core_client.h>
+#include <memory>
 
 namespace coeus {
 
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-  std::shared_ptr<coeus::IHermes> Hermes;
+  std::unique_ptr<coeus::CTETag> current_tag;  // Current CTE tag for blob operations
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;
@@ -72,8 +74,8 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
                const adios2::Mode mode,
                adios2::helper::Comm comm);
 
-  HermesEngine(std::shared_ptr<coeus::IHermes> h,//NOLINT
-               std::shared_ptr<coeus::MPI> mpi,
+  // Test constructor - no longer needs IHermes abstraction
+  HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                adios2::core::IO &io,
                const std::string &name,
                const adios2::Mode mode,

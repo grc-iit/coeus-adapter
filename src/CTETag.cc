@@ -43,9 +43,17 @@ void CTETag::Put(const std::string &blob_name, size_t blob_size, const void* val
 std::vector<uint8_t> CTETag::Get(const std::string &blob_name) {
   try {
     // Get blob size first
+    // Note: Tag::GetBlobSize() doesn't check return code, so if blob doesn't exist,
+    // it will return 0 (size_ is initialized to 0). We'll detect this by trying to read.
     chi::u64 blob_size = tag_.GetBlobSize(blob_name);
+    
+    // If size is 0, we need to check if blob exists or is just empty
+    // GetBlob() requires data_size > 0, so we can't use it to check existence
+    // We'll try to read with the reported size - if blob doesn't exist, GetBlob will throw
     if (blob_size == 0) {
-      // Blob doesn't exist or is empty
+      // Size is 0 - blob either doesn't exist or is empty
+      // Since GetBlob requires size > 0, we can't verify existence
+      // Return empty vector (treating non-existent and empty as same)
       return std::vector<uint8_t>();
     }
     
@@ -53,6 +61,7 @@ std::vector<uint8_t> CTETag::Get(const std::string &blob_name) {
     std::vector<uint8_t> buffer(blob_size);
     
     // Retrieve blob data directly into buffer
+    // This will throw if blob doesn't exist (even if GetBlobSize returned non-zero)
     tag_.GetBlob(blob_name, reinterpret_cast<char*>(buffer.data()), blob_size, 0);
     
     return buffer;

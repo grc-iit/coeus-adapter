@@ -15,6 +15,7 @@
 
 #include "interfaces/IHermes.h"
 #include "CTETag.h"
+#include "CTEInitializer.h"
 #include "common/Tracer.h"
 #include <wrp_cte/core/core_client.h>
 #include <cstdlib>
@@ -40,11 +41,34 @@ class Hermes : public IHermes {
       cte_config = "config/cte_config.yaml"; // Default config path
     }
     
-    // WRP_CTE_CLIENT_INIT automatically calls chi::CHIMAERA_INIT internally
-    bool cte_init = wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config);
+    // Use CTEInitializer for proper initialization following CTE best practices
+    // This ensures:
+    // 1. Chimaera is initialized first
+    // 2. CTE subsystem is initialized
+    // 3. CTE client pool is created
+    bool cte_init = CTEInitializer::Initialize(cte_config, chi::PoolQuery::Dynamic());
     if (!cte_init) {
       std::cerr << "ERROR: Failed to initialize CTE. CTE is required for I/O operations." << std::endl;
       return false;
+    }
+    
+    // Optionally register storage targets if specified in environment
+    // This can be done here or left to configuration file
+    const char* storage_path = getenv("CTE_STORAGE_PATH");
+    if (storage_path) {
+      chi::u64 storage_size = 100ULL * 1024 * 1024 * 1024; // Default 100GB
+      const char* storage_size_str = getenv("CTE_STORAGE_SIZE");
+      if (storage_size_str) {
+        storage_size = std::stoull(storage_size_str);
+      }
+      
+      if (!CTEInitializer::RegisterStorageTarget(
+          storage_path, 
+          chimaera::bdev::BdevType::kFile, 
+          storage_size)) {
+        std::cerr << "WARNING: Failed to register storage target: " << storage_path << std::endl;
+        // Continue anyway - CTE may have targets configured via config file
+      }
     }
     
     std::cout << "CTE initialized successfully with config: " << cte_config << std::endl;
