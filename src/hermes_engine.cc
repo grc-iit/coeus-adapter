@@ -217,13 +217,13 @@ void HermesEngine::Init_() {
 
   // Create admin client (required for pool management)
   chimaera::admin::Client admin_client(chi::kAdminPoolId);
-  admin_client.Create(chi::PoolQuery::Local(), "admin", chi::kAdminPoolId);
+  admin_client.Create(hipc::MemContext(), chi::PoolQuery::Local(), "admin");
 
   // Initialize rank consensus pool first to get rank
   // Note: rank is initialized to 0 by default, but we'll get the actual rank from consensus
   rankConsensus_pool_id_ = chi::PoolId(8001, 0);
   rank_consensus = chimaera::rankConsensus::Client(rankConsensus_pool_id_);
-  rank_consensus.Create(chi::PoolQuery::Local(), "rankConsensus", rankConsensus_pool_id_);
+  rank_consensus.Create(hipc::MemContext(), chi::PoolQuery::Local(), "rankConsensus", rankConsensus_pool_id_);
   rank = rank_consensus.GetRank(chi::PoolQuery::Local());
   
   std::cout << "Rank consensus initialized, assigned rank: " << rank << std::endl;
@@ -287,7 +287,7 @@ void HermesEngine::Init_() {
     // Create coeus_mdm pool
     coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
     client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
-    client.Create(chi::PoolQuery::Local(), "db_operation", coeus_mdm_pool_id_, db_file);
+    client.Create(hipc::MemContext(), chi::PoolQuery::Local(), "db_operation", coeus_mdm_pool_id_, db_file);
     
     if (rank % ppn == 0) {
       db->createTables();
@@ -338,14 +338,14 @@ bool HermesEngine::Promote(int step){
 bool HermesEngine::Demote(int step){
     // CTE handles data placement automatically based on access patterns
     // Demote is handled by CTE's data placement engine
-    bool success = true;
-    if (step > 0) {
-        auto var_locations = db->getAllBlobs(step, rank);
-        for (const auto &location: var_locations) {
-            success &= Hermes->Demote(location.tag_name, location.blob_name);
-        }
-}
-    return success;
+//     bool success = true;
+//     if (step > 0) {
+//         auto var_locations = db->getAllBlobs(step, rank);
+//         for (const auto &location: var_locations) {
+//             success &= Hermes->Demote(location.tag_name, location.blob_name);
+//         }
+// }
+//     return success;
     // This is a no-op - CTE will automatically demote based on scoring
     (void)step;  // Suppress unused parameter warning
     return true;
@@ -677,9 +677,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
 
   std::string name = variable.m_Name;
   current_tag->Put(name, variable.SelectionSize() * sizeof(T), values);
-  if (rank == 0) {
-    std::cout << "Rank 0 - current_tag->Put (DoPutSync) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-  }
+ 
 
 
 #ifdef Meta_enabled
