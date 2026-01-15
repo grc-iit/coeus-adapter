@@ -14,7 +14,7 @@
 #define COEUS_INCLUDE_COMMS_HERMES_H_
 
 #include "interfaces/IHermes.h"
-#include "CTETag.h"
+#include "CTETagClient.h"
 #include "common/Tracer.h"
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_tasks.h>
@@ -93,8 +93,13 @@ class Hermes : public IHermes {
   };
 
     bool GetTag(const std::string &tag_name) override {
-    // Create CTE tag for blob storage
-    tag = (ITag*) new coeus::CTETag(tag_name);
+    // Create CTE tag for blob storage using CTETagClient
+    auto* cte_client = WRP_CTE_CLIENT;
+    if (!cte_client) {
+      std::cerr << "ERROR: CTE client is null in GetTag" << std::endl;
+      return false;
+    }
+    tag = new coeus::CTETagClient(cte_client, tag_name);
     return true;
   }
 

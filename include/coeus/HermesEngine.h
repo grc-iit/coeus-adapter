@@ -40,7 +40,7 @@
 #include <common/ErrorCodes.h>
 #include "common/DbOperation.h"
 #include "common/VariableMetadata.h"
-#include <comms/CTETag.h>
+#include <comms/interfaces/IHermes.h>
 #include <comms/MPI.h>
 #include "common/globalVariable.h"
 #include "common/Tracer.h"
@@ -51,7 +51,7 @@ namespace coeus {
 
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
-  std::unique_ptr<coeus::CTETag> current_tag;  // Current CTE tag for blob operations
+  coeus::IHermes* hermes_ = nullptr;  // CTE Hermes interface for blob operations
   std::string uid;
   SQLiteWrapper* db;
   std::string db_file;

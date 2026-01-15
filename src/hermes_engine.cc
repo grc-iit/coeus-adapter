@@ -11,6 +11,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "coeus/HermesEngine.h"
+#include "comms/CTEHermes.h"
 #include <chimaera/chimaera.h>
 #include <chimaera/admin/admin_client.h>
 #include <wrp_cte/core/core_client.h>
@@ -33,50 +34,14 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // Initialize Chimaera runtime first
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
-    throw std::runtime_error("Failed to initialize Chimaera runtime");
-  }
+  // Create CTEHermes instance - it will handle CTE initialization via connect()
+  hermes_ = new coeus::CTEHermes();
   
-  // Initialize CTE subsystem
-  std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
-  if (cte_config.empty()) {
-    cte_config = "config/cte_config.yaml";
-  }
-  
-  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
-    throw std::runtime_error("Failed to initialize CTE subsystem");
-  }
-  
-  // Get CTE client and create container
-  auto* cte_client = WRP_CTE_CLIENT;
-  if (!cte_client) {
-    throw std::runtime_error("CTE client is null after initialization");
-  }
-  
-  // Create CTE container
-  wrp_cte::core::CreateParams params;
-  auto create_task = cte_client->AsyncCreate(
-      chi::PoolQuery::Dynamic(),
-      wrp_cte::core::kCtePoolName,
-      wrp_cte::core::kCtePoolId,
-      params);
-  create_task.Wait();
-  if (create_task->GetReturnCode() != 0) {
-    throw std::runtime_error("Failed to create CTE container");
-  }
-  cte_client->Init(create_task->new_pool_id_);
-  
-  // Register storage target (100MB file-based)
-  auto reg_task = cte_client->AsyncRegisterTarget(
-      "/tmp/cte_storage",
-      chimaera::bdev::BdevType::kFile,
-      100 * 1024 * 1024);
-  reg_task.Wait();
-  if (reg_task->GetReturnCode() != 0) {
-    // Warning only - target may already be registered or configured via config file
-    std::cerr << "WARNING: Failed to register storage target (code: " 
-              << reg_task->GetReturnCode() << ")" << std::endl;
+  // Initialize CTE via CTEHermes::connect()
+  if (!hermes_->connect()) {
+    delete hermes_;
+    hermes_ = nullptr;
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect()");
   }
   
   //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
@@ -93,53 +58,15 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io, const std::string &name,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // For testing: initialize CTE if not already initialized
-  if (!WRP_CTE_CLIENT) {
-    // Initialize Chimaera runtime first
-    if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
-      throw std::runtime_error("Failed to initialize Chimaera runtime");
-    }
-    
-    // Initialize CTE subsystem
-    std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
-    if (cte_config.empty()) {
-      cte_config = "config/cte_config.yaml";
-    }
-    
-    if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
-      throw std::runtime_error("Failed to initialize CTE subsystem");
-    }
-    
-    // Get CTE client and create container
-    auto* cte_client = WRP_CTE_CLIENT;
-    if (!cte_client) {
-      throw std::runtime_error("CTE client is null after initialization");
-    }
-    
-    // Create CTE container
-    wrp_cte::core::CreateParams params;
-    auto create_task = cte_client->AsyncCreate(
-        chi::PoolQuery::Dynamic(),
-        wrp_cte::core::kCtePoolName,
-        wrp_cte::core::kCtePoolId,
-        params);
-    create_task.Wait();
-    if (create_task->GetReturnCode() != 0) {
-      throw std::runtime_error("Failed to create CTE container");
-    }
-    cte_client->Init(create_task->new_pool_id_);
-    
-    // Register storage target (100MB file-based)
-    auto reg_task = cte_client->AsyncRegisterTarget(
-        "/tmp/cte_storage",
-        chimaera::bdev::BdevType::kFile,
-        100 * 1024 * 1024);
-    reg_task.Wait();
-    if (reg_task->GetReturnCode() != 0) {
-      // Warning only - target may already be registered or configured via config file
-      std::cerr << "WARNING: Failed to register storage target (code: " 
-                << reg_task->GetReturnCode() << ")" << std::endl;
-    }
+  // For testing: create CTEHermes instance
+  // CTEHermes::connect() will check if CTE is already initialized
+  hermes_ = new coeus::CTEHermes();
+  
+  // Initialize CTE via CTEHermes::connect() if not already initialized
+  if (!hermes_->connect()) {
+    delete hermes_;
+    hermes_ = nullptr;
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect()");
   }
   
   Init_();
@@ -319,6 +246,10 @@ void HermesEngine::DoClose(const int transportIndex) {
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
   delete db;
+  if (hermes_) {
+    delete hermes_;
+    hermes_ = nullptr;
+  }
 }
 
 /**
@@ -373,8 +304,10 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                               + "_rank" + std::to_string(rank);
   // if two same run happened in one pipeline
   //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-    // Create CTE tag directly (no need for Hermes abstraction)
-    current_tag = std::make_unique<coeus::CTETag>(tag_name);
+    // Get or create CTE tag using IHermes interface
+    if (!hermes_ || !hermes_->GetTag(tag_name)) {
+      throw std::runtime_error("Failed to get/create tag: " + tag_name);
+    }
 // derived part
 //  if(m_OpenMode == adios2::Mode::Read){
 //      for(int i = 0; i < num_layers; i++) {
@@ -419,7 +352,7 @@ void HermesEngine::ComputeDerivedVariables() {
             std::cout <<"throw error commented" <<std::endl;
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
-      auto blob = current_tag->Get(varName);
+      auto blob = hermes_->tag->Get(varName);
 
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
@@ -487,7 +420,11 @@ void HermesEngine::EndStep() {
 //    }
 //  }
 
-  current_tag.reset();
+  // Tag is managed by CTEHermes, no need to reset
+  if (hermes_ && hermes_->tag) {
+    delete hermes_->tag;
+    hermes_->tag = nullptr;
+  }
 
 }
 
@@ -502,7 +439,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   MinMax.Init(Var.m_Type);
 
   // Obtain the blob from CTE using the filename and variable name
-  auto blob = current_tag->Get(Var.m_Name);
+  auto blob = hermes_->tag->Get(Var.m_Name);
   if (blob.empty()) {
     return false; // Blob not found
   }
@@ -634,12 +571,12 @@ template<typename T>
 void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
                               T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = current_tag->Get(variable.m_Name);
+  auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
   // add spdlog method to extract the variable metadata
 
-    metaInfo metaInfo(variable, adiosOpType::get, current_tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::get, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
@@ -658,11 +595,11 @@ void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
 
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = current_tag->Get(variable.m_Name);
+  auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
 #ifdef Meta_enabled
   // add spdlog method to extract the variable metadata
-    metaInfo metaInfo(variable, adiosOpType::get, current_tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::get, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
   //finish metadata extraction
@@ -682,7 +619,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
 
   std::string name = variable.m_Name;
-  current_tag->Put(name, variable.SelectionSize() * sizeof(T), values);
+  hermes_->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
  
 
 
@@ -696,7 +633,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(current_tag->name, name);
+  BlobInfo blobInfo(hermes_->tag->name, name);
 
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
@@ -708,7 +645,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   }
 
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, current_tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 }
@@ -721,17 +658,17 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
 
   auto start_time = std::chrono::high_resolution_clock::now();
-  current_tag->Put(name, variable.SelectionSize() * sizeof(T), values);
+  hermes_->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
   auto end_time = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
   if (rank == 0) {
-    std::cout << "Rank 0 - current_tag->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+    std::cout << "Rank 0 - hermes_->tag->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(current_tag->name, name);
+  BlobInfo blobInfo(hermes_->tag->name, name);
   auto start_time_md = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
@@ -741,7 +678,7 @@ void HermesEngine::DoPutDeferred_(
     std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 #ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, current_tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
+    metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
 #endif
 
@@ -760,11 +697,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         total_count *= count;
     }
     auto start_time = std::chrono::high_resolution_clock::now();
-    current_tag->Put(name, total_count * sizeof(T), values);
+    hermes_->tag->Put(name, total_count * sizeof(T), values);
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     if (rank == 0) {
-      std::cout << "Rank 0 - current_tag->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
+      std::cout << "Rank 0 - hermes_->tag->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
     }
     auto start_time_md = std::chrono::high_resolution_clock::now();
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
@@ -788,7 +725,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(current_tag->name, variable.m_Name);
+  BlobInfo blobInfo(hermes_->tag->name, variable.m_Name);
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 }
 
@@ -796,7 +733,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                      variable.m_Count, variable.IsConstantDims(), true,
                      adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(current_tag->name, variable.m_Name);
+  BlobInfo blobInfo(hermes_->tag->name, variable.m_Name);
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 
 }

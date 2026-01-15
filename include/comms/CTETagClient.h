@@ -10,8 +10,8 @@
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#ifndef COEUS_INCLUDE_COMMS_CTETAG_H_
-#define COEUS_INCLUDE_COMMS_CTETAG_H_
+#ifndef COEUS_INCLUDE_COMMS_CTETAGCLIENT_H_
+#define COEUS_INCLUDE_COMMS_CTETAGCLIENT_H_
 
 #include "interfaces/ITag.h"
 #include <wrp_cte/core/core_client.h>
@@ -22,24 +22,24 @@
 namespace coeus {
 
 /**
- * CTETag: CTE Tag implementation for blob storage
+ * CTETagClient: ITag implementation using wrp_cte::core::Client directly
  * 
- * This class implements the ITag interface using CTE (Context-Transfer-Engine)
- * for intelligent data placement across storage tiers. It wraps CTE Tag
- * and provides CTE blob storage/retrieval operations.
+ * Unlike CTETag which wraps wrp_cte::core::Tag, this class uses
+ * the CTE client API directly for tag/blob operations.
  */
-class CTETag : public ITag {
+class CTETagClient : public ITag {
  public:
   /**
    * Constructor
+   * @param cte_client Pointer to CTE client (uses WRP_CTE_CLIENT if nullptr)
    * @param tag_name Name of the CTE tag
    */
-  explicit CTETag(const std::string &tag_name);
-
+  CTETagClient(wrp_cte::core::Client* cte_client, const std::string& tag_name);
+  
   /**
    * Destructor
    */
-  ~CTETag() override = default;
+  ~CTETagClient() override = default;
 
   /**
    * Put CTE blob data into the tag
@@ -70,17 +70,17 @@ class CTETag : public ITag {
   size_t GetBlobSize(const std::string &blob_name) override;
 
  private:
-  wrp_cte::core::Tag tag_;  // CTE tag
-  std::string tag_name_;    // Tag name
+  wrp_cte::core::Client* cte_client_;  // CTE client (borrowed, not owned)
+  wrp_cte::core::TagId tag_id_;        // Tag ID
+  std::string tag_name_;               // Tag name
   
   /**
    * Get default blob score for data placement
-   * Can be customized based on access patterns, size, etc.
    */
-  float GetDefaultBlobScore() const { return 0.7f; } // Default: warm data
+  float GetDefaultBlobScore() const { return 0.7f; }
 };
 
 } // namespace coeus
 
-#endif // COEUS_INCLUDE_COMMS_CTETAG_H_
+#endif // COEUS_INCLUDE_COMMS_CTETAGCLIENT_H_
 
