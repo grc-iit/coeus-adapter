@@ -10,7 +10,7 @@
 #include <mpi.h>
 #include <fstream>
 #include "coeus/MetadataSerializer.h"
-#include "comms/Hermes.h"
+#include "comms/CTEHermes.h"
 
 std::vector<double> produce_vector(int step) {
   return {step * 1.0, step * 2.0, step * 3.0};
@@ -38,9 +38,9 @@ int main(int argc, char* argv[]) {
   adios2::IO io = adios.DeclareIO("TestIO");
   auto var = io.DefineVariable<double>("vector", {size_t(size), 3}, {size_t(rank), 0}, {1, 3}, adios2::ConstantDims);
 
-  auto Hermes = std::make_unique<coeus::Hermes>();
+  auto Hermes = std::make_unique<coeus::CTEHermes>();
   if(!Hermes->connect()){
-    std::cout << "Could not connect to Hermes " <<  rank << std::endl;
+    std::cout << "Could not connect to CTEHermes " <<  rank << std::endl;
     return -1;
   }
 
@@ -53,42 +53,39 @@ int main(int argc, char* argv[]) {
     if (rank % ppn == 0) {
       int currentStep;
       auto blob_name = "total_steps_" + io.Name();
-      Hermes->GetBucket("total_steps");
-      Hermes->bkt->Put(blob_name, sizeof(int), &currentStep);
+      Hermes->GetTag("total_steps");
+      Hermes->tag->Put(blob_name, sizeof(int), &currentStep);
     }
 
     auto endInsertApps = std::chrono::high_resolution_clock::now();
-    localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();\
-    delete Hermes->bkt;
+    localInsertAppsTime += std::chrono::duration<double>(endInsertApps - startInsertApps).count();
 
     auto startInsertBlobs = std::chrono::high_resolution_clock::now();
     {
-      std::string bucket_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
-      BlobInfo blob_info(bucket_name, io.Name());
+      std::string tag_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
+      BlobInfo blob_info(tag_name, io.Name());
 
       std::string serializedBlobInfo = MetadataSerializer::SerializeBlobInfo(blob_info);
 
-      Hermes->GetBucket(bucket_name);
-      Hermes->bkt->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
+      Hermes->GetTag(tag_name);
+      Hermes->tag->Put("Var" + std::to_string(step), serializedBlobInfo.size(), serializedBlobInfo.data());
 
     }
     auto endInsertBlobs = std::chrono::high_resolution_clock::now();
     localInsertBlobsTime += std::chrono::duration<double>(endInsertBlobs - startInsertBlobs).count();
-    delete Hermes->bkt;
 
     auto startInsertMetadata = std::chrono::high_resolution_clock::now();
     {
-      std::string bucket_name_metadata = "step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
+      std::string tag_name_metadata = "step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
       VariableMetadata metadata("Var" + std::to_string(step), {4, 4}, {0, 0}, {4, 4}, true, false, "int");
 
       std::string serializedMetadata = MetadataSerializer::SerializeMetadata(metadata);
 
-      Hermes->GetBucket(bucket_name_metadata);
-      Hermes->bkt->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
+      Hermes->GetTag(tag_name_metadata);
+      Hermes->tag->Put("Var" + std::to_string(step), serializedMetadata.size(), serializedMetadata.data());
     }
     auto endInsertMetadata = std::chrono::high_resolution_clock::now();
     localInsertMetadataTime += std::chrono::duration<double>(endInsertMetadata - startInsertMetadata).count();
-    delete Hermes->bkt;
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -98,24 +95,23 @@ int main(int argc, char* argv[]) {
   for (int step = 0; step < N; ++step) {
     auto startQueryApps = std::chrono::high_resolution_clock::now();
     {
-      Hermes->GetBucket("total_steps");
-      auto blob = Hermes->bkt->Get("total_steps_" + io.Name());
+      Hermes->GetTag("total_steps");
+      auto blob = Hermes->tag->Get("total_steps_" + io.Name());
       if (!blob.empty()) {
         auto total_steps = *reinterpret_cast<const int *>(blob.data());
       }
     }
     auto endQueryApps = std::chrono::high_resolution_clock::now();
     localQueryAppsTime += std::chrono::duration<double>(endQueryApps - startQueryApps).count();
-    delete Hermes->bkt;
 
     auto startQueryBlobs = std::chrono::high_resolution_clock::now();
     {
-      std::string bucket_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
+      std::string tag_name = "Variable_step_" + std::to_string(step) + "_rank_" + std::to_string(rank);
 
-      Hermes->GetBucket(bucket_name);
-      std::vector<std::string> blob_names = Hermes->bkt->GetContainedBlobNames();
+      Hermes->GetTag(tag_name);
+      std::vector<std::string> blob_names = Hermes->tag->GetContainedBlobNames();
       for (const auto &blob_name : blob_names) {
-        auto blob = Hermes->bkt->Get(blob_name);
+        auto blob = Hermes->tag->Get(blob_name);
         if (!blob.empty()) {
           BlobInfo blob_info =
               MetadataSerializer::DeserializeBlobInfo(blob);
@@ -124,17 +120,16 @@ int main(int argc, char* argv[]) {
     }
     auto endQueryBlobs = std::chrono::high_resolution_clock::now();
     localQueryBlobsTime += std::chrono::duration<double>(endQueryBlobs - startQueryBlobs).count();
-    delete Hermes->bkt;
 
     auto startQueryMetadata = std::chrono::high_resolution_clock::now();
     {
-      std::string filename = "step_" + std::to_string(step) +
+      std::string tag_name = "step_" + std::to_string(step) +
           "_rank_" + std::to_string(rank);
 
-      Hermes->GetBucket(filename);
-      std::vector<std::string> blob_names = Hermes->bkt->GetContainedBlobNames();
+      Hermes->GetTag(tag_name);
+      std::vector<std::string> blob_names = Hermes->tag->GetContainedBlobNames();
       for (const auto &blob_name : blob_names) {
-        auto blob = Hermes->bkt->Get(blob_name);
+        auto blob = Hermes->tag->Get(blob_name);
         if (!blob.empty()) {
           VariableMetadata variableMetadata =
               MetadataSerializer::DeserializeMetadata(blob);
@@ -143,7 +138,6 @@ int main(int argc, char* argv[]) {
     }
     auto endQueryMetadata = std::chrono::high_resolution_clock::now();
     localQueryMetadataTime += std::chrono::duration<double>(endQueryMetadata - startQueryMetadata).count();
-    delete Hermes->bkt;
   }
 
   MPI_Barrier(MPI_COMM_WORLD);

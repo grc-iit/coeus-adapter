@@ -40,6 +40,11 @@ bool CTEHermes::connect() {
     return true; // Already connected
   }
   
+  // Initialize Chimaera runtime first
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+    std::cerr << "ERROR: Failed to initialize Chimaera runtime" << std::endl;
+    return false;
+  }
   
   // Get CTE config path from environment or use default
   std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
@@ -117,21 +122,79 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
 }
 
 bool CTEHermes::Demote(const std::string &tag_name, const std::string &blob_name) {
-  // CTE handles data placement automatically based on access patterns
-  // Demote operation is handled by CTE's data placement engine
-  // This is a no-op - CTE will automatically demote based on scoring
-  (void)tag_name;  // Suppress unused parameter warning
-  (void)blob_name; // Suppress unused parameter warning
-  return true;
+  if (!cte_client_) {
+    std::cerr << "ERROR: CTE client not initialized. Call connect() first." << std::endl;
+    return false;
+  }
+  
+  try {
+    // Get or create tag to obtain TagId
+    auto tag_task = cte_client_->AsyncGetOrCreateTag(tag_name);
+    tag_task.Wait();
+    
+    if (tag_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for demote operation" << std::endl;
+      return false;
+    }
+    
+    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    
+    // Demote: lower score (0.3 = cold tier) to move blob to slower storage
+    float demote_score = 0.3f;
+    auto reorganize_task = cte_client_->AsyncReorganizeBlob(tag_id, blob_name, demote_score);
+    reorganize_task.Wait();
+    
+    if (reorganize_task->GetReturnCode() == 0) {
+      return true;
+    } else {
+      std::cerr << "WARNING: ReorganizeBlob failed for blob '" << blob_name 
+                << "' in tag '" << tag_name << "' (code: " 
+                << reorganize_task->GetReturnCode() << ")" << std::endl;
+      return false;
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "ERROR: Demote failed for blob '" << blob_name 
+              << "' in tag '" << tag_name << "': " << e.what() << std::endl;
+    return false;
+  }
 }
 
 bool CTEHermes::Prefetch(const std::string &tag_name, const std::string &blob_name) {
-  // CTE handles data placement automatically based on access patterns
-  // Prefetch operation is handled by CTE's data placement engine
-  // This is a no-op - CTE will automatically promote based on scoring
-  (void)tag_name;  // Suppress unused parameter warning
-  (void)blob_name; // Suppress unused parameter warning
-  return true;
+  if (!cte_client_) {
+    std::cerr << "ERROR: CTE client not initialized. Call connect() first." << std::endl;
+    return false;
+  }
+  
+  try {
+    // Get or create tag to obtain TagId
+    auto tag_task = cte_client_->AsyncGetOrCreateTag(tag_name);
+    tag_task.Wait();
+    
+    if (tag_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for prefetch operation" << std::endl;
+      return false;
+    }
+    
+    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    
+    // Prefetch: higher score (0.95 = hot tier) to move blob to faster storage
+    float prefetch_score = 0.95f;
+    auto reorganize_task = cte_client_->AsyncReorganizeBlob(tag_id, blob_name, prefetch_score);
+    reorganize_task.Wait();
+    
+    if (reorganize_task->GetReturnCode() == 0) {
+      return true;
+    } else {
+      std::cerr << "WARNING: ReorganizeBlob failed for blob '" << blob_name 
+                << "' in tag '" << tag_name << "' (code: " 
+                << reorganize_task->GetReturnCode() << ")" << std::endl;
+      return false;
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "ERROR: Prefetch failed for blob '" << blob_name 
+              << "' in tag '" << tag_name << "': " << e.what() << std::endl;
+    return false;
+  }
 }
 
 } // namespace coeus

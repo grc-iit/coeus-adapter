@@ -1,4 +1,4 @@
-name: incompact3D
+=\(_?*IOPU){Jname: incompact3D
 env: incompact3D_env
 pkgs:
   - pkg_type: Incompact3d

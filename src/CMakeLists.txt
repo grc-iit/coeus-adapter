@@ -5,8 +5,8 @@ include_directories(${CMAKE_SOURCE_DIR})
 #------------------------------------------------------------------------------
 set(HERMES_ENGINE_SRCS
         ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/CTETagClient.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/CTEHermes.cc)
+        ${CMAKE_SOURCE_DIR}/include/comms/CTETagClient.cc
+        ${CMAKE_SOURCE_DIR}/include/comms/CTEHermes.cc)
 
 #------------------------------------------------------------------------------
 # Libraries
