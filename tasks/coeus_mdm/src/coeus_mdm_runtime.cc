@@ -88,3 +88,6 @@ chi::u64 Runtime::GetWorkRemaining() const {
 
 }  // namespace chimaera::coeus_mdm
 
+// Generate ChiMod entry points (get_chimod_name, alloc_chimod, etc.)
+CHI_TASK_CC(chimaera::coeus_mdm::Runtime)
+

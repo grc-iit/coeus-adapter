@@ -14,6 +14,7 @@
 #include "comms/CTEHermes.h"
 #include <chimaera/chimaera.h>
 #include <chimaera/admin/admin_client.h>
+#include <chimaera/module_manager.h>
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_tasks.h>
 #include <chrono>
@@ -141,6 +142,36 @@ void HermesEngine::Init_() {
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
   std::cout << "Initialized Chimaera" << std::endl;
+
+  // Load required ChiMod modules (rankConsensus and coeus_mdm)
+  if (CHI_MODULE_MANAGER) {
+    // Initialize ModuleManager if not already initialized
+    if (!CHI_MODULE_MANAGER->IsInitialized()) {
+      if (!CHI_MODULE_MANAGER->ServerInit()) {
+        engine_logger->warn("ModuleManager auto-discovery failed, modules may not be loaded");
+      } else {
+        engine_logger->info("ModuleManager initialized, modules auto-discovered");
+      }
+    }
+    
+    // Verify required modules are loaded
+    auto* rankConsensus_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_rankConsensus");
+    auto* coeus_mdm_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_coeus_mdm");
+    
+    if (!rankConsensus_mod) {
+      engine_logger->warn("rankConsensus module not found - may fail during pool creation");
+    } else {
+      engine_logger->info("rankConsensus module loaded: {}", rankConsensus_mod->lib_path);
+    }
+    
+    if (!coeus_mdm_mod) {
+      engine_logger->warn("coeus_mdm module not found - may fail during pool creation");
+    } else {
+      engine_logger->info("coeus_mdm module loaded: {}", coeus_mdm_mod->lib_path);
+    }
+  } else {
+    engine_logger->warn("CHI_MODULE_MANAGER not available - modules may not be loaded");
+  }
 
   // Create admin client (required for pool management)
   chimaera::admin::Client admin_client(chi::kAdminPoolId);

@@ -56,3 +56,6 @@ chi::u64 Runtime::GetWorkRemaining() const {
 
 }  // namespace chimaera::rankConsensus
 
+// Generate ChiMod entry points (get_chimod_name, alloc_chimod, etc.)
+CHI_TASK_CC(chimaera::rankConsensus::Runtime)
+
