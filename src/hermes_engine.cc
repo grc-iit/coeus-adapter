@@ -138,7 +138,15 @@ void HermesEngine::Init_() {
 
   // Initialize Chimaera (Context-Runtime) for task management
   if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
-    std::cout << "Could not initialize Chimaera" << std::endl;
+    std::cout << "ERROR: Could not initialize Chimaera" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Port 5555 is already in use by another Chimaera runtime" << std::endl;
+    std::cout << "  2. Multiple MPI processes are trying to start runtime simultaneously" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Stop existing runtime: chimaera_stop_runtime" << std::endl;
+    std::cout << "  - Or start runtime separately before MPI job: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Or set CHIMAERA_WITH_RUNTIME=0 to connect as client only" << std::endl;
+    std::cout << "  - Or configure different port in Chimaera config file" << std::endl;
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
   std::cout << "Initialized Chimaera" << std::endl;
