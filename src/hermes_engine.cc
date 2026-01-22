@@ -138,7 +138,7 @@ void HermesEngine::Init_() {
 
   // Initialize Chimaera (Context-Runtime) for task management
   if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
-    engine_logger->error("Could not initialize Chimaera");
+    std::cout << "Could not initialize Chimaera" << std::endl;
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
   std::cout << "Initialized Chimaera" << std::endl;

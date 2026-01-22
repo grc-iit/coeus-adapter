@@ -49,7 +49,7 @@ bool CTEHermes::connect() {
   
   // Initialize CTE subsystem
   if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
-    std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
+    std::cout << "ERROR: Failed to initialize CTE subsystem" << std::endl;
     return false;
   }
   
@@ -59,7 +59,7 @@ bool CTEHermes::connect() {
   }
   
   if (!cte_client_) {
-    std::cerr << "ERROR: CTE client is null after initialization" << std::endl;
+    std::cout << "ERROR: CTE client is null after initialization" << std::endl;
     return false;
   }
   
@@ -72,7 +72,7 @@ bool CTEHermes::connect() {
       params);
   create_task.Wait();
   if (create_task->GetReturnCode() != 0) {
-    std::cerr << "ERROR: Failed to create CTE container" << std::endl;
+    std::cout << "ERROR: Failed to create CTE container" << std::endl;
     return false;
   }
   cte_client_->Init(create_task->new_pool_id_);
@@ -85,7 +85,7 @@ bool CTEHermes::connect() {
   reg_task.Wait();
   if (reg_task->GetReturnCode() != 0) {
     // Warning only - target may already be registered or configured via config file
-    std::cerr << "WARNING: Failed to register storage target (code: " 
+    std::cout << "WARNING: Failed to register storage target (code: " 
               << reg_task->GetReturnCode() << ")" << std::endl;
   }
   
