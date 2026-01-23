@@ -97,14 +97,18 @@ bool CTEHermes::connect() {
   cte_client_->Init(create_task->new_pool_id_);
   
   // Register storage target (100MB file-based)
+  // Use PoolId(514, 0) for the bdev pool - 512 is CTE core, 513+ used by runtime
+  chi::PoolId bdev_id(514, 0);
   auto reg_task = cte_client_->AsyncRegisterTarget(
       "/tmp/cte_storage",
       chimaera::bdev::BdevType::kFile,
-      100 * 1024 * 1024);
+      100 * 1024 * 1024,
+      chi::PoolQuery::Local(),  // Use Local query for bdev pool
+      bdev_id);                 // Provide explicit bdev_id to avoid null PoolId error
   reg_task.Wait();
   if (reg_task->GetReturnCode() != 0) {
     // Warning only - target may already be registered or configured via config file
-    std::cerr << "WARNING: Failed to register storage target (code: " 
+    std::cout << "WARNING: Failed to register storage target (code: " 
               << reg_task->GetReturnCode() << ")" << std::endl;
   }
   
