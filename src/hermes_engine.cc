@@ -689,12 +689,20 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
 
-  auto start_time_md = std::chrono::high_resolution_clock::now();
+  // Time DbOperation construction
+  auto start_time_db_op = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  auto end_time_db_op = std::chrono::high_resolution_clock::now();
+  auto duration_db_op = std::chrono::duration_cast<std::chrono::microseconds>(end_time_db_op - start_time_db_op).count();
+  
+  // Time Mdm_insert call
+  auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
   auto end_time_md = std::chrono::high_resolution_clock::now();
   auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
-    if (rank == 0) {
+  
+  if (rank == 0) {
+    std::cout << "Rank 0 - DbOperation construction (DoPutSync) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
     std::cout << "Rank 0 - Mdm_insert (DoPutSync) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 
@@ -723,12 +731,21 @@ void HermesEngine::DoPutDeferred_(
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
-  auto start_time_md = std::chrono::high_resolution_clock::now();
+  
+  // Time DbOperation construction
+  auto start_time_db_op = std::chrono::high_resolution_clock::now();
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  auto end_time_db_op = std::chrono::high_resolution_clock::now();
+  auto duration_db_op = std::chrono::duration_cast<std::chrono::microseconds>(end_time_db_op - start_time_db_op).count();
+  
+  // Time Mdm_insert call
+  auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
   auto end_time_md = std::chrono::high_resolution_clock::now();
   auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
+  
   if (rank == 0) {
+    std::cout << "Rank 0 - DbOperation construction (DoPutDeferred) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
     std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
   }
 #ifdef Meta_enabled
