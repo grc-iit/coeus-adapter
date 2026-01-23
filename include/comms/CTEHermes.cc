@@ -12,6 +12,7 @@
 
 #include "comms/CTEHermes.h"
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 namespace coeus {
@@ -40,9 +41,22 @@ bool CTEHermes::connect() {
     return true; // Already connected
   }
   
-  // Initialize Chimaera runtime first
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
-    std::cerr << "ERROR: Failed to initialize Chimaera runtime" << std::endl;
+  // Check for CHIMAERA_WITH_RUNTIME environment variable and warn if set
+  const char* with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");
+  if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 || 
+                           std::strcmp(with_runtime_env, "true") == 0 ||
+                           std::strcmp(with_runtime_env, "TRUE") == 0)) {
+    std::cout << "WARNING: CHIMAERA_WITH_RUNTIME=1 is set. This will start runtime on every MPI rank." << std::endl;
+    std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
+  }
+  
+  // Initialize Chimaera client (not runtime)
+  // Note: default_with_runtime=false is correct for production MPI runs
+  // WRP_CTE_CLIENT_INIT will handle Chimaera initialization internally
+  // Only set to true for unit tests or if explicitly needed
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+    std::cout << "ERROR: Failed to initialize Chimaera client" << std::endl;
+    std::cout << "  Make sure Chimaera runtime is running (start with: chimaera_start_runtime)" << std::endl;
     return false;
   }
   

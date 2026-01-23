@@ -18,6 +18,8 @@
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_tasks.h>
 #include <chrono>
+#include <cstdlib>
+#include <cstring>
 
 namespace coeus {
 /**
@@ -137,19 +139,32 @@ void HermesEngine::Init_() {
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
   // Initialize Chimaera (Context-Runtime) for task management
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true)) {
+  // Note: CTEHermes::connect() already initializes Chimaera via WRP_CTE_CLIENT_INIT
+  // We use default_with_runtime=false to avoid starting runtime on every MPI rank
+  // Runtime should be started separately via chimaera_start_runtime or set CHIMAERA_WITH_RUNTIME=1
+  
+  // Check for CHIMAERA_WITH_RUNTIME environment variable and warn if set
+  const char* with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");
+  if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 || 
+                           std::strcmp(with_runtime_env, "true") == 0 ||
+                           std::strcmp(with_runtime_env, "TRUE") == 0)) {
+    std::cout << "WARNING: CHIMAERA_WITH_RUNTIME=1 is set. This will start runtime on every MPI rank." << std::endl;
+    std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
+  }
+  
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
     std::cout << "ERROR: Could not initialize Chimaera" << std::endl;
     std::cout << "This usually means:" << std::endl;
-    std::cout << "  1. Port 5555 is already in use by another Chimaera runtime" << std::endl;
-    std::cout << "  2. Multiple MPI processes are trying to start runtime simultaneously" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
     std::cout << "Solutions:" << std::endl;
-    std::cout << "  - Stop existing runtime: chimaera_stop_runtime" << std::endl;
-    std::cout << "  - Or start runtime separately before MPI job: chimaera_start_runtime" << std::endl;
-    std::cout << "  - Or set CHIMAERA_WITH_RUNTIME=0 to connect as client only" << std::endl;
-    std::cout << "  - Or configure different port in Chimaera config file" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Or set CHIMAERA_WITH_RUNTIME=1 to start runtime (only on rank 0 recommended)" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
-  std::cout << "Initialized Chimaera" << std::endl;
+  std::cout << "Initialized Chimaera (client mode)" << std::endl;
 
   // Load required ChiMod modules (rankConsensus and coeus_mdm)
   if (CHI_MODULE_MANAGER) {
