@@ -2,8 +2,9 @@
 This module provides classes and methods to launch the Incompact3d application.
 Incompact3d is ....
 """
-from jarvis_cd.basic.pkg import Application
-from jarvis_util import *
+from jarvis_cd.core.pkg import Application
+from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm, PscpExec, PscpExecInfo
+import json
 import os
 
 class Incompact3d(Application):
