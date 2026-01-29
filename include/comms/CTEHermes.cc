@@ -69,15 +69,8 @@ bool CTEHermes::connect() {
     return false;
   }
   
-  // Get CTE config path from environment or use default
-  const char* cte_config_env = std::getenv("CTE_CONFIG");
-  std::string cte_config = cte_config_env ? cte_config_env : "";
-  if (cte_config.empty()) {
-    cte_config = "config/cte_config.yaml";
-  }
-  
-  // Initialize CTE subsystem
-  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT(cte_config, chi::PoolQuery::Dynamic())) {
+  // CTE client will be accessed via WRP_CTE_CLIENT singleton when needed
+  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
     std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
     return false;
   }

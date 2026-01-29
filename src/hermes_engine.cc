@@ -311,34 +311,12 @@ HermesEngine::~HermesEngine() {
  * */
 
 bool HermesEngine::Promote(int step){
-    // CTE handles data placement automatically based on access patterns
-    // Prefetch is handled by CTE's data placement engine
-    // bool success = true;
-    // if(step < total_steps) {
-    //     auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
-    //     for (const auto &location : var_locations) {
-    //         success &= Hermes->Prefetch(location.tag_name, location.blob_name);
-    //     }
-    // }
-    // return success;
-    // This is a no-op - CTE will automatically promote based on scoring
-    (void)step;  // Suppress unused parameter warning
+    
     return true;
 }
 
 bool HermesEngine::Demote(int step){
-    // CTE handles data placement automatically based on access patterns
-    // Demote is handled by CTE's data placement engine
-//     bool success = true;
-//     if (step > 0) {
-//         auto var_locations = db->getAllBlobs(step, rank);
-//         for (const auto &location: var_locations) {
-//             success &= Hermes->Demote(location.tag_name, location.blob_name);
-//         }
-// }
-//     return success;
-    // This is a no-op - CTE will automatically demote based on scoring
-    (void)step;  // Suppress unused parameter warning
+
     return true;
 }
 
@@ -467,14 +445,6 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
     ComputeDerivedVariables();
-//  if (m_OpenMode == adios2::Mode::Write) {
-//    if (rank % ppn == 0) {
-//      DbOperation db_op(uid, currentStep);
-//      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-//    }
-//  }
-
-  // Tag is managed by CTEHermes, no need to reset
   if (hermes_ && hermes_->tag) {
     delete hermes_->tag;
     hermes_->tag = nullptr;
@@ -675,11 +645,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   // Diagnostic: log large Put sizes (L>64 Gray-Scott can cause 100KB+ per rank)
-  if (blob_size > 64 * 1024 && rank == 0) {
-    std::cout << "HermesEngine: large Put " << name << " size=" << blob_size
-              << " bytes (step=" << currentStep << " rank=" << rank << ")"
-              << std::endl;
-  }
+  
   hermes_->tag->Put(name, blob_size, values);
  
 
@@ -719,11 +685,6 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-  if (blob_size > 64 * 1024 && rank == 0) {
-    std::cout << "HermesEngine: large Put " << name << " size=" << blob_size
-              << " bytes (step=" << currentStep << " rank=" << rank << ")"
-              << std::endl;
-  }
   hermes_->tag->Put(name, blob_size, values);
 
   // database
