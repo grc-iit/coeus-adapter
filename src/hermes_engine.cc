@@ -198,7 +198,7 @@ void HermesEngine::Init_() {
 
   // Create admin client (required for pool management)
   chimaera::admin::Client admin_client(chi::kAdminPoolId);
-  auto admin_create_task = admin_client.AsyncCreate(chi::PoolQuery::Local(), "admin", chi::kAdminPoolId);
+  auto admin_create_task = admin_client.AsyncCreate(chi::PoolQuery::Dynamic(), "admin", chi::kAdminPoolId);
   admin_create_task.Wait();
   if (admin_create_task->GetReturnCode() != 0) {
     engine_logger->error("Failed to create admin container");
@@ -210,7 +210,7 @@ void HermesEngine::Init_() {
   // Note: rank is initialized to 0 by default, but we'll get the actual rank from consensus
   rankConsensus_pool_id_ = chi::PoolId(8001, 0);
   rank_consensus = chimaera::rankConsensus::Client(rankConsensus_pool_id_);
-  rank_consensus.Create(chi::PoolQuery::Local(), "rankConsensus", rankConsensus_pool_id_);
+  rank_consensus.Create(chi::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
   rank = rank_consensus.GetRank(chi::PoolQuery::Local());
   
   std::cout << "Rank consensus initialized, assigned rank: " << rank << std::endl;
@@ -274,7 +274,7 @@ void HermesEngine::Init_() {
     // Create coeus_mdm pool
     coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
     client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
-    client.Create(chi::PoolQuery::Local(), "db_operation", coeus_mdm_pool_id_, db_file);
+    client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     
     if (rank % ppn == 0) {
       db->createTables();

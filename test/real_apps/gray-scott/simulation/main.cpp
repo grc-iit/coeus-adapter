@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <chrono>
+#include <cstdlib>
 
 #include <adios2.h>
 #include <mpi.h>
@@ -61,6 +62,32 @@ void print_simulator_settings(const GrayScott &s)
               << s.size_z << std::endl;
 }
 
+static const char *mpi_thread_level_name(int level)
+{
+    switch (level)
+    {
+    case MPI_THREAD_SINGLE:
+        return "MPI_THREAD_SINGLE";
+    case MPI_THREAD_FUNNELED:
+        return "MPI_THREAD_FUNNELED";
+    case MPI_THREAD_SERIALIZED:
+        return "MPI_THREAD_SERIALIZED";
+    case MPI_THREAD_MULTIPLE:
+        return "MPI_THREAD_MULTIPLE";
+    default:
+        return "MPI_THREAD_UNKNOWN";
+    }
+}
+
+static bool env_flag_enabled(const char *name)
+{
+    const char *v = std::getenv(name);
+    if (!v)
+        return false;
+    // treat any non-zero int as enabled (e.g., "1", "2")
+    return std::atoi(v) != 0;
+}
+
 int main(int argc, char **argv)
 {
     int provided;
@@ -75,6 +102,28 @@ int main(int argc, char **argv)
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &procs);
+
+    if (rank == 0)
+    {
+        std::cout << "MPI thread support: requested=" << mpi_thread_level_name(MPI_THREAD_MULTIPLE)
+                  << " provided=" << mpi_thread_level_name(provided) << std::endl;
+        if (provided < MPI_THREAD_MULTIPLE)
+        {
+            std::cout << "WARNING: MPI did not provide MPI_THREAD_MULTIPLE. "
+                         "If Hermes/ADIOS uses background threads that call MPI, "
+                         "this can deadlock (often at larger scales, e.g., 128 ranks)."
+                      << std::endl;
+        }
+    }
+    if (env_flag_enabled("GS_REQUIRE_THREAD_MULTIPLE") && provided < MPI_THREAD_MULTIPLE)
+    {
+        if (rank == 0)
+        {
+            std::cerr << "ERROR: GS_REQUIRE_THREAD_MULTIPLE=1 but provided="
+                      << mpi_thread_level_name(provided) << ". Aborting." << std::endl;
+        }
+        MPI_Abort(comm, 2);
+    }
 
     // Create the logger and set up console and file sinks
     std::string binaryDir = BINARY_DIR;
@@ -172,6 +221,12 @@ int main(int argc, char **argv)
             }
 
             writer_main.write(it, sim, rank);
+            // Debug toggle: if this avoids the hang at 128 ranks with Hermes enabled,
+            // it strongly suggests overlap/concurrent MPI activity.
+            if (env_flag_enabled("GS_BARRIER_AFTER_WRITE"))
+            {
+                MPI_Barrier(comm);
+            }
         }
 
         if (settings.checkpoint && (it % settings.checkpoint_freq) == 0)

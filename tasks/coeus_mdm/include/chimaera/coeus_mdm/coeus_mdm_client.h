@@ -68,7 +68,11 @@ class Client : public chi::ContainerClient {
     if (future->GetReturnCode() != 0) {
       HLOG(kError, "coeus_mdm::Create failed with return code: {}",
             future->GetReturnCode());
+      return; // Early return on error
     }
+    // CRITICAL: Update client pool_id_ with the actual pool ID from the task
+    // This is required because the returned pool ID may differ from the requested ID
+    pool_id_ = future->new_pool_id_;
   }
 
   /**
