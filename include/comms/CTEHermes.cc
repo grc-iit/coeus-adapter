@@ -81,40 +81,50 @@ bool CTEHermes::connect() {
     std::cerr << "ERROR: CTE client is null after initialization" << std::endl;
     return false;
   }
-  
-  // Create CTE container
-  wrp_cte::core::CreateParams params;
-  auto create_task = cte_client_->AsyncCreate(
-      chi::PoolQuery::Dynamic(),
-      wrp_cte::core::kCtePoolName,
-      wrp_cte::core::kCtePoolId,
-      params);
-  create_task.Wait();
-  if (create_task->GetReturnCode() != 0) {
-    std::cerr << "ERROR: Failed to create CTE container" << std::endl;
-    return false;
-  }
-  // CRITICAL: Set pool_id_ so PutBlob/GetBlob tasks use the correct pool.
-  // Prevents "Container not found for pool_id=(garbage)" and related segfaults.
-  cte_client_->pool_id_ = create_task->new_pool_id_;
-  cte_client_->Init(create_task->new_pool_id_);
 
-  // Register storage target (100MB file-based)
-  // Use PoolId(514, 0) for the bdev pool - 512 is CTE core, 513+ used by runtime
-  chi::PoolId bdev_id(514, 0);
-  auto reg_task = cte_client_->AsyncRegisterTarget(
-      "/tmp/cte_storage",
-      chimaera::bdev::BdevType::kFile,
-      100 * 1024 * 1024,
-      chi::PoolQuery::Local(),  // Use Local query for bdev pool
-      bdev_id);                 // Provide explicit bdev_id to avoid null PoolId error
-  reg_task.Wait();
-  if (reg_task->GetReturnCode() != 0) {
-    // Warning only - target may already be registered or configured via config file
-    std::cout << "WARNING: Failed to register storage target (code: " 
-              << reg_task->GetReturnCode() << ")" << std::endl;
+  // Pre-deployed CTE: when runtime and CTE core are already started (e.g. Jarvis
+  // with cte_core pool_id: 512.0), attach to the existing pool instead of Create.
+  const char* pre_deployed = std::getenv("CTE_PRE_DEPLOYED");
+  const bool use_pre_deployed = pre_deployed && (std::strcmp(pre_deployed, "1") == 0 ||
+                                                 std::strcmp(pre_deployed, "true") == 0 ||
+                                                 std::strcmp(pre_deployed, "TRUE") == 0);
+
+  if (use_pre_deployed) {
+    // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
+    cte_client_->pool_id_ = wrp_cte::core::kCtePoolId;
+    cte_client_->Init(wrp_cte::core::kCtePoolId);
+  } else {
+    // Create CTE container (or GetOrCreate if already exists)
+    wrp_cte::core::CreateParams params;
+    auto create_task = cte_client_->AsyncCreate(
+        chi::PoolQuery::Dynamic(),
+        wrp_cte::core::kCtePoolName,
+        wrp_cte::core::kCtePoolId,
+        params);
+    create_task.Wait();
+    if (create_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to create CTE container" << std::endl;
+      return false;
+    }
+    // CRITICAL: Set pool_id_ so PutBlob/GetBlob tasks use the correct pool.
+    cte_client_->pool_id_ = create_task->new_pool_id_;
+    cte_client_->Init(create_task->new_pool_id_);
+
+    // Register storage target (100MB file-based)
+    chi::PoolId bdev_id(514, 0);
+    auto reg_task = cte_client_->AsyncRegisterTarget(
+        "/tmp/cte_storage",
+        chimaera::bdev::BdevType::kFile,
+        100 * 1024 * 1024,
+        chi::PoolQuery::Local(),
+        bdev_id);
+    reg_task.Wait();
+    if (reg_task->GetReturnCode() != 0) {
+      std::cout << "WARNING: Failed to register storage target (code: "
+                << reg_task->GetReturnCode() << ")" << std::endl;
+    }
   }
-  
+
   is_connected_ = true;
   return true;
 }

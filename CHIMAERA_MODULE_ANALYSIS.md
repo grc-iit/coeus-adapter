@@ -283,6 +283,19 @@ The **missing `pool_id_` update** (Issue #1) is the most likely root cause:
 
 ---
 
+## Pre-deployed CTE (Jarvis / runtime started before app)
+
+When the Chimaera runtime and CTE core are **already started** (e.g. by Jarvis with `cte_core` pool_id: 512.0), the adapter should **attach** to that existing pool instead of creating a new one.
+
+**Usage:** set `CTE_PRE_DEPLOYED=1` (or `true` / `TRUE`) before running the Gray-Scott (or any Hermes) application.
+
+- **With `CTE_PRE_DEPLOYED=1`:** `CTEHermes::connect()` skips `AsyncCreate` and `AsyncRegisterTarget`. It sets `cte_client_->pool_id_ = kCtePoolId` (512.0) and `Init(512.0)` so all PutBlob/GetBlob tasks use the existing CTE core pool. Storage devices are those already configured in the pre-deployed CTE (e.g. Jarvis `devices`).
+- **Without it:** The adapter creates (or GetOrCreate) the CTE container and registers a local `/tmp/cte_storage` target as before.
+
+Ensure the pre-deployed CTE config uses **pool_id: 512.0** to match `wrp_cte::core::kCtePoolId(512, 0)`.
+
+---
+
 ## Testing After Fix
 
 1. Run Gray-Scott at 128 ranks with Hermes enabled
