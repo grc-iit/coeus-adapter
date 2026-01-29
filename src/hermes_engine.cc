@@ -294,6 +294,11 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
+  // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)
+  if (hermes_ && hermes_->tag) {
+    delete hermes_->tag;
+    hermes_->tag = nullptr;
+  }
   open = false;
 }
 
