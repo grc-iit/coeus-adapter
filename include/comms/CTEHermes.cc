@@ -9,6 +9,15 @@
  * If you do not have access to the file, you may request a copy             *
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/**
+ * CTEHermes: adapter between Coeus Hermes engine and the CTE (Context Transfer Engine).
+ *
+ * connect() supports two modes:
+ * - CTE_PRE_DEPLOYED=1: Attach to an existing CTE core pool (e.g. pool_id 512.0
+ *   started by Jarvis). Skips Create and RegisterTarget; uses kCtePoolId (512,0).
+ * - Otherwise: Create (or GetOrCreate) CTE container and register /tmp/cte_storage.
+ *   pool_id_ is always set from the task so PutBlob/GetBlob use the correct pool.
+ */
 
 #include "comms/CTEHermes.h"
 #include <cstdlib>
@@ -55,15 +64,16 @@ bool CTEHermes::connect() {
   // WRP_CTE_CLIENT_INIT will handle Chimaera initialization internally
   // Only set to true for unit tests or if explicitly needed
   if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
-    std::cout << "ERROR: Failed to initialize Chimaera client" << std::endl;
-    std::cout << "  Make sure Chimaera runtime is running (start with: chimaera_start_runtime)" << std::endl;
+    std::cerr << "ERROR: Failed to initialize Chimaera client" << std::endl;
+    std::cerr << "  Make sure Chimaera runtime is running (start with: chimaera_start_runtime)" << std::endl;
     return false;
   }
   
   // Get CTE config path from environment or use default
-  std::string cte_config = getenv("CTE_CONFIG") ? getenv("CTE_CONFIG") : "";
+  const char* cte_config_env = std::getenv("CTE_CONFIG");
+  std::string cte_config = cte_config_env ? cte_config_env : "";
   if (cte_config.empty()) {
-    cte_config = "config/cte_config.yaml"; // Default config path
+    cte_config = "config/cte_config.yaml";
   }
   
   // Initialize CTE subsystem
