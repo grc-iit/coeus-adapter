@@ -60,13 +60,13 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
     hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
     
     // Call async PutBlob and wait for completion
-    auto task = cte_client_->PutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr, 
-                                          0.8f, 0);
-    
-    
+    auto task = cte_client_->AsyncPutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
+                                          GetDefaultBlobScore(), 0);
+    task.Wait();
+
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_fullptr);
-    
+
     if (task->GetReturnCode() != 0) {
       throw std::runtime_error("PutBlob operation failed");
     }
