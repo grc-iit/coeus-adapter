@@ -154,6 +154,55 @@ Both modules follow the correct structure:
 
 ---
 
+## L-Dependent Hang (L=64 OK, L=128/256 Hang)
+
+**Observed:** Hang occurs when Gray-Scott domain size **L > 64** (e.g. L=128, 256), not just when rank count is high. L=64 runs fine; L=128 or 256 causes hang with Hermes enabled.
+
+**Why L matters:**
+
+- Local grid per rank scales with L: `size_x ≈ L/npx`, `size_y ≈ L/npy`, `size_z ≈ L/npz`.
+- **Per-rank data size** (U, V) ≈ `size_x * size_y * size_z` doubles → scales as **L³ / procs**.
+- **Halo message size** (e.g. xy face) ≈ `(size_y+2)*size_x` doubles → scales as **L² / procs**.
+
+Approximate per-rank sizes (128 ranks, 4×4×8 or 5×5×5):
+
+| L   | Local per dim (approx) | U/V per rank   | Blob Put size (U+V) |
+|-----|------------------------|----------------|---------------------|
+| 64  | ~16                   | ~4K doubles    | ~64 KB              |
+| 128 | ~32                   | ~32K doubles   | ~512 KB             |
+| 256 | ~64                   | ~262K doubles  | ~4 MB               |
+
+**Likely causes when L > 64:**
+
+1. **Large-blob CTE/Hermes path (most likely)**  
+   `CTETagClient::Put()` does `AllocateBuffer(blob_size)` then `AsyncPutBlob(..., blob_size, ...)`. For L=128/256, blob_size is hundreds of KB to several MB per rank. Possible issues:
+   - **SHM exhaustion**: Many ranks allocating large buffers at once → `AllocateBuffer` blocks or fails.
+   - **CTE PutBlob**: Different code path or timeout for large blobs → task never completes → `task.Wait()` hangs.
+   - **Memory pressure**: Large allocs change timing and expose races (e.g. pool_id_ or concurrent Create).
+
+2. **MPI / halo exchange**  
+   Larger L → larger derived datatypes and message sizes. Possible but less likely as sole cause (MPI_Sendrecv is standard); more likely as a secondary effect if Hermes holds resources and delays progress.
+
+3. **SQLite / coeus_mdm**  
+   Larger L → more or larger metadata. Lock contention or serialization could slow or block many ranks.
+
+**Diagnostics to run:**
+
+- **Isolate I/O vs exchange:** Run with **`COEUS_DISABLE_CTE_IO=1`** at L=128 (and 128 ranks).  
+  - If **hang goes away** → hang is in Hermes/CTE (large blob Put or related SHM/CTE path).  
+  - If **still hangs** → problem is elsewhere (e.g. MPI, rankConsensus, or init).
+- **Isolate exchange:** Run with **L=128** but **skip writer** (e.g. set `plotgap` larger than steps so no write).  
+  - If **no hang** → hang is in write path (Hermes/CTE) when L is large.
+- **Log blob sizes:** In HermesEngine `DoPutSync_`/`DoPutDeferred_`, log `variable.SelectionSize() * sizeof(T)` (and L/rank) to confirm threshold (e.g. hang above ~100KB or ~1MB per rank).
+
+**Mitigations to consider:**
+
+- **pool_id_ fix** (already done): Ensures correct pool usage at any scale.
+- **Limit or batch large Puts**: If SHM or CTE has limits, cap blob size per Put or split into chunks (would require API support).
+- **Increase SHM pool / reduce concurrency**: If the issue is SHM exhaustion, increase shared memory or stagger Put calls (e.g. barrier after exchange, then write).
+
+---
+
 ## Root Cause Hypothesis for 128-Rank Hang
 
 The **missing `pool_id_` update** (Issue #1) is the most likely root cause:
@@ -173,6 +222,8 @@ The **missing `pool_id_` update** (Issue #1) is the most likely root cause:
    - If rankConsensus or coeus_mdm operations are still pending (due to wrong pool IDs)
    - And those operations involve MPI communication (via Chimaera runtime)
    - Then MPI_Sendrecv can deadlock waiting for Chimaera tasks that are stuck
+
+**Combined with L:** For **L > 64**, per-rank blob size and SHM usage grow (L³ effect). That can make wrong-pool or resource exhaustion show up earlier (e.g. exactly at L=128). So both the **pool_id_** fix and **L-dependent (large-blob) behavior** should be addressed.
 
 ---
 

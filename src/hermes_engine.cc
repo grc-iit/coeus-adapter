@@ -673,7 +673,14 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
 
   std::string name = variable.m_Name;
-  hermes_->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
+  const size_t blob_size = variable.SelectionSize() * sizeof(T);
+  // Diagnostic: log large Put sizes (L>64 Gray-Scott can cause 100KB+ per rank)
+  if (blob_size > 64 * 1024 && rank == 0) {
+    std::cout << "HermesEngine: large Put " << name << " size=" << blob_size
+              << " bytes (step=" << currentStep << " rank=" << rank << ")"
+              << std::endl;
+  }
+  hermes_->tag->Put(name, blob_size, values);
  
 
 
@@ -690,21 +697,14 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   BlobInfo blobInfo(hermes_->tag->name, name);
 
   // Time DbOperation construction
-  auto start_time_db_op = std::chrono::high_resolution_clock::now();
+
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  auto end_time_db_op = std::chrono::high_resolution_clock::now();
-  auto duration_db_op = std::chrono::duration_cast<std::chrono::microseconds>(end_time_db_op - start_time_db_op).count();
-  
+
   // Time Mdm_insert call
-  auto start_time_md = std::chrono::high_resolution_clock::now();
+
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-  auto end_time_md = std::chrono::high_resolution_clock::now();
-  auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
-  
-  if (rank == 0) {
-    std::cout << "Rank 0 - DbOperation construction (DoPutSync) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-    std::cout << "Rank 0 - Mdm_insert (DoPutSync) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-  }
+
+
 
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
@@ -718,14 +718,14 @@ void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
-
-  auto start_time = std::chrono::high_resolution_clock::now();
-  hermes_->tag->Put(name, variable.SelectionSize() * sizeof(T), values);
-  auto end_time = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-  if (rank == 0) {
-    std::cout << "Rank 0 - hermes_->tag->Put (DoPutDeferred) time: " << duration << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+  const size_t blob_size = variable.SelectionSize() * sizeof(T);
+  if (blob_size > 64 * 1024 && rank == 0) {
+    std::cout << "HermesEngine: large Put " << name << " size=" << blob_size
+              << " bytes (step=" << currentStep << " rank=" << rank << ")"
+              << std::endl;
   }
+  hermes_->tag->Put(name, blob_size, values);
+
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
@@ -733,21 +733,19 @@ void HermesEngine::DoPutDeferred_(
   BlobInfo blobInfo(hermes_->tag->name, name);
   
   // Time DbOperation construction
-  auto start_time_db_op = std::chrono::high_resolution_clock::now();
+
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  auto end_time_db_op = std::chrono::high_resolution_clock::now();
-  auto duration_db_op = std::chrono::duration_cast<std::chrono::microseconds>(end_time_db_op - start_time_db_op).count();
-  
+
   // Time Mdm_insert call
-  auto start_time_md = std::chrono::high_resolution_clock::now();
+  //auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-  auto end_time_md = std::chrono::high_resolution_clock::now();
-  auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
+  //auto end_time_md = std::chrono::high_resolution_clock::now();
+  //auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
   
-  if (rank == 0) {
-    std::cout << "Rank 0 - DbOperation construction (DoPutDeferred) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-    std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-  }
+  // if (rank == 0) {
+  //   std::cout << "Rank 0 - DbOperation construction (DoPutDeferred) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+  //   std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
+  // }
 #ifdef Meta_enabled
     metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
     meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
