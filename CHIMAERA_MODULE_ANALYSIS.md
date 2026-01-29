@@ -248,9 +248,45 @@ The **missing `pool_id_` update** (Issue #1) is the most likely root cause:
 
 ---
 
+## Runtime Errors: "Container not found" and Segfault in PutBlob
+
+### Error 1: Container not found for pool_id=(garbage)
+
+**Message:** `context-runtime/src/worker.cc: ERROR ProcessNewTasks Worker N: Container not found for pool_id=PoolId(major:620934308, minor:3862736971), method=12`
+
+**Cause:** The task’s `pool_id` is **uninitialized/garbage** (e.g. 620934308, 3862736971). Valid pool IDs are small (e.g. 512.0, 8000.0, 8001.0). The worker looks up the container with `GetContainer(pool_id)` and gets null, so it logs "Container not found".
+
+**Why garbage appears:** Some client that **sent** the task had `pool_id_` never set (or overwritten), so the task was built with an uninitialized or wrong `pool_id`. Typical causes:
+
+- **Create() was never called** for that client, or **Create() failed** and the code continued to use the client.
+- **Create() succeeded but `pool_id_` was not updated** after the task completed (the bug we fixed for rankConsensus and coeus_mdm).
+- **CTE client:** If CTE Create fails or `Init(new_pool_id_)` is skipped, the global CTE client can still have default/uninitialized `pool_id_`. Any later PutBlob/GetBlob then sends tasks with that garbage `pool_id_`.
+
+**Fix (adapter side):**
+
+- Ensure **every** client that sends tasks has `pool_id_` set **after** a successful Create (and never use the client after a failed Create). We already fixed rankConsensus and coeus_mdm Create() to set `pool_id_ = future->new_pool_id_`.
+- For the **CTE client**, ensure `connect()` only returns success after Create succeeds and the client is initialized with the returned pool ID. Optionally set `cte_client_->pool_id_ = create_task->new_pool_id_` explicitly after Create so it’s correct even if `Init()` behavior differs across builds.
+
+---
+
+### Error 2: Segmentation fault in PutBlob (vector realloc)
+
+**Message:** `Caught signal 11 (Segmentation fault: address not mapped to object at address 0x1fff81a8)` with backtrace in `libwrp_cte_core_runtime.so` inside `std::vector<wrp_cte::core::BlobBlock>::_M_realloc_insert`, during `ResumeCoroutine` / `ExecTask`.
+
+**Cause:** The crash is in the **CTE core runtime** while processing a task (e.g. PutBlob), during a `std::vector<BlobBlock>` reallocation. Plausible causes:
+
+1. **Wrong container / garbage pool_id:** If the task was routed to the wrong container (because `pool_id` was garbage), the runtime may use wrong or corrupted state (e.g. invalid pointers), leading to memory corruption and then a crash during vector growth.
+2. **Concurrent modification:** Multiple workers or threads modifying the same container state without synchronization can corrupt the vector and cause a segfault on realloc.
+3. **Use-after-free:** A pointer stored in the container (e.g. into a BlobBlock) was freed elsewhere; realloc or access then hits invalid memory.
+
+**Relationship to Error 1:** If tasks are sent with a **garbage pool_id** (Error 1), the worker may still find a container in some cases (e.g. hash collision or wrong lookup), or the task may be executed in a context where the container state is wrong. That can lead to corrupted state and then the segfault (Error 2). So fixing **garbage pool_id** (correct Create + `pool_id_` update for all clients, including CTE) is the first step to avoid both errors.
+
+---
+
 ## Testing After Fix
 
 1. Run Gray-Scott at 128 ranks with Hermes enabled
 2. Verify all ranks complete rankConsensus successfully
 3. Check that `pool_id_` values are correct after Create
 4. Monitor for any remaining deadlocks
+5. If "Container not found" or PutBlob segfault appears, verify CTE client’s `pool_id_` is set after Create and that no client is used after a failed Create

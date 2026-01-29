@@ -94,8 +94,11 @@ bool CTEHermes::connect() {
     std::cerr << "ERROR: Failed to create CTE container" << std::endl;
     return false;
   }
+  // CRITICAL: Set pool_id_ so PutBlob/GetBlob tasks use the correct pool.
+  // Prevents "Container not found for pool_id=(garbage)" and related segfaults.
+  cte_client_->pool_id_ = create_task->new_pool_id_;
   cte_client_->Init(create_task->new_pool_id_);
-  
+
   // Register storage target (100MB file-based)
   // Use PoolId(514, 0) for the bdev pool - 512 is CTE core, 513+ used by runtime
   chi::PoolId bdev_id(514, 0);
