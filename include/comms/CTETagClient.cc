@@ -32,8 +32,13 @@ CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client, const std::string&
 
   name = tag_name;
 
-  // Get or create tag using synchronous Client API
-  tag_id_ = cte_client_->GetOrCreateTag(tag_name);
+  // Get or create tag using AsyncGetOrCreateTag + Wait
+  auto task = cte_client_->AsyncGetOrCreateTag(tag_name);
+  task.Wait();
+  if (task->GetReturnCode() != 0) {
+    throw std::runtime_error("GetOrCreateTag operation failed for tag: " + tag_name);
+  }
+  tag_id_ = task->tag_id_;
 }
 
 CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client,
@@ -69,12 +74,17 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
     // Convert to hipc::ShmPtr<> for API call
     hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
 
-    // Synchronous PutBlob (blocks until done; throws on failure)
-    cte_client_->PutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
-                         GetDefaultBlobScore(), 0);
+    // AsyncPutBlob + Wait (Client API; PutBlob may not be available in all builds)
+    auto task = cte_client_->AsyncPutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
+                                          GetDefaultBlobScore(), 0);
+    task.Wait();
 
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_fullptr);
+
+    if (task->GetReturnCode() != 0) {
+      throw std::runtime_error("PutBlob operation failed");
+    }
   } catch (const std::exception& e) {
     std::cerr << "CTE PutBlob failed for blob '" << blob_name 
               << "' in tag '" << tag_name_ << "': " << e.what() << std::endl;

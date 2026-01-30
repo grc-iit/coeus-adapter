@@ -109,9 +109,15 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
     tag = nullptr;
   }
 
-  // Get or create tag using synchronous Client API, then create CTETagClient
+  // Get or create tag using AsyncGetOrCreateTag + Wait, then create CTETagClient
   try {
-    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+    auto tag_task = AsyncGetOrCreateTag(tag_name);
+    tag_task.Wait();
+    if (tag_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: GetOrCreateTag failed for '" << tag_name << "'" << std::endl;
+      return false;
+    }
+    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
     tag = new CTETagClient(this, tag_id, tag_name);
     return true;
   } catch (const std::exception& e) {
@@ -128,7 +134,13 @@ bool CTEHermes::Demote(const std::string &tag_name, const std::string &blob_name
   }
 
   try {
-    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+    auto tag_task = AsyncGetOrCreateTag(tag_name);
+    tag_task.Wait();
+    if (tag_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for demote operation" << std::endl;
+      return false;
+    }
+    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
 
     // Demote: lower score (0.3 = cold tier) to move blob to slower storage
     float demote_score = 0.3f;
@@ -157,7 +169,13 @@ bool CTEHermes::Prefetch(const std::string &tag_name, const std::string &blob_na
   }
 
   try {
-    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+    auto tag_task = AsyncGetOrCreateTag(tag_name);
+    tag_task.Wait();
+    if (tag_task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for prefetch operation" << std::endl;
+      return false;
+    }
+    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
 
     // Prefetch: higher score (0.95 = hot tier) to move blob to faster storage
     float prefetch_score = 0.95f;
