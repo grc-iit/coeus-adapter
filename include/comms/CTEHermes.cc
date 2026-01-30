@@ -15,21 +15,11 @@
  * connect() supports two modes:
  * - CTE_PRE_DEPLOYED=1: Attach to an existing CTE core pool (e.g. pool_id 512.0
  *   started by Jarvis). Skips Create and RegisterTarget; uses kCtePoolId (512,0).
- * - Otherwise: Create (or GetOrCreate) CTE container and optionally register a
- *   default storage target. pool_id_ is set from the task so PutBlob/GetBlob
- *   use the correct pool.
- *
- * Storage targets can be registered in Chimaera config instead of in-code:
- * - Compose YAML: under compose entry for wrp_cte_core, add a "storage:" section
- *   (path, bdev_type, capacity_limit, optional score). See context-transfer-engine
- *   test/unit/distributed/wrp_config.yaml or config/cte_config.yaml.
- * - Jarvis pipeline: use "devices:" under the wrp_cte package (path, size, score).
- * When targets are defined that way, set CTE_TARGETS_FROM_CONFIG=1 to skip
- * in-code AsyncRegisterTarget (avoids duplicate or conflicting targets).
+ * - Otherwise: Create (or GetOrCreate) CTE container and register /tmp/cte_storage.
+ *   pool_id_ is always set from the task so PutBlob/GetBlob use the correct pool.
  */
 
 #include "comms/CTEHermes.h"
-#include "comms/CTETagClient.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -56,10 +46,10 @@ bool CTEHermes::connect() {
   }
 
   // Initialize CTE subsystem (Chimaera + global client if needed)
-  // if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
-  //   std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
-  //   return false;
-  // }
+  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
+    std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
+    return false;
+  }
 
   // Pre-deployed CTE: when runtime and CTE core are already started (e.g. Jarvis
   // with cte_core pool_id: 512.0), attach this client to the existing pool.
@@ -72,7 +62,6 @@ bool CTEHermes::connect() {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
     pool_id_ = wrp_cte::core::kCtePoolId;
     Init(wrp_cte::core::kCtePoolId);
-    std::cout << "CTEHermes::connect: Using existing CTE core pool" << std::endl;
   } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;
@@ -90,27 +79,18 @@ bool CTEHermes::connect() {
     pool_id_ = create_task->new_pool_id_;
     Init(create_task->new_pool_id_);
 
-    // Register default storage target only when not using config-defined targets.
-    // Set CTE_TARGETS_FROM_CONFIG=1 when storage is defined in Chimaera compose
-    // (storage: section) or Jarvis pipeline (devices); then skip in-code registration.
-    const char* targets_from_config = std::getenv("CTE_TARGETS_FROM_CONFIG");
-    const bool use_config_targets = targets_from_config &&
-        (std::strcmp(targets_from_config, "1") == 0 ||
-         std::strcmp(targets_from_config, "true") == 0 ||
-         std::strcmp(targets_from_config, "TRUE") == 0);
-    if (!use_config_targets) {
-      chi::PoolId bdev_id(514, 0);
-      auto reg_task = AsyncRegisterTarget(
-          "/tmp/cte_storage",
-          chimaera::bdev::BdevType::kFile,
-          100 * 1024 * 1024,
-          chi::PoolQuery::Local(),
-          bdev_id);
-      reg_task.Wait();
-      if (reg_task->GetReturnCode() != 0) {
-        std::cout << "WARNING: Failed to register storage target (code: "
-                  << reg_task->GetReturnCode() << ")" << std::endl;
-      }
+    // Register storage target (100MB file-based)
+    chi::PoolId bdev_id(514, 0);
+    auto reg_task = AsyncRegisterTarget(
+        "/mnt/common/hxu40/cte_storage",
+        chimaera::bdev::BdevType::kFile,
+        100 * 1024 * 1024,
+        chi::PoolQuery::Local(),
+        bdev_id);
+    reg_task.Wait();
+    if (reg_task->GetReturnCode() != 0) {
+      std::cout << "WARNING: Failed to register storage target (code: "
+                << reg_task->GetReturnCode() << ")" << std::endl;
     }
   }
 
