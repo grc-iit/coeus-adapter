@@ -98,20 +98,20 @@ bool CTEHermes::connect() {
         (std::strcmp(targets_from_config, "1") == 0 ||
          std::strcmp(targets_from_config, "true") == 0 ||
          std::strcmp(targets_from_config, "TRUE") == 0);
-    // if (!use_config_targets) {
-    //   chi::PoolId bdev_id(514, 0);
-    //   auto reg_task = AsyncRegisterTarget(
-    //       "/tmp/cte_storage",
-    //       chimaera::bdev::BdevType::kFile,
-    //       100 * 1024 * 1024,
-    //       chi::PoolQuery::Local(),
-    //       bdev_id);
-    //   reg_task.Wait();
-    //   if (reg_task->GetReturnCode() != 0) {
-    //     std::cout << "WARNING: Failed to register storage target (code: "
-    //               << reg_task->GetReturnCode() << ")" << std::endl;
-    //   }
-    // }
+    if (!use_config_targets) {
+      chi::PoolId bdev_id(514, 0);
+      auto reg_task = AsyncRegisterTarget(
+          "/mnt/common/hxu40/cte_storage",
+          chimaera::bdev::BdevType::kFile,
+          100 * 1024 * 1024,
+          chi::PoolQuery::Local(),
+          bdev_id);
+      reg_task.Wait();
+      if (reg_task->GetReturnCode() != 0) {
+        std::cout << "WARNING: Failed to register storage target (code: "
+                  << reg_task->GetReturnCode() << ")" << std::endl;
+      }
+    }
   }
 
   is_connected_ = true;
