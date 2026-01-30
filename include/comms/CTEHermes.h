@@ -15,9 +15,6 @@
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_tasks.h>
 #include "interfaces/IHermes.h"
-#include "CTETagClient.h"
-
-
 #include <chimaera/chimaera.h>
 #include <memory>
 #include <string>
