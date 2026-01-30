@@ -20,6 +20,7 @@
  */
 
 #include "comms/CTEHermes.h"
+#include "comms/CTETagClient.h"
 
 #include <cstdlib>
 #include <cstring>
