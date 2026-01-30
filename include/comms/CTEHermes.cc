@@ -68,12 +68,12 @@ bool CTEHermes::connect() {
                                                  std::strcmp(pre_deployed, "true") == 0 ||
                                                  std::strcmp(pre_deployed, "TRUE") == 0);
 
-
+  if (use_pre_deployed) {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
     pool_id_ = wrp_cte::core::kCtePoolId;
     Init(wrp_cte::core::kCtePoolId);
-    
-  /*
+    std::cout << "CTEHermes::connect: Using existing CTE core pool" << std::endl;
+  } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;
     auto create_task = AsyncCreate(
@@ -113,7 +113,7 @@ bool CTEHermes::connect() {
     //   }
     // }
   }
-  */
+
   is_connected_ = true;
   return true;
 }
