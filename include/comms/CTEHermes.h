@@ -32,7 +32,7 @@ namespace coeus {
  * implements IHermes (connect, GetTag, Demote, Prefetch, tag) for the
  * Hermes engine. All CTE operations use this Client base.
  */
-class CTEHermes :  public wrp_cte::core::Client {
+class CTEHermes : public IHermes, public wrp_cte::core::Client {
  public:
   /**
    * Constructor
