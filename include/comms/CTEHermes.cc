@@ -26,14 +26,8 @@
 
 namespace coeus {
 
-CTEHermes::CTEHermes(wrp_cte::core::Client* cte_client)
-    : cte_client_(cte_client), is_connected_(false) {
-  // Use provided client or global client
-  if (!cte_client_) {
-    cte_client_ = WRP_CTE_CLIENT;
-  }
-  
-  // Initialize tag pointer to nullptr
+CTEHermes::CTEHermes() : is_connected_(false) {
+  // Initialize tag pointer to nullptr (inherited from IHermes)
   tag = nullptr;
 }
 
@@ -46,44 +40,18 @@ CTEHermes::~CTEHermes() {
 }
 
 bool CTEHermes::connect() {
-  if (is_connected_ && cte_client_) {
-    return true; // Already connected
+  if (is_connected_) {
+    return true;  // Already connected
   }
-  
 
-  // const char* with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");
-  // if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 || 
-  //                          std::strcmp(with_runtime_env, "true") == 0 ||
-  //                          std::strcmp(with_runtime_env, "TRUE") == 0)) {
-  //   std::cout << "WARNING: CHIMAERA_WITH_RUNTIME=1 is set. This will start runtime on every MPI rank." << std::endl;
-  //   std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
-  // }
-  
- 
-  // if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
-  //   std::cerr << "ERROR: Failed to initialize Chimaera client" << std::endl;
-  //   std::cerr << "  Make sure Chimaera runtime is running (start with: chimaera_start_runtime)" << std::endl;
-  //   return false;
-  // }
-  
-  // CTE client will be accessed via WRP_CTE_CLIENT singleton when needed
+  // Initialize CTE subsystem (Chimaera + global client if needed)
   if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
     std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
     return false;
   }
-  
-  // Get CTE client
-  if (!cte_client_) {
-    cte_client_ = WRP_CTE_CLIENT;
-  }
-  
-  if (!cte_client_) {
-    std::cerr << "ERROR: CTE client is null after initialization" << std::endl;
-    return false;
-  }
 
   // Pre-deployed CTE: when runtime and CTE core are already started (e.g. Jarvis
-  // with cte_core pool_id: 512.0), attach to the existing pool instead of Create.
+  // with cte_core pool_id: 512.0), attach this client to the existing pool.
   const char* pre_deployed = std::getenv("CTE_PRE_DEPLOYED");
   const bool use_pre_deployed = pre_deployed && (std::strcmp(pre_deployed, "1") == 0 ||
                                                  std::strcmp(pre_deployed, "true") == 0 ||
@@ -91,12 +59,12 @@ bool CTEHermes::connect() {
 
   if (use_pre_deployed) {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
-    cte_client_->pool_id_ = wrp_cte::core::kCtePoolId;
-    cte_client_->Init(wrp_cte::core::kCtePoolId);
+    pool_id_ = wrp_cte::core::kCtePoolId;
+    Init(wrp_cte::core::kCtePoolId);
   } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;
-    auto create_task = cte_client_->AsyncCreate(
+    auto create_task = AsyncCreate(
         chi::PoolQuery::Dynamic(),
         wrp_cte::core::kCtePoolName,
         wrp_cte::core::kCtePoolId,
@@ -107,12 +75,12 @@ bool CTEHermes::connect() {
       return false;
     }
     // CRITICAL: Set pool_id_ so PutBlob/GetBlob tasks use the correct pool.
-    cte_client_->pool_id_ = create_task->new_pool_id_;
-    cte_client_->Init(create_task->new_pool_id_);
+    pool_id_ = create_task->new_pool_id_;
+    Init(create_task->new_pool_id_);
 
     // Register storage target (100MB file-based)
     chi::PoolId bdev_id(514, 0);
-    auto reg_task = cte_client_->AsyncRegisterTarget(
+    auto reg_task = AsyncRegisterTarget(
         "/tmp/cte_storage",
         chimaera::bdev::BdevType::kFile,
         100 * 1024 * 1024,
@@ -130,20 +98,21 @@ bool CTEHermes::connect() {
 }
 
 bool CTEHermes::GetTag(const std::string &tag_name) {
-  if (!cte_client_) {
-    std::cerr << "ERROR: CTE client not initialized. Call connect() first." << std::endl;
+  if (!is_connected_) {
+    std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
   }
-  
+
   // Clean up previous tag if exists
   if (tag) {
     delete tag;
     tag = nullptr;
   }
-  
-  // Create new CTETagClient using CTE client directly
+
+  // Get or create tag using synchronous Client API, then create CTETagClient
   try {
-    tag = new CTETagClient(cte_client_, tag_name);
+    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+    tag = new CTETagClient(this, tag_id, tag_name);
     return true;
   } catch (const std::exception& e) {
     std::cerr << "ERROR: Failed to create tag '" << tag_name << "': " << e.what() << std::endl;
@@ -153,26 +122,17 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
 }
 
 bool CTEHermes::Demote(const std::string &tag_name, const std::string &blob_name) {
-  if (!cte_client_) {
-    std::cerr << "ERROR: CTE client not initialized. Call connect() first." << std::endl;
+  if (!is_connected_) {
+    std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
   }
-  
+
   try {
-    // Get or create tag to obtain TagId
-    auto tag_task = cte_client_->AsyncGetOrCreateTag(tag_name);
-    tag_task.Wait();
-    
-    if (tag_task->GetReturnCode() != 0) {
-      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for demote operation" << std::endl;
-      return false;
-    }
-    
-    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
-    
+    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+
     // Demote: lower score (0.3 = cold tier) to move blob to slower storage
     float demote_score = 0.3f;
-    auto reorganize_task = cte_client_->AsyncReorganizeBlob(tag_id, blob_name, demote_score);
+    auto reorganize_task = AsyncReorganizeBlob(tag_id, blob_name, demote_score);
     reorganize_task.Wait();
     
     if (reorganize_task->GetReturnCode() == 0) {
@@ -191,26 +151,17 @@ bool CTEHermes::Demote(const std::string &tag_name, const std::string &blob_name
 }
 
 bool CTEHermes::Prefetch(const std::string &tag_name, const std::string &blob_name) {
-  if (!cte_client_) {
-    std::cerr << "ERROR: CTE client not initialized. Call connect() first." << std::endl;
+  if (!is_connected_) {
+    std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
   }
-  
+
   try {
-    // Get or create tag to obtain TagId
-    auto tag_task = cte_client_->AsyncGetOrCreateTag(tag_name);
-    tag_task.Wait();
-    
-    if (tag_task->GetReturnCode() != 0) {
-      std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for prefetch operation" << std::endl;
-      return false;
-    }
-    
-    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
-    
+    wrp_cte::core::TagId tag_id = GetOrCreateTag(tag_name);
+
     // Prefetch: higher score (0.95 = hot tier) to move blob to faster storage
     float prefetch_score = 0.95f;
-    auto reorganize_task = cte_client_->AsyncReorganizeBlob(tag_id, blob_name, prefetch_score);
+    auto reorganize_task = AsyncReorganizeBlob(tag_id, blob_name, prefetch_score);
     reorganize_task.Wait();
     
     if (reorganize_task->GetReturnCode() == 0) {

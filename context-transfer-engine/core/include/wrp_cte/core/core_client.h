@@ -4,6 +4,7 @@
 #include <chimaera/chimaera.h>
 #include <hermes_shm/util/singleton.h>
 #include <wrp_cte/core/core_tasks.h>
+#include <stdexcept>
 
 namespace wrp_cte::core {
 
@@ -303,6 +304,34 @@ public:
         chi::CreateTaskId(), pool_id_, pool_query, tag_regex, blob_regex, max_blobs);
 
     return ipc_manager->Send(task);
+  }
+
+  // --- Synchronous wrappers (call Async* + Wait; throw on failure) ---
+
+  /**
+   * Get or create tag - blocks until done. Returns TagId.
+   */
+  TagId GetOrCreateTag(const std::string &tag_name,
+                       const TagId &tag_id = TagId::GetNull()) {
+    auto task = AsyncGetOrCreateTag(tag_name, tag_id);
+    task.Wait();
+    if (task->GetReturnCode() != 0) {
+      throw std::runtime_error("CTE GetOrCreateTag failed");
+    }
+    return task->tag_id_;
+  }
+
+  /**
+   * Put blob - blocks until done.
+   */
+  void PutBlob(const TagId &tag_id,
+               const std::string &blob_name, chi::u64 offset, chi::u64 size,
+               hipc::ShmPtr<> blob_data, float score = 0.8f, chi::u32 flags = 0) {
+    auto task = AsyncPutBlob(tag_id, blob_name, offset, size, blob_data, score, flags);
+    task.Wait();
+    if (task->GetReturnCode() != 0) {
+      throw std::runtime_error("CTE PutBlob failed");
+    }
   }
 };
 

@@ -15,6 +15,7 @@
 
 #include "interfaces/IHermes.h"
 #include "CTETagClient.h"
+
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_tasks.h>
 #include <chimaera/chimaera.h>
@@ -25,18 +26,18 @@
 namespace coeus {
 
 /**
- * CTEHermes: CTE-based implementation of IHermes interface
- * 
- * Wraps wrp_cte::core::Client directly and manages tags/blobs
- * using the CTE client API.
+ * CTEHermes: CTE-based implementation of IHermes interface.
+ *
+ * Inherits wrp_cte::core::Client directly so it is a CTE client; also
+ * implements IHermes (connect, GetTag, Demote, Prefetch, tag) for the
+ * Hermes engine. All CTE operations use this Client base.
  */
-class CTEHermes : public IHermes {
+class CTEHermes :  public wrp_cte::core::Client {
  public:
   /**
    * Constructor
-   * @param cte_client Pointer to CTE client (uses WRP_CTE_CLIENT if nullptr)
    */
-  explicit CTEHermes(wrp_cte::core::Client* cte_client = nullptr);
+  CTEHermes();
 
   /**
    * Destructor
@@ -74,8 +75,7 @@ class CTEHermes : public IHermes {
   bool Prefetch(const std::string &tag_name, const std::string &blob_name) override;
 
  private:
-  wrp_cte::core::Client* cte_client_;  // CTE client (borrowed, not owned)
-  bool is_connected_;                   // Whether CTE is connected/initialized
+  bool is_connected_ = false;  // Whether connect() has been called successfully
 };
 
 } // namespace coeus

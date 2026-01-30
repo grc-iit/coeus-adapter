@@ -30,12 +30,22 @@ namespace coeus {
 class CTETagClient : public ITag {
  public:
   /**
-   * Constructor
+   * Constructor - get or create tag by name
    * @param cte_client Pointer to CTE client (uses WRP_CTE_CLIENT if nullptr)
    * @param tag_name Name of the CTE tag
    */
   CTETagClient(wrp_cte::core::Client* cte_client, const std::string& tag_name);
-  
+
+  /**
+   * Constructor - use existing tag by ID (e.g. from GetOrCreateTag())
+   * @param cte_client Pointer to CTE client
+   * @param tag_id Existing tag ID
+   * @param tag_name Name of the tag (for ITag::name)
+   */
+  CTETagClient(wrp_cte::core::Client* cte_client,
+               const wrp_cte::core::TagId& tag_id,
+               const std::string& tag_name);
+
   /**
    * Destructor
    */

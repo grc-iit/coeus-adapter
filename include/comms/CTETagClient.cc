@@ -11,6 +11,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "comms/CTETagClient.h"
+
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
@@ -19,28 +20,37 @@ namespace coeus {
 
 CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client, const std::string& tag_name)
     : tag_name_(tag_name) {
-  // Use provided client or global client
   if (cte_client) {
     cte_client_ = cte_client;
   } else {
     cte_client_ = WRP_CTE_CLIENT;
   }
-  
+
   if (!cte_client_) {
     throw std::runtime_error("CTE client not initialized. Call WRP_CTE_CLIENT_INIT() first.");
   }
-  
+
   name = tag_name;
-  
-  // Get or create tag using CTE client
-  auto task = cte_client_->AsyncGetOrCreateTag(tag_name);
-  task.Wait();
-  
-  if (task->GetReturnCode() != 0) {
-    throw std::runtime_error("GetOrCreateTag operation failed for tag: " + tag_name);
+
+  // Get or create tag using synchronous Client API
+  tag_id_ = cte_client_->GetOrCreateTag(tag_name);
+}
+
+CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client,
+                           const wrp_cte::core::TagId& tag_id,
+                           const std::string& tag_name)
+    : tag_name_(tag_name), tag_id_(tag_id) {
+  if (cte_client) {
+    cte_client_ = cte_client;
+  } else {
+    cte_client_ = WRP_CTE_CLIENT;
   }
-  
-  tag_id_ = task->tag_id_;
+
+  if (!cte_client_) {
+    throw std::runtime_error("CTE client not initialized. Call WRP_CTE_CLIENT_INIT() first.");
+  }
+
+  name = tag_name;
 }
 
 void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const void* values) {
@@ -58,18 +68,13 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
     
     // Convert to hipc::ShmPtr<> for API call
     hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
-    
-    // Call async PutBlob and wait for completion
-    auto task = cte_client_->AsyncPutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
-                                          GetDefaultBlobScore(), 0);
-    task.Wait();
+
+    // Synchronous PutBlob (blocks until done; throws on failure)
+    cte_client_->PutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
+                         GetDefaultBlobScore(), 0);
 
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_fullptr);
-
-    if (task->GetReturnCode() != 0) {
-      throw std::runtime_error("PutBlob operation failed");
-    }
   } catch (const std::exception& e) {
     std::cerr << "CTE PutBlob failed for blob '" << blob_name 
               << "' in tag '" << tag_name_ << "': " << e.what() << std::endl;
