@@ -101,7 +101,7 @@ bool CTEHermes::connect() {
     if (!use_config_targets) {
       chi::PoolId bdev_id(514, 0);
       auto reg_task = AsyncRegisterTarget(
-          "/mnt/common/hxu40/cte_storage",
+          "/tmp/cte_storage",
           chimaera::bdev::BdevType::kFile,
           100 * 1024 * 1024,
           chi::PoolQuery::Local(),
