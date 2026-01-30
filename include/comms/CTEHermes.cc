@@ -56,10 +56,10 @@ bool CTEHermes::connect() {
   }
 
   // Initialize CTE subsystem (Chimaera + global client if needed)
-  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
-    std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
-    return false;
-  }
+  // if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
+  //   std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
+  //   return false;
+  // }
 
   // Pre-deployed CTE: when runtime and CTE core are already started (e.g. Jarvis
   // with cte_core pool_id: 512.0), attach this client to the existing pool.
@@ -72,6 +72,7 @@ bool CTEHermes::connect() {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
     pool_id_ = wrp_cte::core::kCtePoolId;
     Init(wrp_cte::core::kCtePoolId);
+    std::cout << "CTEHermes::connect: Using existing CTE core pool" << std::endl;
   } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;
