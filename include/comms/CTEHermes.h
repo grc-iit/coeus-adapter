@@ -12,12 +12,12 @@
 
 #ifndef COEUS_INCLUDE_COMMS_CTEHERMES_H_
 #define COEUS_INCLUDE_COMMS_CTEHERMES_H_
-
+#include <wrp_cte/core/core_client.h>
+#include <wrp_cte/core/core_tasks.h>
 #include "interfaces/IHermes.h"
 #include "CTETagClient.h"
 
-#include <wrp_cte/core/core_client.h>
-#include <wrp_cte/core/core_tasks.h>
+
 #include <chimaera/chimaera.h>
 #include <memory>
 #include <string>

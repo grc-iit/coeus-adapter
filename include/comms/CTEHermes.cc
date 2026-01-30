@@ -20,7 +20,7 @@
  */
 
 #include "comms/CTEHermes.h"
-#include <chimaera/chimaera.h>
+
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
