@@ -650,9 +650,9 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   // Diagnostic: log large Put sizes (L>64 Gray-Scott can cause 100KB+ per rank)
-  
-  hermes_->tag->Put(name, blob_size, values);
- 
+  if (!hermes_->Put(name, blob_size, values)) {
+    throw std::runtime_error("HermesEngine::DoPutSync_: Put failed for " + name);
+  }
 
 
 #ifdef Meta_enabled
@@ -690,8 +690,10 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-  
-  hermes_->tag->Put(name, blob_size, values);
+
+  if (!hermes_->Put(name, blob_size, values)) {
+    throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
+  }
   /*
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
@@ -733,11 +735,13 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
         total_count *= count;
     }
     auto start_time = std::chrono::high_resolution_clock::now();
-    hermes_->tag->Put(name, total_count * sizeof(T), values);
+    if (!hermes_->Put(name, total_count * sizeof(T), values)) {
+      throw std::runtime_error("HermesEngine::PutDerived: Put failed for " + name);
+    }
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
     if (rank == 0) {
-      std::cout << "Rank 0 - hermes_->tag->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
+      std::cout << "Rank 0 - hermes_->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
     }
     auto start_time_md = std::chrono::high_resolution_clock::now();
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);

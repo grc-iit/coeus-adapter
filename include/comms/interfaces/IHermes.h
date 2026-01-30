@@ -25,6 +25,7 @@ class IHermes {
 
   virtual bool connect() = 0;
   virtual bool GetTag(const std::string &tag_name) = 0;
+  virtual bool Put(const std::string &blob_name, size_t blob_size, const void *values) = 0;
   virtual bool Demote(const std::string &tag_name, const std::string &blob_name) = 0;
   virtual bool Prefetch(const std::string &tag_name, const std::string &blob_name) = 0;
 };

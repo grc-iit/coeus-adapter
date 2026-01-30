@@ -59,6 +59,15 @@ class CTEHermes : public IHermes, public wrp_cte::core::Client {
   bool GetTag(const std::string &tag_name) override;
 
   /**
+   * Put blob into the current tag (set by GetTag). Bypasses CTETagClient to avoid hang.
+   * @param blob_name Name of the blob
+   * @param blob_size Size of data in bytes
+   * @param values Pointer to data
+   * @return true if successful, false otherwise
+   */
+  bool Put(const std::string &blob_name, size_t blob_size, const void *values) override;
+
+  /**
    * Demote blob (CTE handles automatically via scoring)
    * @param tag_name Name of the tag
    * @param blob_name Name of the blob
@@ -76,6 +85,7 @@ class CTEHermes : public IHermes, public wrp_cte::core::Client {
 
  private:
   bool is_connected_ = false;  // Whether connect() has been called successfully
+  wrp_cte::core::TagId current_tag_id_;  // Current tag (set by GetTag); used by Put()
 };
 
 } // namespace coeus

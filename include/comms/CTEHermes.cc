@@ -20,6 +20,7 @@
  */
 
 #include "comms/CTEHermes.h"
+#include <chimaera/chimaera.h>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -118,11 +119,41 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
       return false;
     }
     wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    current_tag_id_ = tag_id;
     tag = new CTETagClient(this, tag_id, tag_name);
     return true;
   } catch (const std::exception& e) {
     std::cerr << "ERROR: Failed to create tag '" << tag_name << "': " << e.what() << std::endl;
     tag = nullptr;
+    return false;
+  }
+}
+
+bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *values) {
+  if (!is_connected_) {
+    std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
+    return false;
+  }
+  try {
+    auto *ipc_manager = CHI_IPC;
+    hipc::FullPtr<char> shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
+    if (shm_fullptr.IsNull()) {
+      std::cerr << "ERROR: Failed to allocate shared memory for PutBlob" << std::endl;
+      return false;
+    }
+    std::memcpy(shm_fullptr.ptr_, values, blob_size);
+    hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
+    float score = 0.7f;
+    auto task = AsyncPutBlob(current_tag_id_, blob_name, 0, blob_size, shm_ptr, score, 0);
+    task.Wait();
+    ipc_manager->FreeBuffer(shm_fullptr);
+    if (task->GetReturnCode() != 0) {
+      std::cerr << "ERROR: PutBlob failed for blob '" << blob_name << "'" << std::endl;
+      return false;
+    }
+    return true;
+  } catch (const std::exception &e) {
+    std::cerr << "ERROR: CTEHermes::Put failed for '" << blob_name << "': " << e.what() << std::endl;
     return false;
   }
 }
