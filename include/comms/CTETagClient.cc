@@ -76,7 +76,7 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
 
     // AsyncPutBlob + Wait (Client API; PutBlob may not be available in all builds)
     auto task = cte_client_->AsyncPutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
-                                          GetDefaultBlobScore(), 0);
+                                          GetDefaultBlobScore(), wrp_cte::core::Context(), 0);
     task.Wait();
 
     // Free shared memory buffer

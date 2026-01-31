@@ -99,7 +99,7 @@ bool CTEHermes::connect() {
   return true;
 }
 
-bool CTEHermes::TagGet(const std::string &tag_name) {
+bool CTEHermes::GetTag(const std::string &tag_name) {
   if (!is_connected_) {
     std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
@@ -157,7 +157,8 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
     if (debug) {
       std::cout << "CTEHermes::Put: before AsyncPutBlob+Wait blob=" << blob_name << std::endl;
     }
-    auto task = AsyncPutBlob(current_tag_id_, blob_name, 0, blob_size, shm_ptr, score, 0);
+    auto task = AsyncPutBlob(current_tag_id_, blob_name, 0, blob_size, shm_ptr, score,
+                             wrp_cte::core::Context(), 0);
     task.Wait();
     if (debug) {
       std::cout << "CTEHermes::Put: after Wait blob=" << blob_name << std::endl;
