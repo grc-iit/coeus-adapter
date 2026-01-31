@@ -25,7 +25,6 @@ std::string CreateComposeConfig() {
     config_file << "memory:\n";
     config_file << "  main_segment_size: 1GB\n";
     config_file << "  client_data_segment_size: 256MB\n";
-    config_file << "  runtime_data_segment_size: 256MB\n";
     config_file << "\n";
     config_file << "networking:\n";
     config_file << "  port: 5555\n";

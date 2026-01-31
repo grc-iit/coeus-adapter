@@ -27,7 +27,7 @@
 
 namespace coeus {
 
-CTEHermes::CTEHermes() : is_connected_(false) {
+CTEHermes::CTEHermes() : is_connected_(false), current_tag_id_(wrp_cte::core::TagId::GetNull()) {
   // Initialize tag pointer to nullptr (inherited from IHermes)
   tag = nullptr;
 }
@@ -99,7 +99,7 @@ bool CTEHermes::connect() {
   return true;
 }
 
-bool CTEHermes::GetTag(const std::string &tag_name) {
+bool CTEHermes::TagGet(const std::string &tag_name) {
   if (!is_connected_) {
     std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
@@ -135,18 +135,33 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
     std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
   }
+  if (current_tag_id_ == wrp_cte::core::TagId::GetNull()) {
+    std::cerr << "ERROR: Put called without a tag. Call GetTag() first (e.g. in BeginStep)." << std::endl;
+    return false;
+  }
+  const bool debug = (std::getenv("CTE_DEBUG") != nullptr);
   try {
     auto *ipc_manager = CHI_IPC;
+    if (debug) {
+      std::cout << "CTEHermes::Put: before AllocateBuffer blob=" << blob_name
+                << " size=" << blob_size << std::endl;
+    }
     hipc::FullPtr<char> shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
     if (shm_fullptr.IsNull()) {
-      std::cerr << "ERROR: Failed to allocate shared memory for PutBlob" << std::endl;
+      std::cerr << "ERROR: Failed to allocate shared memory for PutBlob (size=" << blob_size << ")" << std::endl;
       return false;
     }
     std::memcpy(shm_fullptr.ptr_, values, blob_size);
     hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
     float score = 0.7f;
+    if (debug) {
+      std::cout << "CTEHermes::Put: before AsyncPutBlob+Wait blob=" << blob_name << std::endl;
+    }
     auto task = AsyncPutBlob(current_tag_id_, blob_name, 0, blob_size, shm_ptr, score, 0);
     task.Wait();
+    if (debug) {
+      std::cout << "CTEHermes::Put: after Wait blob=" << blob_name << std::endl;
+    }
     ipc_manager->FreeBuffer(shm_fullptr);
     if (task->GetReturnCode() != 0) {
       std::cerr << "ERROR: PutBlob failed for blob '" << blob_name << "'" << std::endl;

@@ -82,8 +82,6 @@ size_t ConfigManager::GetMemorySegmentSize(MemorySegment segment) const {
     return main_segment_size_;
   case kClientDataSegment:
     return client_data_segment_size_;
-  case kRuntimeDataSegment:
-    return runtime_data_segment_size_;
   default:
     return 0;
   }
@@ -104,9 +102,6 @@ ConfigManager::GetSharedMemorySegmentName(MemorySegment segment) const {
   case kClientDataSegment:
     segment_name = client_data_segment_name_;
     break;
-  case kRuntimeDataSegment:
-    segment_name = runtime_data_segment_name_;
-    break;
   default:
     return "";
   }
@@ -126,10 +121,6 @@ std::string ConfigManager::GetHostfilePath() const {
 
 bool ConfigManager::IsValid() const { return is_initialized_; }
 
-LaneMapPolicy ConfigManager::GetLaneMapPolicy() const {
-  return lane_map_policy_;
-}
-
 void ConfigManager::LoadDefault() {
   // Set default configuration values
   sched_workers_ = 4;
@@ -138,7 +129,6 @@ void ConfigManager::LoadDefault() {
 
   main_segment_size_ = 1024 * 1024 * 1024;        // 1GB
   client_data_segment_size_ = 512 * 1024 * 1024;  // 512MB
-  runtime_data_segment_size_ = 512 * 1024 * 1024; // 512MB
 
   port_ = 5555;
   neighborhood_size_ = 32;
@@ -146,13 +136,9 @@ void ConfigManager::LoadDefault() {
   // Set default shared memory segment names with environment variables
   main_segment_name_ = "chi_main_segment_${USER}";
   client_data_segment_name_ = "chi_client_data_segment_${USER}";
-  runtime_data_segment_name_ = "chi_runtime_data_segment_${USER}";
 
   // Set default hostfile path (empty means no networking/distributed mode)
   hostfile_path_ = "";
-
-  // Set default lane mapping policy
-  lane_map_policy_ = LaneMapPolicy::kRoundRobin;
 
   // Set default network retry configuration
   wait_for_restart_timeout_ = 30;      // 30 seconds
@@ -160,7 +146,6 @@ void ConfigManager::LoadDefault() {
 
   // Set default worker sleep configuration (in microseconds)
   first_busy_wait_ = 50;               // 50us busy wait
-  sleep_increment_ = 1000;             // 1000us (1ms) sleep increment
   max_sleep_ = 50000;                  // 50000us (50ms) maximum sleep
 }
 
@@ -181,27 +166,14 @@ void ConfigManager::ParseYAML(YAML::Node &yaml_conf) {
       process_reaper_workers_ = runtime["process_reaper_threads"].as<u32>();
     }
 
-    // Lane mapping policy
-    if (runtime["lane_map_policy"]) {
-      std::string policy_str = runtime["lane_map_policy"].as<std::string>();
-      if (policy_str == "map_by_pid_tid") {
-        lane_map_policy_ = LaneMapPolicy::kMapByPidTid;
-      } else if (policy_str == "round_robin") {
-        lane_map_policy_ = LaneMapPolicy::kRoundRobin;
-      } else if (policy_str == "random") {
-        lane_map_policy_ = LaneMapPolicy::kRandom;
-      } else {
-        HLOG(kWarning, "Unknown lane_map_policy '{}', using default (round_robin)", policy_str);
-        lane_map_policy_ = LaneMapPolicy::kRoundRobin;
-      }
+    // Local task scheduler
+    if (runtime["local_sched"]) {
+      local_sched_ = runtime["local_sched"].as<std::string>();
     }
 
     // Worker sleep configuration
     if (runtime["first_busy_wait"]) {
       first_busy_wait_ = runtime["first_busy_wait"].as<u32>();
-    }
-    if (runtime["sleep_increment"]) {
-      sleep_increment_ = runtime["sleep_increment"].as<u32>();
     }
     if (runtime["max_sleep"]) {
       max_sleep_ = runtime["max_sleep"].as<u32>();
@@ -243,10 +215,6 @@ void ConfigManager::ParseYAML(YAML::Node &yaml_conf) {
     if (memory["client_data_segment_size"]) {
       client_data_segment_size_ = hshm::ConfigParse::ParseSize(
           memory["client_data_segment_size"].as<std::string>());
-    }
-    if (memory["runtime_data_segment_size"]) {
-      runtime_data_segment_size_ = hshm::ConfigParse::ParseSize(
-          memory["runtime_data_segment_size"].as<std::string>());
     }
   }
 

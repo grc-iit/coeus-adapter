@@ -123,7 +123,7 @@ logging:
 runtime:
   stack_size: 65536
   queue_depth: 10000
-  lane_map_policy: round_robin
+  local_sched: "default"  # Local task scheduler (default: "default")
   heartbeat_interval: 1000
 ```
 
@@ -338,7 +338,7 @@ logging:
 runtime:
   stack_size: 65536
   queue_depth: 10000
-  lane_map_policy: round_robin
+  local_sched: "default"
   heartbeat_interval: 1000
 
 compose:
@@ -433,8 +433,6 @@ compose:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `WRP_RUNTIME_CONF` | Path to configuration YAML | `export WRP_RUNTIME_CONF=/etc/iowarp/config.yaml` |
-| `CTE_TARGETS_FROM_CONFIG` | (Coeus adapter) When set to `1` or `true`, the adapter does not register a default storage target in code; targets are expected from Chimaera compose `storage:` or Jarvis pipeline `devices`. Set this when storage is defined in config to avoid duplicate or conflicting targets. | `export CTE_TARGETS_FROM_CONFIG=1` |
-| `CTE_PRE_DEPLOYED` | (Coeus adapter) When set to `1` or `true`, attach to an existing CTE pool (e.g. started by Jarvis); skips Create and RegisterTarget. | `export CTE_PRE_DEPLOYED=1` |
 
 **Note**: The runtime does NOT read individual `CHI_*` environment variables. All configuration must be in the YAML file.
 

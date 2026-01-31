@@ -19,7 +19,8 @@ Tag::Tag(const std::string &tag_name) : tag_name_(tag_name) {
 
 Tag::Tag(const TagId &tag_id) : tag_id_(tag_id), tag_name_("") {}
 
-void Tag::PutBlob(const std::string &blob_name, const char *data, size_t data_size, size_t off) {
+void Tag::PutBlob(const std::string &blob_name, const char *data, size_t data_size,
+                  size_t off, float score, const Context &context) {
   // Allocate shared memory for the data
   auto *ipc_manager = CHI_IPC;
   hipc::FullPtr<char> shm_fullptr = ipc_manager->AllocateBuffer(data_size);
@@ -34,24 +35,23 @@ void Tag::PutBlob(const std::string &blob_name, const char *data, size_t data_si
   // Convert to hipc::ShmPtr<> for API call
   hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
 
-  // Call SHM version with default score of 1.0
-  PutBlob(blob_name, shm_ptr, data_size, off, 1.0f);
+  // Call SHM version with provided score and context
+  PutBlob(blob_name, shm_ptr, data_size, off, score, context);
 
   // Explicitly free shared memory buffer
   ipc_manager->FreeBuffer(shm_fullptr);
 }
 
 void Tag::PutBlob(const std::string &blob_name, const hipc::ShmPtr<> &data, size_t data_size,
-                  size_t off, float score) {
+                  size_t off, float score, const Context &context) {
   auto *cte_client = WRP_CTE_CLIENT;
   auto task = cte_client->AsyncPutBlob(tag_id_, blob_name,
-                                       off, data_size, data, score, 0);
+                                       off, data_size, data, score, context);
   task.Wait();
 
   if (task->GetReturnCode() != 0) {
     throw std::runtime_error("PutBlob operation failed");
   }
-
 }
 
 // NOTE: AsyncPutBlob(const char*) overload removed due to memory management issues.
@@ -62,10 +62,11 @@ void Tag::PutBlob(const std::string &blob_name, const hipc::ShmPtr<> &data, size
 // 4. Keeping shm_ptr alive until task completes
 
 chi::Future<PutBlobTask> Tag::AsyncPutBlob(const std::string &blob_name, const hipc::ShmPtr<> &data,
-                                             size_t data_size, size_t off, float score) {
+                                             size_t data_size, size_t off, float score,
+                                             const Context &context) {
   auto *cte_client = WRP_CTE_CLIENT;
   return cte_client->AsyncPutBlob(tag_id_, blob_name,
-                                  off, data_size, data, score, 0);
+                                  off, data_size, data, score, context);
 }
 
 void Tag::GetBlob(const std::string &blob_name, char *data, size_t data_size, size_t off) {
@@ -146,6 +147,16 @@ std::vector<std::string> Tag::GetContainedBlobs() {
 
   std::vector<std::string> blobs = task->blob_names_;
   return blobs;
+}
+
+void Tag::ReorganizeBlob(const std::string &blob_name, float new_score) {
+  auto *cte_client = WRP_CTE_CLIENT;
+  auto task = cte_client->AsyncReorganizeBlob(tag_id_, blob_name, new_score);
+  task.Wait();
+
+  if (task->GetReturnCode() != 0) {
+    throw std::runtime_error("ReorganizeBlob operation failed");
+  }
 }
 
 } // namespace wrp_cte::core

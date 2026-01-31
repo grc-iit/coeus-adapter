@@ -88,8 +88,9 @@ public:
 
   /**
    * Handle Create task - Initialize the Admin container (IS_ADMIN=true)
+   * Returns TaskResume for consistency with other methods called from Run
    */
-  void Create(hipc::FullPtr<CreateTask> task, chi::RunContext &rctx);
+  chi::TaskResume Create(hipc::FullPtr<CreateTask> task, chi::RunContext &rctx);
 
   /**
    * Handle GetOrCreatePool task - Pool get-or-create operation (IS_ADMIN=false)
@@ -115,8 +116,9 @@ public:
 
   /**
    * Handle StopRuntime task - Stop the entire runtime
+   * Returns TaskResume for consistency with other methods called from Run
    */
-  void StopRuntime(hipc::FullPtr<StopRuntimeTask> task, chi::RunContext &rctx);
+  chi::TaskResume StopRuntime(hipc::FullPtr<StopRuntimeTask> task, chi::RunContext &rctx);
 
   /**
    * Handle Flush task - Flush administrative operations
@@ -129,8 +131,9 @@ public:
 
   /**
    * Handle Send - Send task inputs or outputs over network
+   * Returns TaskResume for consistency with other methods called from Run
    */
-  void Send(hipc::FullPtr<SendTask> task, chi::RunContext &rctx);
+  chi::TaskResume Send(hipc::FullPtr<SendTask> task, chi::RunContext &rctx);
 
   /**
    * Helper: Send task inputs to remote node
@@ -144,8 +147,39 @@ public:
 
   /**
    * Handle Recv - Receive task inputs or outputs from network
+   * Returns TaskResume for consistency with other methods called from Run
    */
-  void Recv(hipc::FullPtr<RecvTask> task, chi::RunContext &rctx);
+  chi::TaskResume Recv(hipc::FullPtr<RecvTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle Heartbeat - Respond to heartbeat request
+   * Sets response to 0 to indicate runtime is healthy
+   * Returns TaskResume for consistency with other methods called from Run
+   */
+  chi::TaskResume Heartbeat(hipc::FullPtr<HeartbeatTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle WreapDeadIpcs - Periodic task to reap shared memory from dead processes
+   * Calls IpcManager::WreapDeadIpcs() to clean up orphaned shared memory segments
+   * Returns TaskResume for consistency with other methods called from Run
+   */
+  chi::TaskResume WreapDeadIpcs(hipc::FullPtr<WreapDeadIpcsTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle Monitor - Collect and return worker statistics
+   * Iterates through all workers and collects their current statistics
+   * Returns serialized statistics in JSON format
+   */
+  chi::TaskResume Monitor(hipc::FullPtr<MonitorTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle SubmitBatch - Submit a batch of tasks in a single RPC
+   * Deserializes tasks from the batch and executes them in parallel
+   * up to 32 tasks at a time, then co_awaits their completion
+   * @param task The SubmitBatchTask containing serialized tasks
+   * @param rctx Runtime context for the current worker
+   */
+  chi::TaskResume SubmitBatch(hipc::FullPtr<SubmitBatchTask> task, chi::RunContext &rctx);
 
   /**
    * Helper: Receive task inputs from remote node

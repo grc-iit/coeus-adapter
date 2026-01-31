@@ -7,9 +7,19 @@
 #include <chimaera/corwlock.h>
 #include <chimaera/unordered_map_ll.h>
 #include <hermes_shm/data_structures/ipc/ring_buffer.h>
+#include <hermes_shm/memory/allocator/malloc_allocator.h>
 #include <wrp_cte/core/core_client.h>
 #include <wrp_cte/core/core_config.h>
 #include <wrp_cte/core/core_tasks.h>
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+#ifdef HSHM_ENABLE_DENSE_NN
+#include <hermes_shm/util/compress/dynamic/compression/dense_nn_predictor.h>
+#endif
+#include <hermes_shm/util/compress/dynamic/compression/compression_features.h>
+#include <hermes_shm/util/compress/dynamic/compression/qtable_predictor.h>
+#include <hermes_shm/util/compress/compress_factory.h>
+#endif
 
 // Forward declarations to avoid circular dependency
 namespace wrp_cte::core {
@@ -17,6 +27,28 @@ class Config;
 }
 
 namespace wrp_cte::core {
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+/**
+ * Compression statistics predicted by neural network
+ */
+struct CompressionStats {
+  int compress_lib_;           // Compression library ID
+  double compression_ratio_;   // Predicted compression ratio
+  double compress_time_ms_;    // Predicted compression time in milliseconds
+  double decompress_time_ms_;  // Predicted decompression time in milliseconds
+  double psnr_db_;             // Predicted PSNR for lossy compression (0 for lossless)
+
+  CompressionStats()
+      : compress_lib_(0), compression_ratio_(1.0), compress_time_ms_(0.0),
+        decompress_time_ms_(0.0), psnr_db_(0.0) {}
+
+  CompressionStats(int lib, double ratio, double comp_time, double decomp_time, double psnr)
+      : compress_lib_(lib), compression_ratio_(ratio), compress_time_ms_(comp_time),
+        decompress_time_ms_(decomp_time), psnr_db_(psnr) {}
+};
+#endif  // WRP_CORE_ENABLE_COMPRESS
+
 
 /**
  * CTE Core Runtime Container
@@ -177,9 +209,24 @@ private:
 
   // Telemetry ring buffer for performance monitoring
   static inline constexpr size_t kTelemetryRingSize = 1024; // Ring buffer size
-  std::unique_ptr<hipc::circular_mpsc_ring_buffer<CteTelemetry, CHI_MAIN_ALLOC_T>> telemetry_log_;
+  std::unique_ptr<hipc::circular_mpsc_ring_buffer<CteTelemetry, hipc::MallocAllocator>> telemetry_log_;
   std::atomic<std::uint64_t>
       telemetry_counter_; // Atomic counter for logical time
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+#ifdef HSHM_ENABLE_DENSE_NN
+  // Neural network predictor for compression (initialized on demand)
+  std::unique_ptr<hshm::compress::DenseNNPredictor> nn_predictor_;
+#endif
+
+  // Q-table predictor for compression (primary prediction method)
+  std::unique_ptr<hshm::compress::QTablePredictor> qtable_predictor_;
+
+  // Compression telemetry ring buffer (similar to telemetry_log_)
+  using CompressionTelemetryLog = hipc::ring_buffer<CompressionTelemetry, CHI_MAIN_ALLOC_T>;
+  hipc::ShmPtr<CompressionTelemetryLog> compression_telemetry_log_;
+  std::atomic<std::uint64_t> compression_logical_time_;
+#endif
 
   /**
    * Get access to configuration manager
@@ -378,6 +425,78 @@ private:
    * @param ctx Runtime context for task execution
    */
   void BlobQuery(hipc::FullPtr<BlobQueryTask> task, chi::RunContext &ctx);
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+  /**
+   * Estimate compression statistics using neural network
+   * @param chunk Pointer to data chunk
+   * @param chunk_size Size of chunk in bytes
+   * @param context Compression context with parameters
+   * @return Vector of compression statistics for candidate libraries
+   */
+  std::vector<CompressionStats> EstCompressionStats(
+      const void* chunk, chi::u64 chunk_size, const Context& context);
+
+  /**
+   * Estimate workflow compression time for a specific tier
+   * @param chunk_size Size of chunk in bytes
+   * @param tier_bw Tier bandwidth in bytes/second
+   * @param stats Compression statistics for library
+   * @param context Compression context
+   * @return Estimated time in milliseconds
+   */
+  double EstWorkflowCompressTime(
+      chi::u64 chunk_size, double tier_bw, const CompressionStats& stats,
+      const Context& context);
+
+  /**
+   * Find best compression for ratio optimization
+   * @param chunk Pointer to data chunk
+   * @param chunk_size Size of chunk
+   * @param container_id Container ID for placement
+   * @param stats Vector of compression statistics
+   * @param context Compression context
+   * @return Tuple of (tier_id, compress_lib, estimated_time)
+   */
+  std::tuple<int, int, double> BestCompressRatio(
+      const void* chunk, chi::u64 chunk_size, int container_id,
+      const std::vector<CompressionStats>& stats, const Context& context);
+
+  /**
+   * Find best compression for time optimization
+   * @param chunk Pointer to data chunk
+   * @param chunk_size Size of chunk
+   * @param container_id Container ID for placement
+   * @param stats Vector of compression statistics
+   * @param context Compression context
+   * @return Tuple of (tier_id, compress_lib, estimated_time)
+   */
+  std::tuple<int, int, double> BestCompressTime(
+      const void* chunk, chi::u64 chunk_size, int container_id,
+      const std::vector<CompressionStats>& stats, const Context& context);
+
+  /**
+   * Choose best compression based on context objective
+   * @param context Compression context
+   * @param chunk Pointer to data chunk
+   * @param chunk_size Size of chunk
+   * @param container_id Container ID for placement
+   * @param stats Vector of compression statistics
+   * @return Tuple of (tier_id, compress_lib, estimated_time)
+   */
+  std::tuple<int, int, double> BestCompressForNode(
+      const Context& context, const void* chunk, chi::u64 chunk_size,
+      int container_id, const std::vector<CompressionStats>& stats);
+
+  /**
+   * Dynamic scheduling for Put operation with compression
+   * @param task PutBlob task
+   * @param ctx Runtime context
+   * @return TaskResume for coroutine
+   */
+  chi::TaskResume DynamicPutSchedule(
+      hipc::FullPtr<PutBlobTask> task, chi::RunContext& ctx);
+#endif  // WRP_CORE_ENABLE_COMPRESS
 
 private:
   /**

@@ -33,7 +33,74 @@ struct LocalTaskInfo {
   TaskId task_id_;
   PoolId pool_id_;
   u32 method_id_;
+
+  /**
+   * Cereal serialization support for network transfer
+   * @tparam Archive Archive type
+   * @param ar Archive instance
+   */
+  template <class Archive>
+  void serialize(Archive &ar) {
+    ar(task_id_.pid_, task_id_.tid_, task_id_.major_,
+       task_id_.replica_id_, task_id_.unique_, task_id_.node_id_,
+       task_id_.net_key_);
+    ar(pool_id_.major_, pool_id_.minor_);
+    ar(method_id_);
+  }
 };
+
+}  // namespace chi
+
+// Add local serialization support for LocalTaskInfo in hshm::ipc namespace
+namespace hshm::ipc {
+
+/**
+ * Save LocalTaskInfo to local archive
+ * @param ar Archive to save to
+ * @param info LocalTaskInfo to serialize
+ */
+template <typename Ar>
+void save(Ar &ar, const chi::LocalTaskInfo &info) {
+  // Serialize TaskId fields
+  ar << info.task_id_.pid_;
+  ar << info.task_id_.tid_;
+  ar << info.task_id_.major_;
+  ar << info.task_id_.replica_id_;
+  ar << info.task_id_.unique_;
+  ar << info.task_id_.node_id_;
+  ar << info.task_id_.net_key_;
+  // Serialize PoolId (UniqueId) fields
+  ar << info.pool_id_.major_;
+  ar << info.pool_id_.minor_;
+  // Serialize method_id
+  ar << info.method_id_;
+}
+
+/**
+ * Load LocalTaskInfo from local archive
+ * @param ar Archive to load from
+ * @param info LocalTaskInfo to deserialize into
+ */
+template <typename Ar>
+void load(Ar &ar, chi::LocalTaskInfo &info) {
+  // Deserialize TaskId fields
+  ar >> info.task_id_.pid_;
+  ar >> info.task_id_.tid_;
+  ar >> info.task_id_.major_;
+  ar >> info.task_id_.replica_id_;
+  ar >> info.task_id_.unique_;
+  ar >> info.task_id_.node_id_;
+  ar >> info.task_id_.net_key_;
+  // Deserialize PoolId (UniqueId) fields
+  ar >> info.pool_id_.major_;
+  ar >> info.pool_id_.minor_;
+  // Deserialize method_id
+  ar >> info.method_id_;
+}
+
+}  // namespace hshm::ipc
+
+namespace chi {
 
 
 /**

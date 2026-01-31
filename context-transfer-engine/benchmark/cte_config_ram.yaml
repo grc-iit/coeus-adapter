@@ -6,7 +6,6 @@ workers:
 
   # Worker sleep configuration (all values in microseconds)
   first_busy_wait: 10000        # Busy wait duration before sleeping when idle (default: 50us)
-  sleep_increment: 5000      # Linear sleep increment per idle iteration (default: 1000us = 1ms)
   max_sleep: 50000           # Maximum sleep duration cap (default: 50000us = 50ms)
 
 compose:

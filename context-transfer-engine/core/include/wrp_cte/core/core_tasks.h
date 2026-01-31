@@ -80,8 +80,18 @@ struct CreateParams {
     // The pool_config.config_ contains the full CTE configuration YAML
     // in the format of config/cte_config.yaml (targets, storage, dpe sections).
     // Parse it directly into the Config object
+    HLOG(kDebug, "CTE CreateParams::LoadConfig() - config string length: {}", pool_config.config_.length());
+    HLOG(kDebug, "CTE CreateParams::LoadConfig() - config string:\n{}", pool_config.config_);
     if (!pool_config.config_.empty()) {
-      config_.LoadFromString(pool_config.config_);
+      bool success = config_.LoadFromString(pool_config.config_);
+      if (!success) {
+        HLOG(kError, "CTE CreateParams::LoadConfig() - Failed to load config from string");
+      } else {
+        HLOG(kInfo, "CTE CreateParams::LoadConfig() - Successfully loaded config with {} storage devices",
+             config_.storage_.devices_.size());
+      }
+    } else {
+      HLOG(kWarning, "CTE CreateParams::LoadConfig() - Empty config string provided");
     }
   }
 };
@@ -139,7 +149,7 @@ struct RegisterTargetTask : public chi::Task {
 
   // SHM constructor
   RegisterTargetTask()
-      : chi::Task(), target_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), target_name_(HSHM_MALLOC),
         bdev_type_(chimaera::bdev::BdevType::kFile), total_size_(0),
         bdev_id_(chi::PoolId::GetNull()) {}
 
@@ -153,7 +163,7 @@ struct RegisterTargetTask : public chi::Task {
                               const chi::PoolQuery &target_query,
                               const chi::PoolId &bdev_id)
       : chi::Task(task_id, pool_id, pool_query, Method::kRegisterTarget),
-        target_name_(CHI_IPC->GetMainAlloc(), target_name), bdev_type_(bdev_type),
+        target_name_(HSHM_MALLOC, target_name), bdev_type_(bdev_type),
         total_size_(total_size), target_query_(target_query), bdev_id_(bdev_id) {
     task_id_ = task_id;
     pool_id_ = pool_id;
@@ -211,7 +221,7 @@ struct UnregisterTargetTask : public chi::Task {
 
   // SHM constructor
   UnregisterTargetTask()
-      : chi::Task(), target_name_(CHI_IPC->GetMainAlloc()) {}
+      : chi::Task(), target_name_(HSHM_MALLOC) {}
 
   // Emplace constructor
   explicit UnregisterTargetTask(
@@ -219,7 +229,7 @@ struct UnregisterTargetTask : public chi::Task {
       const chi::PoolQuery &pool_query, const std::string &target_name)
       : chi::Task(task_id, pool_id, pool_query,
                   Method::kUnregisterTarget),
-        target_name_(CHI_IPC->GetMainAlloc(), target_name) {
+        target_name_(HSHM_MALLOC, target_name) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kUnregisterTarget;
@@ -476,16 +486,20 @@ struct BlobInfo {
   float score_;             // 0-1 score for reorganization
   Timestamp last_modified_; // Last modification time
   Timestamp last_read_;     // Last read time
+  int compress_lib_;        // Compression library ID used for this blob (0 = no compression)
+  chi::u64 trace_key_;      // Unique trace ID for linking to trace logs (0 = not traced)
 
   BlobInfo()
       : blob_name_(), blocks_(), score_(0.0f),
         last_modified_(std::chrono::steady_clock::now()),
-        last_read_(std::chrono::steady_clock::now()) {}
+        last_read_(std::chrono::steady_clock::now()),
+        compress_lib_(0), trace_key_(0) {}
 
   explicit BlobInfo(CHI_MAIN_ALLOC_T *alloc)
       : blob_name_(), blocks_(), score_(0.0f),
         last_modified_(std::chrono::steady_clock::now()),
-        last_read_(std::chrono::steady_clock::now()) {
+        last_read_(std::chrono::steady_clock::now()),
+        compress_lib_(0), trace_key_(0) {
     (void)alloc; // Suppress unused parameter warning
   }
 
@@ -493,7 +507,8 @@ struct BlobInfo {
            const std::string &blob_name, float score)
       : blob_name_(blob_name), blocks_(), score_(score),
         last_modified_(std::chrono::steady_clock::now()),
-        last_read_(std::chrono::steady_clock::now()) {
+        last_read_(std::chrono::steady_clock::now()),
+        compress_lib_(0), trace_key_(0) {
     (void)alloc; // Suppress unused parameter warning
   }
 
@@ -506,6 +521,43 @@ struct BlobInfo {
       total += blocks_[i].size_;
     }
     return total;
+  }
+};
+
+/**
+ * Context structure for workflow-aware compression
+ * Provides metadata for compression decision-making
+ */
+struct Context {
+  int dynamic_compress_;   // 0 - skip, 1 - static, 2 - dynamic
+  int compress_lib_;       // The compression library to apply
+  chi::u32 target_psnr_;   // The acceptable PSNR for lossy compression (0 means infinity)
+  int psnr_chance_;        // The chance PSNR will be validated (default 100%)
+  bool max_performance_;   // Compression objective (performance vs ratio)
+  int consumer_node_;      // The node where consumer will access data (-1 for unknown)
+  int data_type_;          // The type of data (e.g., float, char, int, double)
+  bool trace_;             // Enable tracing for this operation
+  chi::u64 trace_key_;     // Unique trace ID for this Put operation
+  int trace_node_;         // Node ID where trace was initiated
+
+  Context()
+      : dynamic_compress_(0), compress_lib_(0), target_psnr_(0),
+        psnr_chance_(100), max_performance_(false),
+        consumer_node_(-1), data_type_(0), trace_(false),
+        trace_key_(0), trace_node_(-1) {}
+
+  explicit Context(CHI_MAIN_ALLOC_T *alloc)
+      : dynamic_compress_(0), compress_lib_(0), target_psnr_(0),
+        psnr_chance_(100), max_performance_(false),
+        consumer_node_(-1), data_type_(0), trace_(false),
+        trace_key_(0), trace_node_(-1) {
+    (void)alloc;
+  }
+
+  // Serialization support for cereal
+  template <class Archive> void serialize(Archive &ar) {
+    ar(dynamic_compress_, compress_lib_, target_psnr_, psnr_chance_,
+       max_performance_, consumer_node_, data_type_, trace_, trace_key_, trace_node_);
   }
 };
 
@@ -560,6 +612,57 @@ struct CteTelemetry {
   }
 };
 
+#ifdef WRP_CORE_ENABLE_COMPRESS
+/**
+ * Compression telemetry data structure for performance monitoring
+ * Tracks compression decisions and actual performance
+ */
+struct CompressionTelemetry {
+  CteOp op_;                     // Operation type (kPutBlob or kGetBlob)
+  int compress_lib_;             // Compression library used (0 = none)
+  chi::u64 original_size_;       // Original data size in bytes
+  chi::u64 compressed_size_;     // Compressed data size in bytes
+  double compress_time_ms_;      // Actual compression time in milliseconds
+  double decompress_time_ms_;    // Actual decompression time in milliseconds
+  double psnr_db_;               // Actual PSNR for lossy compression
+  Timestamp timestamp_;          // When operation occurred
+  std::uint64_t logical_time_;   // Logical time for ordering
+
+  CompressionTelemetry()
+      : op_(CteOp::kPutBlob), compress_lib_(0), original_size_(0),
+        compressed_size_(0), compress_time_ms_(0.0), decompress_time_ms_(0.0),
+        psnr_db_(0.0), timestamp_(std::chrono::steady_clock::now()),
+        logical_time_(0) {}
+
+  CompressionTelemetry(CteOp op, int lib, chi::u64 orig_size, chi::u64 comp_size,
+                       double comp_time, double decomp_time, double psnr,
+                       const Timestamp &ts, std::uint64_t logical_time = 0)
+      : op_(op), compress_lib_(lib), original_size_(orig_size),
+        compressed_size_(comp_size), compress_time_ms_(comp_time),
+        decompress_time_ms_(decomp_time), psnr_db_(psnr),
+        timestamp_(ts), logical_time_(logical_time) {}
+
+  // Calculate compression ratio
+  double GetCompressionRatio() const {
+    if (compressed_size_ == 0) return 1.0;
+    return static_cast<double>(original_size_) / static_cast<double>(compressed_size_);
+  }
+
+  // Serialization support for cereal
+  template <class Archive> void serialize(Archive &ar) {
+    // Convert timestamps to duration counts for serialization
+    auto ts_count = timestamp_.time_since_epoch().count();
+    ar(op_, compress_lib_, original_size_, compressed_size_,
+       compress_time_ms_, decompress_time_ms_, psnr_db_,
+       ts_count, logical_time_);
+    // Note: On deserialization, timestamps will be reconstructed from counts
+    if (Archive::is_loading::value) {
+      timestamp_ = Timestamp(Timestamp::duration(ts_count));
+    }
+  }
+};
+#endif  // WRP_CORE_ENABLE_COMPRESS
+
 /**
  * GetOrCreateTag task - Get or create a tag for blob grouping
  * Template parameter allows different CreateParams types
@@ -571,7 +674,7 @@ struct GetOrCreateTagTask : public chi::Task {
 
   // SHM constructor
   GetOrCreateTagTask()
-      : chi::Task(), tag_name_(CHI_IPC->GetMainAlloc()), tag_id_(TagId::GetNull()) {}
+      : chi::Task(), tag_name_(HSHM_MALLOC), tag_id_(TagId::GetNull()) {}
 
   // Emplace constructor
   explicit GetOrCreateTagTask(const chi::TaskId &task_id,
@@ -580,7 +683,7 @@ struct GetOrCreateTagTask : public chi::Task {
                               const std::string &tag_name,
                               const TagId &tag_id = TagId::GetNull())
       : chi::Task(task_id, pool_id, pool_query, Method::kGetOrCreateTag),
-        tag_name_(CHI_IPC->GetMainAlloc(), tag_name), tag_id_(tag_id) {
+        tag_name_(HSHM_MALLOC, tag_name), tag_id_(tag_id) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kGetOrCreateTag;
@@ -625,7 +728,7 @@ struct GetOrCreateTagTask : public chi::Task {
 };
 
 /**
- * PutBlob task - Store a blob (unimplemented for now)
+ * PutBlob task - Store a blob with optional compression context
  */
 struct PutBlobTask : public chi::Task {
   IN TagId tag_id_;              // Tag ID for blob grouping
@@ -634,24 +737,26 @@ struct PutBlobTask : public chi::Task {
   IN chi::u64 size_;             // Size of blob data
   IN hipc::ShmPtr<> blob_data_;   // Blob data (shared memory pointer)
   IN float score_;               // Score 0-1 for placement decisions
+  IN Context context_;           // Context for compression control (NEW)
   IN chi::u32 flags_;            // Operation flags
 
   // SHM constructor
   PutBlobTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         offset_(0), size_(0),
-        blob_data_(hipc::ShmPtr<>::GetNull()), score_(0.5f), flags_(0) {}
+        blob_data_(hipc::ShmPtr<>::GetNull()), score_(0.5f), context_(),
+        flags_(0) {}
 
   // Emplace constructor
   explicit PutBlobTask(const chi::TaskId &task_id, const chi::PoolId &pool_id,
                        const chi::PoolQuery &pool_query, const TagId &tag_id,
                        const std::string &blob_name,
                        chi::u64 offset, chi::u64 size, hipc::ShmPtr<> blob_data,
-                       float score, chi::u32 flags)
+                       float score, const Context &context, chi::u32 flags)
       : chi::Task(task_id, pool_id, pool_query, Method::kPutBlob),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name),
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name),
         offset_(offset), size_(size), blob_data_(blob_data), score_(score),
-        flags_(flags) {
+        context_(context), flags_(flags) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kPutBlob;
@@ -664,7 +769,7 @@ struct PutBlobTask : public chi::Task {
    */
   template <typename Archive> void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
-    ar(tag_id_, blob_name_, offset_, size_, score_, flags_);
+    ar(tag_id_, blob_name_, offset_, size_, score_, context_, flags_);
     // Use BULK_XFER to transfer blob data from client to runtime
     ar.bulk(blob_data_, size_, BULK_XFER);
   }
@@ -690,6 +795,7 @@ struct PutBlobTask : public chi::Task {
     size_ = other->size_;
     blob_data_ = other->blob_data_;
     score_ = other->score_;
+    context_ = other->context_;
     flags_ = other->flags_;
   }
 
@@ -717,7 +823,7 @@ struct GetBlobTask : public chi::Task {
 
   // SHM constructor
   GetBlobTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         offset_(0), size_(0), flags_(0),
         blob_data_(hipc::ShmPtr<>::GetNull()) {}
 
@@ -728,7 +834,7 @@ struct GetBlobTask : public chi::Task {
                        chi::u64 offset, chi::u64 size, chi::u32 flags,
                        hipc::ShmPtr<> blob_data)
       : chi::Task(task_id, pool_id, pool_query, Method::kGetBlob),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name),
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name),
         offset_(offset), size_(size), flags_(flags), blob_data_(blob_data) {
     task_id_ = task_id;
     pool_id_ = pool_id;
@@ -791,7 +897,7 @@ struct ReorganizeBlobTask : public chi::Task {
 
   // SHM constructor
   ReorganizeBlobTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         new_score_(0.0f) {}
 
   // Emplace constructor
@@ -801,7 +907,7 @@ struct ReorganizeBlobTask : public chi::Task {
       const std::string &blob_name, float new_score)
       : chi::Task(task_id, pool_id, pool_query,
                   Method::kReorganizeBlob),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name), new_score_(new_score) {
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name), new_score_(new_score) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kReorganizeBlob;
@@ -855,14 +961,14 @@ struct DelBlobTask : public chi::Task {
 
   // SHM constructor
   DelBlobTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()) {}
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC) {}
 
   // Emplace constructor
   explicit DelBlobTask(const chi::TaskId &task_id, const chi::PoolId &pool_id,
                        const chi::PoolQuery &pool_query, const TagId &tag_id,
                        const std::string &blob_name)
       : chi::Task(task_id, pool_id, pool_query, Method::kDelBlob),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name) {
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kDelBlob;
@@ -916,13 +1022,13 @@ struct DelTagTask : public chi::Task {
 
   // SHM constructor
   DelTagTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), tag_name_(CHI_IPC->GetMainAlloc()) {}
+      : chi::Task(), tag_id_(TagId::GetNull()), tag_name_(HSHM_MALLOC) {}
 
   // Emplace constructor with tag ID
   explicit DelTagTask(const chi::TaskId &task_id, const chi::PoolId &pool_id,
                       const chi::PoolQuery &pool_query, const TagId &tag_id)
       : chi::Task(task_id, pool_id, pool_query, Method::kDelTag),
-        tag_id_(tag_id), tag_name_(CHI_IPC->GetMainAlloc()) {
+        tag_id_(tag_id), tag_name_(HSHM_MALLOC) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kDelTag;
@@ -935,7 +1041,7 @@ struct DelTagTask : public chi::Task {
                       const chi::PoolQuery &pool_query,
                       const std::string &tag_name)
       : chi::Task(task_id, pool_id, pool_query, Method::kDelTag),
-        tag_id_(TagId::GetNull()), tag_name_(CHI_IPC->GetMainAlloc(), tag_name) {
+        tag_id_(TagId::GetNull()), tag_name_(HSHM_MALLOC, tag_name) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kDelTag;
@@ -1050,7 +1156,7 @@ struct PollTelemetryLogTask : public chi::Task {
   // SHM constructor
   PollTelemetryLogTask()
       : chi::Task(), minimum_logical_time_(0), last_logical_time_(0),
-        entries_(CHI_IPC->GetMainAlloc()) {}
+        entries_(HSHM_MALLOC) {}
 
   // Emplace constructor
   explicit PollTelemetryLogTask(
@@ -1059,7 +1165,7 @@ struct PollTelemetryLogTask : public chi::Task {
       : chi::Task(task_id, pool_id, pool_query,
                   Method::kPollTelemetryLog),
         minimum_logical_time_(minimum_logical_time), last_logical_time_(0),
-        entries_(CHI_IPC->GetMainAlloc()) {
+        entries_(HSHM_MALLOC) {
     task_id_ = task_id;
     pool_id_ = pool_id;
     method_ = Method::kPollTelemetryLog;
@@ -1114,7 +1220,7 @@ struct GetBlobScoreTask : public chi::Task {
 
   // SHM constructor
   GetBlobScoreTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         score_(0.0f) {}
 
   // Emplace constructor
@@ -1123,7 +1229,7 @@ struct GetBlobScoreTask : public chi::Task {
                             const chi::PoolQuery &pool_query,
                             const TagId &tag_id, const std::string &blob_name)
       : chi::Task(task_id, pool_id, pool_query, Method::kGetBlobScore),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name),
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name),
         score_(0.0f) {
     task_id_ = task_id;
     pool_id_ = pool_id;
@@ -1179,7 +1285,7 @@ struct GetBlobSizeTask : public chi::Task {
 
   // SHM constructor
   GetBlobSizeTask()
-      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(CHI_IPC->GetMainAlloc()),
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         size_(0) {}
 
   // Emplace constructor
@@ -1188,7 +1294,7 @@ struct GetBlobSizeTask : public chi::Task {
                            const chi::PoolQuery &pool_query,
                            const TagId &tag_id, const std::string &blob_name)
       : chi::Task(task_id, pool_id, pool_query, Method::kGetBlobSize),
-        tag_id_(tag_id), blob_name_(CHI_IPC->GetMainAlloc(), blob_name),
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name),
         size_(0) {
     task_id_ = task_id;
     pool_id_ = pool_id;
@@ -1316,7 +1422,7 @@ struct TagQueryTask : public chi::Task {
 
   // SHM constructor
   TagQueryTask()
-      : chi::Task(), tag_regex_(CHI_IPC->GetMainAlloc()), max_tags_(0),
+      : chi::Task(), tag_regex_(HSHM_MALLOC), max_tags_(0),
         total_tags_matched_(0) {}
 
   // Emplace constructor
@@ -1326,7 +1432,7 @@ struct TagQueryTask : public chi::Task {
                         const std::string &tag_regex,
                         chi::u32 max_tags = 0)
       : chi::Task(task_id, pool_id, pool_query, Method::kTagQuery),
-        tag_regex_(CHI_IPC->GetMainAlloc(), tag_regex), max_tags_(max_tags),
+        tag_regex_(HSHM_MALLOC, tag_regex), max_tags_(max_tags),
         total_tags_matched_(0) {
     task_id_ = task_id;
     pool_id_ = pool_id;
@@ -1400,7 +1506,7 @@ struct BlobQueryTask : public chi::Task {
 
   // SHM constructor
   BlobQueryTask()
-      : chi::Task(), tag_regex_(CHI_IPC->GetMainAlloc()), blob_regex_(CHI_IPC->GetMainAlloc()), max_blobs_(0),
+      : chi::Task(), tag_regex_(HSHM_MALLOC), blob_regex_(HSHM_MALLOC), max_blobs_(0),
         total_blobs_matched_(0) {}
 
   // Emplace constructor
@@ -1411,7 +1517,7 @@ struct BlobQueryTask : public chi::Task {
                          const std::string &blob_regex,
                          chi::u32 max_blobs = 0)
       : chi::Task(task_id, pool_id, pool_query, Method::kBlobQuery),
-        tag_regex_(CHI_IPC->GetMainAlloc(), tag_regex), blob_regex_(CHI_IPC->GetMainAlloc(), blob_regex),
+        tag_regex_(HSHM_MALLOC, tag_regex), blob_regex_(HSHM_MALLOC, blob_regex),
         max_blobs_(max_blobs), total_blobs_matched_(0) {
     task_id_ = task_id;
     pool_id_ = pool_id;

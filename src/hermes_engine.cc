@@ -690,7 +690,13 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-  
+
+  // Put() can hang for several reasons; set CTE_DEBUG=1 to see where (before
+  // AllocateBuffer, before Wait, or inside Wait). Common causes:
+  // - AllocateBuffer: blob_size too large or many ranks exhausting SHM.
+  // - task.Wait(): CTE runtime not processing (wrong pool_id_, or runtime stuck);
+  //   or multi-node SHM (runtime cannot read client SHM from another node).
+  // - MPI ordering: ranks blocked in Wait() cannot participate in collectives.
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
   }

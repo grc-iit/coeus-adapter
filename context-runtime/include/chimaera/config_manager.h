@@ -152,10 +152,10 @@ class ConfigManager : public hshm::BaseConfig {
   bool IsValid() const;
 
   /**
-   * Get lane mapping policy for task distribution
-   * @return Lane mapping policy
+   * Get local task scheduler name
+   * @return Scheduler name (default: "default")
    */
-  LaneMapPolicy GetLaneMapPolicy() const;
+  std::string GetLocalSched() const { return local_sched_; }
 
   /**
    * Get compose configuration
@@ -180,12 +180,6 @@ class ConfigManager : public hshm::BaseConfig {
    * @return Duration to busy wait before sleeping when there is no work (default: 10000us = 10ms)
    */
   u32 GetFirstBusyWait() const { return first_busy_wait_; }
-
-  /**
-   * Get sleep increment in microseconds
-   * @return Amount to linearly increment sleep duration per iteration with no work (default: 5000us = 5ms)
-   */
-  u32 GetSleepIncrement() const { return sleep_increment_; }
 
   /**
    * Get maximum sleep duration in microseconds
@@ -214,7 +208,6 @@ class ConfigManager : public hshm::BaseConfig {
 
   size_t main_segment_size_ = hshm::Unit<size_t>::Gigabytes(1);
   size_t client_data_segment_size_ = hshm::Unit<size_t>::Megabytes(256);
-  size_t runtime_data_segment_size_ = hshm::Unit<size_t>::Megabytes(256);
 
   u32 port_ = 5555;
   u32 neighborhood_size_ = 32;
@@ -222,13 +215,12 @@ class ConfigManager : public hshm::BaseConfig {
   // Shared memory segment names with environment variable support
   std::string main_segment_name_ = "chi_main_segment_${USER}";
   std::string client_data_segment_name_ = "chi_client_data_segment_${USER}";
-  std::string runtime_data_segment_name_ = "chi_runtime_data_segment_${USER}";
 
   // Networking configuration
   std::string hostfile_path_ = "";
 
-  // Task distribution policy
-  LaneMapPolicy lane_map_policy_ = LaneMapPolicy::kRoundRobin;
+  // Local task scheduler
+  std::string local_sched_ = "default";
 
   // Network retry configuration for system boot
   u32 wait_for_restart_timeout_ = 30;        // Default: 30 seconds
@@ -236,7 +228,6 @@ class ConfigManager : public hshm::BaseConfig {
 
   // Worker sleep configuration (in microseconds)
   u32 first_busy_wait_ = 10000;              // Default: 10000us (10ms) busy wait
-  u32 sleep_increment_ = 5000;               // Default: 5000us (5ms) sleep increment
   u32 max_sleep_ = 50000;                    // Default: 50000us (50ms) maximum sleep
 
   // Compose configuration

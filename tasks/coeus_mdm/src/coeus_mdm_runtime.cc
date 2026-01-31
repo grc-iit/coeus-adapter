@@ -19,7 +19,7 @@ void Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext& rctx) {
   HLOG(kDebug, "coeus_mdm: Executing Create task for pool {}", task->pool_id_);
 
   // Get CreateParams from task
-  auto params = task->GetParams(CHI_IPC->GetMainAlloc());
+  auto params = task->GetParams();
   db_path_ = params.db_path_;
 
   // Initialize SQLite database

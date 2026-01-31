@@ -1,13 +1,18 @@
 #include "chimaera/worker.h"
 #include "hermes_shm/util/logging.h"
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <wrp_cte/core/core_config.h>
 #include <wrp_cte/core/core_dpe.h>
@@ -84,13 +89,12 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext 
     tag_locks_.emplace_back(std::make_unique<chi::CoRwLock>());
   }
 
-  // Get main allocator from IPC manager
+  // Get IPC manager for later use
   auto *ipc_manager = CHI_IPC;
-  auto *main_allocator = ipc_manager->GetMainAlloc();
 
-  // Initialize telemetry ring buffer using unique_ptr
-  telemetry_log_ = std::make_unique<hipc::circular_mpsc_ring_buffer<CteTelemetry, CHI_MAIN_ALLOC_T>>(
-      main_allocator, kTelemetryRingSize);
+  // Initialize telemetry ring buffer using unique_ptr with HSHM_MALLOC
+  telemetry_log_ = std::make_unique<hipc::circular_mpsc_ring_buffer<CteTelemetry, hipc::MallocAllocator>>(
+      HSHM_MALLOC, kTelemetryRingSize);
 
   // Initialize atomic counters
   next_tag_id_minor_ = 1;
@@ -98,14 +102,17 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext 
 
   // Get configuration from params (loaded from pool_config.config_ via
   // LoadConfig)
-  auto params = task->GetParams(main_allocator);
+  HLOG(kDebug, "CTE Create: About to call GetParams(), do_compose_={}", task->do_compose_);
+  auto params = task->GetParams();
   config_ = params.config_;
+  HLOG(kDebug, "CTE Create: GetParams() returned, storage devices in config: {}", config_.storage_.devices_.size());
 
   // Configuration is now loaded from compose pool_config via
   // CreateParams::LoadConfig()
 
   // Store storage configuration in runtime
   storage_devices_ = config_.storage_.devices_;
+  HLOG(kDebug, "CTE Create: Copied storage devices to runtime, count: {}", storage_devices_.size());
 
   // Initialize the client with the pool ID
   client_.Init(task->new_pool_id_);
@@ -187,6 +194,49 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext 
   // runtime Local queues (kTargetManagementQueue, kTagManagementQueue,
   // kBlobOperationsQueue, kStatsQueue) are no longer created explicitly
 
+#ifdef WRP_CORE_ENABLE_COMPRESS
+  // Load Q-table model if configured (primary prediction method)
+  if (!config_.compression_.qtable_model_path_.empty()) {
+    try {
+      HLOG(kInfo, "Loading Q-table model from: {}", config_.compression_.qtable_model_path_);
+      qtable_predictor_ = std::make_unique<hshm::compress::QTablePredictor>();
+      if (qtable_predictor_->Load(config_.compression_.qtable_model_path_)) {
+        HLOG(kInfo, "Q-table model loaded successfully with {} states",
+             qtable_predictor_->GetNumStates());
+      } else {
+        HLOG(kWarning, "Failed to load Q-table model from: {}", config_.compression_.qtable_model_path_);
+        qtable_predictor_.reset();
+      }
+    } catch (const std::exception& e) {
+      HLOG(kError, "Exception while loading Q-table model: {}", e.what());
+      qtable_predictor_.reset();
+    }
+  }
+
+#ifdef HSHM_ENABLE_DENSE_NN
+  // Load DNN model weights as fallback if Q-table not available
+  if (!qtable_predictor_ && !config_.compression_.dnn_model_weights_path_.empty()) {
+    try {
+      HLOG(kInfo, "Loading DNN model weights from: {}", config_.compression_.dnn_model_weights_path_);
+      nn_predictor_ = std::make_unique<hshm::compress::DenseNNPredictor>();
+      if (nn_predictor_->LoadWeights(config_.compression_.dnn_model_weights_path_)) {
+        HLOG(kInfo, "DNN model loaded successfully");
+      } else {
+        HLOG(kWarning, "Failed to load DNN model weights from: {}", config_.compression_.dnn_model_weights_path_);
+        nn_predictor_.reset();
+      }
+    } catch (const std::exception& e) {
+      HLOG(kError, "Exception while loading DNN model: {}", e.what());
+      nn_predictor_.reset();
+    }
+  }
+#endif  // HSHM_ENABLE_DENSE_NN
+
+  if (!qtable_predictor_) {
+    HLOG(kDebug, "No compression predictor configured, dynamic compression prediction disabled");
+  }
+#endif  // WRP_CORE_ENABLE_COMPRESS
+
   HLOG(kInfo,
         "CTE Core container created and initialized for pool: {} (ID: {})",
         pool_name_, task->new_pool_id_);
@@ -228,7 +278,7 @@ void Runtime::Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext &ctx) {
 chi::TaskResume Runtime::RegisterTarget(hipc::FullPtr<RegisterTargetTask> task,
                                         chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Local();
     co_return;
   }
@@ -252,11 +302,17 @@ chi::TaskResume Runtime::RegisterTarget(hipc::FullPtr<RegisterTargetTask> task,
 
     // Create the bdev container using the client
     chi::PoolQuery pool_query = chi::PoolQuery::Dynamic();
+    HLOG(kDebug, "RegisterTarget: Creating bdev with custom_pool_id=({},{}), target_name={}",
+          bdev_pool_id.major_, bdev_pool_id.minor_, target_name);
     auto create_task = bdev_client.AsyncCreate(pool_query, target_name,
                                                 bdev_pool_id, bdev_type, total_size);
     co_await create_task;
+    HLOG(kDebug, "RegisterTarget: After create, create_task->new_pool_id_=({},{}), create_task->return_code_={}",
+          create_task->new_pool_id_.major_, create_task->new_pool_id_.minor_, create_task->return_code_.load());
     bdev_client.pool_id_ = create_task->new_pool_id_;
     bdev_client.return_code_ = create_task->return_code_;
+    HLOG(kDebug, "RegisterTarget: After assignment, bdev_client.pool_id_=({},{})",
+          bdev_client.pool_id_.major_, bdev_client.pool_id_.minor_);
 
     // Check if creation was successful
     if (bdev_client.return_code_ != 0) {
@@ -287,12 +343,15 @@ chi::TaskResume Runtime::RegisterTarget(hipc::FullPtr<RegisterTargetTask> task,
     remaining_size = stats_task->remaining_size_;
 
     // Create target info with bdev client and performance stats
-    auto *ipc_manager = CHI_IPC;
-    auto *main_allocator = ipc_manager->GetMainAlloc();
-    TargetInfo target_info(main_allocator);
+    // Use default constructor (allocator not used in struct)
+    TargetInfo target_info;
+    HLOG(kDebug, "RegisterTarget: Before move, bdev_client.pool_id_=({},{})",
+          bdev_client.pool_id_.major_, bdev_client.pool_id_.minor_);
     target_info.target_name_ = target_name;
     target_info.bdev_pool_name_ = bdev_pool_name;
     target_info.bdev_client_ = std::move(bdev_client);
+    HLOG(kDebug, "RegisterTarget: After move, target_info.bdev_client_.pool_id_=({},{})",
+          target_info.bdev_client_.pool_id_.major_, target_info.bdev_client_.pool_id_.minor_);
     target_info.target_query_ =
         task->target_query_; // Store target query for bdev API calls
     target_info.bytes_read_ = 0;
@@ -348,7 +407,7 @@ chi::TaskResume Runtime::RegisterTarget(hipc::FullPtr<RegisterTargetTask> task,
 void Runtime::UnregisterTarget(hipc::FullPtr<UnregisterTargetTask> task,
                                chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Local();
     return;
   }
@@ -389,7 +448,7 @@ void Runtime::UnregisterTarget(hipc::FullPtr<UnregisterTargetTask> task,
 void Runtime::ListTargets(hipc::FullPtr<ListTargetsTask> task,
                           chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Local();
     return;
   }
@@ -420,7 +479,7 @@ void Runtime::ListTargets(hipc::FullPtr<ListTargetsTask> task,
 void Runtime::StatTargets(hipc::FullPtr<StatTargetsTask> task,
                           chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Local();
     return;
   }
@@ -451,7 +510,7 @@ void Runtime::GetOrCreateTag(
     hipc::FullPtr<GetOrCreateTagTask<CreateParamsT>> task,
     chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     std::string tag_name = task->tag_name_.str();
     // Check if tag exists locally
     TagId *existing_tag_id = tag_name_to_id_.find(tag_name);
@@ -525,7 +584,7 @@ void Runtime::GetOrCreateTag(
 
 chi::TaskResume Runtime::PutBlob(hipc::FullPtr<PutBlobTask> task, chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     co_return;
@@ -560,6 +619,11 @@ chi::TaskResume Runtime::PutBlob(hipc::FullPtr<PutBlobTask> task, chi::RunContex
       task->return_code_ = 4; // Error: No blob name provided
       co_return;
     }
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+    // Compression is not fully integrated with shared memory pointers yet.
+    // This section is disabled pending proper buffer handling implementation.
+#endif  // WRP_CORE_ENABLE_COMPRESS
 
     // Step 1: Check if blob exists
     BlobInfo *blob_info_ptr = CheckBlobExists(blob_name, tag_id);
@@ -652,7 +716,7 @@ chi::TaskResume Runtime::PutBlob(hipc::FullPtr<PutBlobTask> task, chi::RunContex
 
 chi::TaskResume Runtime::GetBlob(hipc::FullPtr<GetBlobTask> task, chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     co_return;
@@ -701,6 +765,11 @@ chi::TaskResume Runtime::GetBlob(hipc::FullPtr<GetBlobTask> task, chi::RunContex
       co_return;
     }
 
+#ifdef WRP_CORE_ENABLE_COMPRESS
+    // Decompression is not fully integrated with shared memory pointers yet.
+    // This section is disabled pending proper buffer handling implementation.
+#endif  // WRP_CORE_ENABLE_COMPRESS
+
     // Step 3: Update timestamp (no lock needed - just updating values, not
     // modifying map structure)
     auto now = std::chrono::steady_clock::now();
@@ -727,7 +796,7 @@ chi::TaskResume Runtime::GetBlob(hipc::FullPtr<GetBlobTask> task, chi::RunContex
 chi::TaskResume Runtime::ReorganizeBlob(hipc::FullPtr<ReorganizeBlobTask> task,
                                         chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     co_return;
@@ -822,7 +891,7 @@ chi::TaskResume Runtime::ReorganizeBlob(hipc::FullPtr<ReorganizeBlobTask> task,
           blob_name, new_score);
     auto put_task =
         client_.AsyncPutBlob(tag_id, blob_name, 0,
-                             blob_size, blob_data_buffer.shm_.template Cast<void>(), new_score, 0);
+                             blob_size, blob_data_buffer.shm_.template Cast<void>(), new_score, Context(), 0);
     co_await put_task;
 
     if (put_task->return_code_ != 0) {
@@ -847,7 +916,7 @@ chi::TaskResume Runtime::ReorganizeBlob(hipc::FullPtr<ReorganizeBlobTask> task,
 
 chi::TaskResume Runtime::DelBlob(hipc::FullPtr<DelBlobTask> task, chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     co_return;
@@ -1039,7 +1108,7 @@ chi::TaskResume Runtime::DelTag(hipc::FullPtr<DelTagTask> task, chi::RunContext 
 void Runtime::GetTagSize(hipc::FullPtr<GetTagSizeTask> task,
                          chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Broadcast();
     return;
   }
@@ -1160,10 +1229,8 @@ TagId Runtime::GetOrAssignTagId(const std::string &tag_name,
     tag_id = GenerateNewTagId();
   }
 
-  // Create tag info
-  auto *ipc_manager = CHI_IPC;
-  auto *main_allocator = ipc_manager->GetMainAlloc();
-  TagInfo tag_info(main_allocator);
+  // Create tag info (use default constructor, allocator not used in struct)
+  TagInfo tag_info;
   tag_info.tag_name_ = tag_name;
   tag_info.tag_id_ = tag_id;
 
@@ -1248,9 +1315,8 @@ BlobInfo *Runtime::CreateNewBlob(const std::string &blob_name,
   }
 
   // Prepare blob info structure BEFORE acquiring lock
-  auto *ipc_manager = CHI_IPC;
-  auto *main_allocator = ipc_manager->GetMainAlloc();
-  BlobInfo new_blob_info(main_allocator);
+  // Use default constructor (allocator not used in struct)
+  BlobInfo new_blob_info;
   new_blob_info.blob_name_ = blob_name;
   new_blob_info.score_ = blob_score;
 
@@ -1295,6 +1361,10 @@ chi::TaskResume Runtime::AllocateNewData(BlobInfo &blob_info, chi::u64 offset,
   registered_targets_.for_each(
       [&available_targets](const chi::PoolId &target_id,
                            const TargetInfo &target_info) {
+        HLOG(kDebug, "AllocateNewData: for_each - key=({},{}), value.bdev_client_.pool_id_=({},{}), remaining_space={}",
+              target_id.major_, target_id.minor_,
+              target_info.bdev_client_.pool_id_.major_, target_info.bdev_client_.pool_id_.minor_,
+              target_info.remaining_space_);
         available_targets.push_back(target_info);
       });
   HLOG(kDebug, "AllocateNewData: Ordered targets: {}",
@@ -1310,6 +1380,8 @@ chi::TaskResume Runtime::AllocateNewData(BlobInfo &blob_info, chi::u64 offset,
       DpeFactory::CreateDpe(config.dpe_.dpe_type_);
 
   // Select targets using DPE algorithm before allocation loop
+  HLOG(kDebug, "AllocateNewData: Before SelectTargets, available_targets[0].bdev_client_.pool_id_=({},{})",
+        available_targets[0].bdev_client_.pool_id_.major_, available_targets[0].bdev_client_.pool_id_.minor_);
   std::vector<TargetInfo> ordered_targets =
       dpe->SelectTargets(available_targets, blob_score, additional_size);
 
@@ -1317,6 +1389,9 @@ chi::TaskResume Runtime::AllocateNewData(BlobInfo &blob_info, chi::u64 offset,
     error_code = 2;
     co_return;
   }
+
+  HLOG(kDebug, "AllocateNewData: After SelectTargets, ordered_targets[0].bdev_client_.pool_id_=({},{})",
+        ordered_targets[0].bdev_client_.pool_id_.major_, ordered_targets[0].bdev_client_.pool_id_.minor_);
 
   // Use for loop to iterate over pre-selected targets in order
   chi::u64 remaining_to_allocate = additional_size;
@@ -1326,7 +1401,13 @@ chi::TaskResume Runtime::AllocateNewData(BlobInfo &blob_info, chi::u64 offset,
       break;
     }
 
+    HLOG(kDebug, "AllocateNewData: In loop, selected_target_info.bdev_client_.pool_id_=({},{}), name={}",
+          selected_target_info.bdev_client_.pool_id_.major_,
+          selected_target_info.bdev_client_.pool_id_.minor_,
+          selected_target_info.target_name_);
     chi::PoolId selected_target_id = selected_target_info.bdev_client_.pool_id_;
+    HLOG(kDebug, "AllocateNewData: After copy, selected_target_id=({},{}) ToU64={}",
+          selected_target_id.major_, selected_target_id.minor_, selected_target_id.ToU64());
 
     // Find the selected target info for allocation using TargetId
     TargetInfo *target_info = registered_targets_.find(selected_target_id);
@@ -1609,17 +1690,34 @@ chi::TaskResume Runtime::ReadData(const std::vector<BlobBlock> &blocks,
 
 chi::TaskResume Runtime::AllocateFromTarget(TargetInfo &target_info, chi::u64 size,
                                             chi::u64 &allocated_offset, bool &success) {
+  HLOG(kDebug, "AllocateFromTarget: ENTER - target_name={}, bdev_client_.pool_id_=({},{}), size={}, remaining_space={}",
+       target_info.target_name_,
+       target_info.bdev_client_.pool_id_.major_, target_info.bdev_client_.pool_id_.minor_,
+       size, target_info.remaining_space_);
+
   // Check if target has sufficient space
   if (target_info.remaining_space_ < size) {
+    HLOG(kDebug, "AllocateFromTarget: Insufficient space - remaining={} < size={}",
+         target_info.remaining_space_, size);
     success = false;
     co_return;
   }
 
   try {
+    HLOG(kDebug, "AllocateFromTarget: Calling AsyncAllocateBlocks with pool_id_=({},{})",
+         target_info.bdev_client_.pool_id_.major_, target_info.bdev_client_.pool_id_.minor_);
+
     // Use bdev client AsyncAllocateBlocks method to get actual offset
     auto alloc_task = target_info.bdev_client_.AsyncAllocateBlocks(
         target_info.target_query_, size);
+
+    HLOG(kDebug, "AllocateFromTarget: AsyncAllocateBlocks returned, IsComplete()={}, co_awaiting...",
+         alloc_task.IsComplete() ? "true" : "false");
+
     co_await alloc_task;
+
+    HLOG(kDebug, "AllocateFromTarget: co_await complete, alloc_task->blocks_.size()={}, return_code={}",
+         alloc_task->blocks_.size(), alloc_task->return_code_.load());
 
     std::vector<chimaera::bdev::Block> allocated_blocks;
     for (size_t i = 0; i < alloc_task->blocks_.size(); ++i) {
@@ -1628,6 +1726,7 @@ chi::TaskResume Runtime::AllocateFromTarget(TargetInfo &target_info, chi::u64 si
 
     // Check if we got any blocks
     if (allocated_blocks.empty()) {
+      HLOG(kDebug, "AllocateFromTarget: FAILED - allocated_blocks is empty");
       success = false;
       co_return;
     }
@@ -1778,7 +1877,7 @@ void Runtime::PollTelemetryLog(hipc::FullPtr<PollTelemetryLogTask> task,
 void Runtime::GetBlobScore(hipc::FullPtr<GetBlobScoreTask> task,
                            chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     return;
@@ -1828,7 +1927,7 @@ void Runtime::GetBlobScore(hipc::FullPtr<GetBlobScoreTask> task,
 void Runtime::GetBlobSize(hipc::FullPtr<GetBlobSizeTask> task,
                           chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ =
         HashBlobToContainer(task->tag_id_, task->blob_name_.str());
     return;
@@ -1877,7 +1976,7 @@ void Runtime::GetBlobSize(hipc::FullPtr<GetBlobSizeTask> task,
 void Runtime::GetContainedBlobs(hipc::FullPtr<GetContainedBlobsTask> task,
                                 chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Broadcast();
     return;
   }
@@ -1931,7 +2030,7 @@ void Runtime::GetContainedBlobs(hipc::FullPtr<GetContainedBlobsTask> task,
 
 void Runtime::TagQuery(hipc::FullPtr<TagQueryTask> task, chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Broadcast();
     return;
   }
@@ -1979,7 +2078,7 @@ void Runtime::TagQuery(hipc::FullPtr<TagQueryTask> task, chi::RunContext &ctx) {
 void Runtime::BlobQuery(hipc::FullPtr<BlobQueryTask> task,
                         chi::RunContext &ctx) {
   // Dynamic scheduling phase - determine routing
-  if (ctx.exec_mode == chi::ExecMode::kDynamicSchedule) {
+  if (ctx.exec_mode_ == chi::ExecMode::kDynamicSchedule) {
     task->pool_query_ = chi::PoolQuery::Broadcast();
     return;
   }
@@ -2070,7 +2169,383 @@ chi::PoolQuery Runtime::HashBlobToContainer(const TagId &tag_id,
   return chi::PoolQuery::DirectHash(hash_value);
 }
 
+// ==============================================================================
+// Compression Support Methods
+// ==============================================================================
+
+#ifdef WRP_CORE_ENABLE_COMPRESS
+std::vector<CompressionStats> Runtime::EstCompressionStats(
+    const void* chunk, chi::u64 chunk_size, const Context& context) {
+  std::vector<CompressionStats> results;
+
+  // Calculate compression features from chunk data
+  const auto* data = static_cast<const uint8_t*>(chunk);
+  chi::u64 sample_size = std::min(chunk_size, static_cast<chi::u64>(65536));
+
+  // Calculate Shannon entropy
+  std::vector<int> histogram(256, 0);
+  for (chi::u64 i = 0; i < sample_size; ++i) {
+    histogram[data[i]]++;
+  }
+  double entropy = 0.0;
+  for (int count : histogram) {
+    if (count > 0) {
+      double prob = static_cast<double>(count) / static_cast<double>(sample_size);
+      entropy -= prob * std::log2(prob);
+    }
+  }
+
+  // Calculate MAD (Mean Absolute Deviation)
+  double mean = 0.0;
+  for (chi::u64 i = 0; i < sample_size; ++i) {
+    mean += data[i];
+  }
+  mean /= static_cast<double>(sample_size);
+  double mad = 0.0;
+  for (chi::u64 i = 0; i < sample_size; ++i) {
+    mad += std::abs(static_cast<double>(data[i]) - mean);
+  }
+  mad /= static_cast<double>(sample_size);
+
+  // Calculate second derivative mean (curvature)
+  double second_deriv_sum = 0.0;
+  chi::u64 deriv_count = 0;
+  for (chi::u64 i = 1; i < sample_size - 1 && i < 999; ++i) {
+    double second_deriv = static_cast<double>(data[i + 1]) -
+                          2.0 * static_cast<double>(data[i]) +
+                          static_cast<double>(data[i - 1]);
+    second_deriv_sum += std::abs(second_deriv);
+    deriv_count++;
+  }
+  double second_derivative_mean = (deriv_count > 0) ?
+      (second_deriv_sum / static_cast<double>(deriv_count)) : 0.0;
+
+  // Determine candidate compression libraries and configs
+  // Library IDs: BROTLI=0, BZIP2=1, Blosc2=2, FPZIP=3, LZ4=4, LZMA=5,
+  //              SNAPPY=6, SZ3=7, ZFP=8, ZLIB=9, ZSTD=10
+  // Config IDs: balanced=0, best=1, default=2, fast=3
+  std::vector<std::pair<int, int>> candidate_lib_configs;
+  if (context.dynamic_compress_ == 1) {
+    // Static mode: use specified library with default config
+    candidate_lib_configs.push_back({context.compress_lib_, 2});
+  } else {
+    // Dynamic mode: test common library/config combinations
+    candidate_lib_configs = {
+      {10, 0},  // ZSTD balanced
+      {10, 3},  // ZSTD fast
+      {4, 3},   // LZ4 fast
+      {1, 1},   // BZIP2 best
+      {9, 0},   // ZLIB balanced
+    };
+  }
+
+  // Run predictions for each candidate library/config
+  for (const auto& [lib_id, config_id] : candidate_lib_configs) {
+    hshm::compress::CompressionPrediction pred;
+
+    // Use Q-table predictor if available (primary method)
+    if (qtable_predictor_ && qtable_predictor_->IsReady()) {
+      hshm::compress::CompressionFeatures features;
+      features.library_config_id = static_cast<double>(lib_id);
+      features.chunk_size_bytes = static_cast<double>(chunk_size);
+      features.shannon_entropy = entropy;
+      features.mad = mad;
+      features.second_derivative_mean = second_derivative_mean;
+      // Set config encoding
+      features.config_fast = (config_id == 3) ? 1 : 0;
+      features.config_balanced = (config_id == 0) ? 1 : 0;
+      features.config_best = (config_id == 1) ? 1 : 0;
+      // Set data type encoding
+      features.data_type_char = (context.data_type_ == 0) ? 1 : 0;
+      features.data_type_float = (context.data_type_ == 1) ? 1 : 0;
+
+      pred = qtable_predictor_->Predict(features);
+    }
+#ifdef HSHM_ENABLE_DENSE_NN
+    // Fallback to DNN if Q-table not available
+    else if (nn_predictor_ && nn_predictor_->IsReady()) {
+      hshm::compress::CompressionFeatures features;
+      features.library_config_id = static_cast<double>(lib_id);
+      features.chunk_size_bytes = static_cast<double>(chunk_size);
+      features.shannon_entropy = entropy;
+      features.mad = mad;
+      features.second_derivative_mean = second_derivative_mean;
+      features.config_fast = (config_id == 3) ? 1 : 0;
+      features.config_balanced = (config_id == 0) ? 1 : 0;
+      features.config_best = (config_id == 1) ? 1 : 0;
+      features.data_type_char = (context.data_type_ == 0) ? 1 : 0;
+      features.data_type_float = (context.data_type_ == 1) ? 1 : 0;
+      pred = nn_predictor_->Predict(features);
+    }
+#endif  // HSHM_ENABLE_DENSE_NN
+    else {
+      // Heuristic fallback if no predictor available
+      pred.compression_ratio = 2.0;
+      pred.psnr_db = 0.0;
+      pred.compression_time_ms = static_cast<double>(chunk_size) / 100000.0;
+    }
+
+    // Filter out compressions below PSNR threshold
+    if (context.target_psnr_ > 0 && pred.psnr_db > 0 && pred.psnr_db < context.target_psnr_) {
+      continue;
+    }
+
+    // Add to results
+    results.emplace_back(lib_id, pred.compression_ratio,
+                         pred.compression_time_ms, pred.compression_time_ms,
+                         pred.psnr_db);
+  }
+
+  return results;
+}
+
+double Runtime::EstWorkflowCompressTime(
+    chi::u64 chunk_size, double tier_bw, const CompressionStats& stats,
+    const Context& context) {
+
+  double compressed_size = chunk_size / stats.compression_ratio_;
+  double transfer_time_ms = (compressed_size / tier_bw) * 1000.0;
+
+  if (stats.psnr_db_ == 0.0) {
+    // Lossless compression
+    return stats.compress_time_ms_ + stats.decompress_time_ms_ + transfer_time_ms;
+  } else {
+    // Lossy compression - may need verification decompression
+    double psnr_check_prob = static_cast<double>(context.psnr_chance_) / 100.0;
+    return stats.compress_time_ms_ +
+           (1.0 + psnr_check_prob) * stats.decompress_time_ms_ +
+           transfer_time_ms;
+  }
+}
+
+std::tuple<int, int, double> Runtime::BestCompressRatio(
+    const void* chunk, chi::u64 chunk_size, int container_id,
+    const std::vector<CompressionStats>& stats, const Context& context) {
+
+  // Find the fastest tier where the compressed data will fit
+  // For now, use a simplified tier selection (tier 0 = fastest)
+  int best_tier = 0;
+  int best_lib = 0;
+  double best_time = std::numeric_limits<double>::max();
+  double best_ratio = 1.0;
+
+  // Assume tier bandwidth (TODO: get from target info)
+  double tier_bw = 1e9;  // 1 GB/s for tier 0
+
+  for (const auto& stat : stats) {
+    // Calculate workflow time for this compression
+    double est_time = EstWorkflowCompressTime(chunk_size, tier_bw, stat, context);
+
+    // Choose compression with best ratio that meets time constraints
+    if (stat.compression_ratio_ > best_ratio) {
+      best_ratio = stat.compression_ratio_;
+      best_lib = stat.compress_lib_;
+      best_time = est_time;
+      best_tier = 0;  // Simplified: always use fastest tier
+    }
+  }
+
+  return std::make_tuple(best_tier, best_lib, best_time);
+}
+
+std::tuple<int, int, double> Runtime::BestCompressTime(
+    const void* chunk, chi::u64 chunk_size, int container_id,
+    const std::vector<CompressionStats>& stats, const Context& context) {
+
+  int best_tier = 0;
+  int best_lib = 0;
+  double best_time = std::numeric_limits<double>::max();
+
+  // Assume tier bandwidth (TODO: get from target info based on container_id)
+  double tier_bw = 1e9;  // 1 GB/s for tier 0
+
+  // For each compression library and tier, calculate workflow time
+  for (const auto& stat : stats) {
+    double est_time = EstWorkflowCompressTime(chunk_size, tier_bw, stat, context);
+
+    // Choose combination with best performance
+    if (est_time < best_time) {
+      best_time = est_time;
+      best_lib = stat.compress_lib_;
+      best_tier = 0;  // Simplified: always use fastest tier
+    }
+  }
+
+  return std::make_tuple(best_tier, best_lib, best_time);
+}
+
+std::tuple<int, int, double> Runtime::BestCompressForNode(
+    const Context& context, const void* chunk, chi::u64 chunk_size,
+    int container_id, const std::vector<CompressionStats>& stats) {
+
+  // Choose strategy based on context objective
+  if (context.max_performance_) {
+    // Objective: minimize time
+    return BestCompressTime(chunk, chunk_size, container_id, stats, context);
+  } else {
+    // Objective: maximize compression ratio
+    return BestCompressRatio(chunk, chunk_size, container_id, stats, context);
+  }
+}
+
+// Static atomic trace key counter for generating unique trace IDs
+static std::atomic<chi::u64> g_trace_key_counter{1};
+
+// Helper function to write trace log entry
+static void WriteTraceLog(const std::string& trace_folder, const std::string& log_name,
+                          chi::u32 container_id, const std::string& entry) {
+  if (trace_folder.empty()) return;
+
+  try {
+    std::string log_path = trace_folder + "/" + log_name + "." + std::to_string(container_id);
+    std::ofstream log_file(log_path, std::ios::app);
+    if (log_file.is_open()) {
+      log_file << entry << std::endl;
+      log_file.close();
+    }
+  } catch (const std::exception& e) {
+    HLOG(kWarning, "Failed to write trace log: {}", e.what());
+  }
+}
+
+chi::TaskResume Runtime::DynamicPutSchedule(
+    hipc::FullPtr<PutBlobTask> task, chi::RunContext& ctx) {
+
+  // Optimized dynamic compression schedule with cached tier results
+  // Calls BestCompressForNode only 3 times (once per tier), NOT 6 times
+  // This reduces redundant compression analysis by 50%
+
+  // Note: Cannot safely dereference ShmPtr without proper memory context
+  // Use size-based heuristics instead of actual data analysis
+  chi::u64 chunk_size = task->size_;
+  Context& context = task->context_;
+
+  // Initialize tracing if enabled
+  auto start_time = std::chrono::high_resolution_clock::now();
+  if (context.trace_) {
+    context.trace_key_ = g_trace_key_counter.fetch_add(1);
+    context.trace_node_ = static_cast<int>(CHI_IPC->GetNodeId());
+  }
+
+  // For now, use simple size-based heuristics without actual data sampling
+  // Proper implementation requires safe ShmPtr dereferencing mechanism
+  // Disable dynamic compression until proper shared memory access is available
+  context.compress_lib_ = 0;
+  context.dynamic_compress_ = 0;
+
+  // Log scheduling decision time if tracing enabled
+  if (context.trace_) {
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration_ms = std::chrono::duration<double, std::milli>(end_time - start_time).count();
+
+    // Log to sched_decision.log.container_id
+    std::ostringstream log_entry;
+    log_entry << context.trace_key_ << "," << duration_ms;
+    WriteTraceLog(config_.compression_.trace_folder_path_, "sched_decision.log",
+                  pool_id_.major_, log_entry.str());
+  }
+
+  // TODO: When compression/decompression is implemented, add tracing:
+  // - In ModifyExistingData (or compression wrapper): Log to compress_stats.log.container_id
+  //   Format: trace_key,compress_lib,compress_time_ms,compression_ratio,psnr_db
+  // - In ReadData (or decompression wrapper): Log to decompress_stats.log.container_id
+  //   Format: trace_key,decompress_time_ms
+  // - Store trace_key in BlobInfo when blob is created/updated (already added to BlobInfo struct)
+
+  (void)ctx;
+  co_return;
+
+  /*
+  // TODO: Re-enable when safe ShmPtr dereferencing is available
+  // Get pointer to data (requires proper shared memory context)
+  const void* chunk = nullptr;  // Needs: CHI_IPC->GetDataPtr(task->blob_data_)
+
+  // Get compression stats once
+  auto stats = EstCompressionStats(chunk, chunk_size, context);
+
+  if (stats.empty()) {
+    // No valid compression available, disable compression
+    context.compress_lib_ = 0;
+    context.dynamic_compress_ = 0;
+    co_return;
+  }
+
+  // Log predicted compression stats if tracing enabled
+  if (context.trace_ && !stats.empty()) {
+    for (const auto& stat : stats) {
+      std::ostringstream log_entry;
+      log_entry << context.trace_key_ << ","
+                << stat.compress_lib_ << ","
+                << stat.compression_ratio_ << ","
+                << stat.compress_time_ms_ << ","
+                << stat.decompress_time_ms_ << ","
+                << stat.psnr_db_;
+      WriteTraceLog(config_.compression_.trace_folder_path_, "predicted_stats.log",
+                    pool_id_.major_, log_entry.str());
+    }
+  }
+
+  // Call BestCompressForNode only 3 times (once per tier: 0, 1, 2)
+  // Cache results in array to avoid redundant computation
+  std::array<std::tuple<int, int, double>, 3> best_per_tier;
+  for (int tier = 0; tier < 3; tier++) {
+    // FIXED: Pass tier (0, 1, 2) as container_id, not a non-existent field
+    best_per_tier[tier] = BestCompressForNode(context, chunk, chunk_size,
+                                               tier, stats);
+  }
+  */
+
+  /*
+  // Unpack cached results for case analysis
+  auto [tier0, lib0, time0] = best_per_tier[0];  // Current node (tier 0)
+  auto [tier1, lib1, time1] = best_per_tier[1];  // Tier 1 (slower storage)
+  auto [tier2, lib2, time2] = best_per_tier[2];  // Tier 2 (slowest storage)
+
+  // Case 1: Compress here, store in current tier
+  // Time = compression time only
+  double case1_time = time0;
+
+  // Case 2: Compress here, transfer to slower tier
+  // Time = compression time + transfer time (approximated as tier1_time)
+  double case2_time = time0 + (time1 - time0) * 0.5;  // Rough transfer estimate
+
+  // Case 3: Send uncompressed to current tier
+  // Time = only transfer time, no compression overhead
+  double case3_time = static_cast<double>(chunk_size) / 1e9 * 1000.0;  // Assume 1GB/s network
+
+  // Select best option based on objective
+  if (context.max_performance_) {
+    // Minimize time: choose option with least time
+    if (case3_time < case1_time && case3_time < case2_time) {
+      // Send uncompressed is fastest
+      context.compress_lib_ = 0;
+    } else if (case2_time < case1_time) {
+      // Compress and send to tier 1 is faster
+      context.compress_lib_ = lib1;
+    } else {
+      // Compress and store locally is best
+      context.compress_lib_ = lib0;
+    }
+  } else {
+    // Maximize compression: always compress with best ratio
+    context.compress_lib_ = lib0;
+  }
+
+  context.dynamic_compress_ = 1;  // Mark as dynamic selection completed
+
+  (void)ctx;
+  co_return;
+  */
+}
+#endif  // WRP_CORE_ENABLE_COMPRESS
+
 } // namespace wrp_cte::core
 
 // Define ChiMod entry points using CHI_TASK_CC macro
 CHI_TASK_CC(wrp_cte::core::Runtime)
+
+// Explicit template instantiation to force generation of Future::await_suspend_impl
+// This is needed because the C++20 coroutine machinery may not be instantiating
+// the template method automatically
+template bool chi::Future<chimaera::bdev::AllocateBlocksTask, CHI_MAIN_ALLOC_T>::await_suspend_impl(
+    std::coroutine_handle<> handle) noexcept;

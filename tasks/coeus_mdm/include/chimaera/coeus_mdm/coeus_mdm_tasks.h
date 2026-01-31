@@ -72,7 +72,7 @@ struct Mdm_insertTask : public chi::Task {
   /** SHM default constructor */
   Mdm_insertTask()
       : chi::Task(),
-        db_op_serialized_(CHI_IPC->GetMainAlloc()) {}
+        db_op_serialized_(HSHM_MALLOC) {}
 
   /** Emplace constructor */
   explicit Mdm_insertTask(
@@ -81,7 +81,7 @@ struct Mdm_insertTask : public chi::Task {
       const chi::PoolQuery &pool_query,
       const DbOperation &db_op)
       : chi::Task(task_node, pool_id, pool_query, Method::kMdm_insert),
-        db_op_serialized_(CHI_IPC->GetMainAlloc()) {
+        db_op_serialized_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
@@ -90,7 +90,7 @@ struct Mdm_insertTask : public chi::Task {
     pool_query_ = pool_query;
 
     // Serialize DbOperation
-    chi::Task::Serialize(CHI_IPC->GetMainAlloc(), db_op_serialized_, db_op);
+    chi::Task::Serialize(HSHM_MALLOC, db_op_serialized_, db_op);
   }
 
   /**

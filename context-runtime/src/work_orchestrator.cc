@@ -10,6 +10,7 @@
 
 #include "chimaera/container.h"
 #include "chimaera/singletons.h"
+#include "chimaera/ipc_manager.h"
 
 // Global pointer variable definition for Work Orchestrator singleton
 HSHM_DEFINE_GLOBAL_PTR_VAR_CC(chi::WorkOrchestrator, g_work_orchestrator);
@@ -33,7 +34,6 @@ bool WorkOrchestrator::Init() {
   // Initialize scheduling state
   next_worker_index_for_scheduling_.store(0);
   active_lanes_ = nullptr;
-  net_worker_ = nullptr;
 
   // Initialize HSHM thread group first
   auto thread_model = HSHM_THREAD_MODEL;
@@ -41,30 +41,32 @@ bool WorkOrchestrator::Init() {
 
   ConfigManager *config = CHI_CONFIG_MANAGER;
   if (!config) {
-    return false; // Configuration manager not initialized
+    return false;  // Configuration manager not initialized
   }
 
-  // Get worker counts from configuration
+  // Get total worker count from configuration
   u32 sched_count = config->GetSchedulerWorkerCount();
   u32 slow_count = config->GetSlowWorkerCount();
+  u32 net_count = 1;  // Hardcoded to 1 network worker for now
+  u32 total_workers = sched_count + slow_count + net_count;
 
-  // Create scheduler workers (fast tasks)
-  for (u32 i = 0; i < sched_count; ++i) {
+  // Create all workers as generic type (kSchedWorker)
+  // The scheduler will partition them into groups via DivideWorkers()
+  for (u32 i = 0; i < total_workers; ++i) {
     if (!CreateWorker(kSchedWorker)) {
       return false;
     }
   }
 
-  // Create slow workers (long-running tasks)
-  for (u32 i = 0; i < slow_count; ++i) {
-    if (!CreateWorker(kSlow)) {
-      return false;
-    }
-  }
+  // Get scheduler from IpcManager (IpcManager is the single owner)
+  scheduler_ = CHI_IPC->GetScheduler();
+  HLOG(kDebug, "WorkOrchestrator: Using scheduler from IpcManager");
 
-  // Create dedicated network worker (hardcoded to 1 for now)
-  if (!CreateWorker(kNetWorker)) {
-    return false;
+  // Let the scheduler partition workers into groups (sched, slow, net)
+  // This sets thread types and populates scheduler_workers_, slow_workers_, net_worker_
+  if (scheduler_) {
+    scheduler_->DivideWorkers(this);
+    HLOG(kDebug, "WorkOrchestrator: Scheduler DivideWorkers completed");
   }
 
   is_initialized_ = true;
@@ -207,6 +209,8 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
   // Map lanes to sched workers (only sched workers process tasks from worker
   // queues)
   u32 num_sched_workers = static_cast<u32>(sched_workers_.size());
+  HLOG(kInfo, "WorkOrchestrator: num_sched_workers={}, num_lanes={}",
+        num_sched_workers, num_lanes);
   if (num_sched_workers == 0) {
     HLOG(kError,
           "WorkOrchestrator: No sched workers available for lane mapping");
@@ -228,10 +232,11 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
       // Mark the lane with the assigned worker ID
       lane->SetAssignedWorkerId(worker->GetId());
 
-      HLOG(kDebug,
-            "WorkOrchestrator: Mapped sched worker {} (ID {}) to worker "
-            "queue lane {}",
+      HLOG(kInfo,
+            "WorkOrchestrator: Mapped worker {} (ID {}) to lane {}",
             worker_idx, worker->GetId(), lane_id);
+    } else {
+      HLOG(kWarning, "WorkOrchestrator: Worker at index {} is null", worker_idx);
     }
   }
 
@@ -250,6 +255,10 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
         worker_threads_.emplace_back(std::move(thread));
       }
     }
+
+    // Note: DivideWorkers() is called in Init() before workers are spawned
+    // Workers are already partitioned into groups at this point
+
     return true;
   } catch (const std::exception &e) {
     return false;
@@ -267,24 +276,10 @@ bool WorkOrchestrator::CreateWorker(ThreadType thread_type) {
   Worker *worker_ptr = worker.get();
   all_workers_.push_back(worker_ptr);
 
-  // Add to type-specific container
-  switch (thread_type) {
-  case kSchedWorker:
-    sched_workers_.push_back(std::move(worker));
-    scheduler_workers_.push_back(worker_ptr);
-    break;
-  case kSlow:
-    sched_workers_.push_back(std::move(worker));
-    slow_workers_.push_back(worker_ptr);
-    break;
-  case kNetWorker:
-    sched_workers_.push_back(std::move(worker));
-    net_worker_ = worker_ptr;
-    break;
-  default:
-    // Unknown worker type
-    return false;
-  }
+  // Add to ownership container (sched_workers_ owns all workers)
+  // The scheduler's DivideWorkers() will partition workers into
+  // scheduler_workers_, slow_workers_, and net_worker_ groups
+  sched_workers_.push_back(std::move(worker));
 
   return true;
 }
@@ -332,51 +327,6 @@ bool WorkOrchestrator::HasWorkRemaining(u64 &total_work_remaining) const {
   }
 
   return total_work_remaining > 0;
-}
-
-void WorkOrchestrator::AssignToWorkerType(ThreadType thread_type,
-                                          const FullPtr<Task> &task_ptr) {
-  if (task_ptr.IsNull()) {
-    return;
-  }
-
-  // Select target worker vector based on thread type
-  std::vector<Worker *> *target_workers = nullptr;
-  if (thread_type == kSchedWorker) {
-    target_workers = &scheduler_workers_;
-  } else if (thread_type == kSlow) {
-    target_workers = &slow_workers_;
-  } else {
-    // Process reaper or other types - not supported for task routing
-    return;
-  }
-
-  if (target_workers->empty()) {
-    HLOG(kWarning, "AssignToWorkerType: No workers of type {}",
-          static_cast<int>(thread_type));
-    return;
-  }
-
-  // Round-robin assignment using static atomic counters
-  static std::atomic<size_t> scheduler_idx{0};
-  static std::atomic<size_t> slow_idx{0};
-
-  std::atomic<size_t> &idx =
-      (thread_type == kSchedWorker) ? scheduler_idx : slow_idx;
-  size_t worker_idx = idx.fetch_add(1) % target_workers->size();
-  Worker *worker = (*target_workers)[worker_idx];
-
-  // Get the worker's assigned lane and emplace the task
-  TaskLane *lane = worker->GetLane();
-  if (lane) {
-    // RUNTIME PATH: Create Future with task pointer set (no serialization)
-    auto *ipc_manager = CHI_IPC;
-    auto *alloc = ipc_manager->GetMainAlloc();
-    Future<Task> future(alloc, task_ptr);
-
-    // Emplace the Future into the lane
-    lane->Emplace(future);
-  }
 }
 
 } // namespace chi

@@ -17,6 +17,8 @@
 #include "chimaera/task.h"
 #include "chimaera/task_queue.h"
 #include "chimaera/types.h"
+#include "chimaera/scheduler/scheduler.h"
+#include "hermes_shm/memory/allocator/malloc_allocator.h"
 
 namespace chi {
 
@@ -27,16 +29,48 @@ using WorkQueue =
 // Forward declarations
 class Task;
 
+// Note: CachedContext is no longer needed since RunContext is now embedded
+// directly in the Task object. Context caching has been eliminated.
+
 /**
- * Structure to hold a cached RunContext for reuse
- * With C++20 stackless coroutines, we don't need stack allocations
+ * Structure to hold worker statistics for monitoring
  */
-struct CachedContext {
-  RunContext *run_ctx;       /**< Pointer to the RunContext */
+struct WorkerStats {
+  u64 num_tasks_processed_;  /**< Total number of tasks this worker has processed */
+  u32 num_queued_tasks_;     /**< Number of tasks waiting to be processed */
+  u32 num_blocked_tasks_;    /**< Number of tasks in blocked queue */
+  u32 num_periodic_tasks_;   /**< Number of periodic tasks on this worker */
+  u32 suspend_period_us_;    /**< Time in microseconds before the worker would suspend */
+  u32 idle_iterations_;      /**< Number of consecutive idle iterations */
+  bool is_running_;          /**< Whether the worker is currently running */
+  bool is_active_;           /**< Whether the worker's lane is currently active (processing tasks) */
+  u32 worker_id_;            /**< Worker identifier */
 
-  CachedContext() : run_ctx(nullptr) {}
+  /** Default constructor */
+  WorkerStats()
+      : num_tasks_processed_(0),
+        num_queued_tasks_(0),
+        num_blocked_tasks_(0),
+        num_periodic_tasks_(0),
+        suspend_period_us_(0),
+        idle_iterations_(0),
+        is_running_(false),
+        is_active_(false),
+        worker_id_(0) {}
 
-  explicit CachedContext(RunContext *ctx) : run_ctx(ctx) {}
+  template <typename Archive>
+  void save(Archive& ar) const {
+    ar(num_tasks_processed_, num_queued_tasks_, num_blocked_tasks_,
+       num_periodic_tasks_, suspend_period_us_, idle_iterations_,
+       is_running_, is_active_, worker_id_);
+  }
+
+  template <typename Archive>
+  void load(Archive& ar) {
+    ar(num_tasks_processed_, num_queued_tasks_, num_blocked_tasks_,
+       num_periodic_tasks_, suspend_period_us_, idle_iterations_,
+       is_running_, is_active_, worker_id_);
+  }
 };
 
 // Macro for accessing HSHM thread-local storage (worker thread context)
@@ -102,6 +136,13 @@ class Worker {
   ThreadType GetThreadType() const;
 
   /**
+   * Set worker thread type
+   * Used by scheduler to assign worker types during DivideWorkers()
+   * @param thread_type New thread type for this worker
+   */
+  void SetThreadType(ThreadType thread_type);
+
+  /**
    * Check if worker is running
    * @return true if worker is active, false otherwise
    */
@@ -159,6 +200,12 @@ class Worker {
    * @return true if task did work, false if idle/no work
    */
   bool GetTaskDidWork() const;
+
+  /**
+   * Get worker statistics for monitoring
+   * @return WorkerStats struct containing current worker statistics
+   */
+  WorkerStats GetWorkerStats() const;
 
   /**
    * Get the epoll file descriptor for this worker
@@ -332,20 +379,6 @@ class Worker {
 
  private:
   /**
-   * Allocate RunContext for task execution
-   * With C++20 stackless coroutines, no stack allocation is needed
-   * @return RunContext pointer
-   */
-  RunContext *AllocateContext();
-
-  /**
-   * Deallocate task execution RunContext
-   * Returns context to cache for reuse
-   * @param run_ctx_ptr Pointer to RunContext to deallocate
-   */
-  void DeallocateContext(RunContext *run_ctx_ptr);
-
-  /**
    * Begin task execution
    * @param future Future object containing the task and completion state
    * @param container Container for the task
@@ -368,6 +401,13 @@ class Worker {
    * @return Number of tasks processed
    */
   u32 ProcessNewTasks();
+
+  /**
+   * Get the time remaining before the next periodic task should resume
+   * Scans all periodic queues to find the task with the shortest remaining time
+   * @return Time in microseconds until next periodic task, or 0 if no periodic tasks
+   */
+  double GetSuspendPeriod() const;
 
   /**
    * Suspend worker when there is no work available
@@ -421,9 +461,7 @@ class Worker {
   // Single lane assigned to this worker (one lane per worker)
   TaskLane *assigned_lane_;
 
-  // RunContext cache for efficient reuse
-  // With C++20 stackless coroutines, we only cache RunContext objects
-  std::queue<CachedContext> context_cache_;
+  // Note: RunContext cache removed - RunContext is now embedded in Task
 
   // Blocked queue system for cooperative tasks (waiting for subtasks):
   // - Queue[0]: Tasks blocked <=2 times (checked every % 2 iterations)
@@ -436,9 +474,9 @@ class Worker {
   std::queue<RunContext *> blocked_queues_[NUM_BLOCKED_QUEUES];
 
   // Event queue for waking up tasks when their subtasks complete
-  // Allocated from main allocator with same depth as TaskLane
+  // Allocated from malloc allocator (temporary runtime data, not IPC)
   static constexpr u32 EVENT_QUEUE_DEPTH = 1024;
-  hipc::mpsc_ring_buffer<RunContext *, CHI_MAIN_ALLOC_T> *event_queue_;
+  hshm::ipc::mpsc_ring_buffer<RunContext *, hshm::ipc::MallocAllocator> *event_queue_;
 
   // Periodic queue system for time-based periodic tasks:
   // - Queue[0]: Tasks with yield_time_us_ <= 50us (checked every 16 iterations)
@@ -474,6 +512,9 @@ class Worker {
   // Mutex to protect epoll_ctl operations from multiple threads
   // Used when external code (e.g., bdev) registers FDs with this worker's epoll
   hshm::Mutex epoll_mutex_;
+
+  // Scheduler pointer (owned by IpcManager, not Worker)
+  Scheduler *scheduler_;
 };
 
 }  // namespace chi

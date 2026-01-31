@@ -18,6 +18,7 @@
 
 // Include Chimaera headers
 #include <chimaera/chimaera.h>
+#include <hermes_shm/memory/allocator/malloc_allocator.h>
 #include <chimaera/container.h>
 #include <chimaera/pool_query.h>
 #include <chimaera/singletons.h>
@@ -40,9 +41,9 @@ using namespace chi;
 constexpr chi::u32 kTestWriteFlag = 0x1;  // BULK_XFER
 constexpr chi::u32 kTestExposeFlag = 0x2; // BULK_EXPOSE
 
-// Helper allocator for tests - returns main allocator for task construction
-Task::AllocT* GetTestAllocator() {
-  return CHI_IPC->GetMainAlloc();
+// Helper allocator for tests - uses HSHM_MALLOC for non-IPC allocations
+hipc::MallocAllocator* GetTestAllocator() {
+  return HSHM_MALLOC;
 }
 
 // Helper to create test task with sample data
@@ -63,7 +64,7 @@ std::unique_ptr<chimaera::admin::CreateTask> CreateTestAdminTask() {
       "test_chimod", "test_pool", chi::PoolId(300, 0),
       nullptr);  // No client for test task
   task->return_code_ = 42;
-  task->error_message_ = chi::priv::string("test error message", alloc);
+  task->error_message_ = chi::priv::string(HSHM_MALLOC, "test error message");
   return task;
 }
 
@@ -338,8 +339,8 @@ TEST_CASE("Admin Task Serialization", "[task_archive][admin_tasks]") {
     chi::LoadTaskArchive in_archive_in(in_data);
     in_archive_in.msg_type_ = chi::MsgType::kSerializeIn;
     auto new_task_in = CreateTestAdminTask();
-    new_task_in->chimod_name_ = chi::priv::string("", GetTestAllocator()); // Clear
-    new_task_in->pool_name_ = chi::priv::string("", GetTestAllocator());
+    new_task_in->chimod_name_ = chi::priv::string(HSHM_MALLOC, ""); // Clear
+    new_task_in->pool_name_ = chi::priv::string(HSHM_MALLOC, "");
     REQUIRE_NOTHROW(in_archive_in >> *new_task_in);
 
     // Verify IN/INOUT parameters were preserved
@@ -357,7 +358,7 @@ TEST_CASE("Admin Task Serialization", "[task_archive][admin_tasks]") {
     in_archive_out.msg_type_ = chi::MsgType::kSerializeOut;
     auto new_task_out = CreateTestAdminTask();
     new_task_out->return_code_ = 0; // Clear
-    new_task_out->error_message_ = chi::priv::string("", GetTestAllocator());
+    new_task_out->error_message_ = chi::priv::string(HSHM_MALLOC, "");
     REQUIRE_NOTHROW(in_archive_out >> *new_task_out);
 
     // Verify OUT/INOUT parameters were preserved
@@ -374,7 +375,7 @@ TEST_CASE("Admin Task Serialization", "[task_archive][admin_tasks]") {
         chi::TaskId(3, 3, 3, 0, 3), chi::PoolId(400, 0),
         chi::PoolQuery(), chi::PoolId(500, 0), 0x123);
     original_task.return_code_ = 99;
-    original_task.error_message_ = chi::priv::string("destroy error", alloc);
+    original_task.error_message_ = chi::priv::string(HSHM_MALLOC, "destroy error");
 
     // Test round-trip IN parameters
     chi::SaveTaskArchive out_archive_in(chi::MsgType::kSerializeIn);
@@ -408,7 +409,7 @@ TEST_CASE("Admin Task Serialization", "[task_archive][admin_tasks]") {
         chi::TaskId(4, 4, 4, 0, 4), chi::PoolId(600, 0),
         chi::PoolQuery(), 0x456, 10000);
     original_task.return_code_ = 777;
-    original_task.error_message_ = chi::priv::string("shutdown error", alloc);
+    original_task.error_message_ = chi::priv::string(HSHM_MALLOC, "shutdown error");
 
     // Test IN parameters
     chi::SaveTaskArchive out_archive_in(chi::MsgType::kSerializeIn);
@@ -755,8 +756,8 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
     chi::LoadTaskArchive recv_in_archive(in_data);
     recv_in_archive.msg_type_ = chi::MsgType::kSerializeIn;
     auto remote_task = CreateTestAdminTask();
-    remote_task->chimod_name_ = chi::priv::string("", GetTestAllocator()); // Clear
-    remote_task->pool_name_ = chi::priv::string("", GetTestAllocator());
+    remote_task->chimod_name_ = chi::priv::string(HSHM_MALLOC, ""); // Clear
+    remote_task->pool_name_ = chi::priv::string(HSHM_MALLOC, "");
     recv_in_archive >> *remote_task;
 
     // Verify IN parameters were transferred
@@ -768,7 +769,7 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
     // Step 3: Simulate task execution and result generation on remote node
     remote_task->return_code_ = 123;
     remote_task->error_message_ =
-        chi::priv::string("remote execution result", GetTestAllocator());
+        chi::priv::string(HSHM_MALLOC, "remote execution result");
 
     // Step 4: Serialize OUT parameters (for sending results back)
     chi::SaveTaskArchive out_archive(chi::MsgType::kSerializeOut);
@@ -780,7 +781,7 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
     recv_out_archive.msg_type_ = chi::MsgType::kSerializeOut;
     auto final_task = CreateTestAdminTask();
     final_task->return_code_ = 0; // Clear
-    final_task->error_message_ = chi::priv::string("", GetTestAllocator());
+    final_task->error_message_ = chi::priv::string(HSHM_MALLOC, "");
     recv_out_archive >> *final_task;
 
     // Verify OUT parameters were transferred back
@@ -802,8 +803,8 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
     // Step 1: Create a SaveTaskArchive with test data
     chi::SaveTaskArchive save_archive(chi::MsgType::kSerializeIn);
     auto original_task = CreateTestAdminTask();
-    original_task->chimod_name_ = chi::priv::string("test_module", GetTestAllocator());
-    original_task->pool_name_ = chi::priv::string("test_pool", GetTestAllocator());
+    original_task->chimod_name_ = chi::priv::string(HSHM_MALLOC, "test_module");
+    original_task->pool_name_ = chi::priv::string(HSHM_MALLOC, "test_pool");
     original_task->pool_id_ = chi::PoolId(100, 200);
     save_archive << *original_task;
 
@@ -833,8 +834,8 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
 
     // Step 5: Deserialize the actual task from LoadTaskArchive
     auto recv_task = CreateTestAdminTask();
-    recv_task->chimod_name_ = chi::priv::string("", GetTestAllocator());
-    recv_task->pool_name_ = chi::priv::string("", GetTestAllocator());
+    recv_task->chimod_name_ = chi::priv::string(HSHM_MALLOC, "");
+    recv_task->pool_name_ = chi::priv::string(HSHM_MALLOC, "");
     load_archive >> *recv_task;
 
     // Step 6: Verify task data was transferred correctly
@@ -852,8 +853,8 @@ TEST_CASE("Complete Serialization Flow", "[task_archive][integration]") {
     // Step 1: Create a SaveTaskArchive with bulk data
     chi::SaveTaskArchive save_archive(chi::MsgType::kSerializeIn);
     auto original_task = CreateTestAdminTask();
-    original_task->chimod_name_ = chi::priv::string("bulk_module", GetTestAllocator());
-    original_task->pool_name_ = chi::priv::string("bulk_pool", GetTestAllocator());
+    original_task->chimod_name_ = chi::priv::string(HSHM_MALLOC, "bulk_module");
+    original_task->pool_name_ = chi::priv::string(HSHM_MALLOC, "bulk_pool");
     save_archive << *original_task;
 
     // Add a bulk descriptor to the send vector
