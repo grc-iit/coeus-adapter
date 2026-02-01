@@ -140,13 +140,14 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
     return false;
   }
   const bool debug = (std::getenv("CTE_DEBUG") != nullptr);
+  auto *ipc_manager = CHI_IPC;
+  hipc::FullPtr<char> shm_fullptr;
   try {
-    auto *ipc_manager = CHI_IPC;
     if (debug) {
       std::cout << "CTEHermes::Put: before AllocateBuffer blob=" << blob_name
                 << " size=" << blob_size << std::endl;
     }
-    hipc::FullPtr<char> shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
+    shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
     if (shm_fullptr.IsNull()) {
       std::cerr << "ERROR: Failed to allocate shared memory for PutBlob (size=" << blob_size << ")" << std::endl;
       return false;
@@ -170,6 +171,9 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
     }
     return true;
   } catch (const std::exception &e) {
+    if (!shm_fullptr.IsNull()) {
+      ipc_manager->FreeBuffer(shm_fullptr);
+    }
     std::cerr << "ERROR: CTEHermes::Put failed for '" << blob_name << "': " << e.what() << std::endl;
     return false;
   }

@@ -523,6 +523,30 @@ compose:
      level: "debug"  # Enable detailed logging
    ```
 
+### Issue: Leftover IPC shared memory (memory leak)
+
+**Symptoms**: `/dev/shm` contains `chimaera_*` or `chi_*` segments after runtime or client processes exit; memory leak or UCX errors when reconnecting.
+
+**Cause**: If the runtime or client is killed without graceful shutdown (e.g. `kill -9`), shared memory segments are not unlinked. The runtime normally unlinks the main segment in `ServerFinalize()` and reaps per-process segments via `WreapAllIpcs()` when shutting down via `chimaera_stop_runtime`.
+
+**Solutions**:
+1. Prefer graceful shutdown so the runtime can clean up:
+   ```bash
+   chimaera_stop_runtime
+   # or send SIGTERM to chimaera_start_runtime and wait for exit
+   ```
+2. To remove leftover segments manually (only when no Chimaera processes are running):
+   ```bash
+   # Per-process segments (chimaera_{pid}_{index})
+   rm -f /dev/shm/chimaera_* 2>/dev/null || true
+   # Main segment (name from config, often chi_main_segment_* or chi_*)
+   rm -f /dev/shm/chi_* 2>/dev/null || true
+   ```
+3. List current segments before cleaning:
+   ```bash
+   ls -la /dev/shm/chimaera_* /dev/shm/chi_* 2>/dev/null || true
+   ```
+
 ## Configuration Best Practices
 
 1. **Configuration File Management**:

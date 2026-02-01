@@ -59,18 +59,19 @@ CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client,
 }
 
 void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const void* values) {
+  auto *ipc_manager = CHI_IPC;
+  hipc::FullPtr<char> shm_fullptr;
   try {
     // Allocate shared memory for the data
-    auto *ipc_manager = CHI_IPC;
-    hipc::FullPtr<char> shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
-    
+    shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
+
     if (shm_fullptr.IsNull()) {
       throw std::runtime_error("Failed to allocate shared memory for PutBlob");
     }
-    
+
     // Copy data to shared memory
     memcpy(shm_fullptr.ptr_, values, blob_size);
-    
+
     // Convert to hipc::ShmPtr<> for API call
     hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
 
@@ -81,65 +82,73 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
 
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_fullptr);
+    shm_fullptr = hipc::FullPtr<char>();
 
     if (task->GetReturnCode() != 0) {
       throw std::runtime_error("PutBlob operation failed");
     }
   } catch (const std::exception& e) {
-    std::cerr << "CTE PutBlob failed for blob '" << blob_name 
+    if (!shm_fullptr.IsNull()) {
+      ipc_manager->FreeBuffer(shm_fullptr);
+    }
+    std::cerr << "CTE PutBlob failed for blob '" << blob_name
               << "' in tag '" << tag_name_ << "': " << e.what() << std::endl;
     throw std::runtime_error("CTE PutBlob failed: " + std::string(e.what()));
   }
 }
 
 std::vector<uint8_t> CTETagClient::Get(const std::string &blob_name) {
+  auto *ipc_manager = CHI_IPC;
+  hipc::FullPtr<char> shm_buffer;
   try {
     // Get blob size first
     auto size_task = cte_client_->AsyncGetBlobSize(tag_id_, blob_name);
     size_task.Wait();
-    
+
     if (size_task->GetReturnCode() != 0) {
       // Blob doesn't exist
       return std::vector<uint8_t>();
     }
-    
+
     chi::u64 blob_size = size_task->size_;
     if (blob_size == 0) {
       return std::vector<uint8_t>();
     }
-    
+
     // Allocate shared memory for reading
-    auto *ipc_manager = CHI_IPC;
-    hipc::FullPtr<char> shm_buffer = ipc_manager->AllocateBuffer(blob_size);
-    
+    shm_buffer = ipc_manager->AllocateBuffer(blob_size);
+
     if (shm_buffer.IsNull()) {
       throw std::runtime_error("Failed to allocate shared memory for GetBlob");
     }
-    
+
     // Convert to hipc::ShmPtr<> for API call
     hipc::ShmPtr<> shm_ptr(shm_buffer.shm_);
-    
+
     // Call async GetBlob and wait for completion
     auto task = cte_client_->AsyncGetBlob(tag_id_, blob_name, 0, blob_size, 0, shm_ptr);
     task.Wait();
-    
+
     if (task->GetReturnCode() != 0) {
       ipc_manager->FreeBuffer(shm_buffer);
-      return std::vector<uint8_t>(); // Blob not found or error
+      return std::vector<uint8_t>();  // Blob not found or error
     }
-    
+
     // Copy data from shared memory to vector
     std::vector<uint8_t> buffer(blob_size);
     memcpy(buffer.data(), shm_buffer.ptr_, blob_size);
-    
+
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_buffer);
-    
+
     return buffer;
   } catch (const std::exception& e) {
-    std::cerr << "CTE GetBlob failed for blob '" << blob_name 
+    if (!shm_buffer.IsNull()) {
+      ipc_manager->FreeBuffer(shm_buffer);
+    }
+    std::cerr << "CTE GetBlob failed for blob '" << blob_name
               << "' in tag '" << tag_name_ << "': " << e.what() << std::endl;
-    return std::vector<uint8_t>(); // Return empty vector on error
+    return std::vector<uint8_t>();  // Return empty vector on error
   }
 }
 
