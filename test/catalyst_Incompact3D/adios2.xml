@@ -11,8 +11,9 @@
             <parameter key="PluginName" value="fides"/>
             <parameter key="PluginLibrary" value="ParaViewADIOSInSituEngine"/>
             <!-- ParaViewFides engine parameters -->
-            <parameter key="DataModel" value="incompact3d.json"/>
-            <parameter key="Script" value="catalyst.py"/>
+            <!-- Use fide.json (TGV: vort,critq) or fide-minimal.json (ux,uy,uz,pp only) -->
+            <parameter key="DataModel" value="fide.json"/>
+            <parameter key="Script" value="pipeline.py"/>
         </engine>
     </io>
 

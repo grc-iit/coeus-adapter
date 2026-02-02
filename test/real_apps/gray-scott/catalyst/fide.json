@@ -16,7 +16,7 @@
         "dimensions" : {
           "source" : "variable_dimensions",
           "data_source": "source",
-          "variable" : "ux"
+          "variable" : "U"
           },
         "origin" : {
           "source" : "array",
@@ -33,44 +33,26 @@
         "dimensions" : {
           "source" : "variable_dimensions",
           "data_source": "source",
-          "variable" : "ux"
+          "variable" : "U"
           }
     },
     "fields": [
       {
-        "name": "ux",
+        "name": "U",
         "association": "points",
         "array" : {
           "array_type" : "basic",
           "data_source": "source",
-          "variable" : "ux"
+          "variable" : "U"
         }
       },
       {
-        "name": "uy",
+        "name": "V",
         "association": "points",
         "array" : {
           "array_type" : "basic",
           "data_source": "source",
-          "variable" : "uy"
-        }
-      },
-       {
-        "name": "uz",
-        "association": "points",
-        "array" : {
-          "array_type" : "basic",
-          "data_source": "source",
-          "variable" : "uz"
-        }
-      },
-       {
-        "name": "qcrit",
-        "association": "points",
-        "array" : {
-          "array_type" : "basic",
-          "data_source": "source",
-          "variable" : "qcrit"
+          "variable" : "V"
         }
       }
     ]
