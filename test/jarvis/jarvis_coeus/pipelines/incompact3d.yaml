@@ -1,7 +1,6 @@
 name: coeus-xcompact3d
 
 pkgs:               # Period to rescan targets for statistics (capacity, bandwidth, etc.) (ms)
-
   - pkg_type: jarvis_coeus.incompact3d
     pkg_name: jarvis_coeus.incompact3d
     benchmarks: "pipe_flow"

@@ -97,30 +97,41 @@ class Incompact3d(Application):
         """
         self.update_config(kwargs, rebuild=False)
 
-        # Ensure output and db directories exist on all nodes (required for distributed runs)
         output_location = self.config['output_location']
         db_path = self.config['db_path']
         db_dir = os.path.dirname(db_path)
+
+        # Ensure output and db directories exist locally (for copy_template_file)
+        os.makedirs(output_location, exist_ok=True)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+
+        # Ensure same directories exist on all nodes (required for distributed runs)
         dirs_to_create = [output_location]
         if db_dir:
             dirs_to_create.append(db_dir)
+        env = getattr(self, 'env', None)
         Mkdir(dirs_to_create, PsshExecInfo(hostfile=self.jarvis.hostfile,
-                                           env=self.env)).run()
+                                           env=env)).run()
 
-        # Path for ADIOS2 config (inside output dir so xcompact3d finds it when cwd=output_location)
-        self.adios2_xml_path = os.path.join(output_location, 'adios2_config.xml')
+        # ADIOS2 config directory (same as output_location so xcompact3d finds it when cwd=output_location)
+        self.adios2_xml_path = output_location
+        adios2_config_file = os.path.join(self.adios2_xml_path, 'adios2_config.xml')
 
         # Copy configuration files based on engine type
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
-                        f"{self.config['output_location']}/adios2_config.xml")
+                                    adios2_config_file)
         elif self.config['engine'].lower() == 'hermes':
             self.copy_template_file(f"{self.pkg_dir}/config/hermes.xml",
-                                    f"{self.config['output_location']}/adios2_config.xml", replacements={
-                    'ppn': self.config['ppn'],
-                    'db_path': self.config['db_path'],
-                })
-        
+                                    adios2_config_file,
+                                    replacements={
+                                        'ppn': self.config['ppn'],
+                                        'db_path': db_path,
+                                    })
+        else:
+            raise Exception('Engine not defined: use bp5 or hermes')
+
         # Copy input file template
         input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
         dest_input = os.path.join(output_location, "input.i3d")
