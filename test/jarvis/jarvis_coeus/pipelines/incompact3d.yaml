@@ -7,7 +7,7 @@ pkgs:               # Period to rescan targets for statistics (capacity, bandwid
     output_location: "${HOME}/incompact3d/output"
     nprocs: 4
     ppn: 16
-    engine: "hermes"
+    engine: "bp5"
 
 # Environment configuration (optional)
 # env:
