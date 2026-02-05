@@ -94,46 +94,27 @@ class Incompact3d(Application):
 
         :param kwargs: Configuration parameters for this pkg.
         :return: None
-        """
-        self.update_config(kwargs, rebuild=False)
-
-        # Resolve to absolute path and expand ~ / ${HOME} so files land in the expected folder
-        raw_output = self.config['output_location']
-        output_location = os.path.abspath(os.path.expanduser(os.path.expandvars(raw_output)))
-        self.config['output_location'] = output_location
-
-        # Resolve pkg_dir so templates are found (works when run from source or installed)
-        pkg_dir = getattr(self, 'pkg_dir', None) or os.path.dirname(os.path.abspath(__file__))
-        os.makedirs(output_location, exist_ok=True)
-
-        adios2_dest = os.path.join(output_location, 'adios2_config.xml')
+        """     
+         os.makedirs(self.config['output_location'], exist_ok=True)
+        
         # Copy configuration files based on engine type
         if self.config['engine'].lower() == 'bp5':
-            self.copy_template_file(
-                os.path.join(pkg_dir, 'config', 'adios2.xml'),
-                adios2_dest)
+            self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
+                        f"{self.config['output_location']}/adios2_config.xml")
         elif self.config['engine'].lower() == 'hermes':
-            self.copy_template_file(
-                os.path.join(pkg_dir, 'config', 'hermes.xml'),
-                adios2_dest,
-                replacements={
+            self.copy_template_file(f"{self.pkg_dir}/config/hermes.xml",
+                                    f"{self.config['output_location']}/adios2_config.xml", replacements={
                     'ppn': self.config['ppn'],
                     'db_path': self.config['db_path'],
                 })
-        else:
-            raise Exception('Engine not defined: use bp5 or hermes')
-
+        
         # Copy input file template
-        benchmark = self.config['benchmarks'].lower()
-        input_i3d_src = os.path.join(pkg_dir, 'benchmarks', benchmark, 'input.i3d')
-        input_i3d_dest = os.path.join(output_location, 'input.i3d')
-        self.copy_template_file(
-            input_i3d_src,
-            input_i3d_dest,
-            replacements={
+        input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
+        self.copy_template_file(f'{input_i3d}',
+                                f"{self.config['output_location']}/input.i3d", replacements={
                 'total_step': self.config['total_step'],
-                'io_frequency': self.config['io_frequency'],
-            })
+                'io_frequency': self.config['io_frequency'],})
+        pass
 
     def start(self):
         """
