@@ -3,9 +3,9 @@ This module provides classes and methods to launch the Incompact3d application.
 Incompact3d is ....
 """
 from jarvis_cd.core.pkg import Application
-from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm, PscpExec, PscpExecInfo
-import json
+from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm
 import os
+
 
 class Incompact3d(Application):
     """
@@ -13,9 +13,9 @@ class Incompact3d(Application):
     """
     def _init(self):
         """
-        Initialize paths
+        Initialize paths (will be set in _configure when directories are available).
         """
-        pass
+        self.adios2_xml_path = None
 
     def _configure_menu(self):
         """
@@ -95,9 +95,21 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """
-        # Create output directory if it doesn't exist
-        os.makedirs(self.config['output_location'], exist_ok=True)
-        
+        self.update_config(kwargs, rebuild=False)
+
+        # Ensure output and db directories exist on all nodes (required for distributed runs)
+        output_location = self.config['output_location']
+        db_path = self.config['db_path']
+        db_dir = os.path.dirname(db_path)
+        dirs_to_create = [output_location]
+        if db_dir:
+            dirs_to_create.append(db_dir)
+        Mkdir(dirs_to_create, PsshExecInfo(hostfile=self.jarvis.hostfile,
+                                           env=self.env)).run()
+
+        # Path for ADIOS2 config (inside output dir so xcompact3d finds it when cwd=output_location)
+        self.adios2_xml_path = os.path.join(output_location, 'adios2_config.xml')
+
         # Copy configuration files based on engine type
         if self.config['engine'].lower() == 'bp5':
             self.copy_template_file(f"{self.pkg_dir}/config/adios2.xml",
@@ -111,11 +123,11 @@ class Incompact3d(Application):
         
         # Copy input file template
         input_i3d = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
-        self.copy_template_file(f'{input_i3d}',
-                                f"{self.config['output_location']}/input.i3d", replacements={
-                'total_step': self.config['total_step'],
-                'io_frequency': self.config['io_frequency'],})
-        pass
+        dest_input = os.path.join(output_location, "input.i3d")
+        self.copy_template_file(input_i3d, dest_input, replacements={
+            'total_step': self.config['total_step'],
+            'io_frequency': self.config['io_frequency'],
+        })
 
     def start(self):
         """
@@ -132,14 +144,14 @@ class Incompact3d(Application):
         # for different systems. Consider adding network_interface parameter to config.
         os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
         os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
-        
+
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
                          ppn=self.config['ppn'],
                          hostfile=self.jarvis.hostfile,
                          env=self.mod_env,
                          cwd=self.config['output_location']
-                         ))
+                         )).run()
 
     def stop(self):
         """
@@ -157,14 +169,13 @@ class Incompact3d(Application):
 
         :return: None
         """
-        output_file = f"{self.config['output_location']}/data.bp5"
+        output_location = self.config['output_location']
         output_files = [
-            output_file,
-            f"{self.config['output_location']}/adios2_config.xml",
-            f"{self.config['output_location']}/input.i3d",
-            self.config['db_path']
+            os.path.join(output_location, 'data.bp5'),
+            os.path.join(output_location, 'adios2_config.xml'),
+            os.path.join(output_location, 'input.i3d'),
+            self.config['db_path'],
         ]
 
         print(f'Removing {output_files}')
-        Rm(output_files, PsshExecInfo(hostfile=self.jarvis.hostfile))
-        pass
+        Rm(output_files, PsshExecInfo(hostfile=self.jarvis.hostfile)).run()
