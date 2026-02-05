@@ -97,7 +97,11 @@ class Incompact3d(Application):
         """
         self.update_config(kwargs, rebuild=False)
 
-        output_location = self.config['output_location']
+        # Resolve to absolute path and expand ~ / ${HOME} so files land in the expected folder
+        raw_output = self.config['output_location']
+        output_location = os.path.abspath(os.path.expanduser(os.path.expandvars(raw_output)))
+        self.config['output_location'] = output_location
+
         # Resolve pkg_dir so templates are found (works when run from source or installed)
         pkg_dir = getattr(self, 'pkg_dir', None) or os.path.dirname(os.path.abspath(__file__))
         os.makedirs(output_location, exist_ok=True)
