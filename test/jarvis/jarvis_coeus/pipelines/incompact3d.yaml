@@ -18,10 +18,10 @@ pkgs:
   - pkg_type: jarvis_coeus.incompact3d
     pkg_name: jarvis_coeus.incompact3d
     benchmarks: "pipe_flow"
-    output_location: "${HOME}/incompact3d/output"
+    output_location: "/mnt/common/hxu40/incompact3d/output"
     nprocs: 4
     ppn: 16
-    engine: "bp5"
+    engine: "hermes"
 
 # Environment configuration (optional)
 # env:
