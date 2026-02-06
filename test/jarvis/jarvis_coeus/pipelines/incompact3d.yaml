@@ -1,6 +1,20 @@
 name: coeus-xcompact3d
 
-pkgs:               # Period to rescan targets for statistics (capacity, bandwidth, etc.) (ms)
+pkgs: 
+  - pkg_type: jarvis_iowarp.wrp_runtime
+    pkg_name: runtime
+
+  - pkg_type: jarvis_iowarp.wrp_cte
+    pkg_name: cte_core
+    devices:
+      - ["${HOME}/cte_benchmark/storage1.bin", "10GB", 0.8]
+  
+
+    # CTE Configuration Parameters
+    dpe_type: "max_bw"                   # Data placement engine: random, round_robin, max_bw
+    neighborhood: 4                      # Number of targets (nodes CTE can buffer to)
+    default_target_timeout_ms: 30000     # Target timeout (ms)
+    poll_period_ms: 5000                 # Period to rescan targets for statistics (capacity, bandwidth, etc.) (ms)              # Period to rescan targets for statistics (capacity, bandwidth, etc.) (ms)
   - pkg_type: jarvis_coeus.incompact3d
     pkg_name: jarvis_coeus.incompact3d
     benchmarks: "pipe_flow"
