@@ -95,7 +95,7 @@ class Incompact3d(Application):
         :param kwargs: Configuration parameters for this pkg.
         :return: None
         """     
-         os.makedirs(self.config['output_location'], exist_ok=True)
+        os.makedirs(self.config['output_location'], exist_ok=True)
         
         # Copy configuration files based on engine type
         if self.config['engine'].lower() == 'bp5':

@@ -46,6 +46,18 @@ set_target_properties(hermes_engine PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON)
 target_compile_options(hermes_engine PRIVATE -fcoroutines)
+#############################################
+# Optional Catalyst/Fides in-situ integration
+#############################################
+# Try to locate Catalyst (Catalyst 2 provides a CMake target catalyst::catalyst)
+find_package(Catalyst QUIET CONFIG)
+if(Catalyst_FOUND)
+  message(STATUS "Catalyst found: enabling in-situ integration in hermes_engine")
+  target_link_libraries(hermes_engine PRIVATE catalyst::catalyst)
+  target_compile_definitions(hermes_engine PRIVATE COEUS_HAVE_CATALYST=1)
+else()
+  message(STATUS "Catalyst not found: building hermes_engine without in-situ integration")
+endif()
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

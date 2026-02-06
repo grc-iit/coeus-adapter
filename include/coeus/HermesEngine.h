@@ -42,11 +42,19 @@
 #include "common/VariableMetadata.h"
 #include <comms/interfaces/IHermes.h>
 #include <comms/MPI.h>
+#include <wrp_cte/core/core_tasks.h>
 #include "common/globalVariable.h"
 #include "common/Tracer.h"
 #include <wrp_cte/core/core_client.h>
 #include <memory>
 
+
+#ifdef COEUS_HAVE_CATALYST
+#include <catalyst.hpp>
+// conduit comes with Catalyst 2
+#include <catalyst_conduit.hpp>
+
+#endif
 namespace coeus {
 
 class HermesEngine : public adios2::plugin::PluginEngineInterface {
@@ -83,6 +91,16 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 
   /** Destructor */
   ~HermesEngine() override;
+  #ifdef COEUS_HAVE_CATALYST
+  // In-situ Catalyst/Fides integration state
+  struct CatalystImpl {
+    adios2::core::IO *InlineIO = nullptr;
+    adios2::core::Engine *InlineWriter = nullptr;
+    std::string ScriptFileName;
+    std::string JSONFileName;
+  };
+  
+#endif
 
   /**
    * Define the beginning of a step. A step is typically the offset from
@@ -123,7 +141,13 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 //  int begin_step_time = 0 ;
 //  int compute_derived_time = 0;
 //  int put_time = 0;
-
+#ifdef COEUS_HAVE_CATALYST
+// Catalyst helpers
+void CatalystConfig();
+void CatalystInit();
+void CatalystExecute();
+std::unique_ptr<CatalystImpl> CatalystState;
+#endif
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
   int comm_size;

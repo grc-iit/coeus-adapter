@@ -12,11 +12,7 @@
 
 #include "coeus/HermesEngine.h"
 #include "comms/CTEHermes.h"
-#include <chimaera/chimaera.h>
-#include <chimaera/admin/admin_client.h>
 #include <chimaera/module_manager.h>
-#include <wrp_cte/core/core_client.h>
-#include <wrp_cte/core/core_tasks.h>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -285,6 +281,38 @@ void HermesEngine::Init_() {
   if(params.find("execution_order") != params.end()) {
       adiosOutput = params["execution_order"];
   }
+  #ifdef COEUS_HAVE_CATALYST
+  // Optional Catalyst/Fides activation if parameters provided
+  bool enableCatalyst = (params.find("Script") != params.end()) && (params.find("DataModel") != params.end());
+  if (enableCatalyst)
+  {
+    CatalystState = std::unique_ptr<CatalystImpl>(new CatalystImpl());
+    CatalystState->ScriptFileName = params["Script"];
+    CatalystState->JSONFileName = params["DataModel"];
+
+    // Create internal Inline IO and writer and mirror variables
+    CatalystState->InlineIO = &m_IO.m_ADIOS.DeclareIO("InlinePluginIO");
+    CatalystState->InlineIO->SetEngine("inline");
+
+    const auto &varMap = m_IO.GetVariables();
+    for (const auto &it : varMap)
+    {
+#define declare_type(T) \
+    if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
+    { \
+      CatalystState->InlineIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
+        it.second->m_Count, it.second->IsConstantDims()); \
+      continue; \
+    }
+      ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+#undef declare_type
+    }
+
+    CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
+
+    CatalystInit();
+  }
+#endif
   open = true;
 
 }
@@ -294,16 +322,29 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineWriter)
+  {
+    CatalystState->InlineWriter->Close(transportIndex);
+  }
+  #endif
   // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)
   if (hermes_ && hermes_->tag) {
     delete hermes_->tag;
     hermes_->tag = nullptr;
   }
+  
   open = false;
 }
 
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState)
+  {
+    conduit_cpp::Node node; 
+    catalyst_finalize(conduit_cpp::c_node(&node));
+  }
   delete db;
   if (hermes_) {
     delete hermes_;
@@ -328,6 +369,12 @@ bool HermesEngine::Demote(int step){
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   IncrementCurrentStep();
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineWriter)
+  {
+    (void)CatalystState->InlineWriter->BeginStep(mode, timeoutSeconds);
+  }
+#endif
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
       total_steps = db->GetTotalSteps(uid);
@@ -450,6 +497,13 @@ size_t HermesEngine::CurrentStep() const {
 
 void HermesEngine::EndStep() {
     ComputeDerivedVariables();
+    #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineWriter)
+  {
+    CatalystState->InlineWriter->EndStep();
+    CatalystExecute();
+  }
+#endif
   if (hermes_ && hermes_->tag) {
     delete hermes_->tag;
     hermes_->tag = nullptr;
@@ -674,13 +728,19 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   // Time Mdm_insert call
 
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-
-
-
-#ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+  {
+    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+    if (inlineVar)
+    {
+      CatalystState->InlineWriter->Put(*inlineVar, values, adios2::Mode::Sync);
+    }
+  }
 #endif
+
+
+
 }
 
 
@@ -710,7 +770,16 @@ void HermesEngine::DoPutDeferred_(
   // Time DbOperation construction
 
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+  {
+    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+    if (inlineVar)
+    {
+      CatalystState->InlineWriter->Put(*inlineVar, values);
+    }
+  }
+  #endif
   // Time Mdm_insert call
   //auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
@@ -787,6 +856,68 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 
 
 } // namespace coeus
+#ifdef COEUS_HAVE_CATALYST
+namespace coeus {
+
+void HermesEngine::CatalystConfig()
+{
+  std::cout << "\tCatalyst Library Version: " << CATALYST_VERSION << "\n";
+  std::cout << "\tCatalyst ABI Version: " << CATALYST_ABI_VERSION << "\n";
+  conduit_cpp::Node node;
+  catalyst_about(conduit_cpp::c_node(&node));
+  auto implementation = node.has_path("catalyst/implementation")
+                            ? node["catalyst/implementation"].as_string()
+                            : std::string("stub");
+  std::cout << "\tImplementation: " << implementation << "\n\n";
+}
+
+void HermesEngine::CatalystInit()
+{
+  conduit_cpp::Node node;
+  node["catalyst/scripts/script/filename"].set(CatalystState->ScriptFileName);
+
+  std::ostringstream address;
+  address << &CatalystState->InlineIO;
+
+  node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
+  node["catalyst/fides/data_source_io/source"].set(std::string("source"));
+  node["catalyst/fides/data_source_io/address"].set(address.str());
+  node["catalyst/fides/data_source_path/source"].set(std::string("source"));
+  node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
+  catalyst_initialize(conduit_cpp::c_node(&node));
+
+  if (rank == 0)
+  {
+    this->CatalystConfig();
+  }
+}
+
+void HermesEngine::CatalystExecute()
+{
+  auto timestep = CatalystState->InlineWriter->CurrentStep();
+  conduit_cpp::Node node;
+  node["catalyst/state/timestep"].set(timestep);
+  node["catalyst/state/time"].set(timestep);
+  node["catalyst/channels/fides/type"].set(std::string("fides"));
+
+  std::ostringstream address;
+  address << &CatalystState->InlineIO;
+
+  node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
+  node["catalyst/fides/data_source_io/source"].set(std::string("source"));
+  node["catalyst/fides/data_source_io/address"].set(address.str());
+  node["catalyst/fides/data_source_path/source"].set(std::string("source"));
+  node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
+
+  conduit_cpp::Node dummy;
+  dummy["dummy"].set(0);
+  node["catalyst/channels/fides/data"].set(dummy);
+
+  catalyst_execute(conduit_cpp::c_node(&node));
+}
+
+} // namespace coeus
+#endif
 /**
  * This is how ADIOS figures out where to dynamically load the engine.
  * */
