@@ -345,6 +345,7 @@ HermesEngine::~HermesEngine() {
     conduit_cpp::Node node; 
     catalyst_finalize(conduit_cpp::c_node(&node));
   }
+  #endif
   delete db;
   if (hermes_) {
     delete hermes_;
