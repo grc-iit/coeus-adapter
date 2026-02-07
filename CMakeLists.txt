@@ -39,6 +39,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static on
 option(COEUS_ENABLE_COVERAGE "Enable coverage calaculation" OFF)
 option(COEUS_ENABLE_DOXYGEN "Enable documentation" OFF)
 option(COEUS_ENABLE_JARVIS "Enable use of jarvis" ON)
+option(COEUS_ENABLE_CATALYST "Enable Catalyst in-situ integration (define COEUS_HAVE_CATALYST)" OFF)
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment

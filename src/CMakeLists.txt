@@ -51,12 +51,17 @@ target_compile_options(hermes_engine PRIVATE -fcoroutines)
 #############################################
 # Try to locate Catalyst (Catalyst 2 provides a CMake target catalyst::catalyst)
 find_package(Catalyst QUIET CONFIG)
-if(Catalyst_FOUND)
-  message(STATUS "Catalyst found: enabling in-situ integration in hermes_engine")
-  target_link_libraries(hermes_engine PRIVATE catalyst::catalyst)
+# Enable COEUS_HAVE_CATALYST if Catalyst was found OR user set COEUS_ENABLE_CATALYST=ON
+if(Catalyst_FOUND OR COEUS_ENABLE_CATALYST)
   target_compile_definitions(hermes_engine PRIVATE COEUS_HAVE_CATALYST=1)
+  if(Catalyst_FOUND)
+    message(STATUS "Catalyst found: enabling in-situ integration in hermes_engine")
+    target_link_libraries(hermes_engine PRIVATE catalyst::catalyst)
+  else()
+    message(STATUS "COEUS_ENABLE_CATALYST=ON: COEUS_HAVE_CATALYST defined but Catalyst not found (link at runtime or disable)")
+  endif()
 else()
-  message(STATUS "Catalyst not found: building hermes_engine without in-situ integration")
+  message(STATUS "Catalyst not found and COEUS_ENABLE_CATALYST=OFF: building without in-situ integration")
 endif()
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
