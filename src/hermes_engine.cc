@@ -33,7 +33,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // Create CTEHermes instance - it will handle CTE initialization via connect()
   hermes_ = new coeus::CTEHermes();
   
   // Initialize CTE via CTEHermes::connect()
@@ -45,8 +44,6 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
   
   //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-  //engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-
 
 }
 
@@ -57,20 +54,14 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io, const std::string &name,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // For testing: create CTEHermes instance
-  // CTEHermes::connect() will check if CTE is already initialized
   hermes_ = new coeus::CTEHermes();
   
-  // Initialize CTE via CTEHermes::connect() if not already initialized
   if (!hermes_->connect()) {
     delete hermes_;
     hermes_ = nullptr;
     throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect()");
   }
-  
   Init_();
-  //engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-
 }
 
 /**
@@ -82,17 +73,17 @@ void HermesEngine::Init_() {
   comm_size = 0;  // Initialize comm_size as well
 
   // initiate the trace manager
-   std::random_device rd;  // Obtain a random seed
-    std::mt19937 gen(rd()); // Mersenne Twister generator
-    std::uniform_int_distribution<> dis(1, 10000);
-    // Generate a random number
-    int randomNumber = dis(gen);
-    // Step 2: Convert the random number to a string
-    std::string randomNumberStr = std::to_string(randomNumber);
+  std::random_device rd;  // Obtain a random seed
+  std::mt19937 gen(rd()); // Mersenne Twister generator
+  std::uniform_int_distribution<> dis(1, 10000);
+  // Generate a random number
+  int randomNumber = dis(gen);
+  // Step 2: Convert the random number to a string
+  std::string randomNumberStr = std::to_string(randomNumber);
 
-    // Step 3: Add the random number to a base string
-    std::string baseString = "logs/engine_test_";
-    std::string logname = baseString + randomNumberStr + ".txt";
+  // Step 3: Add the random number to a base string
+  std::string baseString = "logs/engine_test_";
+  std::string logname = baseString + randomNumberStr + ".txt";
 
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::trace);
@@ -103,28 +94,27 @@ void HermesEngine::Init_() {
       logname, true);
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
- 
   
   // File log for metadata collection
   #ifdef Meta_enabled
-  auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+   auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_get.txt", true);
-  file_sink2->set_level(spdlog::level::trace);
-  file_sink2->set_pattern("%v");
-  spdlog::logger logger2("metadata_logger_get", {file_sink2});
-  logger2.set_level(spdlog::level::trace);
-  meta_logger_get = std::make_shared<spdlog::logger>(logger2);
-  meta_logger_get->info(
+   file_sink2->set_level(spdlog::level::trace);
+   file_sink2->set_pattern("%v");
+   spdlog::logger logger2("metadata_logger_get", {file_sink2});
+   logger2.set_level(spdlog::level::trace);
+   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
+   meta_logger_get->info(
       "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
 
-  auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
-  file_sink3->set_level(spdlog::level::trace);
-  file_sink3->set_pattern("%v");
-  spdlog::logger logger3("metadata_logger_put", {file_sink3});
-  logger3.set_level(spdlog::level::trace);
-  meta_logger_put = std::make_shared<spdlog::logger>(logger3);
-  meta_logger_put->info(
+   file_sink3->set_level(spdlog::level::trace);
+   file_sink3->set_pattern("%v");
+   spdlog::logger logger3("metadata_logger_put", {file_sink3});
+   logger3.set_level(spdlog::level::trace);
+   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
+   meta_logger_put->info(
       "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
    #endif
 
@@ -297,16 +287,16 @@ void HermesEngine::Init_() {
     const auto &varMap = m_IO.GetVariables();
     for (const auto &it : varMap)
     {
-  #define declare_type(T) \
-    if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
-    { \
-      CatalystState->InlineIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
-        it.second->m_Count, it.second->IsConstantDims()); \
-      continue; \
-    }
-      ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
-  #undef declare_type
-    }
+   #define declare_type(T) \
+     if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
+     { \
+       CatalystState->InlineIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
+         it.second->m_Count, it.second->IsConstantDims()); \
+       continue; \
+     }
+       ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+   #undef declare_type
+     }
 
     CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
 
@@ -416,7 +406,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
 //compute the derived variable
 void HermesEngine::ComputeDerivedVariables() {
-    auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
+  auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
   auto const &m_Variables = m_IO.GetVariables();
         // parse all derived variables
   if(rank == 0) {
@@ -525,12 +515,12 @@ void HermesEngine::EndStep()
   }
 
   #ifdef COEUS_HAVE_CATALYST
-  if (catalyst_active)
-  {
+   if (catalyst_active)
+   {
     CatalystState->InlineWriter->EndStep();
     CatalystExecute();
     inline_writer_in_step_ = false;
-  }
+   }
   #endif
 
   if (hermes_ && hermes_->tag)
@@ -551,7 +541,6 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
-  // Obtain the blob from CTE using the filename and variable name
   auto blob = hermes_->tag->Get(Var.m_Name);
   if (blob.empty()) {
     return false; // Blob not found
@@ -706,23 +695,14 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
-#ifdef Meta_enabled
-  // add spdlog method to extract the variable metadata
-    metaInfo metaInfo(variable, adiosOpType::get, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
-  //finish metadata extraction
   if (!blob.empty()) {
     memcpy(values, blob.data(), blob.size());
   }
 
 }
-
-//    }
 
 
 
@@ -731,44 +711,27 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
-  {
-    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-    if (inlineVar)
-    {
-      CatalystState->InlineWriter->Put(*inlineVar, values);
-    }
-  }
+   if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+   {
+     adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+     if (inlineVar)
+     {
+       CatalystState->InlineWriter->Put(*inlineVar, values);
+     }
+   } 
   #endif
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-  // Diagnostic: log large Put sizes (L>64 Gray-Scott can cause 100KB+ per rank)
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutSync_: Put failed for " + name);
   }
-
-
-#ifdef Meta_enabled
-  metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("metadata sync: {}", metaInfoToString(metaInfo));
-
-#endif
-
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
-
-  // Time DbOperation construction
-
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-
-  // Time Mdm_insert call
-
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-
-
 
 }
 
@@ -780,49 +743,26 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
-  {
-    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-    if (inlineVar)
-    {
-      CatalystState->InlineWriter->Put(*inlineVar, values);
-    }
-  }
+   if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+   {
+     adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+     if (inlineVar)
+     {
+       CatalystState->InlineWriter->Put(*inlineVar, values);
+     }
+   }
   #endif
-  // Put() can hang for several reasons; set CTE_DEBUG=1 to see where (before
-  // AllocateBuffer, before Wait, or inside Wait). Common causes:
-  // - AllocateBuffer: blob_size too large or many ranks exhausting SHM.
-  // - task.Wait(): CTE runtime not processing (wrong pool_id_, or runtime stuck);
-  //   or multi-node SHM (runtime cannot read client SHM from another node).
-  // - MPI ordering: ranks blocked in Wait() cannot participate in collectives.
+
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
   }
-  
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
-  
-  // Time DbOperation construction
-
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
- 
-  // Time Mdm_insert call
-  //auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-  //auto end_time_md = std::chrono::high_resolution_clock::now();
-  //auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
-  
-  // if (rank == 0) {
-  //   std::cout << "Rank 0 - DbOperation construction (DoPutDeferred) time: " << duration_db_op << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-  //   std::cout << "Rank 0 - Mdm_insert (DoPutDeferred) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << name << ")" << std::endl;
-  // }
-#ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
 
 
 }
@@ -838,23 +778,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-    auto start_time = std::chrono::high_resolution_clock::now();
     if (!hermes_->Put(name, total_count * sizeof(T), values)) {
       throw std::runtime_error("HermesEngine::PutDerived: Put failed for " + name);
     }
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-    if (rank == 0) {
-      std::cout << "Rank 0 - hermes_->Put (PutDerived) time: " << duration << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
-    }
-    auto start_time_md = std::chrono::high_resolution_clock::now();
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
     client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-    auto end_time_md = std::chrono::high_resolution_clock::now();
-    auto duration_md = std::chrono::duration_cast<std::chrono::microseconds>(end_time_md - start_time_md).count();
-    if (rank == 0) {
-      std::cout << "Rank 0 - Mdm_insert (PutDerived) time: " << duration_md << " microseconds (step: " << currentStep << ", var: " << variable.m_Name << ")" << std::endl;
-    }
 
 }
 
@@ -884,7 +812,8 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 
 
 
-} // namespace coeus
+}
+ // namespace coeus
 #ifdef COEUS_HAVE_CATALYST
 namespace coeus {
 
