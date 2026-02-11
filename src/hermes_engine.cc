@@ -126,7 +126,7 @@ void HermesEngine::Init_() {
   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
   meta_logger_put->info(
       "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
-#endif
+   #endif
 
   //Merge Log
 
@@ -297,7 +297,7 @@ void HermesEngine::Init_() {
     const auto &varMap = m_IO.GetVariables();
     for (const auto &it : varMap)
     {
-#define declare_type(T) \
+  #define declare_type(T) \
     if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
     { \
       CatalystState->InlineIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
@@ -305,14 +305,14 @@ void HermesEngine::Init_() {
       continue; \
     }
       ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
-#undef declare_type
+  #undef declare_type
     }
 
     CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
 
     CatalystInit();
   }
-#endif
+  #endif
   open = true;
 
 }
@@ -370,12 +370,26 @@ bool HermesEngine::Demote(int step){
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   IncrementCurrentStep();
+
   #ifdef COEUS_HAVE_CATALYST
+  inline_writer_in_step_ = false;
+
   if (CatalystState && CatalystState->InlineWriter)
   {
-    (void)CatalystState->InlineWriter->BeginStep(mode, timeoutSeconds);
+    try
+    {
+      adios2::StepStatus status =
+          CatalystState->InlineWriter->BeginStep(mode, timeoutSeconds);
+
+      inline_writer_in_step_ = (status == adios2::StepStatus::OK);
+    }
+    catch (...)
+    {
+      inline_writer_in_step_ = false;
+      throw;
+    }
   }
-#endif
+  #endif
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
       total_steps = db->GetTotalSteps(uid);
@@ -393,17 +407,8 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     if (!hermes_ || !hermes_->GetTag(tag_name)) {
       throw std::runtime_error("Failed to get/create tag: " + tag_name);
     }
-// derived part
-//  if(m_OpenMode == adios2::Mode::Read){
-//      for(int i = 0; i < num_layers; i++) {
- //         Promote(currentStep + lookahead + i);
-//      }
-//  }
-//  if(m_OpenMode == adios2::Mode::Write){
-//      for(int i = 0; i < num_layers; i++) {
-//          Demote(currentStep - lookahead - i);
- //     }
-//  }
+
+
   return adios2::StepStatus::OK;
 }
 
@@ -472,13 +477,13 @@ void HermesEngine::ComputeDerivedVariables() {
     }
 
     for (auto derivedBlock : DerivedBlockData) {
-#define DEFINE_VARIABLE_PUT(T)       \
+  #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
     T* data = static_cast<T *>(std::get<0>(derivedBlock));\
     PutDerived(*derivedVar, data);   \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
-#undef DEFINE_VARIABLE_PUT
+  #undef DEFINE_VARIABLE_PUT
       free(std::get<0>(derivedBlock));
     }
 
@@ -496,21 +501,45 @@ size_t HermesEngine::CurrentStep() const {
   return currentStep;
 }
 
-void HermesEngine::EndStep() {
+void HermesEngine::EndStep()
+{
+  #ifdef COEUS_HAVE_CATALYST
+  bool catalyst_active =
+      (CatalystState && CatalystState->InlineWriter && inline_writer_in_step_);
+  #endif
+
+  try
+  {
     ComputeDerivedVariables();
-    #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineWriter)
+  }
+  catch (...)
+  {
+  #ifdef COEUS_HAVE_CATALYST
+    if (catalyst_active)
+    {
+      CatalystState->InlineWriter->EndStep();
+      inline_writer_in_step_ = false;
+    }
+  #endif
+    throw;
+  }
+
+  #ifdef COEUS_HAVE_CATALYST
+  if (catalyst_active)
   {
     CatalystState->InlineWriter->EndStep();
     CatalystExecute();
+    inline_writer_in_step_ = false;
   }
-#endif
-  if (hermes_ && hermes_->tag) {
+  #endif
+
+  if (hermes_ && hermes_->tag)
+  {
     delete hermes_->tag;
     hermes_->tag = nullptr;
   }
-
 }
+
 
 /**
  * Metadata operations.
@@ -701,7 +730,16 @@ template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+  {
+    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+    if (inlineVar)
+    {
+      CatalystState->InlineWriter->Put(*inlineVar, values);
+    }
+  }
+  #endif
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   // Diagnostic: log large Put sizes (L>64 Gray-Scott can cause 100KB+ per rank)
@@ -729,16 +767,6 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   // Time Mdm_insert call
 
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
-  #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
-  {
-    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-    if (inlineVar)
-    {
-      CatalystState->InlineWriter->Put(*inlineVar, values, adios2::Mode::Sync);
-    }
-  }
-#endif
 
 
 
@@ -751,7 +779,16 @@ void HermesEngine::DoPutDeferred_(
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+  {
+    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
+    if (inlineVar)
+    {
+      CatalystState->InlineWriter->Put(*inlineVar, values);
+    }
+  }
+  #endif
   // Put() can hang for several reasons; set CTE_DEBUG=1 to see where (before
   // AllocateBuffer, before Wait, or inside Wait). Common causes:
   // - AllocateBuffer: blob_size too large or many ranks exhausting SHM.
@@ -771,16 +808,7 @@ void HermesEngine::DoPutDeferred_(
   // Time DbOperation construction
 
   DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
-  {
-    adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-    if (inlineVar)
-    {
-      CatalystState->InlineWriter->Put(*inlineVar, values);
-    }
-  }
-  #endif
+ 
   // Time Mdm_insert call
   //auto start_time_md = std::chrono::high_resolution_clock::now();
   client.Mdm_insert(chi::PoolQuery::Local(), db_op);
@@ -895,26 +923,49 @@ void HermesEngine::CatalystInit()
 
 void HermesEngine::CatalystExecute()
 {
-  auto timestep = CatalystState->InlineWriter->CurrentStep();
-  conduit_cpp::Node node;
-  node["catalyst/state/timestep"].set(timestep);
-  node["catalyst/state/time"].set(timestep);
-  node["catalyst/channels/fides/type"].set(std::string("fides"));
+  // Safety check: ensure CatalystState is valid
+  if (!CatalystState || !CatalystState->InlineWriter) {
+    engine_logger->warn("CatalystExecute called but InlineWriter is null");
+    return;
+  }
+  
+  try {
+    // Match reference implementation: use InlineWriter->CurrentStep() if available,
+    // otherwise fall back to main engine's currentStep
+    int64_t timestep;
+    if (inline_writer_in_step_) {
+      // InlineWriter supports steps, use its CurrentStep() like the reference
+      timestep = static_cast<int64_t>(CatalystState->InlineWriter->CurrentStep());
+    } else {
+      // InlineWriter doesn't support steps, use main engine's step counter
+      timestep = static_cast<int64_t>(currentStep);
+    }
+    conduit_cpp::Node node;
+    node["catalyst/state/timestep"].set(timestep);
+    node["catalyst/state/time"].set(timestep);
+    node["catalyst/channels/fides/type"].set(std::string("fides"));
 
-  std::ostringstream address;
-  address << &CatalystState->InlineIO;
+    std::ostringstream address;
+    address << &CatalystState->InlineIO;
 
-  node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
-  node["catalyst/fides/data_source_io/source"].set(std::string("source"));
-  node["catalyst/fides/data_source_io/address"].set(address.str());
-  node["catalyst/fides/data_source_path/source"].set(std::string("source"));
-  node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
+    node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
+    node["catalyst/fides/data_source_io/source"].set(std::string("source"));
+    node["catalyst/fides/data_source_io/address"].set(address.str());
+    node["catalyst/fides/data_source_path/source"].set(std::string("source"));
+    node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
 
-  conduit_cpp::Node dummy;
-  dummy["dummy"].set(0);
-  node["catalyst/channels/fides/data"].set(dummy);
+    conduit_cpp::Node dummy;
+    dummy["dummy"].set(0);
+    node["catalyst/channels/fides/data"].set(dummy);
 
-  catalyst_execute(conduit_cpp::c_node(&node));
+    catalyst_execute(conduit_cpp::c_node(&node));
+  } catch (const std::exception& e) {
+    engine_logger->error("CatalystExecute failed: {}", e.what());
+    throw;
+  } catch (...) {
+    engine_logger->error("CatalystExecute failed with unknown exception");
+    throw;
+  }
 }
 
 } // namespace coeus

@@ -54,9 +54,7 @@ bool CTEHermes::connect() {
   // Pre-deployed CTE: when runtime and CTE core are already started (e.g. Jarvis
   // with cte_core pool_id: 512.0), attach this client to the existing pool.
   const char* pre_deployed = std::getenv("CTE_PRE_DEPLOYED");
-  const bool use_pre_deployed = pre_deployed && (std::strcmp(pre_deployed, "1") == 0 ||
-                                                 std::strcmp(pre_deployed, "true") == 0 ||
-                                                 std::strcmp(pre_deployed, "TRUE") == 0);
+  const bool use_pre_deployed = true;
 
   if (use_pre_deployed) {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)

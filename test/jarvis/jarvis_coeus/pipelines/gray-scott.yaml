@@ -7,7 +7,7 @@ pkgs:
   - pkg_type: jarvis_iowarp.wrp_cte
     pkg_name: cte_core
     devices:
-      - ["${HOME}/cte_benchmark/storage1.bin", "10GB", 0.8]
+      - ["${HOME}/cte_benchmark/storage1.bin", "5GB", 0.8]
   
 
     # CTE Configuration Parameters
@@ -18,10 +18,11 @@ pkgs:
 
   - pkg_type: jarvis_coeus.adios2_gray_scott
     pkg_name: jarvis_coeus.adios2_gray_scott
-    L: 128
-    nprocs: 64                            # Number of MPI processes
+    L: 64
+    nprocs: 1                            # Number of MPI processes
     ppn: 16                               # Processes per node
     out_file: "${HOME}/iowarp/gsbench.bp"
+    steps: 10000
     engine: "hermes"
 
 # Environment configuration (optional)

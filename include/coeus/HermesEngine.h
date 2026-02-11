@@ -147,6 +147,7 @@ void CatalystConfig();
 void CatalystInit();
 void CatalystExecute();
 std::unique_ptr<CatalystImpl> CatalystState;
+bool inline_writer_in_step_ = false;  // Track if InlineWriter BeginStep was called
 #endif
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
