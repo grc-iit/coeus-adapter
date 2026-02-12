@@ -281,6 +281,8 @@ class Adios2GrayScott(Application):
                                         'OPFILE': self.operator_json_path,
                                         'DBFILE': self.config['db_path'],
                                         'Order': self.config['Execution_order'],
+                                        'DATAMODEL': f'{self.shared_dir}/gs-fides.json',
+                                        'SCRIPT': f'{self.shared_dir}/gs-catalyst.py',
                                     })
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
@@ -288,6 +290,12 @@ class Adios2GrayScott(Application):
                                     self.operator_json_path)
         else:
             raise Exception('Engine not defined')
+
+        # Copy Catalyst/Fides config files to shared directory
+        self.copy_template_file(f'{self.pkg_dir}/config/gs-catalyst.py',
+                                f'{self.shared_dir}/gs-catalyst.py')
+        self.copy_template_file(f'{self.pkg_dir}/config/gs-fides.json',
+                                f'{self.shared_dir}/gs-fides.json')
 
     def start(self):
         """
