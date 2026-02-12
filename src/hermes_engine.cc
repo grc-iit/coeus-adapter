@@ -9,7 +9,7 @@
  * If you do not have access to the file, you may request a copy             *
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+#include "common/CatalystHelper.h"
 #include "coeus/HermesEngine.h"
 #include "comms/CTEHermes.h"
 #include <chimaera/module_manager.h>
@@ -546,7 +546,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
     return false; // Blob not found
   }
 
-#define DEFINE_VARIABLE(T)                                                     \
+ #define DEFINE_VARIABLE(T)                                                     \
   if (adios2::helper::GetDataType<T>() == Var.m_Type) {                        \
     size_t dataSize = blob.size() / sizeof(T);                                 \
     const T *data = reinterpret_cast<const T *>(blob.data());                  \
@@ -557,7 +557,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
     }                                                                          \
   }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE
+ #undef DEFINE_VARIABLE
   return true;
 }
 
@@ -652,7 +652,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
     m_IO.RemoveVariable(variableMetadata.name);
   }
 
-#define DEFINE_VARIABLE(T)                                                     \
+ #define DEFINE_VARIABLE(T)                                                     \
   if (adios2::helper::GetDataType<T>() ==                                      \
       adios2::helper::GetDataTypeFromString(variableMetadata.dataType)) {      \
     adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>(            \
@@ -665,7 +665,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
     variable->m_Engine = this;                                                 \
   }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE
+ #undef DEFINE_VARIABLE
 }
 
 
@@ -675,12 +675,7 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
-#ifdef Meta_enabled
-  // add spdlog method to extract the variable metadata
 
-    metaInfo metaInfo(variable, adiosOpType::get, hermes_->tag->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
 
   if (!blob.empty()) {
     memcpy(values, blob.data(), blob.size());
@@ -814,91 +809,8 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
 
 }
  // namespace coeus
-#ifdef COEUS_HAVE_CATALYST
-namespace coeus {
+// Catalyst helper function implementations (CatalystConfig, CatalystInit, CatalystExecute)
 
-void HermesEngine::CatalystConfig()
-{
-  std::cout << "\tCatalyst Library Version: " << CATALYST_VERSION << "\n";
-  std::cout << "\tCatalyst ABI Version: " << CATALYST_ABI_VERSION << "\n";
-  conduit_cpp::Node node;
-  catalyst_about(conduit_cpp::c_node(&node));
-  auto implementation = node.has_path("catalyst/implementation")
-                            ? node["catalyst/implementation"].as_string()
-                            : std::string("stub");
-  std::cout << "\tImplementation: " << implementation << "\n\n";
-}
-
-void HermesEngine::CatalystInit()
-{
-  conduit_cpp::Node node;
-  node["catalyst/scripts/script/filename"].set(CatalystState->ScriptFileName);
-
-  std::ostringstream address;
-  address << &CatalystState->InlineIO;
-
-  node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
-  node["catalyst/fides/data_source_io/source"].set(std::string("source"));
-  node["catalyst/fides/data_source_io/address"].set(address.str());
-  node["catalyst/fides/data_source_path/source"].set(std::string("source"));
-  node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
-  catalyst_initialize(conduit_cpp::c_node(&node));
-
-  if (rank == 0)
-  {
-    this->CatalystConfig();
-  }
-}
-
-void HermesEngine::CatalystExecute()
-{
-  // Safety check: ensure CatalystState is valid
-  if (!CatalystState || !CatalystState->InlineWriter) {
-    engine_logger->warn("CatalystExecute called but InlineWriter is null");
-    return;
-  }
-  
-  try {
-    // Match reference implementation: use InlineWriter->CurrentStep() if available,
-    // otherwise fall back to main engine's currentStep
-    int64_t timestep;
-    if (inline_writer_in_step_) {
-      // InlineWriter supports steps, use its CurrentStep() like the reference
-      timestep = static_cast<int64_t>(CatalystState->InlineWriter->CurrentStep());
-    } else {
-      // InlineWriter doesn't support steps, use main engine's step counter
-      timestep = static_cast<int64_t>(currentStep);
-    }
-    conduit_cpp::Node node;
-    node["catalyst/state/timestep"].set(timestep);
-    node["catalyst/state/time"].set(timestep);
-    node["catalyst/channels/fides/type"].set(std::string("fides"));
-
-    std::ostringstream address;
-    address << &CatalystState->InlineIO;
-
-    node["catalyst/fides/json_file"].set(CatalystState->JSONFileName);
-    node["catalyst/fides/data_source_io/source"].set(std::string("source"));
-    node["catalyst/fides/data_source_io/address"].set(address.str());
-    node["catalyst/fides/data_source_path/source"].set(std::string("source"));
-    node["catalyst/fides/data_source_path/path"].set(std::string("DataReader"));
-
-    conduit_cpp::Node dummy;
-    dummy["dummy"].set(0);
-    node["catalyst/channels/fides/data"].set(dummy);
-
-    catalyst_execute(conduit_cpp::c_node(&node));
-  } catch (const std::exception& e) {
-    engine_logger->error("CatalystExecute failed: {}", e.what());
-    throw;
-  } catch (...) {
-    engine_logger->error("CatalystExecute failed with unknown exception");
-    throw;
-  }
-}
-
-} // namespace coeus
-#endif
 /**
  * This is how ADIOS figures out where to dynamically load the engine.
  * */
