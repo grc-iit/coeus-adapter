@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /**
  * Work orchestrator implementation
  */
@@ -45,18 +78,29 @@ bool WorkOrchestrator::Init() {
   }
 
   // Get total worker count from configuration
-  u32 sched_count = config->GetSchedulerWorkerCount();
-  u32 slow_count = config->GetSlowWorkerCount();
-  u32 net_count = 1;  // Hardcoded to 1 network worker for now
-  u32 total_workers = sched_count + slow_count + net_count;
+  // Note: max(1, num_threads-1) are task workers, last worker is dedicated network worker
+  // Exception: If num_threads=1, that single worker serves both roles
+  u32 num_threads = config->GetNumThreads();
+  u32 total_workers = num_threads;
+  u32 num_task_workers = (num_threads > 1) ? (num_threads - 1) : 1;
 
-  // Create all workers as generic type (kSchedWorker)
+  if (num_threads == 1) {
+    HLOG(kInfo, "Creating 1 worker (serves both task and network roles)");
+  } else {
+    HLOG(kInfo, "Creating {} workers ({} task + 1 dedicated network)",
+         total_workers, num_task_workers);
+  }
+
+  // Create all workers
   // The scheduler will partition them into groups via DivideWorkers()
   for (u32 i = 0; i < total_workers; ++i) {
-    if (!CreateWorker(kSchedWorker)) {
+    if (!CreateWorker()) {
       return false;
     }
   }
+
+  // Mark as initialized so GetWorker() works during DivideWorkers
+  is_initialized_ = true;
 
   // Get scheduler from IpcManager (IpcManager is the single owner)
   scheduler_ = CHI_IPC->GetScheduler();
@@ -69,7 +113,6 @@ bool WorkOrchestrator::Init() {
     HLOG(kDebug, "WorkOrchestrator: Scheduler DivideWorkers completed");
   }
 
-  is_initialized_ = true;
   return true;
 }
 
@@ -92,7 +135,7 @@ void WorkOrchestrator::Finalize() {
 
   // Clear worker containers
   all_workers_.clear();
-  sched_workers_.clear();
+  workers_.clear();
 
   is_initialized_ = false;
 }
@@ -156,29 +199,8 @@ Worker *WorkOrchestrator::GetWorker(u32 worker_id) const {
   return all_workers_[worker_id];
 }
 
-std::vector<Worker *>
-WorkOrchestrator::GetWorkersByType(ThreadType thread_type) const {
-  std::vector<Worker *> workers;
-  if (!is_initialized_) {
-    return workers;
-  }
-
-  for (auto *worker : all_workers_) {
-    if (worker && worker->GetThreadType() == thread_type) {
-      workers.push_back(worker);
-    }
-  }
-
-  return workers;
-}
-
 size_t WorkOrchestrator::GetWorkerCount() const {
   return is_initialized_ ? all_workers_.size() : 0;
-}
-
-u32 WorkOrchestrator::GetWorkerCountByType(ThreadType thread_type) const {
-  ConfigManager *config = CHI_CONFIG_MANAGER;
-  return config->GetWorkerThreadCount(thread_type);
 }
 
 bool WorkOrchestrator::IsInitialized() const { return is_initialized_; }
@@ -206,21 +228,20 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
     return false;
   }
 
-  // Map lanes to sched workers (only sched workers process tasks from worker
-  // queues)
-  u32 num_sched_workers = static_cast<u32>(sched_workers_.size());
-  HLOG(kInfo, "WorkOrchestrator: num_sched_workers={}, num_lanes={}",
-        num_sched_workers, num_lanes);
-  if (num_sched_workers == 0) {
-    HLOG(kError,
-          "WorkOrchestrator: No sched workers available for lane mapping");
+  // All workers process tasks - assign each worker to a lane using 1:1 mapping
+  u32 num_workers = static_cast<u32>(all_workers_.size());
+  HLOG(kInfo, "WorkOrchestrator: num_workers={}, num_lanes={}",
+        num_workers, num_lanes);
+
+  if (num_workers == 0) {
+    HLOG(kError, "WorkOrchestrator: No workers available for lane mapping");
     return false;
   }
 
-  // Number of lanes should equal number of sched workers (configured in
-  // IpcManager) Each worker gets exactly one lane for 1:1 mapping
-  for (u32 worker_idx = 0; worker_idx < num_sched_workers; ++worker_idx) {
-    Worker *worker = sched_workers_[worker_idx].get();
+  // Map lanes to workers using 1:1 mapping
+  // Each worker gets exactly one lane
+  for (u32 worker_idx = 0; worker_idx < num_workers; ++worker_idx) {
+    Worker *worker = all_workers_[worker_idx];
     if (worker) {
       // Direct 1:1 mapping: worker i gets lane i
       u32 lane_id = worker_idx;
@@ -232,8 +253,7 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
       // Mark the lane with the assigned worker ID
       lane->SetAssignedWorkerId(worker->GetId());
 
-      HLOG(kInfo,
-            "WorkOrchestrator: Mapped worker {} (ID {}) to lane {}",
+      HLOG(kInfo, "WorkOrchestrator: Mapped worker {} (ID {}) to lane {}",
             worker_idx, worker->GetId(), lane_id);
     } else {
       HLOG(kWarning, "WorkOrchestrator: Worker at index {} is null", worker_idx);
@@ -265,9 +285,9 @@ bool WorkOrchestrator::SpawnWorkerThreads() {
   }
 }
 
-bool WorkOrchestrator::CreateWorker(ThreadType thread_type) {
+bool WorkOrchestrator::CreateWorker() {
   u32 worker_id = static_cast<u32>(all_workers_.size());
-  auto worker = std::make_unique<Worker>(worker_id, thread_type);
+  auto worker = std::make_unique<Worker>(worker_id);
 
   if (!worker->Init()) {
     return false;
@@ -276,17 +296,15 @@ bool WorkOrchestrator::CreateWorker(ThreadType thread_type) {
   Worker *worker_ptr = worker.get();
   all_workers_.push_back(worker_ptr);
 
-  // Add to ownership container (sched_workers_ owns all workers)
-  // The scheduler's DivideWorkers() will partition workers into
-  // scheduler_workers_, slow_workers_, and net_worker_ groups
-  sched_workers_.push_back(std::move(worker));
+  // Add to ownership container (workers_ owns all worker unique_ptrs)
+  workers_.push_back(std::move(worker));
 
   return true;
 }
 
-bool WorkOrchestrator::CreateWorkers(ThreadType thread_type, u32 count) {
+bool WorkOrchestrator::CreateWorkers(u32 count) {
   for (u32 i = 0; i < count; ++i) {
-    if (!CreateWorker(thread_type)) {
+    if (!CreateWorker()) {
       return false;
     }
   }

@@ -1,8 +1,43 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 /**
  * Configuration manager implementation
  */
 
 #include "chimaera/config_manager.h"
+#include "chimaera/task.h"
+#include "chimaera/ipc_manager.h"
 #include <cstdlib>
 
 // Global pointer variable definition for Configuration manager singleton
@@ -65,21 +100,10 @@ std::string ConfigManager::GetServerConfigPath() const {
   return std::string();
 }
 
-u32 ConfigManager::GetWorkerThreadCount(ThreadType thread_type) const {
-  switch (thread_type) {
-  case kSchedWorker:
-    return sched_workers_;
-  case kProcessReaper:
-    return process_reaper_workers_;
-  default:
-    return 0;
-  }
-}
-
 size_t ConfigManager::GetMemorySegmentSize(MemorySegment segment) const {
   switch (segment) {
   case kMainSegment:
-    return main_segment_size_;
+    return CalculateMainSegmentSize();
   case kClientDataSegment:
     return client_data_segment_size_;
   default:
@@ -123,11 +147,11 @@ bool ConfigManager::IsValid() const { return is_initialized_; }
 
 void ConfigManager::LoadDefault() {
   // Set default configuration values
-  sched_workers_ = 4;
-  slow_threads_ = 4;
+  num_threads_ = 4;
+  queue_depth_ = 1024;
   process_reaper_workers_ = 1;
 
-  main_segment_size_ = 1024 * 1024 * 1024;        // 1GB
+  main_segment_size_ = 0;                         // 0 means auto-calculate
   client_data_segment_size_ = 512 * 1024 * 1024;  // 512MB
 
   port_ = 5555;
@@ -155,13 +179,26 @@ void ConfigManager::ParseYAML(YAML::Node &yaml_conf) {
   if (yaml_conf["runtime"]) {
     auto runtime = yaml_conf["runtime"];
 
-    // Worker thread configuration (new location)
-    if (runtime["sched_threads"]) {
-      sched_workers_ = runtime["sched_threads"].as<u32>();
+    // New unified worker thread configuration
+    if (runtime["num_threads"]) {
+      num_threads_ = runtime["num_threads"].as<u32>();
     }
-    if (runtime["slow_threads"]) {
-      slow_threads_ = runtime["slow_threads"].as<u32>();
+
+    // Backward compatibility: auto-convert old format
+    if (runtime["sched_threads"] || runtime["slow_threads"]) {
+      u32 sched = runtime["sched_threads"].as<u32>(0);
+      u32 slow = runtime["slow_threads"].as<u32>(0);
+      num_threads_ = sched + slow;
+      HLOG(kWarning, "sched_threads and slow_threads are deprecated. "
+           "Please use 'num_threads' instead. Auto-converted to num_threads={}", num_threads_);
     }
+
+    // Queue depth configuration (now actually used)
+    if (runtime["queue_depth"]) {
+      queue_depth_ = runtime["queue_depth"].as<u32>();
+    }
+
+    // Process reaper threads
     if (runtime["process_reaper_threads"]) {
       process_reaper_workers_ = runtime["process_reaper_threads"].as<u32>();
     }
@@ -179,38 +216,20 @@ void ConfigManager::ParseYAML(YAML::Node &yaml_conf) {
       max_sleep_ = runtime["max_sleep"].as<u32>();
     }
 
-    // Other runtime parameters (for future use or backward compatibility)
-    if (runtime["stack_size"]) {
-      // Stack size parameter exists but is not currently used by the runtime
-    }
-    if (runtime["queue_depth"]) {
-      // Queue depth parameter exists but is not currently used by the runtime
-    }
-    if (runtime["heartbeat_interval"]) {
-      // Heartbeat interval parameter exists but is not currently used by the runtime
-    }
-  }
-
-  // Backward compatibility: support old 'workers' section if runtime section didn't set these
-  if (yaml_conf["workers"]) {
-    auto workers = yaml_conf["workers"];
-    if (workers["sched_threads"] && !yaml_conf["runtime"]["sched_threads"]) {
-      sched_workers_ = workers["sched_threads"].as<u32>();
-    }
-    if (workers["slow_threads"] && !yaml_conf["runtime"]["slow_threads"]) {
-      slow_threads_ = workers["slow_threads"].as<u32>();
-    }
-    if (workers["process_reaper_threads"] && !yaml_conf["runtime"]["process_reaper_threads"]) {
-      process_reaper_workers_ = workers["process_reaper_threads"].as<u32>();
-    }
+    // Note: stack_size parameter removed (was never used)
+    // Note: heartbeat_interval parsing removed (not used by runtime)
   }
 
   // Parse memory segments
   if (yaml_conf["memory"]) {
     auto memory = yaml_conf["memory"];
     if (memory["main_segment_size"]) {
-      main_segment_size_ = hshm::ConfigParse::ParseSize(
-          memory["main_segment_size"].as<std::string>());
+      std::string size_str = memory["main_segment_size"].as<std::string>();
+      if (size_str == "auto") {
+        main_segment_size_ = 0;  // Trigger auto-calculation
+      } else {
+        main_segment_size_ = hshm::ConfigParse::ParseSize(size_str);
+      }
     }
     if (memory["client_data_segment_size"]) {
       client_data_segment_size_ = hshm::ConfigParse::ParseSize(
@@ -277,6 +296,38 @@ void ConfigManager::ParseYAML(YAML::Node &yaml_conf) {
       }
     }
   }
+}
+
+size_t ConfigManager::CalculateMainSegmentSize() const {
+  // If main_segment_size is explicitly set (non-zero), use it
+  if (main_segment_size_ > 0) {
+    return main_segment_size_;
+  }
+
+  // Auto-calculate based on queue_depth and num_threads using exact ring_buffer sizes
+  constexpr size_t BASE_OVERHEAD = 32 * 1024 * 1024;  // 32MB for metadata
+  constexpr u32 NUM_PRIORITIES = 2;                    // normal + resumed
+
+  // Calculate total workers: num_threads + 1 network worker
+  u32 total_workers = num_threads_ + 1;
+
+  // Calculate worker task queues size: TaskQueue with total_workers lanes
+  size_t worker_queues_size = TaskQueue::CalculateSize(
+      total_workers,      // num_lanes
+      NUM_PRIORITIES,     // num_priorities
+      queue_depth_);      // depth per queue
+
+  // Calculate network queue size: NetQueue with 1 lane
+  size_t net_queue_size = NetQueue::CalculateSize(
+      1,                  // num_lanes
+      NUM_PRIORITIES,     // num_priorities
+      queue_depth_);      // depth per queue
+
+  // Total size: BASE_OVERHEAD + queues_size * num_workers
+  size_t queues_size = worker_queues_size + net_queue_size;
+  size_t calculated = BASE_OVERHEAD + (queues_size * total_workers);
+
+  return calculated;
 }
 
 } // namespace chi

@@ -18,9 +18,12 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+// IMPORTANT: Include HermesEngine.h (and thus ADIOS2) BEFORE Catalyst/Conduit
+// headers. Conduit defines preprocessor macros that conflict with ADIOS2's
+// Variable<T> template class, causing parse errors in adios2/core/Variable.h.
+#include "coeus/HermesEngine.h"
 #include <catalyst.hpp>
 #include <catalyst_conduit.hpp>
-#include "coeus/HermesEngine.h"
 
 namespace coeus {
 

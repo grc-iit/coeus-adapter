@@ -1,14 +1,35 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by The HDF Group.                                               *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Hermes. The full Hermes copyright notice, including  *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the top directory. If you do not  *
- * have access to the file, you may request a copy from help@hdfgroup.org.   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef HSHM_DATA_STRUCTURES_PRIV_VECTOR_H_
 #define HSHM_DATA_STRUCTURES_PRIV_VECTOR_H_
@@ -550,6 +571,7 @@ class vector {
    *
    * @param min_capacity Minimum capacity needed
    */
+  HSHM_INLINE_CROSS_FUN
   void Grow(size_type min_capacity) {
     size_type new_capacity = (capacity_ == 0) ? 1 : capacity_ * 2;
     while (new_capacity < min_capacity) {
@@ -565,6 +587,7 @@ class vector {
    * @param pos Position to construct at
    * @param val Value to move construct
    */
+  HSHM_INLINE_CROSS_FUN
   void ConstructMove(size_type pos, T&& val) {
     if constexpr (kIsPod) {
       data_.ptr_[pos] = static_cast<T&&>(val);
@@ -580,6 +603,7 @@ class vector {
    * @param pos Position to construct at
    * @param val Value to copy construct
    */
+  HSHM_INLINE_CROSS_FUN
   void ConstructCopy(size_type pos, const T& val) {
     if constexpr (kIsPod) {
       data_.ptr_[pos] = val;
@@ -594,6 +618,7 @@ class vector {
    *
    * @param pos Position to destroy
    */
+  HSHM_INLINE_CROSS_FUN
   void Destroy(size_type pos) {
     if constexpr (!kIsPod) {
       data_.ptr_[pos].~T();
@@ -607,6 +632,7 @@ class vector {
    * @param first First position to destroy
    * @param last Last position (exclusive)
    */
+  HSHM_INLINE_CROSS_FUN
   void DestroyRange(size_type first, size_type last) {
     if constexpr (!kIsPod) {
       for (size_type i = first; i < last; ++i) {
@@ -622,6 +648,7 @@ class vector {
    *
    * @param alloc Pointer to allocator instance for memory management
    */
+  HSHM_INLINE_CROSS_FUN
   explicit vector(AllocT* alloc)
     : data_(hipc::FullPtr<T>::GetNull()), size_(0), capacity_(0), alloc_(alloc) {}
 
@@ -630,6 +657,7 @@ class vector {
    * Destroys all elements and deallocates memory using allocator.
    * Note: Does not deallocate the allocator itself (managed externally).
    */
+  HSHM_INLINE_CROSS_FUN
   ~vector() {
     clear();
     if (!data_.IsNull() && alloc_ != nullptr) {
@@ -645,6 +673,7 @@ class vector {
    * @param count Number of elements to create with default values
    * @param alloc Pointer to allocator instance for memory management
    */
+  HSHM_INLINE_CROSS_FUN
   explicit vector(size_type count, AllocT* alloc)
       : data_(hipc::FullPtr<T>::GetNull()), size_(0), capacity_(0), alloc_(alloc) {
     reserve(count);
@@ -666,6 +695,7 @@ class vector {
    * @param value Value to initialize elements with
    * @param alloc Pointer to allocator instance for memory management
    */
+  HSHM_INLINE_CROSS_FUN
   vector(size_type count, const T& value, AllocT* alloc)
       : data_(hipc::FullPtr<T>::GetNull()), size_(0), capacity_(0), alloc_(alloc) {
     reserve(count);
@@ -681,6 +711,7 @@ class vector {
    * @param init Initializer list
    * @param alloc Pointer to allocator instance for memory management
    */
+  HSHM_INLINE_CROSS_FUN
   vector(std::initializer_list<T> init, AllocT* alloc)
       : data_(hipc::FullPtr<T>::GetNull()), size_(0), capacity_(0), alloc_(alloc) {
     reserve(init.size());
@@ -695,6 +726,7 @@ class vector {
    *
    * @param other Vector to copy from
    */
+  HSHM_INLINE_CROSS_FUN
   vector(const vector& other)
       : data_(hipc::FullPtr<T>::GetNull()), size_(0), capacity_(0), alloc_(other.alloc_) {
     if (alloc_ != nullptr) {
@@ -711,6 +743,7 @@ class vector {
    *
    * @param other Vector to move from
    */
+  HSHM_INLINE_CROSS_FUN
   vector(vector&& other) noexcept
       : data_(other.data_), size_(other.size_), capacity_(other.capacity_),
         alloc_(other.alloc_) {
@@ -727,6 +760,7 @@ class vector {
    * @param other Vector to copy from
    * @return Reference to this vector
    */
+  HSHM_INLINE_CROSS_FUN
   vector& operator=(const vector& other) {
     if (this != &other) {
       clear();
@@ -748,6 +782,7 @@ class vector {
    * @param other Vector to move from
    * @return Reference to this vector
    */
+  HSHM_INLINE_CROSS_FUN
   vector& operator=(vector&& other) noexcept {
     if (this != &other) {
       clear();
@@ -772,6 +807,7 @@ class vector {
    * @param init Initializer list
    * @return Reference to this vector
    */
+  HSHM_INLINE_CROSS_FUN
   vector& operator=(std::initializer_list<T> init) {
     clear();
     reserve(init.size());
@@ -789,6 +825,7 @@ class vector {
    * @return Reference to element at position
    * @throws std::out_of_range if position is out of bounds
    */
+  HSHM_INLINE_CROSS_FUN
   T& at(size_type pos) {
     if (pos >= size_) {
       throw std::out_of_range("Vector index out of bounds");
@@ -804,6 +841,7 @@ class vector {
    * @return Const reference to element at position
    * @throws std::out_of_range if position is out of bounds
    */
+  HSHM_INLINE_CROSS_FUN
   const T& at(size_type pos) const {
     if (pos >= size_) {
       throw std::out_of_range("Vector index out of bounds");
@@ -818,6 +856,7 @@ class vector {
    * @param pos Position to access
    * @return Reference to element at position
    */
+  HSHM_INLINE_CROSS_FUN
   T& operator[](size_type pos) {
     return data_.ptr_[pos];
   }
@@ -829,6 +868,7 @@ class vector {
    * @param pos Position to access
    * @return Const reference to element at position
    */
+  HSHM_INLINE_CROSS_FUN
   const T& operator[](size_type pos) const {
     return data_.ptr_[pos];
   }
@@ -839,6 +879,7 @@ class vector {
    *
    * @return Reference to first element
    */
+  HSHM_INLINE_CROSS_FUN
   T& front() {
     return data_.ptr_[0];
   }
@@ -849,6 +890,7 @@ class vector {
    *
    * @return Const reference to first element
    */
+  HSHM_INLINE_CROSS_FUN
   const T& front() const {
     return data_.ptr_[0];
   }
@@ -859,6 +901,7 @@ class vector {
    *
    * @return Reference to last element
    */
+  HSHM_INLINE_CROSS_FUN
   T& back() {
     return data_.ptr_[size_ - 1];
   }
@@ -869,6 +912,7 @@ class vector {
    *
    * @return Const reference to last element
    */
+  HSHM_INLINE_CROSS_FUN
   const T& back() const {
     return data_.ptr_[size_ - 1];
   }
@@ -879,6 +923,7 @@ class vector {
    *
    * @return Pointer to underlying data array
    */
+  HSHM_INLINE_CROSS_FUN
   T* data() {
     return data_.ptr_;
   }
@@ -889,6 +934,7 @@ class vector {
    *
    * @return Const pointer to underlying data array
    */
+  HSHM_INLINE_CROSS_FUN
   const T* data() const {
     return data_.ptr_;
   }
@@ -899,6 +945,7 @@ class vector {
    *
    * @return Iterator to first element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator begin() {
     return iterator(data_.ptr_);
   }
@@ -909,6 +956,7 @@ class vector {
    *
    * @return Const iterator to first element
    */
+  HSHM_INLINE_CROSS_FUN
   const_iterator begin() const {
     return const_iterator(data_.ptr_);
   }
@@ -919,6 +967,7 @@ class vector {
    *
    * @return Const iterator to first element
    */
+  HSHM_INLINE_CROSS_FUN
   const_iterator cbegin() const {
     return const_iterator(data_.ptr_);
   }
@@ -929,6 +978,7 @@ class vector {
    *
    * @return Iterator to one past last element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator end() {
     return iterator(data_.ptr_ + size_);
   }
@@ -939,6 +989,7 @@ class vector {
    *
    * @return Const iterator to one past last element
    */
+  HSHM_INLINE_CROSS_FUN
   const_iterator end() const {
     return const_iterator(data_.ptr_ + size_);
   }
@@ -949,6 +1000,7 @@ class vector {
    *
    * @return Const iterator to one past last element
    */
+  HSHM_INLINE_CROSS_FUN
   const_iterator cend() const {
     return const_iterator(data_.ptr_ + size_);
   }
@@ -958,6 +1010,7 @@ class vector {
    *
    * @return Reverse iterator to last element
    */
+  HSHM_INLINE_CROSS_FUN
   reverse_iterator rbegin() {
     return reverse_iterator(end());
   }
@@ -967,6 +1020,7 @@ class vector {
    *
    * @return Const reverse iterator to last element
    */
+  HSHM_INLINE_CROSS_FUN
   const_reverse_iterator rbegin() const {
     return const_reverse_iterator(end());
   }
@@ -976,6 +1030,7 @@ class vector {
    *
    * @return Const reverse iterator to last element
    */
+  HSHM_INLINE_CROSS_FUN
   const_reverse_iterator crbegin() const {
     return const_reverse_iterator(end());
   }
@@ -985,6 +1040,7 @@ class vector {
    *
    * @return Reverse iterator to one before first element
    */
+  HSHM_INLINE_CROSS_FUN
   reverse_iterator rend() {
     return reverse_iterator(begin());
   }
@@ -994,6 +1050,7 @@ class vector {
    *
    * @return Const reverse iterator to one before first element
    */
+  HSHM_INLINE_CROSS_FUN
   const_reverse_iterator rend() const {
     return const_reverse_iterator(begin());
   }
@@ -1003,6 +1060,7 @@ class vector {
    *
    * @return Const reverse iterator to one before first element
    */
+  HSHM_INLINE_CROSS_FUN
   const_reverse_iterator crend() const {
     return const_reverse_iterator(begin());
   }
@@ -1012,6 +1070,7 @@ class vector {
    *
    * @return True if size is zero
    */
+  HSHM_INLINE_CROSS_FUN
   bool empty() const {
     return size_ == 0;
   }
@@ -1021,6 +1080,7 @@ class vector {
    *
    * @return Current size
    */
+  HSHM_INLINE_CROSS_FUN
   size_type size() const {
     return size_;
   }
@@ -1030,6 +1090,7 @@ class vector {
    *
    * @return Current capacity
    */
+  HSHM_INLINE_CROSS_FUN
   size_type capacity() const {
     return capacity_;
   }
@@ -1041,6 +1102,7 @@ class vector {
    *
    * @param new_capacity Desired capacity
    */
+  HSHM_INLINE_CROSS_FUN
   void reserve(size_type new_capacity) {
     if (new_capacity <= capacity_ || alloc_ == nullptr) {
       return;
@@ -1069,6 +1131,7 @@ class vector {
    * Reduces capacity to match current size, freeing unused memory.
    * Uses allocator's AllocateObjs and Free methods for proper management.
    */
+  HSHM_INLINE_CROSS_FUN
   void shrink_to_fit() {
     if (size_ < capacity_ && alloc_ != nullptr) {
       if (size_ == 0) {
@@ -1101,6 +1164,7 @@ class vector {
    *
    * @param val Element to add
    */
+  HSHM_INLINE_CROSS_FUN
   void push_back(const T& val) {
     if (size_ >= capacity_) {
       Grow(size_ + 1);
@@ -1114,6 +1178,7 @@ class vector {
    *
    * @param val Element to add
    */
+  HSHM_INLINE_CROSS_FUN
   void push_back(T&& val) {
     if (size_ >= capacity_) {
       Grow(size_ + 1);
@@ -1125,6 +1190,7 @@ class vector {
   /**
    * Remove last element from vector
    */
+  HSHM_INLINE_CROSS_FUN
   void pop_back() {
     if (size_ > 0) {
       Destroy(size_ - 1);
@@ -1135,6 +1201,7 @@ class vector {
   /**
    * Clear all elements from vector
    */
+  HSHM_INLINE_CROSS_FUN
   void clear() {
     DestroyRange(0, size_);
     size_ = 0;
@@ -1148,6 +1215,7 @@ class vector {
    * @param val Value to insert
    * @return Iterator to inserted element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator insert(const_iterator pos, const T& val) {
     size_type idx = pos.get() - data_.ptr_;
     if (size_ >= capacity_) {
@@ -1177,6 +1245,7 @@ class vector {
    * @param val Value to insert
    * @return Iterator to inserted element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator insert(const_iterator pos, T&& val) {
     size_type idx = pos.get() - data_.ptr_;
     if (size_ >= capacity_) {
@@ -1207,6 +1276,7 @@ class vector {
    * @param last Iterator to one past last element to insert
    * @return Iterator to first inserted element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator insert(const_iterator pos, const_iterator first,
                   const_iterator last) {
     size_type idx = pos.get() - data_.ptr_;
@@ -1241,6 +1311,7 @@ class vector {
    * @param pos Iterator to element to erase
    * @return Iterator to element following erased element
    */
+  HSHM_INLINE_CROSS_FUN
   iterator erase(const_iterator pos) {
     size_type idx = pos.get() - data_.ptr_;
 
@@ -1266,6 +1337,7 @@ class vector {
    * @param last Iterator to one past last element to erase
    * @return Iterator to element following erased elements
    */
+  HSHM_INLINE_CROSS_FUN
   iterator erase(const_iterator first, const_iterator last) {
     size_type first_idx = first.get() - data_.ptr_;
     size_type last_idx = last.get() - data_.ptr_;
@@ -1292,6 +1364,7 @@ class vector {
    *
    * @param new_size New size
    */
+  HSHM_INLINE_CROSS_FUN
   void resize(size_type new_size) {
     if (new_size > size_) {
       if (new_size > capacity_) {
@@ -1318,6 +1391,7 @@ class vector {
    * @param new_size New size
    * @param value Value to fill new elements with
    */
+  HSHM_INLINE_CROSS_FUN
   void resize(size_type new_size, const T& value) {
     if (new_size > size_) {
       if (new_size > capacity_) {
@@ -1338,6 +1412,7 @@ class vector {
    *
    * @param other Vector to swap with
    */
+  HSHM_INLINE_CROSS_FUN
   void swap(vector& other) noexcept {
     std::swap(data_, other.data_);
     std::swap(size_, other.size_);
@@ -1352,6 +1427,7 @@ class vector {
    * @param ar Archive to save to
    */
   template<class Archive>
+  HSHM_INLINE_CROSS_FUN
   void save(Archive& ar) const {
     hshm::ipc::save_vec<Archive, vector<T, AllocT>, T>(ar, *this);
   }
@@ -1364,6 +1440,7 @@ class vector {
    * @param ar Archive to load from
    */
   template<class Archive>
+  HSHM_INLINE_CROSS_FUN
   void load(Archive& ar) {
     hshm::ipc::load_vec<Archive, vector<T, AllocT>, T>(ar, *this);
   }

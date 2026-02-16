@@ -93,16 +93,11 @@ The configuration file uses YAML format with the following sections:
 # Chimaera Runtime Configuration
 # Based on config/chimaera_default.yaml
 
-# Worker thread configuration
-workers:
-  sched_threads: 4           # Scheduler worker threads (for fast tasks with EstCpuTime < 50us)
-  slow_threads: 4            # Slow worker threads (for long-running tasks with EstCpuTime >= 50us)
-
 # Memory segment configuration
 memory:
-  main_segment_size: 1073741824      # 1GB (or use: 1G)
+  main_segment_size: auto            # Auto-calculated from queue_depth and num_threads
+                                     # Or specify explicitly (e.g., "1GB" or 1073741824)
   client_data_segment_size: 536870912 # 512MB (or use: 512M)
-  runtime_data_segment_size: 536870912 # 512MB (or use: 512M)
 
 # Network configuration
 networking:
@@ -119,36 +114,54 @@ logging:
 
 # Runtime configuration
 runtime:
-  stack_size: 65536  # 64KB per task
-  queue_depth: 10000
-  local_sched: "default"  # Local task scheduler (default: "default")
-  heartbeat_interval: 1000  # milliseconds
+  num_threads: 4             # Worker threads for task execution
+  process_reaper_threads: 1  # Process reaper threads
+  queue_depth: 1024          # Task queue depth per worker
+  local_sched: "default"     # Local task scheduler
+  heartbeat_interval: 1000   # Heartbeat interval in milliseconds
+  first_busy_wait: 10000     # Busy wait before sleeping when idle (10ms)
+  max_sleep: 50000           # Maximum sleep duration (50ms)
 ```
 
 ### Configuration Parameters Reference
 
-#### Worker Threads (`workers` section)
+#### Runtime Configuration (`runtime` section)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `sched_threads` | integer | 4 | Number of scheduler worker threads for fast tasks (EstCpuTime < 50us) |
-| `slow_threads` | integer | 4 | Number of slow worker threads for long-running tasks (EstCpuTime >= 50us) |
+| `num_threads` | integer | 4 | Number of worker threads for task execution |
+| `process_reaper_threads` | integer | 1 | Number of process reaper threads |
+| `queue_depth` | integer | 1024 | Task queue depth per worker (now actually configurable) |
+| `local_sched` | string | "default" | Local task scheduler |
+| `heartbeat_interval` | integer | 1000 | Heartbeat interval in milliseconds |
+| `first_busy_wait` | integer | 10000 | Busy wait before sleeping when idle (microseconds, 10ms default) |
+| `max_sleep` | integer | 50000 | Maximum sleep duration (microseconds, 50ms default) |
 
 **Notes:**
-- Fast tasks are routed to scheduler threads for low-latency execution
-- Slow tasks are routed to dedicated slow threads to avoid blocking fast tasks
-- Set based on CPU core count and workload characteristics
-- Total threads = `sched_threads + slow_threads`
+- Set `num_threads` based on CPU core count and workload characteristics
+- Higher `queue_depth` increases memory usage but allows more queued tasks
+- Sleep configuration affects worker responsiveness vs CPU usage tradeoff
 
 #### Memory Segments (`memory` section)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `main_segment_size` | size | 1GB | Main shared memory segment for task metadata and control structures |
+| `main_segment_size` | size/string | "auto" | Main shared memory segment for task metadata and control structures. Use "auto" for automatic calculation based on `queue_depth` and `num_threads`, or specify explicitly (e.g., "1GB") |
 | `client_data_segment_size` | size | 512MB | Client-side data segment for application data |
-| `runtime_data_segment_size` | size | 512MB | Runtime-side data segment for internal state |
 
-**Size format:** Supports bytes (`1073741824`) or suffixed values (`1G`, `512M`, `64K`)
+**Size format:** Supports `"auto"`, bytes (`1073741824`), or suffixed values (`1G`, `512M`, `64K`)
+
+**Auto-calculation formula:** When `main_segment_size` is set to `"auto"`:
+```
+main_segment_size = BASE_OVERHEAD + (queues_size × num_workers)
+where:
+  BASE_OVERHEAD = 32MB
+  num_workers = num_threads + 1 (network worker)
+  queues_size = worker_queues_size + net_queue_size
+  worker_queues_size = exact size of TaskQueue with num_workers lanes
+  net_queue_size = exact size of NetQueue with 1 lane
+  Uses ring_buffer::CalculateSize() for exact memory calculation
+```
 
 **Docker requirements:** Set `shm_size` >= sum of all segments (recommend 20-30% extra)
 
@@ -183,13 +196,6 @@ runtime:
 - `warning`: Warning messages only (production)
 - `error`: Error messages only (production)
 
-#### Runtime Configuration (`runtime` section)
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `stack_size` | integer | 65536 | Stack size per task in bytes (64KB default) |
-| `queue_depth` | integer | 10000 | Maximum depth of task queues |
-| `local_sched` | string | "default" | Local task scheduler (default: "default") |
 | `heartbeat_interval` | integer | 1000 | Heartbeat interval in milliseconds |
 
 **Local scheduler options:**
@@ -276,17 +282,16 @@ The `compose` section allows you to declaratively define pools that should be cr
 
 ```yaml
 # Chimaera configuration with compose section
-workers:
-  sched_threads: 4
-  slow_threads: 4
-
 memory:
-  main_segment_size: 1GB
+  main_segment_size: auto
   client_data_segment_size: 512MB
-  runtime_data_segment_size: 512MB
 
 networking:
   port: 5555
+
+runtime:
+  num_threads: 4
+  queue_depth: 1024
 
 compose:
   # BDev file-based storage device
@@ -382,14 +387,9 @@ chimaera_compose /path/to/config.yaml
 
 ```yaml
 # Production-ready configuration with multiple pools
-workers:
-  sched_threads: 8
-  slow_threads: 8
-
 memory:
-  main_segment_size: 4GB
+  main_segment_size: auto
   client_data_segment_size: 2GB
-  runtime_data_segment_size: 2GB
 
 networking:
   port: 5555
@@ -401,8 +401,8 @@ logging:
   file: "/var/log/chimaera/chimaera.log"
 
 runtime:
-  stack_size: 65536
-  queue_depth: 20000
+  num_threads: 16        # 8 sched + 8 slow = 16 total
+  queue_depth: 2048
   local_sched: "default"
   heartbeat_interval: 1000
 
@@ -523,30 +523,6 @@ compose:
      level: "debug"  # Enable detailed logging
    ```
 
-### Issue: Leftover IPC shared memory (memory leak)
-
-**Symptoms**: `/dev/shm` contains `chimaera_*` or `chi_*` segments after runtime or client processes exit; memory leak or UCX errors when reconnecting.
-
-**Cause**: If the runtime or client is killed without graceful shutdown (e.g. `kill -9`), shared memory segments are not unlinked. The runtime normally unlinks the main segment in `ServerFinalize()` and reaps per-process segments via `WreapAllIpcs()` when shutting down via `chimaera_stop_runtime`.
-
-**Solutions**:
-1. Prefer graceful shutdown so the runtime can clean up:
-   ```bash
-   chimaera_stop_runtime
-   # or send SIGTERM to chimaera_start_runtime and wait for exit
-   ```
-2. To remove leftover segments manually (only when no Chimaera processes are running):
-   ```bash
-   # Per-process segments (chimaera_{pid}_{index})
-   rm -f /dev/shm/chimaera_* 2>/dev/null || true
-   # Main segment (name from config, often chi_main_segment_* or chi_*)
-   rm -f /dev/shm/chi_* 2>/dev/null || true
-   ```
-3. List current segments before cleaning:
-   ```bash
-   ls -la /dev/shm/chimaera_* /dev/shm/chi_* 2>/dev/null || true
-   ```
-
 ## Configuration Best Practices
 
 1. **Configuration File Management**:
@@ -562,10 +538,9 @@ compose:
    - Example: If total segments = 2GB, set `shm_size: 2.5gb`
 
 3. **Worker Threads**:
-   - Set `sched_threads` + `slow_threads` equal to CPU core count
-   - Balance between fast and slow threads based on workload (50/50 split is a good starting point)
-   - Use more `sched_threads` for workloads with many fast tasks (< 50us execution time)
-   - Use more `slow_threads` for workloads with many long-running tasks (>= 50us execution time)
+   - Set `num_threads` equal to CPU core count
+   - All threads are now unified workers (no separate fast/slow distinction)
+   - Adjust based on workload characteristics and CPU availability
 
 4. **Network Tuning**:
    - Use smaller `neighborhood_size` (4-8) for stress testing
@@ -580,10 +555,10 @@ compose:
    - Ensure log directory is writable
 
 6. **Runtime Configuration**:
-   - Start with default `stack_size` (64KB) and increase if tasks need more
-   - Increase `queue_depth` for bursty workloads
+   - Increase `queue_depth` for bursty workloads (affects memory usage via auto-calculated `main_segment_size`)
    - Use `round_robin` lane mapping for general workloads
    - Adjust `heartbeat_interval` based on monitoring requirements
+   - Tune `first_busy_wait` and `max_sleep` to balance responsiveness vs CPU usage
 
 ## References
 
@@ -591,8 +566,8 @@ compose:
 - **Default configuration**: `config/chimaera_default.yaml`
   - Reference implementation with all default values
   - Includes comments explaining each parameter
-  - 4 scheduler workers, 4 slow workers
-  - 1GB main segment, 512MB client/runtime segments
+  - 4 worker threads
+  - Auto-calculated main segment, 512MB client segment
 
 ### Compose Utility
 - **Compose utility source**: `util/chimaera_compose.cc`

@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_TASK_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_TASK_H_
 
@@ -338,6 +371,16 @@ class Task {
    * @return Estimated CPU time in microseconds
    */
   HSHM_CROSS_FUN size_t EstCpuTime() const;
+
+  /**
+   * Get the copy space size for serialized task output
+   * Derived classes can override to specify custom copy space sizes
+   * Default is 4KB (4096 bytes) for most tasks
+   * @return Size in bytes for the serialized_task_ capacity
+   */
+  HSHM_CROSS_FUN size_t GetCopySpaceSize() const {
+    return 4096;  // Default 4KB for most tasks
+  }
 };
 
 /**
@@ -357,36 +400,66 @@ enum class ExecMode : u32 {
  *
  * This container holds the serialized task data and completion status
  * for asynchronous task operations.
+ *
+ * Bitfield flags for flags_:
+ * - FUTURE_COMPLETE = 1: Task execution completed
+ * - FUTURE_NEW_DATA = 2: New output data available in copy space
  */
-template <typename AllocT = CHI_MAIN_ALLOC_T>
-class FutureShm : public hipc::ShmContainer<AllocT> {
- public:
+/**
+ * FutureShm - Fixed-size shared memory structure for task futures
+ *
+ * This structure contains metadata and a copy space buffer for task serialization.
+ * The copy space is a flexible array member allocated as part of the structure.
+ *
+ * Memory layout:
+ * - Fixed-size header fields (pool_id, method_id, etc.)
+ * - Flexible array: char copy_space[]
+ *
+ * Allocation: AllocateBuffer(sizeof(FutureShm) + copy_space_size)
+ */
+struct FutureShm {
+  // Bitfield flags for flags_
+  static constexpr u32 FUTURE_COMPLETE = 1;      /**< Task execution is complete */
+  static constexpr u32 FUTURE_NEW_DATA = 2;      /**< New output data available */
+  static constexpr u32 FUTURE_COPY_FROM_CLIENT = 4; /**< Task needs to be copied from client serialization */
+  static constexpr u32 FUTURE_WAS_COPIED = 8;    /**< Task was already copied from client (don't re-copy) */
+
   /** Pool ID for the task */
   PoolId pool_id_;
 
   /** Method ID for the task */
   u32 method_id_;
 
-  /** Serialized task data */
-  hipc::vector<char, AllocT> serialized_task_;
+  /** Size of input data in copy_space (client → worker direction) */
+  hipc::atomic<size_t> input_size_;
 
-  /** Atomic completion flag (0=not complete, 1=complete) */
-  hipc::atomic<u32> is_complete_;
+  /** Total size of output data (worker → client direction) */
+  hipc::atomic<size_t> output_size_;
 
-  /** Size of the shared memory segment containing this FutureShm
-   *  Used for lazy registration - shm_name derived from alloc_id (pid.count)
-   */
-  size_t shm_size_;
+  /** Current chunk size in copy_space for streaming output */
+  hipc::atomic<size_t> current_chunk_size_;
+
+  /** Total capacity of copy_space buffer */
+  hipc::atomic<size_t> capacity_;
+
+  /** Atomic bitfield for completion and data availability flags */
+  hshm::abitfield32_t flags_;
+
+  /** Copy space for serialized task data (flexible array member) */
+  char copy_space[];
 
   /**
-   * SHM default constructor
+   * Default constructor - initializes fields
+   * Note: copy_space is allocated as part of the buffer, not separately
    */
-  explicit FutureShm(AllocT* alloc)
-      : hipc::ShmContainer<AllocT>(alloc), serialized_task_(alloc) {
+  FutureShm() {
     pool_id_ = PoolId::GetNull();
     method_id_ = 0;
-    is_complete_.store(0);
-    shm_size_ = 0;
+    input_size_.store(0);
+    output_size_.store(0);
+    current_chunk_size_.store(0);
+    capacity_.store(0);
+    flags_.SetBits(0);
   }
 };
 
@@ -402,7 +475,7 @@ class FutureShm : public hipc::ShmContainer<AllocT> {
 template <typename TaskT, typename AllocT = CHI_MAIN_ALLOC_T>
 class Future {
  public:
-  using FutureT = FutureShm<AllocT>;
+  using FutureT = FutureShm;
 
   // Allow all Future instantiations to access each other's private members
   // This enables the Cast method to work across different task types
@@ -413,8 +486,8 @@ class Future {
   /** FullPtr to the task (wraps private memory with null allocator) */
   hipc::FullPtr<TaskT> task_ptr_;
 
-  /** FullPtr to the shared FutureShm object */
-  hipc::FullPtr<FutureT> future_shm_;
+  /** ShmPtr to the shared FutureShm object */
+  hipc::ShmPtr<FutureT> future_shm_;
 
   /** Parent task RunContext pointer (nullptr if no parent waiting) */
   RunContext* parent_task_;
@@ -430,46 +503,12 @@ class Future {
 
  public:
   /**
-   * Constructor with allocator - allocates new FutureShm
-   * @param alloc Allocator to use for FutureShm allocation
-   * @param task_ptr FullPtr to the task (wraps private memory with null
-   * allocator)
-   */
-  Future(AllocT* alloc, hipc::FullPtr<TaskT> task_ptr)
-      : task_ptr_(task_ptr), parent_task_(nullptr), is_owner_(false) {
-    // Allocate FutureShm object (null check for safety)
-    if (alloc != nullptr) {
-      future_shm_ =
-          alloc->template NewObj<FutureT>(alloc).template Cast<FutureT>();
-      // Copy pool_id to FutureShm
-      if (!task_ptr_.IsNull() && !future_shm_.IsNull()) {
-        future_shm_->pool_id_ = task_ptr_->pool_id_;
-        future_shm_->method_id_ = task_ptr_->method_;
-      }
-    }
-  }
-
-  /**
-   * Constructor with allocator and existing FutureShm
-   * @param alloc Allocator (for FullPtr construction)
-   * @param task_ptr FullPtr to the task (wraps private memory with null
-   * allocator)
+   * Constructor from ShmPtr<FutureShm> and FullPtr<Task>
    * @param future_shm ShmPtr to existing FutureShm object
-   */
-  Future(AllocT* alloc, hipc::FullPtr<TaskT> task_ptr,
-         hipc::ShmPtr<FutureT> future_shm)
-      : task_ptr_(task_ptr),
-        future_shm_(alloc, future_shm),
-        parent_task_(nullptr),
-        is_owner_(false) {}
-
-  /**
-   * Constructor from FullPtr<FutureShm> and FullPtr<Task>
-   * @param future_shm FullPtr to existing FutureShm object
    * @param task_ptr FullPtr to the task (wraps private memory with null
    * allocator)
    */
-  Future(hipc::FullPtr<FutureT> future_shm, hipc::FullPtr<TaskT> task_ptr)
+  Future(hipc::ShmPtr<FutureT> future_shm, hipc::FullPtr<TaskT> task_ptr)
       : task_ptr_(task_ptr),
         future_shm_(future_shm),
         parent_task_(nullptr),
@@ -488,19 +527,12 @@ class Future {
    * @param future_shm_ptr ShmPtr to FutureShm object
    */
   explicit Future(const hipc::ShmPtr<FutureT>& future_shm_ptr)
-      : future_shm_(nullptr, future_shm_ptr),
+      : future_shm_(future_shm_ptr),
         parent_task_(nullptr),
         is_owner_(false) {
     // Task pointer starts null - will be set in ProcessNewTasks
     task_ptr_.SetNull();
   }
-
-  /**
-   * Fix the allocator pointer after construction from ShmPtr
-   * Call this immediately after popping from ring buffer
-   * Uses IpcManager::ToFullPtr to resolve the allocator from the ShmPtr
-   */
-  void SetAllocator();
 
   /**
    * Destructor - destroys the task if this Future owns it
@@ -618,7 +650,11 @@ class Future {
     if (future_shm_.IsNull()) {
       return false;
     }
-    return future_shm_->is_complete_.load() != 0;
+    auto future_shm = GetFutureShm();
+    if (future_shm.IsNull()) {
+      return false;
+    }
+    return future_shm->flags_.Any(FutureT::FUTURE_COMPLETE);
   }
 
   /**
@@ -632,7 +668,10 @@ class Future {
    */
   void Complete() {
     if (!future_shm_.IsNull()) {
-      future_shm_->is_complete_.store(1);
+      auto future_shm = GetFutureShm();
+      if (!future_shm.IsNull()) {
+        future_shm->flags_.SetBits(FutureT::FUTURE_COMPLETE);
+      }
     }
   }
 
@@ -648,16 +687,20 @@ class Future {
   bool IsNull() const { return task_ptr_.IsNull(); }
 
   /**
-   * Get the FutureShm FullPtr
-   * @return FullPtr to the FutureShm object
+   * Get the internal ShmPtr to FutureShm (for internal use)
+   * @return ShmPtr to the FutureShm object
    */
-  hipc::FullPtr<FutureT>& GetFutureShm() { return future_shm_; }
+  hipc::ShmPtr<FutureT> GetFutureShmPtr() const {
+    return future_shm_;
+  }
 
   /**
-   * Get the FutureShm FullPtr (const version)
+   * Get the FutureShm FullPtr (for access to copy_space and flags_)
+   * Converts the internal ShmPtr to FullPtr using IpcManager
    * @return FullPtr to the FutureShm object
+   * Note: Implementation provided in ipc_manager.h where CHI_IPC is defined
    */
-  const hipc::FullPtr<FutureT>& GetFutureShm() const { return future_shm_; }
+  hipc::FullPtr<FutureT> GetFutureShm() const;
 
   /**
    * Get the pool ID from the FutureShm
@@ -667,7 +710,11 @@ class Future {
     if (future_shm_.IsNull()) {
       return PoolId::GetNull();
     }
-    return future_shm_->pool_id_;
+    auto future_shm = GetFutureShm();
+    if (future_shm.IsNull()) {
+      return PoolId::GetNull();
+    }
+    return future_shm->pool_id_;
   }
 
   /**
@@ -676,7 +723,10 @@ class Future {
    */
   void SetPoolId(const PoolId& pool_id) {
     if (!future_shm_.IsNull()) {
-      future_shm_->pool_id_ = pool_id;
+      auto future_shm = GetFutureShm();
+      if (!future_shm.IsNull()) {
+        future_shm->pool_id_ = pool_id;
+      }
     }
   }
 
@@ -843,7 +893,6 @@ typedef hipc::multi_mpsc_ring_buffer<Future<Task>, CHI_MAIN_ALLOC_T> TaskQueue;
 struct RunContext {
   /** Coroutine handle for C++20 stackless coroutines */
   std::coroutine_handle<> coro_handle_;
-  ThreadType thread_type_;      /**< Type of worker thread executing this task */
   u32 worker_id_;               /**< Worker ID executing this task */
   FullPtr<Task> task_;          /**< Task being executed by this context */
   bool is_yielded_;             /**< Task is waiting for completion */
@@ -860,8 +909,6 @@ struct RunContext {
   u32 yield_count_;                     /**< Number of times task has yielded */
   Future<Task, CHI_MAIN_ALLOC_T>
       future_;               /**< Future for async completion tracking */
-  bool destroy_in_end_task_; /**< Flag to indicate if task should be destroyed
-                                in EndTask */
   std::atomic<bool> is_notified_; /**< Atomic flag to prevent duplicate event
                                      queue additions */
   double true_period_ns_;       /**< Original period from task->period_ns_ */
@@ -869,7 +916,6 @@ struct RunContext {
 
   RunContext()
       : coro_handle_(nullptr),
-        thread_type_(kSchedWorker),
         worker_id_(0),
         is_yielded_(false),
         yield_time_us_(0.0),
@@ -880,7 +926,6 @@ struct RunContext {
         event_queue_(nullptr),
         completed_replicas_(0),
         yield_count_(0),
-        destroy_in_end_task_(false),
         is_notified_(false),
         true_period_ns_(0.0),
         did_work_(false) {}
@@ -890,7 +935,6 @@ struct RunContext {
    */
   RunContext(RunContext&& other) noexcept
       : coro_handle_(other.coro_handle_),
-        thread_type_(other.thread_type_),
         worker_id_(other.worker_id_),
         task_(std::move(other.task_)),
         is_yielded_(other.is_yielded_),
@@ -905,7 +949,6 @@ struct RunContext {
         completed_replicas_(other.completed_replicas_),
         yield_count_(other.yield_count_),
         future_(std::move(other.future_)),
-        destroy_in_end_task_(other.destroy_in_end_task_),
         is_notified_(other.is_notified_.load()),
         true_period_ns_(other.true_period_ns_),
         did_work_(other.did_work_) {
@@ -919,7 +962,6 @@ struct RunContext {
   RunContext& operator=(RunContext&& other) noexcept {
     if (this != &other) {
       coro_handle_ = other.coro_handle_;
-      thread_type_ = other.thread_type_;
       worker_id_ = other.worker_id_;
       task_ = std::move(other.task_);
       is_yielded_ = other.is_yielded_;
@@ -934,7 +976,6 @@ struct RunContext {
       completed_replicas_ = other.completed_replicas_;
       yield_count_ = other.yield_count_;
       future_ = std::move(other.future_);
-      destroy_in_end_task_ = other.destroy_in_end_task_;
       is_notified_.store(other.is_notified_.load());
       true_period_ns_ = other.true_period_ns_;
       did_work_ = other.did_work_;

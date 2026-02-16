@@ -1,0 +1,9 @@
+name: test_binary_assim
+
+transfers:
+  - src: file::/tmp/test_binary_assim_file.bin
+    dst: iowarp::test_binary_assim_tag
+    format: binary
+    depends_on: ""
+    range_off: 0
+    range_size: 0

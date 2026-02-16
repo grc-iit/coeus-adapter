@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef WRPCTE_CORE_TASKS_H_
 #define WRPCTE_CORE_TASKS_H_
 
@@ -389,6 +422,80 @@ struct StatTargetsTask : public chi::Task {
 };
 
 /**
+ * GetTargetInfo task - Get information about a specific target
+ * Returns target score, remaining space, and performance metrics
+ */
+struct GetTargetInfoTask : public chi::Task {
+  IN chi::priv::string target_name_;  // Name of target to query
+  OUT float target_score_;             // Target score (0-1, normalized log bandwidth)
+  OUT chi::u64 remaining_space_;       // Remaining allocatable space in bytes
+  OUT chi::u64 bytes_read_;            // Bytes read from target
+  OUT chi::u64 bytes_written_;         // Bytes written to target
+  OUT chi::u64 ops_read_;              // Read operations
+  OUT chi::u64 ops_written_;           // Write operations
+
+  // SHM constructor
+  GetTargetInfoTask()
+      : chi::Task(), target_name_(HSHM_MALLOC), target_score_(0.0f), remaining_space_(0),
+        bytes_read_(0), bytes_written_(0), ops_read_(0), ops_written_(0) {}
+
+  // Emplace constructor
+  explicit GetTargetInfoTask(const chi::TaskId &task_id,
+                             const chi::PoolId &pool_id,
+                             const chi::PoolQuery &pool_query,
+                             const std::string &target_name)
+      : chi::Task(task_id, pool_id, pool_query, Method::kGetTargetInfo),
+        target_name_(HSHM_MALLOC, target_name), target_score_(0.0f), remaining_space_(0),
+        bytes_read_(0), bytes_written_(0), ops_read_(0), ops_written_(0) {
+    task_id_ = task_id;
+    pool_id_ = pool_id;
+    method_ = Method::kGetTargetInfo;
+    task_flags_.Clear();
+    pool_query_ = pool_query;
+  }
+
+  /**
+   * Serialize IN and INOUT parameters
+   */
+  template <typename Archive> void SerializeIn(Archive &ar) {
+    Task::SerializeIn(ar);
+    ar(target_name_);
+  }
+
+  /**
+   * Serialize OUT and INOUT parameters
+   */
+  template <typename Archive> void SerializeOut(Archive &ar) {
+    Task::SerializeOut(ar);
+    ar(target_score_, remaining_space_, bytes_read_, bytes_written_,
+       ops_read_, ops_written_);
+  }
+
+  /**
+   * Copy from another GetTargetInfoTask
+   */
+  void Copy(const hipc::FullPtr<GetTargetInfoTask> &other) {
+    Task::Copy(other.template Cast<Task>());
+    target_name_ = other->target_name_;
+    target_score_ = other->target_score_;
+    remaining_space_ = other->remaining_space_;
+    bytes_read_ = other->bytes_read_;
+    bytes_written_ = other->bytes_written_;
+    ops_read_ = other->ops_read_;
+    ops_written_ = other->ops_written_;
+  }
+
+  /**
+   * Aggregate replica results
+   */
+  void Aggregate(const hipc::FullPtr<GetTargetInfoTask> &other) {
+    Task::Aggregate(other.template Cast<Task>());
+    // For target info, just copy (should be same across replicas)
+    Copy(other);
+  }
+};
+
+/**
  * TagId type definition
  * Uses chi::UniqueId with node_id as major and atomic counter as minor
  */
@@ -487,19 +594,20 @@ struct BlobInfo {
   Timestamp last_modified_; // Last modification time
   Timestamp last_read_;     // Last read time
   int compress_lib_;        // Compression library ID used for this blob (0 = no compression)
+  int compress_preset_;     // Compression preset used (1=FAST, 2=BALANCED, 3=BEST)
   chi::u64 trace_key_;      // Unique trace ID for linking to trace logs (0 = not traced)
 
   BlobInfo()
       : blob_name_(), blocks_(), score_(0.0f),
         last_modified_(std::chrono::steady_clock::now()),
         last_read_(std::chrono::steady_clock::now()),
-        compress_lib_(0), trace_key_(0) {}
+        compress_lib_(0), compress_preset_(2), trace_key_(0) {}
 
   explicit BlobInfo(CHI_MAIN_ALLOC_T *alloc)
       : blob_name_(), blocks_(), score_(0.0f),
         last_modified_(std::chrono::steady_clock::now()),
         last_read_(std::chrono::steady_clock::now()),
-        compress_lib_(0), trace_key_(0) {
+        compress_lib_(0), compress_preset_(2), trace_key_(0) {
     (void)alloc; // Suppress unused parameter warning
   }
 
@@ -508,7 +616,7 @@ struct BlobInfo {
       : blob_name_(blob_name), blocks_(), score_(score),
         last_modified_(std::chrono::steady_clock::now()),
         last_read_(std::chrono::steady_clock::now()),
-        compress_lib_(0), trace_key_(0) {
+        compress_lib_(0), compress_preset_(2), trace_key_(0) {
     (void)alloc; // Suppress unused parameter warning
   }
 
@@ -530,7 +638,8 @@ struct BlobInfo {
  */
 struct Context {
   int dynamic_compress_;   // 0 - skip, 1 - static, 2 - dynamic
-  int compress_lib_;       // The compression library to apply
+  int compress_lib_;       // The compression library to apply (0-10)
+  int compress_preset_;    // Compression preset: 1=FAST, 2=BALANCED, 3=BEST (default=2)
   chi::u32 target_psnr_;   // The acceptable PSNR for lossy compression (0 means infinity)
   int psnr_chance_;        // The chance PSNR will be validated (default 100%)
   bool max_performance_;   // Compression objective (performance vs ratio)
@@ -540,24 +649,39 @@ struct Context {
   chi::u64 trace_key_;     // Unique trace ID for this Put operation
   int trace_node_;         // Node ID where trace was initiated
 
+  // Dynamic statistics (populated after compression)
+  chi::u64 actual_original_size_;      // Original data size in bytes
+  chi::u64 actual_compressed_size_;    // Actual size after compression in bytes
+  double actual_compression_ratio_;    // Actual compression ratio (original/compressed)
+  double actual_compress_time_ms_;     // Actual compression time in milliseconds
+  double actual_psnr_db_;              // Actual PSNR for lossy compression (0 if lossless)
+
   Context()
-      : dynamic_compress_(0), compress_lib_(0), target_psnr_(0),
-        psnr_chance_(100), max_performance_(false),
+      : dynamic_compress_(0), compress_lib_(0), compress_preset_(2),
+        target_psnr_(0), psnr_chance_(100), max_performance_(false),
         consumer_node_(-1), data_type_(0), trace_(false),
-        trace_key_(0), trace_node_(-1) {}
+        trace_key_(0), trace_node_(-1),
+        actual_original_size_(0), actual_compressed_size_(0),
+        actual_compression_ratio_(1.0), actual_compress_time_ms_(0.0),
+        actual_psnr_db_(0.0) {}
 
   explicit Context(CHI_MAIN_ALLOC_T *alloc)
-      : dynamic_compress_(0), compress_lib_(0), target_psnr_(0),
-        psnr_chance_(100), max_performance_(false),
+      : dynamic_compress_(0), compress_lib_(0), compress_preset_(2),
+        target_psnr_(0), psnr_chance_(100), max_performance_(false),
         consumer_node_(-1), data_type_(0), trace_(false),
-        trace_key_(0), trace_node_(-1) {
+        trace_key_(0), trace_node_(-1),
+        actual_original_size_(0), actual_compressed_size_(0),
+        actual_compression_ratio_(1.0), actual_compress_time_ms_(0.0),
+        actual_psnr_db_(0.0) {
     (void)alloc;
   }
 
   // Serialization support for cereal
   template <class Archive> void serialize(Archive &ar) {
-    ar(dynamic_compress_, compress_lib_, target_psnr_, psnr_chance_,
-       max_performance_, consumer_node_, data_type_, trace_, trace_key_, trace_node_);
+    ar(dynamic_compress_, compress_lib_, compress_preset_, target_psnr_, psnr_chance_,
+       max_performance_, consumer_node_, data_type_, trace_, trace_key_, trace_node_,
+       actual_original_size_, actual_compressed_size_, actual_compression_ratio_,
+       actual_compress_time_ms_, actual_psnr_db_);
   }
 };
 
@@ -611,57 +735,6 @@ struct CteTelemetry {
     }
   }
 };
-
-#ifdef WRP_CORE_ENABLE_COMPRESS
-/**
- * Compression telemetry data structure for performance monitoring
- * Tracks compression decisions and actual performance
- */
-struct CompressionTelemetry {
-  CteOp op_;                     // Operation type (kPutBlob or kGetBlob)
-  int compress_lib_;             // Compression library used (0 = none)
-  chi::u64 original_size_;       // Original data size in bytes
-  chi::u64 compressed_size_;     // Compressed data size in bytes
-  double compress_time_ms_;      // Actual compression time in milliseconds
-  double decompress_time_ms_;    // Actual decompression time in milliseconds
-  double psnr_db_;               // Actual PSNR for lossy compression
-  Timestamp timestamp_;          // When operation occurred
-  std::uint64_t logical_time_;   // Logical time for ordering
-
-  CompressionTelemetry()
-      : op_(CteOp::kPutBlob), compress_lib_(0), original_size_(0),
-        compressed_size_(0), compress_time_ms_(0.0), decompress_time_ms_(0.0),
-        psnr_db_(0.0), timestamp_(std::chrono::steady_clock::now()),
-        logical_time_(0) {}
-
-  CompressionTelemetry(CteOp op, int lib, chi::u64 orig_size, chi::u64 comp_size,
-                       double comp_time, double decomp_time, double psnr,
-                       const Timestamp &ts, std::uint64_t logical_time = 0)
-      : op_(op), compress_lib_(lib), original_size_(orig_size),
-        compressed_size_(comp_size), compress_time_ms_(comp_time),
-        decompress_time_ms_(decomp_time), psnr_db_(psnr),
-        timestamp_(ts), logical_time_(logical_time) {}
-
-  // Calculate compression ratio
-  double GetCompressionRatio() const {
-    if (compressed_size_ == 0) return 1.0;
-    return static_cast<double>(original_size_) / static_cast<double>(compressed_size_);
-  }
-
-  // Serialization support for cereal
-  template <class Archive> void serialize(Archive &ar) {
-    // Convert timestamps to duration counts for serialization
-    auto ts_count = timestamp_.time_since_epoch().count();
-    ar(op_, compress_lib_, original_size_, compressed_size_,
-       compress_time_ms_, decompress_time_ms_, psnr_db_,
-       ts_count, logical_time_);
-    // Note: On deserialization, timestamps will be reconstructed from counts
-    if (Archive::is_loading::value) {
-      timestamp_ = Timestamp(Timestamp::duration(ts_count));
-    }
-  }
-};
-#endif  // WRP_CORE_ENABLE_COMPRESS
 
 /**
  * GetOrCreateTag task - Get or create a tag for blob grouping
@@ -736,15 +809,17 @@ struct PutBlobTask : public chi::Task {
   IN chi::u64 offset_;           // Offset within blob
   IN chi::u64 size_;             // Size of blob data
   IN hipc::ShmPtr<> blob_data_;   // Blob data (shared memory pointer)
-  IN float score_;               // Score 0-1 for placement decisions
-  IN Context context_;           // Context for compression control (NEW)
+  IN float score_;               // Score for placement: -1.0=unknown (use defaults), 0.0-1.0=explicit
+  INOUT Context context_;        // Context for compression control and statistics
   IN chi::u32 flags_;            // Operation flags
 
   // SHM constructor
+  // Default score -1.0f means "unknown" - runtime will use 1.0 for new blobs
+  // or preserve existing score for modifications
   PutBlobTask()
       : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
         offset_(0), size_(0),
-        blob_data_(hipc::ShmPtr<>::GetNull()), score_(0.5f), context_(),
+        blob_data_(hipc::ShmPtr<>::GetNull()), score_(-1.0f), context_(),
         flags_(0) {}
 
   // Emplace constructor
@@ -779,7 +854,7 @@ struct PutBlobTask : public chi::Task {
    */
   template <typename Archive> void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
-    ar(blob_name_);
+    ar(blob_name_, context_);
     // No bulk transfer needed for PutBlob output (metadata only)
   }
 
@@ -1335,6 +1410,97 @@ struct GetBlobSizeTask : public chi::Task {
    * @param other Pointer to the replica task to aggregate from
    */
   void Aggregate(const hipc::FullPtr<GetBlobSizeTask> &other) {
+    Task::Aggregate(other.template Cast<Task>());
+    Copy(other);
+  }
+};
+
+/**
+ * Block information for GetBlobInfo response
+ * Contains the target pool ID and size for each block
+ */
+struct BlobBlockInfo {
+  chi::PoolId target_pool_id_;  // Pool ID of the target (bdev) storing this block
+  chi::u64 block_size_;         // Size of this block in bytes
+  chi::u64 block_offset_;       // Offset within target where block is stored
+
+  BlobBlockInfo() : target_pool_id_(), block_size_(0), block_offset_(0) {}
+  BlobBlockInfo(const chi::PoolId &pool_id, chi::u64 size, chi::u64 offset)
+      : target_pool_id_(pool_id), block_size_(size), block_offset_(offset) {}
+
+  template <typename Archive>
+  void serialize(Archive &ar) {
+    chi::u64 pool_id_u64 = target_pool_id_.IsNull() ? 0 : target_pool_id_.ToU64();
+    ar(pool_id_u64, block_size_, block_offset_);
+    // Restore PoolId from u64 when deserializing
+    target_pool_id_ = chi::PoolId::FromU64(pool_id_u64);
+  }
+};
+
+/**
+ * GetBlobInfo task - Get comprehensive blob metadata
+ * Returns score, size, and block placement information
+ */
+struct GetBlobInfoTask : public chi::Task {
+  IN TagId tag_id_;                        // Tag ID for blob lookup
+  IN chi::priv::string blob_name_;         // Blob name (required)
+  OUT float score_;                        // Blob score (0.0-1.0)
+  OUT chi::u64 total_size_;                // Total blob size in bytes
+  OUT std::vector<BlobBlockInfo> blocks_;  // Block placement info
+
+  // SHM constructor
+  GetBlobInfoTask()
+      : chi::Task(), tag_id_(TagId::GetNull()), blob_name_(HSHM_MALLOC),
+        score_(0.0f), total_size_(0), blocks_() {}
+
+  // Emplace constructor
+  explicit GetBlobInfoTask(const chi::TaskId &task_id,
+                           const chi::PoolId &pool_id,
+                           const chi::PoolQuery &pool_query,
+                           const TagId &tag_id, const std::string &blob_name)
+      : chi::Task(task_id, pool_id, pool_query, Method::kGetBlobInfo),
+        tag_id_(tag_id), blob_name_(HSHM_MALLOC, blob_name),
+        score_(0.0f), total_size_(0) {
+    task_id_ = task_id;
+    pool_id_ = pool_id;
+    method_ = Method::kGetBlobInfo;
+    task_flags_.Clear();
+    pool_query_ = pool_query;
+  }
+
+  /**
+   * Serialize IN and INOUT parameters
+   */
+  template <typename Archive> void SerializeIn(Archive &ar) {
+    Task::SerializeIn(ar);
+    ar(tag_id_, blob_name_);
+  }
+
+  /**
+   * Serialize OUT and INOUT parameters
+   */
+  template <typename Archive> void SerializeOut(Archive &ar) {
+    Task::SerializeOut(ar);
+    ar(score_, total_size_);
+    // NOTE: blocks_ temporarily removed from serialization for debugging
+  }
+
+  /**
+   * Copy from another GetBlobInfoTask
+   */
+  void Copy(const hipc::FullPtr<GetBlobInfoTask> &other) {
+    Task::Copy(other.template Cast<Task>());
+    tag_id_ = other->tag_id_;
+    blob_name_ = other->blob_name_;
+    score_ = other->score_;
+    total_size_ = other->total_size_;
+    blocks_ = other->blocks_;
+  }
+
+  /**
+   * Aggregate replica results into this task
+   */
+  void Aggregate(const hipc::FullPtr<GetBlobInfoTask> &other) {
     Task::Aggregate(other.template Cast<Task>());
     Copy(other);
   }

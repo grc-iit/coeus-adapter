@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef WRPCTE_CORE_RUNTIME_H_
 #define WRPCTE_CORE_RUNTIME_H_
 
@@ -12,42 +45,12 @@
 #include <wrp_cte/core/core_config.h>
 #include <wrp_cte/core/core_tasks.h>
 
-#ifdef WRP_CORE_ENABLE_COMPRESS
-#ifdef HSHM_ENABLE_DENSE_NN
-#include <hermes_shm/util/compress/dynamic/compression/dense_nn_predictor.h>
-#endif
-#include <hermes_shm/util/compress/dynamic/compression/compression_features.h>
-#include <hermes_shm/util/compress/dynamic/compression/qtable_predictor.h>
-#include <hermes_shm/util/compress/compress_factory.h>
-#endif
-
 // Forward declarations to avoid circular dependency
 namespace wrp_cte::core {
 class Config;
 }
 
 namespace wrp_cte::core {
-
-#ifdef WRP_CORE_ENABLE_COMPRESS
-/**
- * Compression statistics predicted by neural network
- */
-struct CompressionStats {
-  int compress_lib_;           // Compression library ID
-  double compression_ratio_;   // Predicted compression ratio
-  double compress_time_ms_;    // Predicted compression time in milliseconds
-  double decompress_time_ms_;  // Predicted decompression time in milliseconds
-  double psnr_db_;             // Predicted PSNR for lossy compression (0 for lossless)
-
-  CompressionStats()
-      : compress_lib_(0), compression_ratio_(1.0), compress_time_ms_(0.0),
-        decompress_time_ms_(0.0), psnr_db_(0.0) {}
-
-  CompressionStats(int lib, double ratio, double comp_time, double decomp_time, double psnr)
-      : compress_lib_(lib), compression_ratio_(ratio), compress_time_ms_(comp_time),
-        decompress_time_ms_(decomp_time), psnr_db_(psnr) {}
-};
-#endif  // WRP_CORE_ENABLE_COMPRESS
 
 
 /**
@@ -71,7 +74,7 @@ public:
   /**
    * Destroy the container (Method::kDestroy)
    */
-  void Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext &ctx);
+  chi::TaskResume Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext &ctx);
 
   /**
    * Register a target (Method::kRegisterTarget)
@@ -83,24 +86,30 @@ public:
   /**
    * Unregister a target (Method::kUnregisterTarget)
    */
-  void UnregisterTarget(hipc::FullPtr<UnregisterTargetTask> task,
+  chi::TaskResume UnregisterTarget(hipc::FullPtr<UnregisterTargetTask> task,
                         chi::RunContext &ctx);
 
   /**
    * List registered targets (Method::kListTargets)
    */
-  void ListTargets(hipc::FullPtr<ListTargetsTask> task, chi::RunContext &ctx);
+  chi::TaskResume ListTargets(hipc::FullPtr<ListTargetsTask> task, chi::RunContext &ctx);
 
   /**
    * Update target statistics (Method::kStatTargets)
    */
-  void StatTargets(hipc::FullPtr<StatTargetsTask> task, chi::RunContext &ctx);
+  chi::TaskResume StatTargets(hipc::FullPtr<StatTargetsTask> task, chi::RunContext &ctx);
+
+  /**
+   * Get target information (Method::kGetTargetInfo)
+   * Returns target score, remaining space, and performance metrics
+   */
+  chi::TaskResume GetTargetInfo(hipc::FullPtr<GetTargetInfoTask> task, chi::RunContext &ctx);
 
   /**
    * Get or create a tag (Method::kGetOrCreateTag)
    */
   template <typename CreateParamsT = CreateParams>
-  void GetOrCreateTag(hipc::FullPtr<GetOrCreateTagTask<CreateParamsT>> task,
+  chi::TaskResume GetOrCreateTag(hipc::FullPtr<GetOrCreateTagTask<CreateParamsT>> task,
                       chi::RunContext &ctx);
 
   /**
@@ -137,30 +146,31 @@ public:
   /**
    * Get tag size operation - returns total size of all blobs in tag
    */
-  void GetTagSize(hipc::FullPtr<GetTagSizeTask> task, chi::RunContext &ctx);
+  chi::TaskResume GetTagSize(hipc::FullPtr<GetTagSizeTask> task, chi::RunContext &ctx);
 
   // Pure virtual methods - implementations are in autogen/core_lib_exec.cc
   void Init(const chi::PoolId &pool_id, const std::string &pool_name,
             chi::u32 container_id = 0) override;
   chi::TaskResume Run(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr,
                       chi::RunContext &rctx) override;
-  void Monitor(chi::MonitorModeId mode, chi::u32 method,
-               chi::Future<chi::Task>& task_future, chi::RunContext &rctx);
-  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
   chi::u64 GetWorkRemaining() const override;
+
+  // Container virtual method implementations (defined in autogen/core_lib_exec.cc)
+  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
   void SaveTask(chi::u32 method, chi::SaveTaskArchive &archive,
                 hipc::FullPtr<chi::Task> task_ptr) override;
   void LoadTask(chi::u32 method, chi::LoadTaskArchive &archive,
                 hipc::FullPtr<chi::Task> task_ptr) override;
   hipc::FullPtr<chi::Task> AllocLoadTask(chi::u32 method, chi::LoadTaskArchive &archive) override;
-  void LocalLoadTask(chi::u32 method, chi::LocalLoadTaskArchive &archive,
-                     hipc::FullPtr<chi::Task> task_ptr) override;
-  hipc::FullPtr<chi::Task> LocalAllocLoadTask(chi::u32 method, chi::LocalLoadTaskArchive &archive) override;
-  void LocalSaveTask(chi::u32 method, chi::LocalSaveTaskArchive &archive,
-                     hipc::FullPtr<chi::Task> task_ptr) override;
   hipc::FullPtr<chi::Task> NewCopyTask(chi::u32 method, hipc::FullPtr<chi::Task> orig_task_ptr,
                                         bool deep) override;
   hipc::FullPtr<chi::Task> NewTask(chi::u32 method) override;
+  void LocalLoadTask(chi::u32 method, chi::LocalLoadTaskArchive &archive,
+                     hipc::FullPtr<chi::Task> task_ptr) override;
+  hipc::FullPtr<chi::Task> LocalAllocLoadTask(chi::u32 method,
+                                               chi::LocalLoadTaskArchive &archive) override;
+  void LocalSaveTask(chi::u32 method, chi::LocalSaveTaskArchive &archive,
+                     hipc::FullPtr<chi::Task> task_ptr) override;
   void Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> origin_task_ptr,
                  hipc::FullPtr<chi::Task> replica_task_ptr) override;
 
@@ -212,21 +222,6 @@ private:
   std::unique_ptr<hipc::circular_mpsc_ring_buffer<CteTelemetry, hipc::MallocAllocator>> telemetry_log_;
   std::atomic<std::uint64_t>
       telemetry_counter_; // Atomic counter for logical time
-
-#ifdef WRP_CORE_ENABLE_COMPRESS
-#ifdef HSHM_ENABLE_DENSE_NN
-  // Neural network predictor for compression (initialized on demand)
-  std::unique_ptr<hshm::compress::DenseNNPredictor> nn_predictor_;
-#endif
-
-  // Q-table predictor for compression (primary prediction method)
-  std::unique_ptr<hshm::compress::QTablePredictor> qtable_predictor_;
-
-  // Compression telemetry ring buffer (similar to telemetry_log_)
-  using CompressionTelemetryLog = hipc::ring_buffer<CompressionTelemetry, CHI_MAIN_ALLOC_T>;
-  hipc::ShmPtr<CompressionTelemetryLog> compression_telemetry_log_;
-  std::atomic<std::uint64_t> compression_logical_time_;
-#endif
 
   /**
    * Get access to configuration manager
@@ -387,7 +382,7 @@ private:
    * @param task PollTelemetryLog task containing parameters and results
    * @param ctx Runtime context for task execution
    */
-  void PollTelemetryLog(hipc::FullPtr<PollTelemetryLogTask> task,
+  chi::TaskResume PollTelemetryLog(hipc::FullPtr<PollTelemetryLogTask> task,
                         chi::RunContext &ctx);
 
   /**
@@ -395,21 +390,21 @@ private:
    * @param task GetBlobScore task containing blob lookup parameters and results
    * @param ctx Runtime context for task execution
    */
-  void GetBlobScore(hipc::FullPtr<GetBlobScoreTask> task, chi::RunContext &ctx);
+  chi::TaskResume GetBlobScore(hipc::FullPtr<GetBlobScoreTask> task, chi::RunContext &ctx);
 
   /**
    * Get blob size operation - returns the size of a blob in bytes
    * @param task GetBlobSize task containing blob lookup parameters and results
    * @param ctx Runtime context for task execution
    */
-  void GetBlobSize(hipc::FullPtr<GetBlobSizeTask> task, chi::RunContext &ctx);
+  chi::TaskResume GetBlobSize(hipc::FullPtr<GetBlobSizeTask> task, chi::RunContext &ctx);
 
   /**
    * Get contained blobs operation - returns all blob names in a tag
    * @param task GetContainedBlobs task containing tag ID and results
    * @param ctx Runtime context for task execution
    */
-  void GetContainedBlobs(hipc::FullPtr<GetContainedBlobsTask> task,
+  chi::TaskResume GetContainedBlobs(hipc::FullPtr<GetContainedBlobsTask> task,
                          chi::RunContext &ctx);
 
   /**
@@ -417,86 +412,22 @@ private:
    * @param task TagQuery task containing regex pattern and results
    * @param ctx Runtime context for task execution
    */
-  void TagQuery(hipc::FullPtr<TagQueryTask> task, chi::RunContext &ctx);
+  chi::TaskResume TagQuery(hipc::FullPtr<TagQueryTask> task, chi::RunContext &ctx);
 
   /**
    * Query blobs by tag and blob regex patterns (Method::kBlobQuery)
    * @param task BlobQuery task containing regex patterns and results
    * @param ctx Runtime context for task execution
    */
-  void BlobQuery(hipc::FullPtr<BlobQueryTask> task, chi::RunContext &ctx);
-
-#ifdef WRP_CORE_ENABLE_COMPRESS
-  /**
-   * Estimate compression statistics using neural network
-   * @param chunk Pointer to data chunk
-   * @param chunk_size Size of chunk in bytes
-   * @param context Compression context with parameters
-   * @return Vector of compression statistics for candidate libraries
-   */
-  std::vector<CompressionStats> EstCompressionStats(
-      const void* chunk, chi::u64 chunk_size, const Context& context);
+  chi::TaskResume BlobQuery(hipc::FullPtr<BlobQueryTask> task, chi::RunContext &ctx);
 
   /**
-   * Estimate workflow compression time for a specific tier
-   * @param chunk_size Size of chunk in bytes
-   * @param tier_bw Tier bandwidth in bytes/second
-   * @param stats Compression statistics for library
-   * @param context Compression context
-   * @return Estimated time in milliseconds
+   * Get comprehensive blob metadata (Method::kGetBlobInfo)
+   * Returns score, total size, and block placement information
+   * @param task GetBlobInfo task containing blob lookup parameters and results
+   * @param ctx Runtime context for task execution
    */
-  double EstWorkflowCompressTime(
-      chi::u64 chunk_size, double tier_bw, const CompressionStats& stats,
-      const Context& context);
-
-  /**
-   * Find best compression for ratio optimization
-   * @param chunk Pointer to data chunk
-   * @param chunk_size Size of chunk
-   * @param container_id Container ID for placement
-   * @param stats Vector of compression statistics
-   * @param context Compression context
-   * @return Tuple of (tier_id, compress_lib, estimated_time)
-   */
-  std::tuple<int, int, double> BestCompressRatio(
-      const void* chunk, chi::u64 chunk_size, int container_id,
-      const std::vector<CompressionStats>& stats, const Context& context);
-
-  /**
-   * Find best compression for time optimization
-   * @param chunk Pointer to data chunk
-   * @param chunk_size Size of chunk
-   * @param container_id Container ID for placement
-   * @param stats Vector of compression statistics
-   * @param context Compression context
-   * @return Tuple of (tier_id, compress_lib, estimated_time)
-   */
-  std::tuple<int, int, double> BestCompressTime(
-      const void* chunk, chi::u64 chunk_size, int container_id,
-      const std::vector<CompressionStats>& stats, const Context& context);
-
-  /**
-   * Choose best compression based on context objective
-   * @param context Compression context
-   * @param chunk Pointer to data chunk
-   * @param chunk_size Size of chunk
-   * @param container_id Container ID for placement
-   * @param stats Vector of compression statistics
-   * @return Tuple of (tier_id, compress_lib, estimated_time)
-   */
-  std::tuple<int, int, double> BestCompressForNode(
-      const Context& context, const void* chunk, chi::u64 chunk_size,
-      int container_id, const std::vector<CompressionStats>& stats);
-
-  /**
-   * Dynamic scheduling for Put operation with compression
-   * @param task PutBlob task
-   * @param ctx Runtime context
-   * @return TaskResume for coroutine
-   */
-  chi::TaskResume DynamicPutSchedule(
-      hipc::FullPtr<PutBlobTask> task, chi::RunContext& ctx);
-#endif  // WRP_CORE_ENABLE_COMPRESS
+  chi::TaskResume GetBlobInfo(hipc::FullPtr<GetBlobInfoTask> task, chi::RunContext &ctx);
 
 private:
   /**

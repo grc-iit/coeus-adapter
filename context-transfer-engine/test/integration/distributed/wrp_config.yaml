@@ -1,0 +1,81 @@
+---
+# WRP Configuration for Distributed CTE Testing
+# Combines Chimaera runtime configuration with CTE compose deployment
+# 4-node cluster configuration
+
+# Memory segment configuration
+memory:
+  main_segment_size: auto
+  client_data_segment_size: 2GB
+  runtime_data_segment_size: 2GB
+
+# Network configuration
+networking:
+  port: 8080
+  neighborhood_size: 32
+  # Hostfile path inside Docker container (mounted workspace)
+  hostfile: /workspace/context-transfer-engine/test/integration/distributed/hostfile
+
+# Logging configuration
+logging:
+  level: info
+  file: /tmp/chimaera.log
+
+# Runtime configuration
+runtime:
+  num_threads: 16        # Worker threads for task execution (8 sched + 8 slow = 16)
+  queue_depth: 1024      # Task queue depth per worker
+  local_sched: "default" # Local task scheduler
+  heartbeat_interval: 1000
+
+# Compose section - declarative pool creation
+# Creates CTE and CAE ChiMods with their respective configurations
+compose:
+  # CTE Core ChiMod with storage configuration
+  # Pool ID: 512.0 (defined in wrp_cte/core/constants.h)
+  # Pool name: "cte_main" (user-defined)
+  - mod_name: wrp_cte_core
+    pool_name: cte_main
+    pool_query: local
+    pool_id: "512.0"
+    # Storage block device configuration
+    # This configuration defines 4 storage targets across 4 nodes
+    storage:
+      - path: /mnt/hdd1
+        bdev_type: file
+        capacity_limit: 10GB
+        score: 0.25
+      - path: /mnt/hdd2
+        bdev_type: file
+        capacity_limit: 10GB
+        score: 0.25
+      - path: /mnt/hdd3
+        bdev_type: file
+        capacity_limit: 10GB
+        score: 0.25
+      - path: /mnt/hdd4
+        bdev_type: file
+        capacity_limit: 10GB
+        score: 0.25
+    # Data Placement Engine configuration
+    dpe:
+      dpe_type: max_bw  # Options: random, round_robin, max_bw
+    # Target management configuration
+    targets:
+      neighborhood: 4
+      default_target_timeout_ms: 30000
+      poll_period_ms: 5000
+    # Performance configuration
+    performance:
+      target_stat_interval_ms: 5000
+      blob_cache_size_mb: 16384
+      max_concurrent_operations: 64
+      score_threshold: 0.7
+      score_difference_threshold: 0.05
+  # CAE Core ChiMod for data assimilation
+  # Pool ID: 400.0 (defined in wrp_cae/core/constants.h as kCaePoolId)
+  # Pool name: "cae_main" (user-defined)
+  - mod_name: wrp_cae_core
+    pool_name: cae_main
+    pool_query: local
+    pool_id: "400.0"

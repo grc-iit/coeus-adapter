@@ -1,10 +1,43 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef ADMIN_TASKS_H_
 #define ADMIN_TASKS_H_
 
 #include <chimaera/chimaera.h>
 #include <chimaera/config_manager.h>
-#include <yaml-cpp/yaml.h>
 #include <hermes_shm/memory/allocator/malloc_allocator.h>
+#include <yaml-cpp/yaml.h>
 
 #include "autogen/admin_methods.h"
 
@@ -32,7 +65,8 @@ struct CreateParams {
   CreateParams() = default;
 
   // Serialization support for cereal
-  template <class Archive> void serialize(Archive &ar) {
+  template <class Archive>
+  void serialize(Archive &ar) {
     // No additional fields to serialize for admin
   }
 
@@ -43,7 +77,7 @@ struct CreateParams {
   void LoadConfig(const chi::PoolConfig &pool_config) {
     // Admin doesn't have additional configuration fields
     // YAML config parsing would go here for modules with config fields
-    (void)pool_config; // Suppress unused parameter warning
+    (void)pool_config;  // Suppress unused parameter warning
   }
 };
 
@@ -63,7 +97,7 @@ struct BaseCreateTask : public chi::Task {
   INOUT chi::priv::string chimod_name_;
   IN chi::priv::string pool_name_;
   INOUT chi::priv::string
-      chimod_params_; // Serialized parameters for the specific ChiMod
+      chimod_params_;  // Serialized parameters for the specific ChiMod
   INOUT chi::PoolId new_pool_id_;
 
   // Results for pool operations
@@ -78,28 +112,36 @@ struct BaseCreateTask : public chi::Task {
 
   /** SHM default constructor */
   BaseCreateTask()
-      : chi::Task(), chimod_name_(HSHM_MALLOC), pool_name_(HSHM_MALLOC),
-        chimod_params_(HSHM_MALLOC), new_pool_id_(chi::PoolId::GetNull()),
-        error_message_(HSHM_MALLOC), is_admin_(IS_ADMIN), do_compose_(DO_COMPOSE),
+      : chi::Task(),
+        chimod_name_(HSHM_MALLOC),
+        pool_name_(HSHM_MALLOC),
+        chimod_params_(HSHM_MALLOC),
+        new_pool_id_(chi::PoolId::GetNull()),
+        error_message_(HSHM_MALLOC),
+        is_admin_(IS_ADMIN),
+        do_compose_(DO_COMPOSE),
         client_(nullptr) {
-    HLOG(kDebug, "BaseCreateTask default constructor: IS_ADMIN={}, DO_COMPOSE={}, do_compose_={}",
+    HLOG(kDebug,
+         "BaseCreateTask default constructor: IS_ADMIN={}, DO_COMPOSE={}, "
+         "do_compose_={}",
          IS_ADMIN, DO_COMPOSE, do_compose_);
   }
 
   /** Emplace constructor with CreateParams arguments */
   template <typename... CreateParamsArgs>
-  explicit BaseCreateTask(const chi::TaskId &task_node,
-                          const chi::PoolId &task_pool_id,
-                          const chi::PoolQuery &pool_query,
-                          const std::string &chimod_name,
-                          const std::string &pool_name,
-                          const chi::PoolId &target_pool_id,
-                          chi::ContainerClient *client,
-                          CreateParamsArgs &&...create_params_args)
+  explicit BaseCreateTask(
+      const chi::TaskId &task_node, const chi::PoolId &task_pool_id,
+      const chi::PoolQuery &pool_query, const std::string &chimod_name,
+      const std::string &pool_name, const chi::PoolId &target_pool_id,
+      chi::ContainerClient *client, CreateParamsArgs &&...create_params_args)
       : chi::Task(task_node, task_pool_id, pool_query, 0),
-        chimod_name_(HSHM_MALLOC, chimod_name), pool_name_(HSHM_MALLOC, pool_name),
-        chimod_params_(HSHM_MALLOC), new_pool_id_(target_pool_id),
-        error_message_(HSHM_MALLOC), is_admin_(IS_ADMIN), do_compose_(DO_COMPOSE),
+        chimod_name_(HSHM_MALLOC, chimod_name),
+        pool_name_(HSHM_MALLOC, pool_name),
+        chimod_params_(HSHM_MALLOC),
+        new_pool_id_(target_pool_id),
+        error_message_(HSHM_MALLOC),
+        is_admin_(IS_ADMIN),
+        do_compose_(DO_COMPOSE),
         client_(client) {
     // Initialize base task
     task_id_ = task_node;
@@ -124,10 +166,16 @@ struct BaseCreateTask : public chi::Task {
                           const chi::PoolConfig &pool_config)
       : chi::Task(task_node, task_pool_id, pool_query, 0),
         chimod_name_(HSHM_MALLOC, pool_config.mod_name_),
-        pool_name_(HSHM_MALLOC, pool_config.pool_name_), chimod_params_(HSHM_MALLOC),
-        new_pool_id_(pool_config.pool_id_), error_message_(HSHM_MALLOC),
-        is_admin_(IS_ADMIN), do_compose_(DO_COMPOSE), client_(nullptr) {
-    HLOG(kDebug, "BaseCreateTask COMPOSE constructor: IS_ADMIN={}, DO_COMPOSE={}, do_compose_={}, pool_name={}",
+        pool_name_(HSHM_MALLOC, pool_config.pool_name_),
+        chimod_params_(HSHM_MALLOC),
+        new_pool_id_(pool_config.pool_id_),
+        error_message_(HSHM_MALLOC),
+        is_admin_(IS_ADMIN),
+        do_compose_(DO_COMPOSE),
+        client_(nullptr) {
+    HLOG(kDebug,
+         "BaseCreateTask COMPOSE constructor: IS_ADMIN={}, DO_COMPOSE={}, "
+         "do_compose_={}, pool_name={}",
          IS_ADMIN, DO_COMPOSE, do_compose_, pool_config.pool_name_);
     // Initialize base task
     task_id_ = task_node;
@@ -144,10 +192,9 @@ struct BaseCreateTask : public chi::Task {
    * Does nothing if do_compose_ is true (compose mode)
    */
   template <typename... Args>
-  void SetParams(AllocT* alloc,
-                 Args &&...args) {
+  void SetParams(AllocT *alloc, Args &&...args) {
     if (do_compose_) {
-      return; // Skip SetParams in compose mode
+      return;  // Skip SetParams in compose mode
     }
     CreateParamsT params(std::forward<Args>(args)...);
     chi::Task::Serialize(alloc, chimod_params_, params);
@@ -158,8 +205,7 @@ struct BaseCreateTask : public chi::Task {
    * In compose mode (do_compose_=true), deserializes PoolConfig and calls
    * LoadConfig
    */
-  CreateParamsT
-  GetParams() const {
+  CreateParamsT GetParams() const {
     if (do_compose_) {
       // Compose mode: deserialize PoolConfig and load into CreateParams
       chi::PoolConfig pool_config =
@@ -175,22 +221,32 @@ struct BaseCreateTask : public chi::Task {
 
   /**
    * Serialize IN and INOUT parameters for network transfer
-   * This includes: chimod_name_, pool_name_, chimod_params_, new_pool_id_, is_admin_, do_compose_
+   * This includes: chimod_name_, pool_name_, chimod_params_, new_pool_id_,
+   * is_admin_, do_compose_
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
-    HLOG(kDebug, "BaseCreateTask::SerializeIn BEFORE: do_compose_={}, is_admin_={}", do_compose_, is_admin_);
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
+    HLOG(kDebug,
+         "BaseCreateTask::SerializeIn BEFORE: do_compose_={}, is_admin_={}",
+         do_compose_, is_admin_);
     Task::SerializeIn(ar);
-    ar(chimod_name_, pool_name_, chimod_params_, new_pool_id_, is_admin_, do_compose_);
-    HLOG(kDebug, "BaseCreateTask::SerializeIn AFTER: do_compose_={}, is_admin_={}", do_compose_, is_admin_);
+    ar(chimod_name_, pool_name_, chimod_params_, new_pool_id_, is_admin_,
+       do_compose_);
+    HLOG(kDebug,
+         "BaseCreateTask::SerializeIn AFTER: do_compose_={}, is_admin_={}",
+         do_compose_, is_admin_);
   }
 
   /**
    * Serialize OUT and INOUT parameters for network transfer
-   * This includes: chimod_name_, chimod_params_, new_pool_id_, error_message_, is_admin_, do_compose_
+   * This includes: chimod_name_, chimod_params_, new_pool_id_, error_message_,
+   * is_admin_, do_compose_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
-    ar(chimod_name_, chimod_params_, new_pool_id_, error_message_, is_admin_, do_compose_);
+    ar(chimod_name_, chimod_params_, new_pool_id_, error_message_, is_admin_,
+       do_compose_);
   }
 
   /**
@@ -198,7 +254,9 @@ struct BaseCreateTask : public chi::Task {
    * @param other Pointer to the source task to copy from
    */
   void Copy(const hipc::FullPtr<BaseCreateTask> &other) {
-    HLOG(kDebug, "BaseCreateTask::Copy() BEFORE: this->do_compose_={}, other->do_compose_={}",
+    HLOG(kDebug,
+         "BaseCreateTask::Copy() BEFORE: this->do_compose_={}, "
+         "other->do_compose_={}",
          do_compose_, other->do_compose_);
     // Copy base Task fields
     Task::Copy(other.template Cast<Task>());
@@ -210,7 +268,8 @@ struct BaseCreateTask : public chi::Task {
     error_message_ = other->error_message_;
     is_admin_ = other->is_admin_;
     do_compose_ = other->do_compose_;
-    HLOG(kDebug, "BaseCreateTask::Copy() AFTER: this->do_compose_={}", do_compose_);
+    HLOG(kDebug, "BaseCreateTask::Copy() AFTER: this->do_compose_={}",
+         do_compose_);
   }
 
   /** Aggregate replica results into this task */
@@ -262,15 +321,18 @@ using ComposeTask =
  */
 struct DestroyPoolTask : public chi::Task {
   // Pool destruction parameters
-  IN chi::PoolId target_pool_id_; ///< ID of pool to destroy
-  IN chi::u32 destruction_flags_; ///< Flags controlling destruction behavior
+  IN chi::PoolId target_pool_id_;  ///< ID of pool to destroy
+  IN chi::u32 destruction_flags_;  ///< Flags controlling destruction behavior
 
   // Output results
-  OUT chi::priv::string error_message_; ///< Error description if destruction failed
+  OUT chi::priv::string
+      error_message_;  ///< Error description if destruction failed
 
   /** SHM default constructor */
   DestroyPoolTask()
-      : chi::Task(), target_pool_id_(), destruction_flags_(0),
+      : chi::Task(),
+        target_pool_id_(),
+        destruction_flags_(0),
         error_message_(HSHM_MALLOC) {}
 
   /** Emplace constructor */
@@ -280,7 +342,8 @@ struct DestroyPoolTask : public chi::Task {
                            chi::PoolId target_pool_id,
                            chi::u32 destruction_flags = 0)
       : chi::Task(task_node, pool_id, pool_query, 10),
-        target_pool_id_(target_pool_id), destruction_flags_(destruction_flags),
+        target_pool_id_(target_pool_id),
+        destruction_flags_(destruction_flags),
         error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
@@ -294,7 +357,8 @@ struct DestroyPoolTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * This includes: target_pool_id_, destruction_flags_
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     ar(target_pool_id_, destruction_flags_);
   }
@@ -303,7 +367,8 @@ struct DestroyPoolTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: error_message_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(error_message_);
   }
@@ -334,15 +399,18 @@ struct DestroyPoolTask : public chi::Task {
  */
 struct StopRuntimeTask : public chi::Task {
   // Runtime shutdown parameters
-  IN chi::u32 shutdown_flags_;  ///< Flags controlling shutdown behavior
-  IN chi::u32 grace_period_ms_; ///< Grace period for clean shutdown
+  IN chi::u32 shutdown_flags_;   ///< Flags controlling shutdown behavior
+  IN chi::u32 grace_period_ms_;  ///< Grace period for clean shutdown
 
   // Output results
-  OUT chi::priv::string error_message_; ///< Error description if shutdown failed
+  OUT chi::priv::string
+      error_message_;  ///< Error description if shutdown failed
 
   /** SHM default constructor */
   StopRuntimeTask()
-      : chi::Task(), shutdown_flags_(0), grace_period_ms_(5000),
+      : chi::Task(),
+        shutdown_flags_(0),
+        grace_period_ms_(5000),
         error_message_(HSHM_MALLOC) {}
 
   /** Emplace constructor */
@@ -352,7 +420,8 @@ struct StopRuntimeTask : public chi::Task {
                            chi::u32 shutdown_flags = 0,
                            chi::u32 grace_period_ms = 5000)
       : chi::Task(task_node, pool_id, pool_query, 10),
-        shutdown_flags_(shutdown_flags), grace_period_ms_(grace_period_ms),
+        shutdown_flags_(shutdown_flags),
+        grace_period_ms_(grace_period_ms),
         error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
@@ -366,7 +435,8 @@ struct StopRuntimeTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * This includes: shutdown_flags_, grace_period_ms_
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     ar(shutdown_flags_, grace_period_ms_);
   }
@@ -375,7 +445,8 @@ struct StopRuntimeTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: error_message_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(error_message_);
   }
@@ -407,18 +478,16 @@ struct StopRuntimeTask : public chi::Task {
  */
 struct FlushTask : public chi::Task {
   // Output results
-  OUT chi::u64 total_work_done_; ///< Total amount of work remaining across all
-                                 ///< containers
+  OUT chi::u64 total_work_done_;  ///< Total amount of work remaining across all
+                                  ///< containers
 
   /** SHM default constructor */
-  FlushTask()
-      : chi::Task(), total_work_done_(0) {}
+  FlushTask() : chi::Task(), total_work_done_(0) {}
 
   /** Emplace constructor */
   explicit FlushTask(const chi::TaskId &task_node, const chi::PoolId &pool_id,
                      const chi::PoolQuery &pool_query)
-      : chi::Task(task_node, pool_id, pool_query, 10),
-        total_work_done_(0) {
+      : chi::Task(task_node, pool_id, pool_query, 10), total_work_done_(0) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
@@ -431,7 +500,8 @@ struct FlushTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * No additional parameters for FlushTask
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     // No additional parameters to serialize for flush
   }
@@ -440,7 +510,8 @@ struct FlushTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: total_work_done_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(total_work_done_);
   }
@@ -476,34 +547,36 @@ using DestroyTask = DestroyPoolTask;
  */
 struct SendTask : public chi::Task {
   // Network transfer parameters
-  IN chi::u32 transfer_flags_; ///< Flags controlling transfer behavior
+  IN chi::u32 transfer_flags_;  ///< Flags controlling transfer behavior
 
   // Results
-  OUT chi::priv::string error_message_; ///< Error description if transfer failed
+  OUT chi::priv::string
+      error_message_;  ///< Error description if transfer failed
 
   /** SHM default constructor */
-  SendTask()
-      : chi::Task(), transfer_flags_(0), error_message_(HSHM_MALLOC) {}
+  SendTask() : chi::Task(), transfer_flags_(0), error_message_(HSHM_MALLOC) {}
 
   /** Emplace constructor */
   explicit SendTask(const chi::TaskId &task_node, const chi::PoolId &pool_id,
                     const chi::PoolQuery &pool_query,
                     chi::u32 transfer_flags = 0)
       : chi::Task(task_node, pool_id, pool_query, Method::kSend),
-        transfer_flags_(transfer_flags), error_message_(HSHM_MALLOC) {
+        transfer_flags_(transfer_flags),
+        error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
     method_ = Method::kSend;
     task_flags_.Clear();
     pool_query_ = pool_query;
-    stat_.io_size_ = 1024 * 1024; // 1MB
+    stat_.io_size_ = 1024 * 1024;  // 1MB
   }
 
   /**
    * Serialize IN and INOUT parameters for network transfer
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     ar(transfer_flags_);
   }
@@ -511,7 +584,8 @@ struct SendTask : public chi::Task {
   /**
    * Serialize OUT and INOUT parameters for network transfer
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(error_message_);
   }
@@ -542,34 +616,36 @@ struct SendTask : public chi::Task {
  */
 struct RecvTask : public chi::Task {
   // Network transfer parameters
-  IN chi::u32 transfer_flags_; ///< Flags controlling transfer behavior
+  IN chi::u32 transfer_flags_;  ///< Flags controlling transfer behavior
 
   // Results
-  OUT chi::priv::string error_message_; ///< Error description if transfer failed
+  OUT chi::priv::string
+      error_message_;  ///< Error description if transfer failed
 
   /** SHM default constructor */
-  RecvTask()
-      : chi::Task(), transfer_flags_(0), error_message_(HSHM_MALLOC) {}
+  RecvTask() : chi::Task(), transfer_flags_(0), error_message_(HSHM_MALLOC) {}
 
   /** Emplace constructor */
   explicit RecvTask(const chi::TaskId &task_node, const chi::PoolId &pool_id,
                     const chi::PoolQuery &pool_query,
                     chi::u32 transfer_flags = 0)
       : chi::Task(task_node, pool_id, pool_query, Method::kRecv),
-        transfer_flags_(transfer_flags), error_message_(HSHM_MALLOC) {
+        transfer_flags_(transfer_flags),
+        error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
     method_ = Method::kRecv;
     task_flags_.Clear();
     pool_query_ = pool_query;
-    stat_.io_size_ = 1024 * 1024; // 1MB
+    stat_.io_size_ = 1024 * 1024;  // 1MB
   }
 
   /**
    * Serialize IN and INOUT parameters for network transfer
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     ar(transfer_flags_);
   }
@@ -577,7 +653,8 @@ struct RecvTask : public chi::Task {
   /**
    * Serialize OUT and INOUT parameters for network transfer
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(error_message_);
   }
@@ -608,14 +685,14 @@ struct RecvTask : public chi::Task {
  */
 struct HeartbeatTask : public chi::Task {
   // Heartbeat response
-  OUT int32_t response_; ///< 0 = success, non-zero = error
+  OUT int32_t response_;  ///< 0 = success, non-zero = error
 
   /** SHM default constructor */
-  HeartbeatTask()
-      : chi::Task(), response_(-1) {}
+  HeartbeatTask() : chi::Task(), response_(-1) {}
 
   /** Emplace constructor */
-  explicit HeartbeatTask(const chi::TaskId &task_node, const chi::PoolId &pool_id,
+  explicit HeartbeatTask(const chi::TaskId &task_node,
+                         const chi::PoolId &pool_id,
                          const chi::PoolQuery &pool_query)
       : chi::Task(task_node, pool_id, pool_query, Method::kHeartbeat),
         response_(-1) {
@@ -631,7 +708,8 @@ struct HeartbeatTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * No additional parameters for HeartbeatTask
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     // No additional parameters to serialize for heartbeat
   }
@@ -640,7 +718,8 @@ struct HeartbeatTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: response_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(response_);
   }
@@ -675,13 +754,12 @@ struct WreapDeadIpcsTask : public chi::Task {
   OUT chi::u64 reaped_count_;
 
   /** SHM default constructor */
-  WreapDeadIpcsTask()
-      : chi::Task(), reaped_count_(0) {}
+  WreapDeadIpcsTask() : chi::Task(), reaped_count_(0) {}
 
   /** Emplace constructor */
   explicit WreapDeadIpcsTask(const chi::TaskId &task_node,
-                              const chi::PoolId &pool_id,
-                              const chi::PoolQuery &pool_query)
+                             const chi::PoolId &pool_id,
+                             const chi::PoolQuery &pool_query)
       : chi::Task(task_node, pool_id, pool_query, Method::kWreapDeadIpcs),
         reaped_count_(0) {
     // Initialize task
@@ -696,7 +774,8 @@ struct WreapDeadIpcsTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * No additional parameters for WreapDeadIpcsTask
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     // No additional parameters to serialize
   }
@@ -705,13 +784,15 @@ struct WreapDeadIpcsTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: reaped_count_
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(reaped_count_);
   }
 
   /**
-   * Copy from another WreapDeadIpcsTask (assumes this task is already constructed)
+   * Copy from another WreapDeadIpcsTask (assumes this task is already
+   * constructed)
    * @param other Pointer to the source task to copy from
    */
   void Copy(const hipc::FullPtr<WreapDeadIpcsTask> &other) {
@@ -743,9 +824,7 @@ struct MonitorTask : public chi::Task {
   /**
    * SHM default constructor
    */
-  MonitorTask()
-      : chi::Task(),
-        info_() {}
+  MonitorTask() : chi::Task(), info_() {}
 
   /**
    * Emplace constructor - create new MonitorTask
@@ -753,11 +832,9 @@ struct MonitorTask : public chi::Task {
    * @param pool_id Pool this task belongs to
    * @param pool_query Query for routing this task
    */
-  explicit MonitorTask(const chi::TaskId &task_node,
-                       const chi::PoolId &pool_id,
+  explicit MonitorTask(const chi::TaskId &task_node, const chi::PoolId &pool_id,
                        const chi::PoolQuery &pool_query)
-      : chi::Task(task_node, pool_id, pool_query, Method::kMonitor),
-        info_() {
+      : chi::Task(task_node, pool_id, pool_query, Method::kMonitor), info_() {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
@@ -770,7 +847,8 @@ struct MonitorTask : public chi::Task {
    * Serialize IN and INOUT parameters for network transfer
    * No additional parameters for MonitorTask
    */
-  template <typename Archive> void SerializeIn(Archive &ar) {
+  template <typename Archive>
+  void SerializeIn(Archive &ar) {
     Task::SerializeIn(ar);
     // No additional parameters to serialize
   }
@@ -779,7 +857,8 @@ struct MonitorTask : public chi::Task {
    * Serialize OUT and INOUT parameters for network transfer
    * This includes: info_ (vector of WorkerStats)
    */
-  template <typename Archive> void SerializeOut(Archive &ar) {
+  template <typename Archive>
+  void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
     ar(info_);
   }
@@ -807,11 +886,12 @@ struct MonitorTask : public chi::Task {
  * Stores task metadata and serialized task data for efficient batch submission
  */
 class TaskBatch {
-private:
-  std::vector<chi::LocalTaskInfo> task_infos_;     /**< Task metadata for deserialization */
-  std::vector<char> serialized_data_;              /**< Serialized task data */
+ private:
+  std::vector<chi::LocalTaskInfo>
+      task_infos_;                    /**< Task metadata for deserialization */
+  std::vector<char> serialized_data_; /**< Serialized task data */
 
-public:
+ public:
   /**
    * Default constructor
    */
@@ -833,13 +913,14 @@ public:
     archive << (*task);
 
     // Record task info
-    const auto& task_infos = archive.GetTaskInfos();
+    const auto &task_infos = archive.GetTaskInfos();
     if (!task_infos.empty()) {
-      task_infos_.insert(task_infos_.end(), task_infos.begin(), task_infos.end());
+      task_infos_.insert(task_infos_.end(), task_infos.begin(),
+                         task_infos.end());
     }
 
     // Append serialized data
-    const auto& data = archive.GetData();
+    const auto &data = archive.GetData();
     serialized_data_.insert(serialized_data_.end(), data.begin(), data.end());
   }
 
@@ -863,9 +944,7 @@ public:
    * Get number of tasks in batch
    * @return Number of tasks
    */
-  size_t GetTaskCount() const {
-    return task_infos_.size();
-  }
+  size_t GetTaskCount() const { return task_infos_.size(); }
 
   /**
    * Serialize for cereal
@@ -884,19 +963,22 @@ public:
  */
 struct SubmitBatchTask : public chi::Task {
   // Batch task data
-  IN std::vector<chi::LocalTaskInfo> task_infos_;    ///< Task metadata
-  IN std::vector<char> serialized_data_;             ///< Serialized task data
+  IN std::vector<chi::LocalTaskInfo> task_infos_;  ///< Task metadata
+  IN std::vector<char> serialized_data_;           ///< Serialized task data
 
   // Results
-  OUT chi::u32 tasks_completed_;                     ///< Number of tasks completed
-  OUT chi::priv::string error_message_;              ///< Error description if failed
+  OUT chi::u32 tasks_completed_;         ///< Number of tasks completed
+  OUT chi::priv::string error_message_;  ///< Error description if failed
 
   /**
    * SHM default constructor
    */
   SubmitBatchTask()
-      : chi::Task(), task_infos_(), serialized_data_(),
-        tasks_completed_(0), error_message_(HSHM_MALLOC) {}
+      : chi::Task(),
+        task_infos_(),
+        serialized_data_(),
+        tasks_completed_(0),
+        error_message_(HSHM_MALLOC) {}
 
   /**
    * Emplace constructor
@@ -905,8 +987,10 @@ struct SubmitBatchTask : public chi::Task {
                            const chi::PoolId &pool_id,
                            const chi::PoolQuery &pool_query)
       : chi::Task(task_node, pool_id, pool_query, Method::kSubmitBatch),
-        task_infos_(), serialized_data_(),
-        tasks_completed_(0), error_message_(HSHM_MALLOC) {
+        task_infos_(),
+        serialized_data_(),
+        tasks_completed_(0),
+        error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
@@ -925,7 +1009,8 @@ struct SubmitBatchTask : public chi::Task {
       : chi::Task(task_node, pool_id, pool_query, Method::kSubmitBatch),
         task_infos_(batch.GetTaskInfos()),
         serialized_data_(batch.GetSerializedData()),
-        tasks_completed_(0), error_message_(HSHM_MALLOC) {
+        tasks_completed_(0),
+        error_message_(HSHM_MALLOC) {
     // Initialize task
     task_id_ = task_node;
     pool_id_ = pool_id;
@@ -977,6 +1062,6 @@ struct SubmitBatchTask : public chi::Task {
   }
 };
 
-} // namespace chimaera::admin
+}  // namespace chimaera::admin
 
-#endif // ADMIN_TASKS_H_
+#endif  // ADMIN_TASKS_H_

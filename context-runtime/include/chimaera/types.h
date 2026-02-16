@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_TYPES_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_TYPES_H_
 
@@ -242,14 +275,6 @@ struct AddressHash {
 // - BULK_EXPOSE: Bulk is exposed (sender exposes for reading)
 // - BULK_XFER: Bulk is exposed for writing (receiver)
 
-// Thread types for work orchestrator
-enum ThreadType {
-  kSchedWorker = 0,    ///< Scheduler worker for fast tasks (EstCpuTime < 50us)
-  kSlow = 1,           ///< Slow worker for long-running tasks (EstCpuTime >= 50us)
-  kProcessReaper = 2,  ///< Process reaper thread
-  kNetWorker = 3       ///< Network worker for Send/Recv tasks
-};
-
 // Lane mapping policies for task distribution
 enum class LaneMapPolicy {
   kMapByPidTid = 0, ///< Map tasks to lanes by hashing PID+TID (ensures
@@ -282,6 +307,7 @@ enum MemorySegment {
 // HSHM Thread-local storage keys
 extern hshm::ThreadLocalKey chi_cur_worker_key_;
 extern hshm::ThreadLocalKey chi_task_counter_key_;
+extern hshm::ThreadLocalKey chi_is_client_thread_key_;
 
 /**
  * Thread-local task counter for generating unique TaskId major and unique

@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORKER_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORKER_H_
 
@@ -13,6 +46,7 @@
 
 #include "chimaera/container.h"
 #include "chimaera/integer_timer.h"
+#include "chimaera/local_transfer.h"
 #include "chimaera/pool_query.h"
 #include "chimaera/task.h"
 #include "chimaera/task_queue.h"
@@ -93,9 +127,8 @@ class Worker {
   /**
    * Constructor
    * @param worker_id Unique worker identifier
-   * @param thread_type Type of worker thread
    */
-  Worker(u32 worker_id, ThreadType thread_type);
+  Worker(u32 worker_id);
 
   /**
    * Destructor
@@ -128,19 +161,6 @@ class Worker {
    * @return Worker identifier
    */
   u32 GetId() const;
-
-  /**
-   * Get worker thread type
-   * @return Type of worker thread
-   */
-  ThreadType GetThreadType() const;
-
-  /**
-   * Set worker thread type
-   * Used by scheduler to assign worker types during DivideWorkers()
-   * @param thread_type New thread type for this worker
-   */
-  void SetThreadType(ThreadType thread_type);
 
   /**
    * Check if worker is running
@@ -338,6 +358,19 @@ class Worker {
    */
   void ProcessEventQueue();
 
+  /**
+   * Copy task output data to copy space for streaming to clients
+   * Processes client_copy_ queue with time budget of up to 10ms per call
+   * For each task:
+   * - Acquires reader lock on IpcManager::allocator_map_lock_
+   * - Checks if FUTURE_NEW_DATA flag is set
+   * - If not set: copies data to copy space, sets FUTURE_NEW_DATA flag
+   * - Waits up to 1ms for client to consume data (unset FUTURE_NEW_DATA)
+   * - If still set after 1ms: pushes task to back of queue, continues to next
+   * - If data fully copied: sets FUTURE_COMPLETE, removes from queue
+   */
+  void CopyTaskOutputToClient();
+
  public:
   /**
    * Check if task should be processed locally based on task flags and pool
@@ -369,6 +402,22 @@ class Worker {
                    const std::vector<PoolQuery> &pool_queries);
 
   /**
+   * Begin client transfer for task outputs
+   * Called only when task was copied from client (was_copied = true)
+   * @param task_ptr Task to serialize
+   * @param run_ctx Runtime context
+   * @param container Container for serialization
+   */
+  void EndTaskBeginClientTransfer(const FullPtr<Task> &task_ptr,
+                                  RunContext *run_ctx, Container *container);
+
+  /**
+   * Signal parent task that subtask completed
+   * @param parent_task Parent task's RunContext to signal
+   */
+  void EndTaskSignalParent(RunContext *parent_task);
+
+  /**
    * End task execution and perform cleanup
    * @param task_ptr Full pointer to task to end
    * @param run_ctx Pointer to RunContext for task
@@ -383,11 +432,8 @@ class Worker {
    * @param future Future object containing the task and completion state
    * @param container Container for the task
    * @param lane Lane for the task (can be nullptr)
-   * @param destroy_in_end_task Flag indicating if task should be destroyed in
-   * EndTask
    */
-  void BeginTask(Future<Task> &future, Container *container, TaskLane *lane,
-                 bool destroy_in_end_task);
+  void BeginTask(Future<Task> &future, Container *container, TaskLane *lane);
 
   /**
    * Continue processing blocked tasks that are ready to resume
@@ -401,6 +447,26 @@ class Worker {
    * @return Number of tasks processed
    */
   u32 ProcessNewTasks();
+
+  /**
+   * Ensure IPC allocator is registered for a Future
+   * Handles lazy registration of client memory allocators
+   * @param future_shm_full FullPtr to FutureShm to check allocator for
+   * @return true if allocator is registered or registration succeeded, false on failure
+   */
+  bool EnsureIpcRegistered(const hipc::FullPtr<FutureShm> &future_shm_full);
+
+  /**
+   * Get task pointer from Future, copying from client if needed
+   * Deserializes task if FUTURE_COPY_FROM_CLIENT flag is set
+   * @param future Future object containing FutureShm
+   * @param container Container to allocate task in
+   * @param method_id Method ID for task creation
+   * @return FullPtr to task (either existing or newly deserialized)
+   */
+  hipc::FullPtr<Task> GetOrCopyTaskFromFuture(Future<Task> &future,
+                                               Container *container,
+                                               u32 method_id);
 
   /**
    * Get the time remaining before the next periodic task should resume
@@ -448,7 +514,6 @@ class Worker {
   void RerouteDynamicTask(const FullPtr<Task> &task_ptr, RunContext *run_ctx);
 
   u32 worker_id_;
-  ThreadType thread_type_;
   bool is_running_;
   bool is_initialized_;
   bool did_work_;       // Tracks if any work was done in current loop iteration
@@ -512,6 +577,9 @@ class Worker {
   // Mutex to protect epoll_ctl operations from multiple threads
   // Used when external code (e.g., bdev) registers FDs with this worker's epoll
   hshm::Mutex epoll_mutex_;
+
+  // Client copy queue - LocalTransfer objects streaming output data to clients
+  std::queue<LocalTransfer> client_copy_;
 
   // Scheduler pointer (owned by IpcManager, not Worker)
   Scheduler *scheduler_;

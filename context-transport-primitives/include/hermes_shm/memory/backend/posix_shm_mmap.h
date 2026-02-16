@@ -1,14 +1,35 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by The HDF Group.                                               *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Hermes. The full Hermes copyright notice, including  *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the top directory. If you do not  *
- * have access to the file, you may request a copy from help@hdfgroup.org.   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef HSHM_INCLUDE_MEMORY_BACKEND_POSIX_SHM_MMAP_H
 #define HSHM_INCLUDE_MEMORY_BACKEND_POSIX_SHM_MMAP_H
@@ -46,7 +67,8 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
    * Initialize backend with mixed private/shared mapping
    *
    * @param backend_id Unique identifier for this backend
-   * @param backend_size Total size of the region (including all headers and data)
+   * @param backend_size Total size of the region (including all headers and
+   * data)
    * @param url POSIX shared memory object name (e.g., "/my_shm")
    * @return true on success, false on failure
    *
@@ -54,7 +76,8 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
    *   [4KB backend header] [4KB private header] [4KB shared header] [data]
    *
    * Memory layout in virtual memory:
-   *   [4KB backend header MAP_SHARED] [4KB private header MAP_PRIVATE] [4KB shared header MAP_SHARED] [data MAP_SHARED]
+   *   [4KB backend header MAP_SHARED] [4KB private header MAP_PRIVATE] [4KB
+   * shared header MAP_SHARED] [data MAP_SHARED]
    */
   bool shm_init(const MemoryBackendId &backend_id, size_t backend_size,
                 const std::string &url) {
@@ -64,9 +87,11 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
       backend_size = kMinBackendSize;
     }
 
-    // File layout: [4KB backend header] [4KB private header] [4KB shared header] [data]
-    // Total file size includes all three headers plus data
-    size_t total_file_size = backend_size + kBackendHeaderSize;  // backend_size already includes private + shared headers + data
+    // File layout: [4KB backend header] [4KB private header] [4KB shared
+    // header] [data] Total file size includes all three headers plus data
+    size_t total_file_size =
+        backend_size + kBackendHeaderSize;  // backend_size already includes
+                                            // private + shared headers + data
 
     // Create shared memory object with entire size
     SystemInfo::DestroySharedMemory(url);
@@ -91,8 +116,8 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
     // Shared portion: backend_size - kBackendHeaderSize (shared header + data)
     // Offset into file: kBackendHeaderSize (skip the backend header in file)
     size_t shared_portion_size = backend_size - kBackendHeaderSize;
-    region_ = reinterpret_cast<char *>(
-        SystemInfo::MapMixedMemory(fd_, kBackendHeaderSize, shared_portion_size, kBackendHeaderSize));
+    region_ = reinterpret_cast<char *>(SystemInfo::MapMixedMemory(
+        fd_, kBackendHeaderSize, shared_portion_size, kBackendHeaderSize));
     if (!region_) {
       HLOG(kError, "Failed to create mixed mapping");
       SystemInfo::UnmapMemory(header_, kBackendHeaderSize);
@@ -102,8 +127,10 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
 
     // Memory layout after mapping:
     // header_ points to: [4KB backend header MAP_SHARED] at file offset 0
-    // region_ points to: [4KB private header MAP_PRIVATE] [4KB shared header MAP_SHARED] [data MAP_SHARED]
-    //                     where shared portion maps to file offset kBackendHeaderSize
+    // region_ points to: [4KB private header MAP_PRIVATE] [4KB shared header
+    // MAP_SHARED] [data MAP_SHARED]
+    //                     where shared portion maps to file offset
+    //                     kBackendHeaderSize
 
     // Calculate data pointer
     // region_[0..4KB) = private header
@@ -120,12 +147,12 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
     flags_.Clear();
 
     // Copy all header fields to backend header (file offset 0)
-    (*header_) = (const MemoryBackendHeader&)*this;
+    (*header_) = (const MemoryBackendHeader &)*this;
 
-    HLOG(kInfo, "shm_init: Initialized with backend_size={}, data_capacity={}",
-          backend_size_, data_capacity_);
-    HLOG(kInfo, "shm_init: header_={}, region_={}, data_={}",
-          (void*)header_, (void*)region_, (void*)data_);
+    HLOG(kDebug, "shm_init: Initialized with backend_size={}, data_capacity={}",
+         backend_size_, data_capacity_);
+    HLOG(kDebug, "shm_init: header_={}, region_={}, data_={}", (void *)header_,
+         (void *)region_, (void *)data_);
 
     // Mark this process as the owner of the backend
     SetOwner();
@@ -159,20 +186,24 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
       SystemInfo::CloseSharedMemory(fd_);
       return false;
     }
-    (MemoryBackendHeader&)*this = (*header_);
+    (MemoryBackendHeader &)*this = (*header_);
 
     // Read backend_size from backend header
     size_t backend_size = header_->backend_size_;
 
-    HLOG(kInfo, "shm_attach: Read backend_size={} from backend header at {}",
-          backend_size, (void*)header_);
-    HLOG(kInfo, "shm_attach: Header fields: id_=({},{}), data_capacity_={}, priv_header_off_={}",
-          header_->id_.major_, header_->id_.minor_, header_->data_capacity_, header_->priv_header_off_);
+    HLOG(kDebug, "shm_attach: Read backend_size={} from backend header at {}",
+         backend_size, (void *)header_);
+    HLOG(kDebug,
+         "shm_attach: Header fields: id_=({},{}), data_capacity_={}, "
+         "priv_header_off_={}",
+         header_->id_.major_, header_->id_.minor_, header_->data_capacity_,
+         header_->priv_header_off_);
 
     // Validate backend_size before subtraction to prevent underflow
     if (backend_size < kBackendHeaderSize) {
-      HLOG(kError, "Invalid backend_size in header: {} bytes (must be >= {} bytes)",
-            backend_size, kBackendHeaderSize);
+      HLOG(kError,
+           "Invalid backend_size in header: {} bytes (must be >= {} bytes)",
+           backend_size, kBackendHeaderSize);
       SystemInfo::UnmapMemory(header_, kBackendHeaderSize);
       SystemInfo::CloseSharedMemory(fd_);
       return false;
@@ -183,8 +214,8 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
     // Shared portion: backend_size - kBackendHeaderSize (shared header + data)
     // Offset into file: kBackendHeaderSize (skip the backend header in file)
     size_t shared_portion_size = backend_size - kBackendHeaderSize;
-    region_ = reinterpret_cast<char *>(
-        SystemInfo::MapMixedMemory(fd_, kBackendHeaderSize, shared_portion_size, kBackendHeaderSize));
+    region_ = reinterpret_cast<char *>(SystemInfo::MapMixedMemory(
+        fd_, kBackendHeaderSize, shared_portion_size, kBackendHeaderSize));
     if (!region_) {
       HLOG(kError, "Failed to create mixed mapping during attach");
       SystemInfo::UnmapMemory(header_, kBackendHeaderSize);
@@ -194,19 +225,16 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
 
     // Memory layout after mapping (same as shm_init):
     // header_ points to: [4KB backend header MAP_SHARED] at file offset 0
-    // region_ points to: [4KB private header MAP_PRIVATE] [4KB shared header MAP_SHARED] [data MAP_SHARED]
-    //                     where shared portion maps to file offset kBackendHeaderSize
+    // region_ points to: [4KB private header MAP_PRIVATE] [4KB shared header
+    // MAP_SHARED] [data MAP_SHARED]
+    //                     where shared portion maps to file offset
+    //                     kBackendHeaderSize
 
     // Calculate data pointer (same layout as shm_init)
     // region_[0..4KB) = private header
     // region_[4KB..8KB) = shared header (maps to file offset 4KB..8KB)
     // region_[8KB...) = data (maps to file offset 8KB...)
     data_ = region_ + 2 * kBackendHeaderSize;
-
-    HLOG(kInfo, "shm_attach: Attached with backend_size={}, data_capacity={}",
-          backend_size, header_->data_capacity_);
-    HLOG(kInfo, "shm_attach: header_={}, region_={}, data_={}",
-          (void*)header_, (void*)region_, (void*)data_);
 
     // Mark this process as NOT the owner (attaching to existing backend)
     UnsetOwner();
@@ -238,7 +266,8 @@ class PosixShmMmap : public MemoryBackend, public UrlMemoryBackend {
     }
     // Unmap the mixed mapping region (private header + shared header + data)
     if (region_ != nullptr) {
-      // Total size is: private header (kBackendHeaderSize) + shared portion (backend_size_ - kBackendHeaderSize)
+      // Total size is: private header (kBackendHeaderSize) + shared portion
+      // (backend_size_ - kBackendHeaderSize)
       SystemInfo::UnmapMemory(region_, header_->backend_size_);
       region_ = nullptr;
     }

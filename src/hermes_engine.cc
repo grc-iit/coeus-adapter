@@ -9,8 +9,10 @@
  * If you do not have access to the file, you may request a copy             *
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-#include "common/CatalystHelper.h"
+// IMPORTANT: Include HermesEngine.h (ADIOS2) before CatalystHelper.h (Catalyst/Conduit)
+// to avoid preprocessor macro collisions with adios2::core::Variable<T>.
 #include "coeus/HermesEngine.h"
+#include "common/CatalystHelper.h"
 #include "comms/CTEHermes.h"
 #include <chimaera/module_manager.h>
 #include <chrono>

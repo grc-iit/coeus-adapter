@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORK_ORCHESTRATOR_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORK_ORCHESTRATOR_H_
 
@@ -56,24 +89,10 @@ class WorkOrchestrator {
   Worker* GetWorker(u32 worker_id) const;
 
   /**
-   * Get workers by thread type
-   * @param thread_type Type of worker threads
-   * @return Vector of worker pointers of specified type
-   */
-  std::vector<Worker*> GetWorkersByType(ThreadType thread_type) const;
-
-  /**
    * Get total number of workers
    * @return Total count of all workers
    */
   size_t GetWorkerCount() const;
-
-  /**
-   * Get worker count by type
-   * @param thread_type Type of worker threads
-   * @return Count of workers of specified type
-   */
-  u32 GetWorkerCountByType(ThreadType thread_type) const;
 
 
   /**
@@ -130,19 +149,17 @@ class WorkOrchestrator {
   bool SpawnWorkerThreads();
 
   /**
-   * Create workers of specified type
-   * @param thread_type Type of workers to create
+   * Create workers
    * @param count Number of workers to create
    * @return true if creation successful, false otherwise
    */
-  bool CreateWorkers(ThreadType thread_type, u32 count);
+  bool CreateWorkers(u32 count);
 
   /**
-   * Create a single worker with specified type
-   * @param thread_type Type of worker to create
+   * Create a single worker
    * @return true if creation successful, false otherwise
    */
-  bool CreateWorker(ThreadType thread_type);
+  bool CreateWorker();
 
   /**
    * Initialize queue lane mappings
@@ -153,10 +170,10 @@ class WorkOrchestrator {
   bool is_initialized_ = false;
   bool workers_running_ = false;
 
-  // Worker containers organized by type
-  std::vector<std::unique_ptr<Worker>> sched_workers_;
+  // Worker ownership container (owns all worker unique_ptrs)
+  std::vector<std::unique_ptr<Worker>> workers_;
 
-  // All workers for easy access
+  // All workers for easy access (raw pointers to owned workers)
   std::vector<Worker*> all_workers_;
 
   // Active lanes pointer to IPC Manager worker queues

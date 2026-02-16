@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_MANAGERS_CONFIG_MANAGER_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_MANAGERS_CONFIG_MANAGER_H_
 
@@ -95,23 +128,22 @@ class ConfigManager : public hshm::BaseConfig {
   std::string GetServerConfigPath() const;
 
   /**
-   * Get number of worker threads for given type
-   * @param thread_type Type of worker thread
-   * @return Number of threads to spawn
+   * Get number of worker threads
+   * @return Number of worker threads for task execution
    */
-  u32 GetWorkerThreadCount(ThreadType thread_type) const;
+  u32 GetNumThreads() const { return num_threads_; }
 
   /**
-   * Get number of scheduler worker threads
-   * @return Number of scheduler worker threads
+   * Get task queue depth per worker
+   * @return Queue depth (number of tasks per worker queue)
    */
-  u32 GetSchedulerWorkerCount() const { return sched_workers_; }
+  u32 GetQueueDepth() const { return queue_depth_; }
 
   /**
-   * Get number of slow worker threads
-   * @return Number of slow worker threads
+   * Calculate main segment size based on queue_depth and num_threads
+   * @return Calculated size in bytes, or explicit size if main_segment_size_ > 0
    */
-  u32 GetSlowWorkerCount() const { return slow_threads_; }
+  size_t CalculateMainSegmentSize() const;
 
   /**
    * Get memory segment size
@@ -202,8 +234,8 @@ class ConfigManager : public hshm::BaseConfig {
   std::string config_file_path_;
 
   // Configuration parameters
-  u32 sched_workers_ = 4;
-  u32 slow_threads_ = 4;
+  u32 num_threads_ = 4;
+  u32 queue_depth_ = 1024;
   u32 process_reaper_workers_ = 1;
 
   size_t main_segment_size_ = hshm::Unit<size_t>::Gigabytes(1);

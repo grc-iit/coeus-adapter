@@ -1,0 +1,60 @@
+# Content Transfer Engine (CTE) Configuration File
+# Score/Demotion Benchmark Configuration
+#
+# This configuration provides a two-tier storage setup:
+# - Tier 1 (Fast): 8GB RAM with score 1.0 (highest priority)
+# - Tier 2 (Slow): 16GB NVMe with score 0.0 (lowest priority)
+#
+# Blobs placed with score 1.0 go to RAM (fast tier)
+# Blobs reorganized with score 0.0 are demoted to NVMe (slow tier)
+
+runtime:
+  num_threads: 4             # Worker threads for task execution
+  queue_depth: 1024          # Task queue depth per worker
+
+  # Worker sleep configuration (all values in microseconds)
+  first_busy_wait: 10000     # Busy wait before sleeping when idle (10ms)
+  max_sleep: 50000           # Maximum sleep duration (50ms)
+
+compose:
+  # CTE Core module configuration
+  - mod_name: wrp_cte_core
+    pool_name: wrp_cte
+    pool_query: local
+    pool_id: 512.0
+
+    # Target management settings
+    targets:
+      neighborhood: 1                    # Single-node configuration
+      default_target_timeout_ms: 30000   # 30 second timeout
+      poll_period_ms: 5000               # Rescan targets every 5 seconds
+
+    # Storage block device configuration - Two-tier setup
+    storage:
+      # Tier 1: Fast RAM storage (8GB)
+      # Score 1.0 means this is the highest priority tier
+      # New blobs with score 1.0 will be placed here first
+      - path: "ram::cte_ram_tier"
+        bdev_type: "ram"
+        capacity_limit: "512m"
+        score: 1.0
+
+      # Tier 2: Slow NVMe storage (16GB)
+      # Score 0.0 means this is the lowest priority tier
+      # Blobs demoted with SetScore/ReorganizeBlob to score 0.0 go here
+      - path: "/tmp/cte_nvme_tier/storage.bin"
+        bdev_type: "file"
+        capacity_limit: "16GB"
+        score: 0.0
+
+    # Data Placement Engine configuration
+    # max_bw places data on the fastest available tier with capacity
+    dpe:
+      dpe_type: "max_bw"
+
+    # Performance tuning
+    performance:
+      target_stat_interval_ms: 1000      # Update target stats every 1 second
+      max_concurrent_operations: 64      # Allow high concurrency
+      score_threshold: 0.7               # Reorganization threshold
+      score_difference_threshold: 0.05   # Minimum score change to trigger reorg

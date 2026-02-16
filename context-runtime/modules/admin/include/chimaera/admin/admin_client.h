@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef ADMIN_CLIENT_H_
 #define ADMIN_CLIENT_H_
 
@@ -21,17 +54,15 @@ class Client : public chi::ContainerClient {
    * Default constructor
    */
   Client() {
-    HLOG(kWarning, "AdminClient: Default constructor called - pool_id_ will be PoolId(0,0)");
+    HLOG(kWarning,
+         "AdminClient: Default constructor called - pool_id_ will be "
+         "PoolId(0,0)");
   }
 
   /**
    * Constructor with pool ID
    */
-  explicit Client(const chi::PoolId& pool_id) {
-    HLOG(kInfo, "AdminClient: Constructor called with pool_id={}", pool_id);
-    Init(pool_id);
-    HLOG(kInfo, "AdminClient: After Init, pool_id_={}", pool_id_);
-  }
+  explicit Client(const chi::PoolId& pool_id) { Init(pool_id); }
 
   /**
    * Create the Admin container (asynchronous)
@@ -40,16 +71,17 @@ class Client : public chi::ContainerClient {
    * @param custom_pool_id Explicit pool ID for the pool being created
    */
   chi::Future<CreateTask> AsyncCreate(const chi::PoolQuery& pool_query,
-                                       const std::string& pool_name,
-                                       const chi::PoolId& custom_pool_id) {
+                                      const std::string& pool_name,
+                                      const chi::PoolId& custom_pool_id) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate CreateTask for admin container creation
     // Note: Admin uses BaseCreateTask pattern, not GetOrCreatePoolTask
-    // The custom_pool_id is the ID for the pool being created (not the task pool)
-    // Pass 'this' as client pointer for PostWait callback
-    auto task = ipc_manager->NewTask<CreateTask>(chi::CreateTaskId(),
-                                                 chi::kAdminPoolId, pool_query, "", pool_name, custom_pool_id, this);
+    // The custom_pool_id is the ID for the pool being created (not the task
+    // pool) Pass 'this' as client pointer for PostWait callback
+    auto task = ipc_manager->NewTask<CreateTask>(
+        chi::CreateTaskId(), chi::kAdminPoolId, pool_query, "", pool_name,
+        custom_pool_id, this);
 
     // Submit to runtime and return Future
     return ipc_manager->Send(task);
@@ -58,8 +90,9 @@ class Client : public chi::ContainerClient {
   /**
    * Destroy an existing ChiPool (asynchronous)
    */
-  chi::Future<DestroyPoolTask> AsyncDestroyPool(const chi::PoolQuery& pool_query,
-      chi::PoolId target_pool_id, chi::u32 destruction_flags = 0) {
+  chi::Future<DestroyPoolTask> AsyncDestroyPool(
+      const chi::PoolQuery& pool_query, chi::PoolId target_pool_id,
+      chi::u32 destruction_flags = 0) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate DestroyPoolTask
@@ -80,13 +113,13 @@ class Client : public chi::ContainerClient {
    * @return Future for the periodic SendTask
    */
   chi::Future<SendTask> AsyncSendPoll(const chi::PoolQuery& pool_query,
-      chi::u32 transfer_flags = 0,
-      double period_us = 25) {
+                                      chi::u32 transfer_flags = 0,
+                                      double period_us = 25) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate SendTask for polling
-    auto task = ipc_manager->NewTask<SendTask>(
-        chi::CreateTaskId(), pool_id_, pool_query, transfer_flags);
+    auto task = ipc_manager->NewTask<SendTask>(chi::CreateTaskId(), pool_id_,
+                                               pool_query, transfer_flags);
 
     // Set task as periodic if period is specified
     if (period_us > 0) {
@@ -100,16 +133,17 @@ class Client : public chi::ContainerClient {
 
   /**
    * Receive tasks from network (asynchronous)
-   * Can be used for both SerializeIn (receiving inputs) and SerializeOut (receiving outputs)
+   * Can be used for both SerializeIn (receiving inputs) and SerializeOut
+   * (receiving outputs)
    */
   chi::Future<RecvTask> AsyncRecv(const chi::PoolQuery& pool_query,
-      chi::u32 transfer_flags = 0,
-      double period_us = 25) {
+                                  chi::u32 transfer_flags = 0,
+                                  double period_us = 25) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate RecvTask
-    auto task = ipc_manager->NewTask<RecvTask>(
-        chi::CreateTaskId(), pool_id_, pool_query, transfer_flags);
+    auto task = ipc_manager->NewTask<RecvTask>(chi::CreateTaskId(), pool_id_,
+                                               pool_query, transfer_flags);
 
     // Set task as periodic if period is specified
     if (period_us > 0) {
@@ -138,8 +172,9 @@ class Client : public chi::ContainerClient {
   /**
    * Stop the entire Chimaera runtime (asynchronous)
    */
-  chi::Future<StopRuntimeTask> AsyncStopRuntime(const chi::PoolQuery& pool_query,
-      chi::u32 shutdown_flags = 0, chi::u32 grace_period_ms = 5000) {
+  chi::Future<StopRuntimeTask> AsyncStopRuntime(
+      const chi::PoolQuery& pool_query, chi::u32 shutdown_flags = 0,
+      chi::u32 grace_period_ms = 5000) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate StopRuntimeTask
@@ -161,12 +196,10 @@ class Client : public chi::ContainerClient {
     auto* ipc_manager = CHI_IPC;
 
     // Create ComposeTask with PoolConfig passed directly to constructor
-    auto task_ptr = ipc_manager->NewTask<chimaera::admin::ComposeTask<chi::PoolConfig>>(
-        chi::CreateTaskId(),
-        chi::kAdminPoolId,
-        pool_config.pool_query_,
-        pool_config
-    );
+    auto task_ptr =
+        ipc_manager->NewTask<chimaera::admin::ComposeTask<chi::PoolConfig>>(
+            chi::CreateTaskId(), chi::kAdminPoolId, pool_config.pool_query_,
+            pool_config);
 
     // Submit to runtime and return Future
     return ipc_manager->Send(task_ptr);
@@ -176,16 +209,17 @@ class Client : public chi::ContainerClient {
    * Heartbeat - Check if runtime is alive (asynchronous)
    * Polls for ZMQ heartbeat requests and responds
    * @param pool_query Pool routing information
-   * @param period_us Period in microseconds (default 5000us = 5ms, 0 = one-shot)
+   * @param period_us Period in microseconds (default 5000us = 5ms, 0 =
+   * one-shot)
    * @return Future for the heartbeat task
    */
   chi::Future<HeartbeatTask> AsyncHeartbeat(const chi::PoolQuery& pool_query,
-      double period_us = 5000) {
+                                            double period_us = 5000) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate HeartbeatTask
-    auto task = ipc_manager->NewTask<HeartbeatTask>(
-        chi::CreateTaskId(), pool_id_, pool_query);
+    auto task = ipc_manager->NewTask<HeartbeatTask>(chi::CreateTaskId(),
+                                                    pool_id_, pool_query);
 
     // Set task as periodic if period is specified
     if (period_us > 0) {
@@ -199,18 +233,19 @@ class Client : public chi::ContainerClient {
 
   /**
    * WreapDeadIpcs - Periodic task to reap shared memory from dead processes
-   * Calls IpcManager::WreapDeadIpcs() to clean up orphaned shared memory segments
+   * Calls IpcManager::WreapDeadIpcs() to clean up orphaned shared memory
+   * segments
    * @param pool_query Pool routing information
    * @param period_us Period in microseconds (default 1000000us = 1s)
    * @return Future for the WreapDeadIpcs task
    */
-  chi::Future<WreapDeadIpcsTask> AsyncWreapDeadIpcs(const chi::PoolQuery& pool_query,
-      double period_us = 1000000) {
+  chi::Future<WreapDeadIpcsTask> AsyncWreapDeadIpcs(
+      const chi::PoolQuery& pool_query, double period_us = 1000000) {
     auto* ipc_manager = CHI_IPC;
 
     // Allocate WreapDeadIpcsTask
-    auto task = ipc_manager->NewTask<WreapDeadIpcsTask>(
-        chi::CreateTaskId(), pool_id_, pool_query);
+    auto task = ipc_manager->NewTask<WreapDeadIpcsTask>(chi::CreateTaskId(),
+                                                        pool_id_, pool_query);
 
     // Set task as periodic if period is specified
     if (period_us > 0) {
@@ -229,28 +264,23 @@ class Client : public chi::ContainerClient {
    * - Worker idle status and suspend periods
    *
    * @param pool_query Query for routing this task
-   * @param period_us Period in microseconds for periodic monitoring (0 = one-shot)
+   * @param period_us Period in microseconds for periodic monitoring (0 =
+   * one-shot)
    * @return Future for MonitorTask that will contain worker statistics
    */
   chi::Future<MonitorTask> AsyncMonitor(const chi::PoolQuery& pool_query,
-      double period_us = 0) {
+                                        double period_us = 0) {
     auto* ipc_manager = CHI_IPC;
 
-    HLOG(kInfo, "AsyncMonitor: Creating MonitorTask with pool_id_={}", pool_id_);
     // Allocate MonitorTask
-    auto task = ipc_manager->NewTask<MonitorTask>(
-        chi::CreateTaskId(), pool_id_, pool_query);
-    HLOG(kInfo, "AsyncMonitor: Task pool_id={}, method={}", task->pool_id_, task->method_);
-
-    HLOG(kInfo, "AsyncMonitor: Task created, IsNull={}", task.IsNull());
-
+    auto task = ipc_manager->NewTask<MonitorTask>(chi::CreateTaskId(), pool_id_,
+                                                  pool_query);
     // Set task as periodic if period is specified
     if (period_us > 0) {
       task->SetPeriod(period_us, chi::kMicro);
       task->SetFlags(TASK_PERIODIC);
     }
 
-    HLOG(kInfo, "AsyncMonitor: Sending task");
     // Submit to runtime and return Future
     return ipc_manager->Send(task);
   }
@@ -263,23 +293,17 @@ class Client : public chi::ContainerClient {
    * @param batch TaskBatch containing the tasks to submit
    * @return Future for SubmitBatchTask with completion results
    */
-  chi::Future<SubmitBatchTask> AsyncSubmitBatch(const chi::PoolQuery& pool_query,
-                                                 const TaskBatch& batch) {
+  chi::Future<SubmitBatchTask> AsyncSubmitBatch(
+      const chi::PoolQuery& pool_query, const TaskBatch& batch) {
     auto* ipc_manager = CHI_IPC;
-
-    HLOG(kInfo, "AsyncSubmitBatch: Creating SubmitBatchTask with {} tasks",
-         batch.GetTaskCount());
 
     // Allocate SubmitBatchTask with batch data
     auto task = ipc_manager->NewTask<SubmitBatchTask>(
         chi::CreateTaskId(), pool_id_, pool_query, batch);
 
-    HLOG(kInfo, "AsyncSubmitBatch: Task created, sending to runtime");
-
     // Submit to runtime and return Future
     return ipc_manager->Send(task);
   }
-
 };
 
 }  // namespace chimaera::admin

@@ -3,7 +3,8 @@
 
 # Memory segment configuration
 memory:
-  main_segment_size: 1073741824      # 1GB
+  main_segment_size: auto            # Auto-calculated from queue_depth and num_threads
+                                     # Or specify explicitly (e.g., "1GB" or 1073741824)
   client_data_segment_size: 536870912 # 512MB
 
 # Network configuration
@@ -21,16 +22,14 @@ logging:
 # Runtime configuration (includes worker threads, scheduling, and performance parameters)
 runtime:
   # Worker thread configuration
-  sched_threads: 1           # Scheduler worker threads (for fast tasks with EstCpuTime < 50us)
-  slow_threads: 0            # Slow worker threads (for long-running tasks with EstCpuTime >= 50us)
+  num_threads: 4             # Worker threads for task execution (replaces sched_threads + slow_threads)
   process_reaper_threads: 1  # Process reaper threads
 
   # Task execution configuration
-  stack_size: 65536          # 64KB per task
-  queue_depth: 10000         # Maximum queue depth
-  local_sched: "default"     # Local task scheduler (default: "default")
+  queue_depth: 1024          # Task queue depth per worker (now actually configurable)
+  local_sched: "default"     # Local task scheduler
   heartbeat_interval: 1000   # Heartbeat interval in milliseconds
 
   # Worker sleep configuration (all values in microseconds)
-  first_busy_wait: 10000        # Busy wait duration before sleeping when idle (default: 50us)
-  max_sleep: 50000           # Maximum sleep duration cap (default: 50000us = 50ms)
+  first_busy_wait: 10000     # Busy wait before sleeping when idle (10ms)
+  max_sleep: 50000           # Maximum sleep duration (50ms)

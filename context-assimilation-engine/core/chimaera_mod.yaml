@@ -1,0 +1,15 @@
+# CAE Core ChiMod Configuration
+module_name: core
+namespace: wrp_cae
+version: 1.0.0
+
+# Inherited Methods (fixed IDs)
+kCreate: 0        # Container creation (required)
+kDestroy: 1       # Container destruction (required)
+kNodeFailure: -1  # Not implemented (-1 means disabled)
+kRecover: -1      # Not implemented
+kMigrate: -1      # Not implemented
+kUpgrade: -1      # Not implemented
+
+# Custom Methods (start from 10, use sequential IDs)
+kParseOmni: 10       # Parse OMNI YAML file and schedule assimilation tasks

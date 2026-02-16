@@ -1,0 +1,19 @@
+# Include the license file
+include COPYING
+include additional_legal/*.*
+
+include README.txt
+
+include HDFCompass.desktop
+include HDFCompass.ico
+include HDFCompass.icns
+include HDFCompass.py
+
+recursive-include tests *.*
+recursive-include docs *.*
+prune docs/_build
+
+include data/asc/*.*
+include data/bag/*.*
+include data/hdf5/*.*
+include data/hdf5/Download/download_data.py

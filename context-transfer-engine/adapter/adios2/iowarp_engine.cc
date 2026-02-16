@@ -1,18 +1,40 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of IOWarp Core. The full IOWarp Core copyright         *
- * notice, including terms governing use, modification, and redistribution,  *
- * is contained in the COPYING file, which can be found at the top directory.*
- * If you do not have access to the file, you may request a copy             *
- * from scslab@iit.edu.                                                      *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "iowarp_engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -37,12 +59,66 @@ IowarpEngine::IowarpEngine(adios2::core::IO &io, const std::string &name,
       open_(false),
       compress_mode_(0),
       compress_lib_(0),
-      compress_trace_(false) {
+      compress_trace_(false),
+      total_io_time_ms_(0.0) {
+  std::cerr << "[IowarpEngine] DEBUG: Constructor entered, rank=" << rank_
+            << ", name=" << name << std::endl;
+  std::cerr.flush();
+
   // Initialize CTE client - assumes Chimaera runtime is already running
+  std::cerr << "[IowarpEngine] DEBUG: About to call WRP_CTE_CLIENT_INIT" << std::endl;
+  std::cerr.flush();
   wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local());
+  std::cerr << "[IowarpEngine] DEBUG: WRP_CTE_CLIENT_INIT completed" << std::endl;
+  std::cerr.flush();
 
   // Read compression environment variables
+  std::cerr << "[IowarpEngine] DEBUG: About to read compression env vars" << std::endl;
+  std::cerr.flush();
   ReadCompressionEnvVars();
+  std::cerr << "[IowarpEngine] DEBUG: Compression env vars read, mode=" << compress_mode_ << std::endl;
+  std::cerr.flush();
+
+#ifdef WRP_CTE_ENABLE_COMPRESS
+  // Initialize compressor client if compression is enabled
+  if (compress_mode_ != 0) {
+    std::cerr << "[IowarpEngine] DEBUG: Creating compressor client" << std::endl;
+    std::cerr.flush();
+    compressor_client_ = std::make_unique<wrp_cte::compressor::Client>();
+    std::cerr << "[IowarpEngine] DEBUG: Compressor client created, calling AsyncCreate" << std::endl;
+    std::cerr.flush();
+    // Create the compressor pool
+    auto create_task = compressor_client_->AsyncCreate(
+        chi::PoolQuery::Local(),
+        "wrp_cte_compressor",
+        chi::PoolId(513, 0));
+    std::cerr << "[IowarpEngine] DEBUG: AsyncCreate called, about to Wait()" << std::endl;
+    std::cerr.flush();
+    create_task.Wait();
+    std::cerr << "[IowarpEngine] DEBUG: Wait() completed, return_code=" << create_task->GetReturnCode() << std::endl;
+    std::cerr.flush();
+    if (create_task->GetReturnCode() != 0) {
+      if (rank_ == 0) {
+        std::cerr << "[IowarpEngine] Warning: Failed to create compressor pool, "
+                  << "compression may not work correctly" << std::endl;
+      }
+    } else {
+      if (rank_ == 0) {
+        std::cerr << "[IowarpEngine] Compressor client initialized" << std::endl;
+      }
+    }
+  }
+#endif
+
+  // Start wall clock timer
+  wall_clock_start_ = std::chrono::high_resolution_clock::now();
+
+  std::cerr << "[IowarpEngine] DEBUG: Constructor completed, starting timing measurement" << std::endl;
+  std::cerr.flush();
+
+  if (rank_ == 0) {
+    std::cerr << "[IowarpEngine] Starting timing measurement" << std::endl;
+  }
 }
 
 /**
@@ -52,12 +128,33 @@ IowarpEngine::~IowarpEngine() {
   if (open_) {
     DoClose();
   }
+
+  // Calculate total wall clock time
+  auto wall_clock_end = std::chrono::high_resolution_clock::now();
+  double total_wall_time_ms =
+      std::chrono::duration<double, std::milli>(wall_clock_end - wall_clock_start_).count();
+  double compute_time_ms = total_wall_time_ms - total_io_time_ms_;
+
+  if (rank_ == 0) {
+    std::cerr << "\n========================================" << std::endl;
+    std::cerr << "[IowarpEngine] Timing Summary" << std::endl;
+    std::cerr << "========================================" << std::endl;
+    std::cerr << "Total wall time:  " << total_wall_time_ms << " ms" << std::endl;
+    std::cerr << "Total I/O time:   " << total_io_time_ms_ << " ms" << std::endl;
+    std::cerr << "Compute time:     " << compute_time_ms << " ms" << std::endl;
+    std::cerr << "I/O percentage:   " << (total_io_time_ms_ / total_wall_time_ms * 100.0) << "%" << std::endl;
+    std::cerr << "Compute percentage: " << (compute_time_ms / total_wall_time_ms * 100.0) << "%" << std::endl;
+    std::cerr << "========================================\n" << std::endl;
+  }
 }
 
 /**
  * Initialize the engine
  */
 void IowarpEngine::Init_() {
+  std::cerr << "[IowarpEngine] DEBUG: Init_() entered, open_=" << open_ << std::endl;
+  std::cerr.flush();
+
   if (open_) {
     throw std::runtime_error("IowarpEngine::Init_: Engine already initialized");
   }
@@ -65,13 +162,22 @@ void IowarpEngine::Init_() {
   // Create or get tag for this ADIOS file/session
   // Use the engine name as the tag name
   try {
+    std::cerr << "[IowarpEngine] DEBUG: About to create Tag with name=" << m_Name << std::endl;
+    std::cerr.flush();
     current_tag_ = std::make_unique<wrp_cte::core::Tag>(m_Name);
+    std::cerr << "[IowarpEngine] DEBUG: Tag created successfully" << std::endl;
+    std::cerr.flush();
     open_ = true;
   } catch (const std::exception &e) {
+    std::cerr << "[IowarpEngine] DEBUG: Tag creation failed: " << e.what() << std::endl;
+    std::cerr.flush();
     throw std::runtime_error(
         std::string("IowarpEngine::Init_: Failed to create/get tag: ") +
         e.what());
   }
+
+  std::cerr << "[IowarpEngine] DEBUG: Init_() completed" << std::endl;
+  std::cerr.flush();
 }
 
 /**
@@ -82,16 +188,25 @@ void IowarpEngine::Init_() {
  */
 adios2::StepStatus IowarpEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
+  std::cerr << "[IowarpEngine] DEBUG: BeginStep() entered, open_=" << open_ << std::endl;
+  std::cerr.flush();
+
   (void)mode;            // Suppress unused parameter warning
   (void)timeoutSeconds;  // Suppress unused parameter warning
 
   // Lazy initialization if not already initialized
   if (!open_) {
+    std::cerr << "[IowarpEngine] DEBUG: BeginStep() calling Init_()" << std::endl;
+    std::cerr.flush();
     Init_();
+    std::cerr << "[IowarpEngine] DEBUG: BeginStep() Init_() returned" << std::endl;
+    std::cerr.flush();
   }
 
   // Increment step counter
   IncrementCurrentStep();
+  std::cerr << "[IowarpEngine] DEBUG: BeginStep() completed, step=" << current_step_ << std::endl;
+  std::cerr.flush();
 
   return adios2::StepStatus::OK;
 }
@@ -104,7 +219,15 @@ void IowarpEngine::EndStep() {
     throw std::runtime_error("IowarpEngine::EndStep: Engine not initialized");
   }
 
+  // Timing measurement for I/O operations
+  auto io_start = std::chrono::high_resolution_clock::now();
+
   // Process all deferred put tasks from this step
+  size_t total_original_size = 0;
+  size_t total_compressed_size = 0;
+  double total_compress_time_ms = 0.0;
+  size_t num_tasks = 0;
+
   for (auto &deferred : deferred_tasks_) {
     // Set TASK_DATA_OWNER flag so task destructor will free the buffer
     auto *task_ptr = deferred.task.get();
@@ -114,10 +237,58 @@ void IowarpEngine::EndStep() {
 
     // Wait for task to complete
     deferred.task.Wait();
+
+    // Extract compression statistics from context
+    if (task_ptr != nullptr) {
+      const auto &ctx = task_ptr->context_;
+      if (ctx.actual_original_size_ > 0) {
+        total_original_size += ctx.actual_original_size_;
+        total_compressed_size += ctx.actual_compressed_size_;
+        total_compress_time_ms += ctx.actual_compress_time_ms_;
+        num_tasks++;
+
+        // Log individual task compression stats if tracing is enabled
+        if (rank_ == 0 && compress_trace_) {
+          std::cerr << "[IowarpEngine] Compression stats: "
+                    << "original=" << ctx.actual_original_size_ << " bytes, "
+                    << "compressed=" << ctx.actual_compressed_size_ << " bytes, "
+                    << "ratio=" << ctx.actual_compression_ratio_ << ", "
+                    << "time=" << ctx.actual_compress_time_ms_ << " ms, "
+                    << "PSNR=" << ctx.actual_psnr_db_ << " dB" << std::endl;
+        }
+      }
+    }
   }
 
   // Clear the deferred tasks vector for the next step
   deferred_tasks_.clear();
+
+  // Print aggregated compression statistics for this step
+  if (rank_ == 0 && num_tasks > 0) {
+    double overall_ratio = (total_compressed_size > 0)
+                               ? static_cast<double>(total_original_size) / total_compressed_size
+                               : 1.0;
+    std::cerr << "[IowarpEngine] Step " << current_step_ << " compression summary: "
+              << "tasks=" << num_tasks << ", "
+              << "total_original=" << total_original_size << " bytes, "
+              << "total_compressed=" << total_compressed_size << " bytes, "
+              << "overall_ratio=" << overall_ratio << ", "
+              << "total_compress_time=" << total_compress_time_ms << " ms" << std::endl;
+  }
+
+  // Measure and log I/O time
+  auto io_end = std::chrono::high_resolution_clock::now();
+  double io_time_ms = std::chrono::duration<double, std::milli>(io_end - io_start).count();
+
+  // Accumulate total I/O time
+  total_io_time_ms_ += io_time_ms;
+
+  // Log per-step I/O time
+  if (rank_ == 0) {
+    std::cerr << "[IowarpEngine] Step " << current_step_
+              << " I/O time: " << io_time_ms << " ms"
+              << " (Total I/O: " << total_io_time_ms_ << " ms)" << std::endl;
+  }
 }
 
 /**
@@ -313,6 +484,15 @@ void IowarpEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   // Create compression context from environment variables
   auto context = CreateCompressionContext();
 
+#ifdef WRP_CTE_ENABLE_COMPRESS
+  // Call compressor for dynamic scheduling if compression is enabled
+  if (compressor_client_ && compress_mode_ == 2) {
+    compressor_client_->DynamicSchedule(
+        data_size, const_cast<void*>(reinterpret_cast<const void*>(values)),
+        context, chi::PoolQuery::Local());
+  }
+#endif
+
   // Put blob to CTE synchronously
   try {
     current_tag_->PutBlob(blob_name, reinterpret_cast<const char *>(values),
@@ -388,6 +568,14 @@ void IowarpEngine::DoPutDeferred_(const adios2::core::Variable<T> &variable,
 
     // Create compression context from environment variables
     auto context = CreateCompressionContext();
+
+#ifdef WRP_CTE_ENABLE_COMPRESS
+    // Call compressor for dynamic scheduling if compression is enabled
+    if (compressor_client_ && compress_mode_ == 2) {
+      compressor_client_->DynamicSchedule(
+          data_size, buffer.ptr_, context, chi::PoolQuery::Local());
+    }
+#endif
 
     auto task = current_tag_->AsyncPutBlob(
         blob_name, buffer.shm_.template Cast<void>(), data_size, 0, 1.0f, context);

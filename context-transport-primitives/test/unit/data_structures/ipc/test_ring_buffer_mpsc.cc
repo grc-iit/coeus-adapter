@@ -1,14 +1,35 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by The HDF Group.                                               *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Hermes. The full Hermes copyright notice, including  *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the top directory. If you do not  *
- * have access to the file, you may request a copy from help@hdfgroup.org.   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "../../../context-runtime/test/simple_test.h"
 #include "hermes_shm/data_structures/ipc/ring_buffer.h"
@@ -146,37 +167,54 @@ TEST_CASE("MPSC RingBuffer: contention under capacity limit",
   // Small buffer to induce contention
   mpsc_ring_buffer<int, ArenaAllocator<false>> rb(alloc, 16);
 
-  std::atomic<int> successful_pushes(0);
-  std::atomic<int> failed_pushes(0);
+  std::atomic<int> total_pushed(0);
+  std::atomic<int> total_popped(0);
+  std::atomic<bool> producers_done(false);
 
-  // 3 producer threads try to push as many items as possible
+  // 3 producer threads push items concurrently
   std::vector<std::thread> producers;
   for (int producer_id = 0; producer_id < 3; ++producer_id) {
-    producers.emplace_back(
-        [&rb, &successful_pushes, &failed_pushes, producer_id]() {
-          for (int i = 0; i < 50; ++i) {
-            int value = producer_id * 1000 + i;
-            if (rb.Push(value)) {
-              successful_pushes.fetch_add(1, std::memory_order_relaxed);
-            } else {
-              failed_pushes.fetch_add(1, std::memory_order_relaxed);
-            }
-            std::this_thread::sleep_for(std::chrono::microseconds(50));
-          }
-        });
+    producers.emplace_back([&rb, &total_pushed, producer_id]() {
+      for (int i = 0; i < 50; ++i) {
+        int value = producer_id * 1000 + i;
+        rb.Push(value);  // Blocks when buffer is full
+        total_pushed.fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+      }
+    });
   }
 
+  // Consumer thread drains the buffer concurrently
+  std::thread consumer([&rb, &total_popped, &producers_done]() {
+    while (true) {
+      int val;
+      if (rb.Pop(val)) {
+        total_popped.fetch_add(1, std::memory_order_relaxed);
+      } else if (producers_done.load(std::memory_order_acquire)) {
+        // Drain any remaining items
+        while (rb.Pop(val)) {
+          total_popped.fetch_add(1, std::memory_order_relaxed);
+        }
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  // Wait for all producers to complete
   for (auto &t : producers) {
     t.join();
   }
+  producers_done.store(true, std::memory_order_release);
 
-  // With ERROR_ON_NO_SPACE flag, some pushes should fail
-  int total_attempts = 3 * 50;
-  int total_succeeded = successful_pushes.load();
-  int total_failed = failed_pushes.load();
+  // Wait for consumer to finish
+  consumer.join();
 
-  REQUIRE(total_succeeded + total_failed == total_attempts);
-  REQUIRE(total_succeeded <= 16);  // At most capacity items in buffer
+  // Verify all items were pushed and consumed
+  int total_expected = 3 * 50;
+  REQUIRE(total_pushed.load() == total_expected);
+  REQUIRE(total_popped.load() == total_expected);
+  REQUIRE(rb.Empty());
 
 }
 

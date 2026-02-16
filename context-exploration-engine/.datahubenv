@@ -1,0 +1,13 @@
+gms:
+  ca_certificate_path: null
+  client_certificate_path: null
+  client_mode: null
+  datahub_component: null
+  disable_ssl_verification: false
+  extra_headers: null
+  openapi_ingestion: null
+  retry_max_times: null
+  retry_status_codes: null
+  server: http://localhost:8080
+  timeout_sec: null
+  token: ''

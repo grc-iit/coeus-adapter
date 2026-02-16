@@ -1,7 +1,40 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <chimaera/bdev/bdev_runtime.h>
 #include <chimaera/comutex.h>
-#include <chimaera/worker.h>
 #include <chimaera/work_orchestrator.h>
+#include <chimaera/worker.h>
 #include <errno.h>
 #include <sys/epoll.h>
 #include <sys/mman.h>
@@ -35,7 +68,8 @@ bool WorkerIOContext::Init(const std::string &file_path, chi::u32 io_depth,
   aio_ctx_ = 0;
   int ret = io_setup(io_depth, &aio_ctx_);
   if (ret < 0) {
-    HLOG(kError, "Worker {} failed to setup AIO context: errno: {}, strerror: {}",
+    HLOG(kError,
+         "Worker {} failed to setup AIO context: errno: {}, strerror: {}",
          worker_id, -ret, strerror(-ret));
     close(file_fd_);
     file_fd_ = -1;
@@ -55,8 +89,9 @@ bool WorkerIOContext::Init(const std::string &file_path, chi::u32 io_depth,
   }
 
   is_initialized_ = true;
-  HLOG(kDebug, "Worker {} I/O context initialized: fd={}, aio_ctx={}, event_fd={}",
-       worker_id, file_fd_, reinterpret_cast<void*>(aio_ctx_), event_fd_);
+  HLOG(kDebug,
+       "Worker {} I/O context initialized: fd={}, aio_ctx={}, event_fd={}",
+       worker_id, file_fd_, reinterpret_cast<void *>(aio_ctx_), event_fd_);
   return true;
 }
 
@@ -286,7 +321,8 @@ Runtime::~Runtime() {
 bool Runtime::InitializeWorkerIOContexts() {
   // Pre-allocate vector based on actual number of workers
   chi::WorkOrchestrator *work_orchestrator = CHI_WORK_ORCHESTRATOR;
-  size_t num_workers = work_orchestrator ? work_orchestrator->GetWorkerCount() : 16;
+  size_t num_workers =
+      work_orchestrator ? work_orchestrator->GetWorkerCount() : 16;
   worker_io_contexts_.resize(num_workers);
   // Contexts are lazily initialized when first accessed
   return true;
@@ -302,8 +338,8 @@ void Runtime::CleanupWorkerIOContexts() {
 WorkerIOContext *Runtime::GetWorkerIOContext(size_t worker_id) {
   // Check bounds - vector is pre-allocated in InitializeWorkerIOContexts
   if (worker_id >= worker_io_contexts_.size()) {
-    HLOG(kWarning, "Worker ID {} exceeds pre-allocated size {}",
-         worker_id, worker_io_contexts_.size());
+    HLOG(kWarning, "Worker ID {} exceeds pre-allocated size {}", worker_id,
+         worker_io_contexts_.size());
     return nullptr;
   }
 
@@ -321,7 +357,8 @@ WorkerIOContext *Runtime::GetWorkerIOContext(size_t worker_id) {
     if (worker != nullptr && ctx->event_fd_ >= 0) {
       // Store context pointer as user data for epoll event handling
       if (!worker->RegisterEpollFd(ctx->event_fd_, EPOLLIN, ctx)) {
-        HLOG(kWarning, "Failed to register eventfd with worker {} epoll", worker_id);
+        HLOG(kWarning, "Failed to register eventfd with worker {} epoll",
+             worker_id);
         // Continue anyway - we can fall back to polling
       } else {
         HLOG(kDebug, "Registered eventfd {} with worker {} epoll",
@@ -333,7 +370,8 @@ WorkerIOContext *Runtime::GetWorkerIOContext(size_t worker_id) {
   return ctx;
 }
 
-chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext &ctx) {
+chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task,
+                                chi::RunContext &ctx) {
   // Get the creation parameters
   CreateParams params = task->GetParams();
 
@@ -406,8 +444,9 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext 
 
     // Initialize per-worker I/O contexts for parallel file access
     if (!InitializeWorkerIOContexts()) {
-      HLOG(kWarning, "Failed to initialize per-worker I/O contexts, "
-                     "falling back to single FD");
+      HLOG(kWarning,
+           "Failed to initialize per-worker I/O contexts, "
+           "falling back to single FD");
     }
 
   } else if (bdev_type_ == BdevType::kRam) {
@@ -456,9 +495,12 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext 
 }
 
 chi::TaskResume Runtime::AllocateBlocks(hipc::FullPtr<AllocateBlocksTask> task,
-                             chi::RunContext &ctx) {
-  HLOG(kDebug, "bdev::AllocateBlocks: ENTER - pool_id_=({},{}), size={}, container_id={}",
-       task->pool_id_.major_, task->pool_id_.minor_, task->size_, container_id_);
+                                        chi::RunContext &ctx) {
+  HLOG(kDebug,
+       "bdev::AllocateBlocks: ENTER - pool_id_=({},{}), size={}, "
+       "container_id={}",
+       task->pool_id_.major_, task->pool_id_.minor_, task->size_,
+       container_id_);
 
   // Get worker ID for allocation
   int worker_id = static_cast<int>(GetWorkerID(ctx));
@@ -528,7 +570,7 @@ chi::TaskResume Runtime::AllocateBlocks(hipc::FullPtr<AllocateBlocksTask> task,
         global_block_map_.FreeBlock(worker_id, allocated_block);
       }
       task->blocks_.clear();
-      HLOG(kError, "Out of space: {} bytes requested", total_size);
+      // HLOG(kError, "Out of space: {} bytes requested", total_size);
       task->return_code_ = 1;  // Out of space
       co_return;
     }
@@ -555,10 +597,12 @@ chi::TaskResume Runtime::AllocateBlocks(hipc::FullPtr<AllocateBlocksTask> task,
   // operator
   // task->blocks_ = local_blocks;
   for (size_t i = 0; i < local_blocks.size(); i++) {
-    task->blocks_.emplace_back(local_blocks[i]);
+    task->blocks_.push_back(local_blocks[i]);
   }
 
-  HLOG(kDebug, "bdev::AllocateBlocks: SUCCESS - allocated {} blocks, task->blocks_.size()={}",
+  HLOG(kDebug,
+       "bdev::AllocateBlocks: SUCCESS - allocated {} blocks, "
+       "task->blocks_.size()={}",
        local_blocks.size(), task->blocks_.size());
 
   task->return_code_ = 0;
@@ -567,7 +611,7 @@ chi::TaskResume Runtime::AllocateBlocks(hipc::FullPtr<AllocateBlocksTask> task,
 }
 
 chi::TaskResume Runtime::FreeBlocks(hipc::FullPtr<FreeBlocksTask> task,
-                         chi::RunContext &ctx) {
+                                    chi::RunContext &ctx) {
   // Get worker ID for free operation
   int worker_id = static_cast<int>(GetWorkerID(ctx));
 
@@ -583,7 +627,8 @@ chi::TaskResume Runtime::FreeBlocks(hipc::FullPtr<FreeBlocksTask> task,
   co_return;
 }
 
-chi::TaskResume Runtime::Write(hipc::FullPtr<WriteTask> task, chi::RunContext &ctx) {
+chi::TaskResume Runtime::Write(hipc::FullPtr<WriteTask> task,
+                               chi::RunContext &ctx) {
   // Set I/O size in task stat for routing decisions
   task->stat_.io_size_ = task->length_;
 
@@ -603,7 +648,8 @@ chi::TaskResume Runtime::Write(hipc::FullPtr<WriteTask> task, chi::RunContext &c
   co_return;
 }
 
-chi::TaskResume Runtime::Read(hipc::FullPtr<ReadTask> task, chi::RunContext &ctx) {
+chi::TaskResume Runtime::Read(hipc::FullPtr<ReadTask> task,
+                              chi::RunContext &ctx) {
   // Set I/O size in task stat for routing decisions
   task->stat_.io_size_ = task->length_;
 
@@ -623,7 +669,8 @@ chi::TaskResume Runtime::Read(hipc::FullPtr<ReadTask> task, chi::RunContext &ctx
   co_return;
 }
 
-chi::TaskResume Runtime::GetStats(hipc::FullPtr<GetStatsTask> task, chi::RunContext &ctx) {
+chi::TaskResume Runtime::GetStats(hipc::FullPtr<GetStatsTask> task,
+                                  chi::RunContext &ctx) {
   // Return the user-provided performance characteristics
   task->metrics_ = perf_metrics_;
   // Get remaining size from heap allocator
@@ -635,7 +682,8 @@ chi::TaskResume Runtime::GetStats(hipc::FullPtr<GetStatsTask> task, chi::RunCont
   co_return;
 }
 
-chi::TaskResume Runtime::Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext &ctx) {
+chi::TaskResume Runtime::Destroy(hipc::FullPtr<DestroyTask> task,
+                                 chi::RunContext &ctx) {
   // Close file descriptor if open
   if (file_fd_ >= 0) {
     close(file_fd_);
@@ -652,7 +700,8 @@ chi::TaskResume Runtime::Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContex
 void Runtime::InitializeAllocator() {
   // Initialize global block map with actual number of workers
   chi::WorkOrchestrator *work_orchestrator = CHI_WORK_ORCHESTRATOR;
-  size_t num_workers = work_orchestrator ? work_orchestrator->GetWorkerCount() : 16;
+  size_t num_workers =
+      work_orchestrator ? work_orchestrator->GetWorkerCount() : 16;
   global_block_map_.Init(num_workers);
 
   // Initialize heap with total file size and alignment requirement
@@ -742,8 +791,8 @@ chi::u32 Runtime::PerformAsyncIO(WorkerIOContext *io_ctx, bool is_write,
         // I/O completed
         long result = static_cast<long>(events[0].res);
         if (result < 0) {
-          HLOG(kError, "Linux AIO failed: result={}, strerror={}",
-               result, strerror(-result));
+          HLOG(kError, "Linux AIO failed: result={}, strerror={}", result,
+               strerror(-result));
           return 4;
         }
         bytes_transferred = static_cast<chi::u64>(result);
@@ -1004,8 +1053,8 @@ void Runtime::ReadFromFile(hipc::FullPtr<ReadTask> task, chi::RunContext &ctx) {
     // Perform async read using per-worker I/O context (Linux AIO) or fallback
     chi::u64 bytes_read;
     chi::u32 result =
-        PerformAsyncIO(io_ctx, false, block.offset_, buffer_to_use, aligned_size,
-                       bytes_read, task.Cast<chi::Task>());
+        PerformAsyncIO(io_ctx, false, block.offset_, buffer_to_use,
+                       aligned_size, bytes_read, task.Cast<chi::Task>());
 
     if (result != 0) {
       task->return_code_ = result;

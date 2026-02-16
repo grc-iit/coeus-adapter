@@ -1,0 +1,8 @@
+# CAE Chimaera Repository Configuration
+namespace: wrp_cae
+version: 1.0.0
+description: "Content Assimilation Engine (CAE) ChiMod Repository"
+
+# Module discovery - directories to scan for ChiMods
+modules:
+  - core

@@ -63,17 +63,16 @@ The `chimaera_compose` utility is useful for:
 **Minimal Configuration** (`config.yaml`):
 
 ```yaml
-workers:
-  sched_threads: 4
-  slow_threads: 4
-
 memory:
-  main_segment_size: 1GB
+  main_segment_size: auto
   client_data_segment_size: 512MB
-  runtime_data_segment_size: 512MB
 
 networking:
   port: 5555
+
+runtime:
+  num_threads: 4
+  queue_depth: 1024
 
 compose:
   - mod_name: wrp_cte_core
@@ -97,16 +96,10 @@ The configuration file has two main parts:
 ### 1. Runtime Configuration (Top-Level)
 
 ```yaml
-# Worker threads
-workers:
-  sched_threads: 8           # Fast task workers (< 50us)
-  slow_threads: 8            # Slow task workers (>= 50us)
-
 # Shared memory segments
 memory:
-  main_segment_size: 4GB
+  main_segment_size: auto    # Auto-calculated or specify explicitly
   client_data_segment_size: 2GB
-  runtime_data_segment_size: 2GB
 
 # Networking for distributed mode
 networking:
@@ -121,9 +114,9 @@ logging:
 
 # Runtime settings (optional, can omit for defaults)
 runtime:
-  stack_size: 65536
-  queue_depth: 10000
-  local_sched: "default"  # Local task scheduler (default: "default")
+  num_threads: 16            # Worker threads for task execution
+  queue_depth: 1024          # Task queue depth per worker
+  local_sched: "default"     # Local task scheduler
   heartbeat_interval: 1000
 ```
 
@@ -180,20 +173,21 @@ compose:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `sched_threads` | 4 | Scheduler workers for fast tasks (< 50us) |
-| `slow_threads` | 4 | Workers for slow tasks (>= 50us) |
+| `num_threads` | 4 | Worker threads for task execution |
+| `queue_depth` | 1024 | Task queue depth per worker |
 
-**Recommendation**: Set total threads = CPU cores (e.g., 8+8 for 16-core system)
+**Recommendation**: Set `num_threads` = CPU cores (e.g., 16 for 16-core system)
 
 ### Memory (`memory`)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `main_segment_size` | 1GB | Task metadata and control structures |
+| `main_segment_size` | "auto" | Task metadata and control structures. Use "auto" for automatic calculation or specify explicitly |
 | `client_data_segment_size` | 512MB | Application data |
-| `runtime_data_segment_size` | 512MB | Runtime internal state |
 
-**Size format**: `1GB`, `512MB`, `64K`, or bytes (`1073741824`)
+**Size format**: `"auto"`, `1GB`, `512MB`, `64K`, or bytes (`1073741824`)
+
+**Auto-calculation**: When set to `"auto"`, main_segment_size is calculated using exact ring_buffer sizes based on `queue_depth` and `num_threads`. Formula: `BASE_OVERHEAD + (queues_size × num_workers)` where queues_size uses ring_buffer::CalculateSize() for precise memory calculation.
 
 **Docker**: Set `shm_size` >= sum of segments + 20% overhead
 
@@ -286,17 +280,16 @@ storage:
 ### Single-Node Development
 
 ```yaml
-workers:
-  sched_threads: 4
-  slow_threads: 4
-
 memory:
-  main_segment_size: 1GB
+  main_segment_size: auto
   client_data_segment_size: 512MB
-  runtime_data_segment_size: 512MB
 
 networking:
   port: 5555
+
+runtime:
+  num_threads: 4
+  queue_depth: 1024
 
 compose:
   - mod_name: wrp_cte_core
@@ -317,14 +310,9 @@ compose:
 # Combined Chimaera + CTE Configuration
 # For use with 4-node distributed cluster
 
-workers:
-  sched_threads: 8
-  slow_threads: 8
-
 memory:
-  main_segment_size: 4GB
+  main_segment_size: auto
   client_data_segment_size: 2GB
-  runtime_data_segment_size: 2GB
 
 networking:
   port: 8080
@@ -336,8 +324,8 @@ logging:
   file: /var/log/chimaera/chimaera.log
 
 runtime:
-  stack_size: 65536
-  queue_depth: 10000
+  num_threads: 16        # 8 sched + 8 slow = 16 total
+  queue_depth: 1024
   local_sched: "default"
   heartbeat_interval: 1000
 
@@ -384,17 +372,16 @@ compose:
 ### Multi-Tier Storage with RAM Cache
 
 ```yaml
-workers:
-  sched_threads: 8
-  slow_threads: 8
-
 memory:
-  main_segment_size: 4GB
+  main_segment_size: auto
   client_data_segment_size: 2GB
-  runtime_data_segment_size: 2GB
 
 networking:
   port: 5555
+
+runtime:
+  num_threads: 16
+  queue_depth: 1024
 
 compose:
   - mod_name: wrp_cte_core

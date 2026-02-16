@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef MOD_NAME_TASKS_H_
 #define MOD_NAME_TASKS_H_
 
@@ -56,7 +89,8 @@ struct CustomTask : public chi::Task {
   /** SHM default constructor */
   CustomTask()
       : chi::Task(),
-        data_(HSHM_MALLOC), operation_id_(0) {}
+        data_(HSHM_MALLOC), operation_id_(0) {
+  }
 
   /** Emplace constructor */
   explicit CustomTask(
@@ -73,6 +107,10 @@ struct CustomTask : public chi::Task {
     method_ = Method::kCustom;
     task_flags_.Clear();
     pool_query_ = pool_query;
+  }
+
+  /** Destructor */
+  ~CustomTask() {
   }
 
   /**
@@ -100,11 +138,15 @@ struct CustomTask : public chi::Task {
    * @param other Pointer to the source task to copy from
    */
   void Copy(const hipc::FullPtr<CustomTask> &other) {
+    HLOG(kInfo, "CustomTask::Copy() - ENTRY, this={}, other={}, this.data_.data()={}, other.data_.data()={}",
+         (void*)this, (void*)other.ptr_, (void*)data_.data(), (void*)other->data_.data());
     // Copy base Task fields
     Task::Copy(other.template Cast<Task>());
     // Copy CustomTask-specific fields
     data_ = other->data_;
     operation_id_ = other->operation_id_;
+    HLOG(kInfo, "CustomTask::Copy() - EXIT, this={}, this.data_.data()={}",
+         (void*)this, (void*)data_.data());
   }
 
   /**
@@ -304,6 +346,65 @@ struct WaitTestTask : public chi::Task {
    * @param other Pointer to the replica task to aggregate from
    */
   void Aggregate(const hipc::FullPtr<WaitTestTask> &other) {
+    Task::Aggregate(other.template Cast<Task>());
+    Copy(other);
+  }
+};
+
+/**
+ * TestLargeOutputTask - Test large output streaming (1MB)
+ * Tests streaming mechanism for large output data
+ */
+struct TestLargeOutputTask : public chi::Task {
+  // Task-specific data
+  OUT std::vector<uint8_t> data_;  // Output: 1MB of test data
+
+  /** SHM default constructor */
+  TestLargeOutputTask()
+      : chi::Task() {}
+
+  /** Emplace constructor */
+  explicit TestLargeOutputTask(
+      const chi::TaskId &task_node,
+      const chi::PoolId &pool_id,
+      const chi::PoolQuery &pool_query)
+      : chi::Task(task_node, pool_id, pool_query, 24) {
+    // Initialize task
+    task_id_ = task_node;
+    pool_id_ = pool_id;
+    method_ = Method::kTestLargeOutput;
+    task_flags_.Clear();
+    pool_query_ = pool_query;
+  }
+
+  template<typename Archive>
+  void SerializeIn(Archive& ar) {
+    Task::SerializeIn(ar);
+    // No input parameters for this task
+  }
+
+  template<typename Archive>
+  void SerializeOut(Archive& ar) {
+    Task::SerializeOut(ar);
+    ar(data_);  // Return the 1MB output data
+  }
+
+  /**
+   * Copy from another TestLargeOutputTask (assumes this task is already constructed)
+   * @param other Pointer to the source task to copy from
+   */
+  void Copy(const hipc::FullPtr<TestLargeOutputTask> &other) {
+    // Copy base Task fields
+    Task::Copy(other.template Cast<Task>());
+    // Copy TestLargeOutputTask-specific fields
+    this->data_ = other->data_;
+  }
+
+  /**
+   * Aggregate replica results into this task
+   * @param other Pointer to the replica task to aggregate from
+   */
+  void Aggregate(const hipc::FullPtr<TestLargeOutputTask> &other) {
     Task::Aggregate(other.template Cast<Task>());
     Copy(other);
   }

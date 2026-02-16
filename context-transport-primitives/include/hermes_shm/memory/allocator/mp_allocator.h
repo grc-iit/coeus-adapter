@@ -1,14 +1,35 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by The HDF Group.                                               *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Hermes. The full Hermes copyright notice, including  *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the top directory. If you do not  *
- * have access to the file, you may request a copy from help@hdfgroup.org.   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef HSHM_MEMORY_ALLOCATOR_MP_ALLOCATOR_H_
 #define HSHM_MEMORY_ALLOCATOR_MP_ALLOCATOR_H_
@@ -605,9 +626,12 @@ class _MultiProcessAllocator : public Allocator {
   /**
    * Tier 2: Allocate from ProcessBlock and expand ThreadBlock (medium path)
    *
-   * When ThreadBlock is exhausted, this allocates thread_unit_ bytes from
-   * the ProcessBlock allocator, expands the ThreadBlock with this memory,
-   * and retries the allocation from the expanded ThreadBlock.
+   * When ThreadBlock is exhausted, this allocates memory from the ProcessBlock
+   * allocator, expands the ThreadBlock with this memory, and retries the
+   * allocation from the expanded ThreadBlock.
+   *
+   * The expansion size is the larger of thread_unit_ or the requested size
+   * plus overhead to account for BuddyAllocator metadata.
    *
    * Requires ProcessBlock lock.
    *
@@ -621,11 +645,16 @@ class _MultiProcessAllocator : public Allocator {
       return OffsetPtr<>::GetNull();
     }
 
+    // Calculate expansion size: use larger of thread_unit_ or size + metadata overhead
+    // Add 25% overhead for BuddyAllocator metadata (page headers, alignment)
+    size_t required_size = size + (size / 4) + sizeof(BuddyPage);
+    size_t expand_size = (required_size > thread_unit_) ? required_size : thread_unit_;
+
     ScopedMutex scoped_lock(pblock->lock_, 0);
-    OffsetPtr<> expand_offset = pblock->alloc_.AllocateOffset(thread_unit_);
+    OffsetPtr<> expand_offset = pblock->alloc_.AllocateOffset(expand_size);
     if (!expand_offset.IsNull()) {
       // Expand the thread block and try reallocating
-      tblock->Expand(expand_offset, thread_unit_);
+      tblock->Expand(expand_offset, expand_size);
       return AllocateOffsetFromTblock(size);
     }
     return OffsetPtr<>::GetNull();
@@ -634,9 +663,12 @@ class _MultiProcessAllocator : public Allocator {
   /**
    * Tier 3: Allocate from global allocator and expand ProcessBlock (slow path)
    *
-   * When ProcessBlock is exhausted, this allocates process_unit_ bytes from
-   * the global allocator, expands the ProcessBlock with this memory, and
-   * then retries allocation through the ProcessBlock tier.
+   * When ProcessBlock is exhausted, this allocates memory from the global
+   * allocator, expands the ProcessBlock with this memory, and then retries
+   * allocation through the ProcessBlock tier.
+   *
+   * The expansion size is the larger of process_unit_ or the required size
+   * plus overhead to account for BuddyAllocator metadata.
    *
    * Requires both global and ProcessBlock locks (acquired sequentially).
    *
@@ -649,11 +681,16 @@ class _MultiProcessAllocator : public Allocator {
       return OffsetPtr<>::GetNull();
     }
 
+    // Calculate expansion size: use larger of process_unit_ or size + metadata overhead
+    // Add 25% overhead for BuddyAllocator metadata (page headers, alignment)
+    size_t required_size = size + (size / 4) + sizeof(BuddyPage);
+    size_t expand_size = (required_size > process_unit_) ? required_size : process_unit_;
+
     // Acquire global lock to allocate expansion memory
     OffsetPtr<> expand_ptr;
     {
       ScopedMutex global_lock(lock_, 0);
-      expand_ptr = alloc_.AllocateOffset(process_unit_);
+      expand_ptr = alloc_.AllocateOffset(expand_size);
       if (expand_ptr.IsNull()) {
         return OffsetPtr<>::GetNull();
       }
@@ -662,7 +699,7 @@ class _MultiProcessAllocator : public Allocator {
     // Acquire ProcessBlock lock to expand
     {
       ScopedMutex pblock_lock(pblock->lock_, 0);
-      pblock->Expand(expand_ptr, process_unit_);
+      pblock->Expand(expand_ptr, expand_size);
     }
 
     // Retry through ProcessBlock tier (which will expand ThreadBlock if needed)

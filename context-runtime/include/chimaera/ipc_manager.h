@@ -1,17 +1,54 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_MANAGERS_IPC_MANAGER_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_MANAGERS_IPC_MANAGER_H_
 
 #include <atomic>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include "chimaera/chimaera_manager.h"
+#include "chimaera/corwlock.h"
 #include "chimaera/local_task_archives.h"
+#include "chimaera/local_transfer.h"
 #include "chimaera/scheduler/scheduler.h"
 #include "chimaera/task.h"
 #include "chimaera/task_queue.h"
@@ -57,17 +94,21 @@ struct IpcSharedHeader {
  * Used for registering client memory with the runtime
  */
 struct ClientShmInfo {
-  std::string shm_name;       // Shared memory name (chimaera_{pid}_{count})
-  pid_t owner_pid;            // PID of the owning process
-  u32 shm_index;              // Index within the owner's shm segments
-  size_t size;                // Size of the shared memory segment
-  hipc::AllocatorId alloc_id; // Allocator ID for this segment
+  std::string shm_name;        // Shared memory name (chimaera_{pid}_{count})
+  pid_t owner_pid;             // PID of the owning process
+  u32 shm_index;               // Index within the owner's shm segments
+  size_t size;                 // Size of the shared memory segment
+  hipc::AllocatorId alloc_id;  // Allocator ID for this segment
 
   ClientShmInfo() : owner_pid(0), shm_index(0), size(0) {}
 
   ClientShmInfo(const std::string &name, pid_t pid, u32 idx, size_t sz,
                 const hipc::AllocatorId &id)
-      : shm_name(name), owner_pid(pid), shm_index(idx), size(sz), alloc_id(id) {}
+      : shm_name(name),
+        owner_pid(pid),
+        shm_index(idx),
+        size(sz),
+        alloc_id(id) {}
 
   /**
    * Serialization support for cereal
@@ -163,7 +204,6 @@ class IpcManager {
   template <typename TaskT>
   void DelTask(hipc::FullPtr<TaskT> task_ptr) {
     if (task_ptr.IsNull()) return;
-
     delete task_ptr.ptr_;
   }
 
@@ -198,43 +238,129 @@ class IpcManager {
   }
 
   /**
-   * Free a FutureShm object using the correct allocator
-   * Looks up allocator by alloc_id in the shm_ member
-   * @tparam FutureT The FutureShm type
-   * @param future_shm FullPtr to the FutureShm to free
+   * Allocate and construct an object using placement new
+   * Combines AllocateBuffer and placement new construction
+   * @tparam T Type of object to construct
+   * @tparam Args Constructor argument types
+   * @param args Constructor arguments
+   * @return FullPtr<T> to constructed object
    */
-  template <typename FutureT>
-  void FreeFutureShm(hipc::FullPtr<FutureT> &future_shm) {
-    if (future_shm.IsNull()) {
-      return;
+  template <typename T, typename... Args>
+  hipc::FullPtr<T> NewObj(Args &&...args) {
+    // Allocate buffer for the object
+    hipc::FullPtr<char> buffer = AllocateBuffer(sizeof(T));
+    if (buffer.IsNull()) {
+      return hipc::FullPtr<T>();
     }
 
-    // Get allocator ID from the shm_ member
-    hipc::AllocatorId alloc_id = future_shm.shm_.alloc_id_;
+    // Construct object using placement new
+    T *obj = new (buffer.ptr_) T(std::forward<Args>(args)...);
 
-    // Check if allocator ID is null (shouldn't happen for FutureShm)
-    if (alloc_id == hipc::AllocatorId::GetNull()) {
-      // Null allocator - FutureShm allocated in private memory (unusual)
-      return;
+    // Return FullPtr<T> by reinterpreting the buffer's ptr and shm
+    hipc::FullPtr<T> result;
+    result.ptr_ = obj;
+    result.shm_ = buffer.shm_.template Cast<T>();
+    return result;
+  }
+
+  /**
+   * Create a Future for a task with optional serialization
+   * Used internally by Send and as a public interface for future creation
+   *
+   * Two execution paths:
+   * - Client thread (IsClientThread=true): Serialize the task into the Future
+   * - Runtime thread (IsClientThread=false): Wrap task_ptr directly without
+   * serialization
+   *
+   * @tparam TaskT Task type (must derive from Task)
+   * @param task_ptr Task to wrap in Future
+   * @return Future<TaskT> wrapping the task
+   */
+  template <typename TaskT>
+  Future<TaskT> MakeFuture(hipc::FullPtr<TaskT> task_ptr) {
+    // Check task_ptr validity once at the start - null is an error
+    if (task_ptr.IsNull()) {
+      HLOG(kError, "MakeFuture: called with null task_ptr");
+      return Future<TaskT>();
     }
 
-    // Check main allocator
-    if (main_allocator_ && alloc_id == main_allocator_id_) {
-      main_allocator_->DelObj(future_shm);
-      return;
-    }
+    bool is_runtime = CHI_CHIMAERA_MANAGER->IsRuntime();
+    Worker *worker = CHI_CUR_WORKER;
 
-    // Check per-process shared memory allocators via alloc_map_
-    u64 alloc_key = (static_cast<u64>(alloc_id.major_) << 32) |
-                    static_cast<u64>(alloc_id.minor_);
-    auto it = alloc_map_.find(alloc_key);
-    if (it != alloc_map_.end()) {
-      it->second->DelObj(future_shm);
-      return;
-    }
+    // Runtime path requires BOTH IsRuntime AND worker to be non-null
+    bool use_runtime_path = is_runtime && worker != nullptr;
 
-    HLOG(kWarning, "FreeFutureShm: Could not find allocator for alloc_id ({}.{})",
-         alloc_id.major_, alloc_id.minor_);
+    if (!use_runtime_path) {
+      // CLIENT PATH: Serialize the task into Future
+      LocalSaveTaskArchive archive(LocalMsgType::kSerializeIn);
+      archive << (*task_ptr.ptr_);
+
+      // Get serialized data
+      const std::vector<char> &serialized = archive.GetData();
+      size_t serialized_size = serialized.size();
+
+      // Get recommended copy space size from task, but use actual size if
+      // larger
+      size_t recommended_size = task_ptr->GetCopySpaceSize();
+      size_t copy_space_size = std::max(recommended_size, serialized_size);
+
+      // Allocate and construct FutureShm with appropriately sized copy_space
+      size_t alloc_size = sizeof(FutureShm) + copy_space_size;
+      hipc::FullPtr<char> buffer = AllocateBuffer(alloc_size);
+      if (buffer.IsNull()) {
+        return Future<TaskT>();
+      }
+
+      // Construct FutureShm in-place using placement new
+      FutureShm *future_shm_ptr = new (buffer.ptr_) FutureShm();
+
+      // Initialize FutureShm fields
+      future_shm_ptr->pool_id_ = task_ptr->pool_id_;
+      future_shm_ptr->method_id_ = task_ptr->method_;
+      future_shm_ptr->capacity_.store(copy_space_size);
+
+      // Copy serialized data to copy_space (guaranteed to fit now)
+      memcpy(future_shm_ptr->copy_space, serialized.data(), serialized_size);
+      future_shm_ptr->input_size_.store(serialized_size,
+                                        std::memory_order_release);
+
+      // Memory fence: Ensure copy_space and input_size_ writes are visible
+      // before flag
+      std::atomic_thread_fence(std::memory_order_release);
+
+      // Set FUTURE_COPY_FROM_CLIENT flag - worker will deserialize from
+      // copy_space
+      future_shm_ptr->flags_.SetBits(FutureShm::FUTURE_COPY_FROM_CLIENT);
+
+      // Keep the original task_ptr alive
+      // The worker will deserialize and execute a copy, but caller keeps the
+      // original
+      hipc::ShmPtr<FutureShm> future_shm_shmptr =
+          buffer.shm_.template Cast<FutureShm>();
+
+      // CLIENT PATH: Preserve the original task_ptr
+      Future<TaskT> future(future_shm_shmptr, task_ptr);
+      return future;
+    } else {
+      // RUNTIME PATH: Create Future with task pointer directly (no
+      // serialization) Runtime doesn't copy/serialize, so no copy_space needed
+
+      // Allocate and construct FutureShm using NewObj (no copy_space for
+      // runtime)
+      hipc::FullPtr<FutureShm> future_shm = NewObj<FutureShm>();
+      if (future_shm.IsNull()) {
+        return Future<TaskT>();
+      }
+
+      // Initialize FutureShm fields
+      future_shm.ptr_->pool_id_ = task_ptr->pool_id_;
+      future_shm.ptr_->method_id_ = task_ptr->method_;
+      future_shm.ptr_->capacity_.store(0);  // No copy_space in runtime path
+
+      // Create Future with ShmPtr and task_ptr (no serialization needed)
+      Future<TaskT> future(future_shm.shm_, task_ptr);
+      return future;
+    }
   }
 
   /**
@@ -242,130 +368,57 @@ class IpcManager {
    * Creates a Future wrapper, serializes task inputs, and enqueues to worker
    *
    * Two execution paths:
-   * - Client mode (!IsRuntime): Serialize task and copy Future with null task
-   * pointer
-   * - Runtime mode (IsRuntime): Create Future with task pointer directly (no
-   * copy)
+   * - Client thread (IsClientThread=true): Serialize task and copy Future with
+   * null task pointer
+   * - Runtime thread (IsClientThread=false): Create Future with task pointer
+   * directly (no copy)
    *
    * @param task_ptr Task to send
+   * @param awake_event Whether to awaken worker after enqueueing
    * @return Future<TaskT> for polling completion and retrieving results
    */
   template <typename TaskT>
   Future<TaskT> Send(hipc::FullPtr<TaskT> task_ptr, bool awake_event = true) {
-    if (!CHI_CHIMAERA_MANAGER->IsRuntime()) {
-      // CLIENT PATH: Serialize task and create two Future objects
-      // - One for the queue (with null task pointer)
-      // - One for the user (with task pointer set)
+    // 1. Create Future using MakeFuture (handles both client and runtime paths)
+    // In CLIENT mode: MakeFuture serializes task and sets
+    // FUTURE_COPY_FROM_CLIENT flag In RUNTIME mode: MakeFuture wraps task
+    // pointer directly without serialization
+    Future<TaskT> future = MakeFuture(task_ptr);
 
-      // 1. Get allocator from per-process shared memory (created during ClientInit)
-      CHI_MAIN_ALLOC_T *alloc = last_alloc_;
-      size_t shm_size = 0;
-      if (alloc != nullptr) {
-        // Get the shm_size from the allocator's backend
-        shm_size = alloc->GetBackend().backend_size_;
+    // 2. Get current worker (needed for runtime parent task tracking)
+    Worker *worker = CHI_CUR_WORKER;
+    bool is_runtime = CHI_CHIMAERA_MANAGER->IsRuntime();
+
+    // Runtime path requires BOTH IsRuntime AND worker to be non-null
+    bool use_runtime_path = is_runtime && worker != nullptr;
+
+    // 3. Set parent task RunContext from current worker (runtime only)
+    if (use_runtime_path) {
+      RunContext *run_ctx = worker->GetCurrentRunContext();
+      if (run_ctx != nullptr) {
+        future.SetParentTask(run_ctx);
       }
-
-      // 2. Create Future with allocator and task_ptr (for user)
-      Future<TaskT> user_future(alloc, task_ptr);
-
-      // 3. Serialize task using LocalSaveTaskArchive with kSerializeIn mode
-      LocalSaveTaskArchive archive(LocalMsgType::kSerializeIn);
-      archive << (*task_ptr.ptr_);
-
-      // 4. Get serialized data and copy to FutureShm's hipc::vector
-      const std::vector<char> &serialized = archive.GetData();
-      auto &future_shm = user_future.GetFutureShm();
-      future_shm->serialized_task_.resize(serialized.size());
-      memcpy(future_shm->serialized_task_.data(), serialized.data(),
-             serialized.size());
-
-      // 5. Set shm_size for lazy registration by worker
-      future_shm->shm_size_ = shm_size;
-
-      // 6. Create a separate Future for the queue with null task pointer
-      // This Future shares the same FutureShm but has a null task pointer
-      hipc::FullPtr<TaskT> null_task_ptr;
-      null_task_ptr.SetNull();
-      Future<TaskT> queue_future(user_future.GetFutureShm(), null_task_ptr);
-
-      // 7. Map task to lane using scheduler
-      // Route Send/Recv tasks to net worker's lane
-      LaneId lane_id;
-      if (IsNetworkTask(task_ptr)) {
-        // Get net worker's lane (last lane in the queue)
-        lane_id = shared_header_->num_workers - 1;
-      } else {
-        // Convert Future<TaskT> to Future<Task> for scheduler
-        Future<Task> task_future = queue_future.template Cast<Task>();
-        lane_id = scheduler_->ClientMapTask(this, task_future);
-      }
-
-      // 8. Enqueue the Future object to the worker queue
-      auto &lane_ref = worker_queues_->GetLane(lane_id, 0);
-      // Convert Future<TaskT> to Future<Task> for the queue
-      Future<Task> task_future = queue_future.template Cast<Task>();
-      lane_ref.Push(task_future);
-
-      // 9. Awaken worker for this lane
-      AwakenWorker(&lane_ref);
-
-      // 10. Return the Future with task pointer set for the user
-      return user_future;
-    } else {
-      // RUNTIME PATH: Create Future with task pointer directly (no
-      // serialization copy)
-
-      // 1. Get allocator from per-process shared memory (created during ServerInit)
-      // ServerInit calls IncreaseMemory() which sets last_alloc_ for runtime use
-      CHI_MAIN_ALLOC_T *alloc = last_alloc_;
-      if (alloc == nullptr) {
-        // Fall back to main_allocator_ if last_alloc_ is not set
-        alloc = main_allocator_;
-        if (alloc == nullptr) {
-          HLOG(kError, "Send: No allocator available in runtime path");
-          return Future<TaskT>();  // Return null Future
-        }
-      }
-
-      // 2. Create Future with allocator and task_ptr (task pointer is set)
-      Future<TaskT> future(alloc, task_ptr);
-
-      // 2. Get current worker (needed for scheduler and parent task tracking)
-      Worker *worker = CHI_CUR_WORKER;
-
-      // 3. Set the parent task RunContext from current worker (if available and
-      // awake_event is true)
-      if (awake_event && worker != nullptr) {
-        RunContext *run_ctx = worker->GetCurrentRunContext();
-        if (run_ctx != nullptr) {
-          future.SetParentTask(run_ctx);
-        }
-      }
-
-      // 4. Map task to lane using scheduler
-      // Route Send/Recv tasks to net worker's lane
-      LaneId lane_id;
-      if (IsNetworkTask(task_ptr)) {
-        // Get net worker's lane (last lane in the queue)
-        lane_id = shared_header_->num_workers - 1;
-      } else {
-        // Convert Future<TaskT> to Future<Task> for scheduler
-        Future<Task> task_future = future.template Cast<Task>();
-        lane_id = scheduler_->RuntimeMapTask(worker, task_future);
-      }
-
-      // 4. Enqueue the Future object to the worker queue
-      auto &lane_ref = worker_queues_->GetLane(lane_id, 0);
-      // Convert Future<TaskT> to Future<Task> for the queue
-      Future<Task> task_future = future.template Cast<Task>();
-      lane_ref.Push(task_future);
-
-      // 5. Awaken worker for this lane
-      AwakenWorker(&lane_ref);
-
-      // 6. Return the Future with task pointer
-      return future;
     }
+
+    // 4. Map task to lane using scheduler
+    LaneId lane_id;
+    Future<Task> task_future_for_sched = future.template Cast<Task>();
+    if (use_runtime_path) {
+      lane_id = scheduler_->RuntimeMapTask(worker, task_future_for_sched);
+    } else {
+      lane_id = scheduler_->ClientMapTask(this, task_future_for_sched);
+    }
+
+    // 5. Enqueue the Future object to the worker queue
+    auto &lane_ref = worker_queues_->GetLane(lane_id, 0);
+    Future<Task> task_future_for_queue = future.template Cast<Task>();
+    lane_ref.Push(task_future_for_queue);
+
+    // 6. Awaken worker for this lane
+    AwakenWorker(&lane_ref);
+
+    // 7. Return the same Future (no separate user_future/queue_future)
+    return future;
   }
 
   /**
@@ -373,27 +426,58 @@ class IpcManager {
    * Called after Future::Wait() has confirmed task completion
    *
    * Two execution paths:
-   * - Client mode (!IsRuntime): Deserialize task outputs from FutureShm
+   * - Path 1 (fits): Data fits in serialized_task_capacity, deserialize
+   * directly
+   * - Path 2 (streaming): Data larger than capacity, assemble from stream
    * - Runtime mode (IsRuntime): No-op (task already has correct outputs)
    *
    * @param future Future containing completed task
    */
   template <typename TaskT>
   void Recv(Future<TaskT> &future) {
-    if (!CHI_CHIMAERA_MANAGER->IsRuntime()) {
-      // CLIENT PATH: Deserialize task outputs from FutureShm
-      auto &future_shm = future.GetFutureShm();
+    bool is_runtime = CHI_CHIMAERA_MANAGER->IsRuntime();
+    Worker *worker = CHI_CUR_WORKER;
+
+    // Runtime path requires BOTH IsRuntime AND worker to be non-null
+    bool use_runtime_path = is_runtime && worker != nullptr;
+
+    if (!use_runtime_path) {
+      // CLIENT PATH: Deserialize task outputs from FutureShm using
+      // LocalTransfer
+      auto future_shm = future.GetFutureShm();
       TaskT *task_ptr = future.get();
 
-      // Get the serialized task data from FutureShm
-      hipc::vector<char, CHI_MAIN_ALLOC_T> &serialized =
-          future_shm->serialized_task_;
+      // Wait for first data to be available (signaled by FUTURE_NEW_DATA or
+      // FUTURE_COMPLETE) This ensures output_size_ is valid before we read it
+      hshm::abitfield32_t &flags = future_shm->flags_;
+      while (!flags.Any(FutureShm::FUTURE_NEW_DATA) &&
+             !flags.Any(FutureShm::FUTURE_COMPLETE)) {
+        HSHM_THREAD_MODEL->Yield();
+      }
 
-      // Convert hipc::vector to std::vector for LocalLoadTaskArchive
-      std::vector<char> buffer(serialized.begin(), serialized.end());
+      // Memory fence: Ensure we see worker's writes to output_size_
+      std::atomic_thread_fence(std::memory_order_acquire);
+
+      // Get output size from FutureShm (now valid)
+      size_t output_size = future_shm->output_size_.load();
+
+      // Use LocalTransfer to receive all data
+      LocalTransfer receiver(future_shm, output_size);
+
+      // Receive all data (blocks until complete)
+      bool recv_complete = receiver.Recv();
+      if (!recv_complete) {
+        HLOG(kError, "Recv: LocalTransfer failed - received {}/{} bytes",
+             receiver.GetBytesTransferred(), output_size);
+      }
+
+      // Wait for FUTURE_COMPLETE to ensure all data has been sent
+      while (!flags.Any(FutureShm::FUTURE_COMPLETE)) {
+        HSHM_THREAD_MODEL->Yield();
+      }
 
       // Create LocalLoadTaskArchive with kSerializeOut mode
-      LocalLoadTaskArchive archive(buffer);
+      LocalLoadTaskArchive archive(receiver.GetData());
       archive.SetMsgType(LocalMsgType::kSerializeOut);
 
       // Deserialize task outputs into the Future's task pointer
@@ -402,6 +486,19 @@ class IpcManager {
     // RUNTIME PATH: No deserialization needed - task already has correct
     // outputs
   }
+
+  /**
+   * Set the IsClientThread flag for the current thread
+   * @param is_client_thread true if thread is running client code, false
+   * otherwise
+   */
+  void SetIsClientThread(bool is_client_thread);
+
+  /**
+   * Get the IsClientThread flag for the current thread
+   * @return true if thread is running client code, false otherwise
+   */
+  bool GetIsClientThread() const;
 
   /**
    * Get TaskQueue for task processing
@@ -426,6 +523,14 @@ class IpcManager {
    * @return Number of scheduling queues, 0 if not initialized
    */
   u32 GetNumSchedQueues() const;
+
+  /**
+   * Set number of scheduling queues in shared memory header
+   * Called by scheduler after DivideWorkers to inform IpcManager of actual
+   * scheduler worker count
+   * @param num_sched_queues Number of scheduler workers that process tasks
+   */
+  void SetNumSchedQueues(u32 num_sched_queues);
 
   /**
    * Awaken a worker by sending a signal to its thread
@@ -527,9 +632,11 @@ class IpcManager {
   /**
    * Convert ShmPtr to FullPtr by checking allocator IDs
    * Handles three cases:
-   * 1. AllocatorId::GetNull() - offset is the actual memory address (raw pointer)
+   * 1. AllocatorId::GetNull() - offset is the actual memory address (raw
+   * pointer)
    * 2. Main allocator - runtime shared memory for queues/futures
    * 3. Per-process shared memory allocators via alloc_map_
+   * Acquires reader lock on allocator_map_lock_ for thread-safe access
    * @param shm_ptr The ShmPtr to convert
    * @return FullPtr with matching allocator and pointer, or null FullPtr if no
    * match
@@ -550,16 +657,22 @@ class IpcManager {
     }
 
     // Case 3: Check per-process shared memory allocators via alloc_map_
+    // Acquire reader lock for thread-safe access to allocator_map_
+    allocator_map_lock_.ReadLock(0);
+
     // Convert AllocatorId to lookup key (combine major and minor)
     u64 alloc_key = (static_cast<u64>(shm_ptr.alloc_id_.major_) << 32) |
                     static_cast<u64>(shm_ptr.alloc_id_.minor_);
     auto it = alloc_map_.find(alloc_key);
+    hipc::FullPtr<T> result;
     if (it != alloc_map_.end()) {
-      return hipc::FullPtr<T>(it->second, shm_ptr);
+      result = hipc::FullPtr<T>(it->second, shm_ptr);
     }
 
-    // No matching allocator found
-    return hipc::FullPtr<T>();
+    // Release the lock before returning
+    allocator_map_lock_.ReadUnlock();
+
+    return result;
   }
 
   /**
@@ -568,6 +681,7 @@ class IpcManager {
    * Checks main allocator first, then per-process allocators
    * If no allocator contains the pointer, returns a FullPtr with null allocator
    * (private memory)
+   * Acquires reader lock on allocator_map_lock_ for thread-safe access
    * @param ptr The raw pointer to convert
    * @return FullPtr with matching allocator and pointer, or FullPtr with null
    * allocator if no match (private memory)
@@ -584,11 +698,20 @@ class IpcManager {
     }
 
     // Check per-process shared memory allocators
+    // Acquire reader lock for thread-safe access
+    allocator_map_lock_.ReadLock(0);
+
+    hipc::FullPtr<T> result;
     for (auto *alloc : alloc_vector_) {
       if (alloc && alloc->ContainsPtr(ptr)) {
-        return hipc::FullPtr<T>(alloc, ptr);
+        result = hipc::FullPtr<T>(alloc, ptr);
+        allocator_map_lock_.ReadUnlock();
+        return result;
       }
     }
+
+    // Release the lock before returning
+    allocator_map_lock_.ReadUnlock();
 
     // No matching allocator found - treat as private memory
     // Return FullPtr with the raw pointer (null allocator ID)
@@ -654,10 +777,9 @@ class IpcManager {
    * Called by worker when encountering an unknown allocator in a FutureShm
    * Derives shm_name from alloc_id: chimaera_{pid}_{index}
    * @param alloc_id Allocator ID (major=pid, minor=index)
-   * @param shm_size Size of the shared memory segment
    * @return true if successful (or already registered), false on error
    */
-  bool RegisterMemory(const hipc::AllocatorId &alloc_id, size_t shm_size);
+  bool RegisterMemory(const hipc::AllocatorId &alloc_id);
 
   /**
    * Get the current process's shared memory info for registration
@@ -693,26 +815,21 @@ class IpcManager {
    */
   size_t WreapAllIpcs();
 
- private:
   /**
-   * Check if task is a network task (Send or Recv)
-   * Network tasks are routed to the dedicated network worker
-   * @param task_ptr Task to check
-   * @return true if task is a Send or Recv admin task
+   * Clear all chimaera_* shared memory segments from /dev/shm
+   *
+   * Called during RuntimeInit to clean up leftover shared memory segments
+   * from previous runs or crashed processes. Attempts to remove all files
+   * matching "chimaera_*" pattern in /dev/shm directory.
+   *
+   * Permission errors are silently ignored to allow multi-user systems where
+   * other users may have active Chimaera processes.
+   *
+   * @return Number of shared memory segments successfully removed
    */
-  template <typename TaskT>
-  bool IsNetworkTask(const hipc::FullPtr<TaskT> &task_ptr) const {
-    if (task_ptr.IsNull()) {
-      return false;
-    }
-    // Admin kSend = 14, kRecv = 15
-    constexpr u32 kAdminSend = 14;
-    constexpr u32 kAdminRecv = 15;
-    const Task *task = task_ptr.ptr_;
-    return task->pool_id_ == kAdminPoolId &&
-           (task->method_ == kAdminSend || task->method_ == kAdminRecv);
-  }
+  size_t ClearUserIpcs();
 
+ private:
   /**
    * Initialize memory segments for server
    * @return true if successful, false otherwise
@@ -756,7 +873,8 @@ class IpcManager {
 
   bool is_initialized_ = false;
 
-  // Shared memory backend for main segment (contains IpcSharedHeader, TaskQueue)
+  // Shared memory backend for main segment (contains IpcSharedHeader,
+  // TaskQueue)
   hipc::PosixShmMmap main_backend_;
 
   // Allocator ID for main segment
@@ -810,16 +928,27 @@ class IpcManager {
   // Per-Process Shared Memory Management
   //============================================================================
 
-  /** Counter for shared memory segments created by this process (starts at 0) */
+  /** Counter for shared memory segments created by this process (starts at 0)
+   */
   std::atomic<u32> shm_count_{0};
 
   /**
    * Map of AllocatorId -> Allocator for all registered shared memory segments
    * Key is the allocator ID (major.minor), value is the allocator pointer
    * Used by ToFullPtr to find the correct allocator for a ShmPtr
+   * Protected by allocator_map_lock_ for thread-safe access
    */
   std::unordered_map<u64, hipc::MultiProcessAllocator *> alloc_map_;
 
+ public:
+  /**
+   * RwLock for protecting allocator_map_ access
+   * Reader lock: for normal ToFullPtr lookups and allocation attempts
+   * Writer lock: for IpcManager cleanup and memory increase operations
+   */
+  chi::CoRwLock allocator_map_lock_;
+
+ private:
   /**
    * Vector of allocators owned by this process
    * Used for allocation attempts before calling IncreaseMemory
@@ -856,9 +985,19 @@ HSHM_DEFINE_GLOBAL_PTR_VAR_H(chi::IpcManager, g_ipc_manager);
 // Macro for accessing the IPC manager singleton using global pointer variable
 #define CHI_IPC HSHM_GET_GLOBAL_PTR_VAR(::chi::IpcManager, g_ipc_manager)
 
-// Define Future::Wait() after IpcManager is fully defined
-// This avoids circular dependency issues between future.h and ipc_manager.h
+// Define Future methods after IpcManager and CHI_IPC are fully defined
+// This avoids circular dependency issues between task.h and ipc_manager.h
 namespace chi {
+
+// GetFutureShm() implementation - converts internal ShmPtr to FullPtr
+template <typename TaskT, typename AllocT>
+hipc::FullPtr<typename Future<TaskT, AllocT>::FutureT>
+Future<TaskT, AllocT>::GetFutureShm() const {
+  if (future_shm_.IsNull()) {
+    return hipc::FullPtr<FutureT>();
+  }
+  return CHI_IPC->ToFullPtr(future_shm_);
+}
 
 template <typename TaskT, typename AllocT>
 void Future<TaskT, AllocT>::Wait() {
@@ -867,24 +1006,38 @@ void Future<TaskT, AllocT>::Wait() {
   is_owner_ = true;
 
   if (!task_ptr_.IsNull() && !future_shm_.IsNull()) {
-    // Wait for completion by polling is_complete atomic
-    // Busy-wait with thread yielding - works for both client and runtime
-    // contexts Coroutine contexts should use co_await Future instead
-    hipc::atomic<u32> &is_complete = future_shm_->is_complete_;
-    while (is_complete.load() == 0) {
-      HSHM_THREAD_MODEL->Yield();
+    // Convert ShmPtr to FullPtr to access flags_
+    hipc::FullPtr<FutureShm> future_full = CHI_IPC->ToFullPtr(future_shm_);
+    if (future_full.IsNull()) {
+      HLOG(kError, "Future::Wait: ToFullPtr returned null for future_shm_");
+      return;
     }
 
-    // Call IpcManager::Recv() to deserialize results (client path only)
-    CHI_IPC->Recv(*this);
+    // Determine path: client vs runtime
+    bool is_runtime = CHI_CHIMAERA_MANAGER->IsRuntime();
+    Worker *worker = CHI_CUR_WORKER;
+    bool use_runtime_path = is_runtime && worker != nullptr;
+
+    if (use_runtime_path) {
+      // RUNTIME PATH: Wait for FUTURE_COMPLETE first (task outputs are direct)
+      // No deserialization needed, just wait for completion signal
+      hshm::abitfield32_t &flags = future_full->flags_;
+      while (!flags.Any(FutureShm::FUTURE_COMPLETE)) {
+        HSHM_THREAD_MODEL->Yield();
+      }
+    } else {
+      // CLIENT PATH: Call Recv() first to handle streaming
+      // Recv() uses LocalTransfer which will consume chunks as they arrive
+      // FUTURE_COMPLETE will be set by worker after all data is sent
+      // Don't wait for FUTURE_COMPLETE first - that causes deadlock for streaming
+      CHI_IPC->Recv(*this);
+    }
 
     // Call PostWait() callback on the task for post-completion actions
     task_ptr_->PostWait();
 
-    // Free the FutureShm object using the correct allocator
-    // FutureShm is allocated from per-process shared memory, look up by alloc_id
-    CHI_IPC->FreeFutureShm(future_shm_);
-    future_shm_.SetNull();
+    // Don't free future_shm here - let the destructor handle it since is_owner_
+    // = true
   }
 }
 
@@ -896,20 +1049,13 @@ void Future<TaskT, AllocT>::Destroy() {
     task_ptr_.SetNull();
   }
   // Also free FutureShm if it wasn't freed in Wait()
-  // FutureShm is allocated from per-process shared memory, look up by alloc_id
   if (!future_shm_.IsNull()) {
-    CHI_IPC->FreeFutureShm(future_shm_);
+    // Cast ShmPtr<FutureShm> to ShmPtr<char> for FreeBuffer
+    hipc::ShmPtr<char> buffer_shm = future_shm_.template Cast<char>();
+    CHI_IPC->FreeBuffer(buffer_shm);
     future_shm_.SetNull();
   }
   is_owner_ = false;
-}
-
-template <typename TaskT, typename AllocT>
-void Future<TaskT, AllocT>::SetAllocator() {
-  // Use IpcManager::ToFullPtr to resolve the allocator from the ShmPtr
-  // This handles all allocator lookup including null allocator (private memory)
-  // Note: RegisterMemory must be called before this if the allocator is unknown
-  future_shm_ = CHI_IPC->ToFullPtr(future_shm_.shm_);
 }
 
 }  // namespace chi

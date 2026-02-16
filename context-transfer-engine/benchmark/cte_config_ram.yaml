@@ -1,12 +1,12 @@
 # Content Transfer Engine (CTE) Configuration File
 # RAM-only storage configuration for benchmark testing
-workers:
-  sched_threads: 1
-  slow_threads: 0
+runtime:
+  num_threads: 1             # Worker threads for task execution
+  queue_depth: 1024          # Task queue depth per worker
 
   # Worker sleep configuration (all values in microseconds)
-  first_busy_wait: 10000        # Busy wait duration before sleeping when idle (default: 50us)
-  max_sleep: 50000           # Maximum sleep duration cap (default: 50000us = 50ms)
+  first_busy_wait: 10000     # Busy wait before sleeping when idle (10ms)
+  max_sleep: 50000           # Maximum sleep duration (50ms)
 
 compose:
   # Compose parameters

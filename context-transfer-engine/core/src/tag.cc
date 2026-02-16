@@ -1,20 +1,72 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include <wrp_cte/core/core_client.h>
 #include <cstring>
 #include <stdexcept>
+#include <iostream>
 
 namespace wrp_cte::core {
 
 Tag::Tag(const std::string &tag_name) : tag_name_(tag_name) {
+  std::cerr << "[Tag::Tag] DEBUG: Entered constructor for tag_name=" << tag_name << std::endl;
+  std::cerr.flush();
+
   // Call the WRP_CTE client AsyncGetOrCreateTag function
+  std::cerr << "[Tag::Tag] DEBUG: Getting WRP_CTE_CLIENT..." << std::endl;
+  std::cerr.flush();
   auto *cte_client = WRP_CTE_CLIENT;
+  std::cerr << "[Tag::Tag] DEBUG: Got cte_client=" << (void*)cte_client << std::endl;
+  std::cerr.flush();
+
+  std::cerr << "[Tag::Tag] DEBUG: Calling AsyncGetOrCreateTag..." << std::endl;
+  std::cerr.flush();
   auto task = cte_client->AsyncGetOrCreateTag(tag_name);
+  std::cerr << "[Tag::Tag] DEBUG: AsyncGetOrCreateTag returned, calling Wait()..." << std::endl;
+  std::cerr.flush();
   task.Wait();
+  std::cerr << "[Tag::Tag] DEBUG: Wait() completed" << std::endl;
+  std::cerr.flush();
 
   if (task->GetReturnCode() != 0) {
+    std::cerr << "[Tag::Tag] ERROR: GetOrCreateTag operation failed with code " << task->GetReturnCode() << std::endl;
+    std::cerr.flush();
     throw std::runtime_error("GetOrCreateTag operation failed");
   }
 
   tag_id_ = task->tag_id_;
+  std::cerr << "[Tag::Tag] DEBUG: Constructor completed successfully" << std::endl;
+  std::cerr.flush();
 }
 
 Tag::Tag(const TagId &tag_id) : tag_id_(tag_id), tag_name_("") {}
@@ -46,7 +98,8 @@ void Tag::PutBlob(const std::string &blob_name, const hipc::ShmPtr<> &data, size
                   size_t off, float score, const Context &context) {
   auto *cte_client = WRP_CTE_CLIENT;
   auto task = cte_client->AsyncPutBlob(tag_id_, blob_name,
-                                       off, data_size, data, score, context);
+                                       off, data_size, data, score, context, 0,
+                                       chi::PoolQuery::Dynamic());
   task.Wait();
 
   if (task->GetReturnCode() != 0) {

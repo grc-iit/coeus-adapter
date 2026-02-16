@@ -49,8 +49,8 @@ echo -e "${YELLOW}[Step 1]${NC} Starting rank 0 (${DURATION}s, ${NTHREADS} threa
 RANK0_PID=$!
 echo "Rank 0 PID: $RANK0_PID"
 
-# Small delay to ensure rank 0 initializes first
-sleep 0.5
+# Delay to ensure rank 0 initializes shared memory before other ranks attach
+sleep 2
 
 echo -e "${YELLOW}[Step 2]${NC} Starting rank 1 (${DURATION}s, ${NTHREADS} threads) in background..."
 "$TEST_BINARY" 1 $DURATION $NTHREADS > /tmp/mp_test_rank1.log 2>&1 &

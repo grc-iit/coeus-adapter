@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 // Copyright 2024 IOWarp contributors
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_SCHEDULER_DEFAULT_SCHED_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_SCHEDULER_DEFAULT_SCHED_H_
@@ -12,7 +45,7 @@ namespace chi {
 /**
  * Default scheduler implementation.
  * Uses PID+TID hash-based lane mapping and provides no rebalancing.
- * Manages its own worker partitioning into scheduler, slow, and network groups.
+ * All workers process tasks; scheduler tracks worker groups for routing decisions.
  */
 class DefaultScheduler : public Scheduler {
  public:
@@ -27,11 +60,8 @@ class DefaultScheduler : public Scheduler {
   ~DefaultScheduler() override = default;
 
   /**
-   * Partition workers into scheduler, slow, and network worker groups.
-   * Reads worker counts from ConfigManager and assigns workers to:
-   * - scheduler_workers_: First N workers for fast tasks
-   * - slow_workers_: Next M workers for long-running tasks
-   * - net_worker_: Last worker for network operations
+   * Initialize scheduler with all available workers.
+   * Tracks scheduler workers and network worker for routing decisions.
    * @param work_orch Pointer to the work orchestrator
    */
   void DivideWorkers(WorkOrchestrator *work_orch) override;
@@ -60,19 +90,6 @@ class DefaultScheduler : public Scheduler {
    */
   void AdjustPolling(RunContext *run_ctx) override;
 
-  /**
-   * Assign a task to a worker of the specified type using round-robin.
-   * @param thread_type Type of worker to assign to (kSchedWorker or kSlow)
-   * @param future Future containing the task to assign
-   */
-  void AssignToWorkerType(ThreadType thread_type, Future<Task> &future);
-
-  /**
-   * Get the network worker
-   * @return Pointer to the network worker, or nullptr if not assigned
-   */
-  Worker *GetNetWorker() const { return net_worker_; }
-
  private:
   /**
    * Map task to lane by PID+TID hash
@@ -81,14 +98,9 @@ class DefaultScheduler : public Scheduler {
    */
   u32 MapByPidTid(u32 num_lanes);
 
-  // Worker partitioning - specific to default scheduler
-  std::vector<Worker *> scheduler_workers_;  ///< Workers for fast tasks
-  std::vector<Worker *> slow_workers_;       ///< Workers for long-running tasks
-  Worker *net_worker_;                        ///< Network worker
-
-  // Round-robin assignment counters
-  std::atomic<size_t> scheduler_idx_{0};
-  std::atomic<size_t> slow_idx_{0};
+  // Internal worker tracking for routing decisions
+  std::vector<Worker *> scheduler_workers_;  ///< Task processing workers
+  Worker *net_worker_;                        ///< Network worker (for routing periodic Send/Recv)
 };
 
 }  // namespace chi

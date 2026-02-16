@@ -1,14 +1,35 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * Distributed under BSD 3-Clause license.                                   *
- * Copyright by The HDF Group.                                               *
- * Copyright by the Illinois Institute of Technology.                        *
- * All rights reserved.                                                      *
- *                                                                           *
- * This file is part of Hermes. The full Hermes copyright notice, including  *
- * terms governing use, modification, and redistribution, is contained in    *
- * the COPYING file, which can be found at the top directory. If you do not  *
- * have access to the file, you may request a copy from help@hdfgroup.org.   *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef HSHM_SHM_INCLUDE_HSHM_SHM_HSHM_SHM_H_
 #define HSHM_SHM_INCLUDE_HSHM_SHM_HSHM_SHM_H_
@@ -26,8 +47,6 @@
 #include "types/bitfield.h"
 #include "types/hash.h"
 #include "types/numbers.h"
-#include "types/qtok.h"
-#include "types/real_number.h"
 
 // Utilities (low-level support)
 #include "util/affinity.h"
@@ -47,21 +66,21 @@
 #include "util/type_switch.h"
 
 // Compression utilities (guarded by HSHM_ENABLE_COMPRESS)
-#include "util/compress/blosc.h"
-#include "util/compress/brotli.h"
-#include "util/compress/bzip2.h"
-#include "util/compress/compress.h"
-#include "util/compress/compress_factory.h"
-#include "util/compress/lz4.h"
-#include "util/compress/lzma.h"
-#include "util/compress/lzo.h"
-#include "util/compress/snappy.h"
-#include "util/compress/zlib.h"
-#include "util/compress/zstd.h"
+#include "compress/blosc.h"
+#include "compress/brotli.h"
+#include "compress/bzip2.h"
+#include "compress/compress.h"
+#include "compress/compress_factory.h"
+#include "compress/lz4.h"
+#include "compress/lzma.h"
+#include "compress/lzo.h"
+#include "compress/snappy.h"
+#include "compress/zlib.h"
+#include "compress/zstd.h"
 
 // Encryption utilities (guarded by HSHM_ENABLE_ENCRYPT)
-#include "util/encrypt/aes.h"
-#include "util/encrypt/encrypt.h"
+#include "encrypt/aes.h"
+#include "encrypt/encrypt.h"
 
 // Thread models and synchronization (guarded by respective HSHM_ENABLE_*
 // macros)
@@ -97,12 +116,12 @@
 // Data structures
 // IPC data structures (inter-process communication containers)
 #include "data_structures/ipc/algorithm.h"
+#include "data_structures/ipc/multi_ring_buffer.h"
 #include "data_structures/ipc/rb_tree_pre.h"
 #include "data_structures/ipc/ring_buffer.h"
 #include "data_structures/ipc/shm_container.h"
 #include "data_structures/ipc/slist_pre.h"
 #include "data_structures/ipc/vector.h"
-#include "data_structures/ipc/multi_ring_buffer.h"
 
 // Private data structures (single-process containers)
 #include "data_structures/priv/string.h"

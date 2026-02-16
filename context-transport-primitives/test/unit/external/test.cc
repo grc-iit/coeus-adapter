@@ -9,10 +9,10 @@ int main() {
   hipc::AllocatorId alloc_id(1, 0);
   auto mem_mngr = HSHM_MEMORY_MANAGER;
   mem_mngr->UnregisterAllocator(alloc_id);
-  mem_mngr->UnregisterBackend(hipc::MemoryBackendId::Get(0));
+  mem_mngr->UnregisterBackend(hipc::MemoryBackendId::GetRoot());
   mem_mngr->CreateBackend<hipc::PosixShmMmap>(
-      hipc::MemoryBackendId::Get(0), hshm::Unit<size_t>::Megabytes(100),
+      hipc::MemoryBackendId::GetRoot(), hshm::Unit<size_t>::Megabytes(100),
       shm_url);
-  mem_mngr->CreateAllocator<hipc::StackAllocator>(hipc::MemoryBackendId::Get(0),
+  mem_mngr->CreateAllocator<hipc::StackAllocator>(hipc::MemoryBackendId::GetRoot(),
                                                   alloc_id, 0);
 }

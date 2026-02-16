@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2024, Gnosis Research Center, Illinois Institute of Technology
+ * All rights reserved.
+ *
+ * This file is part of IOWarp Core.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived from
+ *    this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
 // Copyright 2024 IOWarp contributors
 #include "chimaera/scheduler/default_sched.h"
 
@@ -18,95 +51,82 @@ void DefaultScheduler::DivideWorkers(WorkOrchestrator *work_orch) {
   // Get worker counts from configuration
   ConfigManager *config = CHI_CONFIG_MANAGER;
   if (!config) {
-    HLOG(kError, "DefaultScheduler::DivideWorkers: ConfigManager not available");
+    HLOG(kError,
+         "DefaultScheduler::DivideWorkers: ConfigManager not available");
     return;
   }
 
-  u32 sched_count = config->GetSchedulerWorkerCount();
-  u32 slow_count = config->GetSlowWorkerCount();
-  u32 net_count = 1;  // Hardcoded to 1 network worker for now
-
+  u32 thread_count = config->GetNumThreads();
   u32 total_workers = work_orch->GetTotalWorkerCount();
-  u32 expected_workers = sched_count + slow_count + net_count;
 
-  if (total_workers != expected_workers) {
-    HLOG(kWarning,
-         "DefaultScheduler::DivideWorkers: Worker count mismatch. "
-         "Expected {}, got {}",
-         expected_workers, total_workers);
-  }
-
-  // Clear any existing worker group assignments
+  // Clear any existing worker assignments
   scheduler_workers_.clear();
-  slow_workers_.clear();
   net_worker_ = nullptr;
 
-  // Assign workers to groups based on configuration
-  // Order: first sched_count workers -> scheduler_workers_
-  //        next slow_count workers -> slow_workers_
-  //        last worker -> net_worker_
-  u32 worker_idx = 0;
+  // Network worker is always the last worker
+  net_worker_ = work_orch->GetWorker(total_workers - 1);
 
-  // Assign scheduler workers (fast tasks)
-  for (u32 i = 0; i < sched_count && worker_idx < total_workers; ++i) {
-    Worker *worker = work_orch->GetWorker(worker_idx);
+  // Scheduler workers are all workers except the last one (unless only 1
+  // worker)
+  u32 num_sched_workers = (total_workers == 1) ? 1 : (total_workers - 1);
+  for (u32 i = 0; i < num_sched_workers; ++i) {
+    Worker *worker = work_orch->GetWorker(i);
     if (worker) {
-      worker->SetThreadType(kSchedWorker);
       scheduler_workers_.push_back(worker);
-      HLOG(kDebug, "DefaultScheduler: Worker {} assigned as kSchedWorker",
-           worker_idx);
     }
-    ++worker_idx;
   }
 
-  // Assign slow workers (long-running tasks)
-  for (u32 i = 0; i < slow_count && worker_idx < total_workers; ++i) {
-    Worker *worker = work_orch->GetWorker(worker_idx);
-    if (worker) {
-      worker->SetThreadType(kSlow);
-      slow_workers_.push_back(worker);
-      HLOG(kDebug, "DefaultScheduler: Worker {} assigned as kSlow", worker_idx);
-    }
-    ++worker_idx;
-  }
-
-  // Assign network worker (last worker)
-  for (u32 i = 0; i < net_count && worker_idx < total_workers; ++i) {
-    Worker *worker = work_orch->GetWorker(worker_idx);
-    if (worker) {
-      worker->SetThreadType(kNetWorker);
-      net_worker_ = worker;
-      HLOG(kDebug, "DefaultScheduler: Worker {} assigned as kNetWorker",
-           worker_idx);
-    }
-    ++worker_idx;
+  // Update IpcManager with the number of workers
+  IpcManager *ipc = CHI_IPC;
+  if (ipc) {
+    ipc->SetNumSchedQueues(total_workers);
   }
 
   HLOG(kInfo,
-       "DefaultScheduler::DivideWorkers: Partitioned {} workers "
-       "(sched={}, slow={}, net={})",
-       total_workers, sched_count, slow_count, net_count);
+       "DefaultScheduler: {} scheduler workers, 1 network worker (worker {})",
+       scheduler_workers_.size(), total_workers - 1);
 }
 
 u32 DefaultScheduler::ClientMapTask(IpcManager *ipc_manager,
-                                     const Future<Task> &task) {
+                                    const Future<Task> &task) {
   // Get number of scheduling queues
   u32 num_lanes = ipc_manager->GetNumSchedQueues();
-  HLOG(kDebug, "ClientMapTask: num_sched_queues={}", num_lanes);
   if (num_lanes == 0) {
     return 0;
   }
 
-  // Always use PID+TID hash-based mapping
+  // Check if this is a network task (Send or Recv from admin pool)
+  Task *task_ptr = task.get();
+  if (task_ptr != nullptr && task_ptr->pool_id_ == chi::kAdminPoolId) {
+    u32 method_id = task_ptr->method_;
+    if (method_id == 14 || method_id == 15) {  // kSend or kRecv
+      // Route to network worker (last worker)
+      return num_lanes - 1;
+    }
+  }
+
+  // Use PID+TID hash-based mapping for other tasks
   u32 lane = MapByPidTid(num_lanes);
-  HLOG(kDebug, "ClientMapTask: PID+TID hash mapped to lane {}", lane);
+
   return lane;
 }
 
 u32 DefaultScheduler::RuntimeMapTask(Worker *worker, const Future<Task> &task) {
-  // Return current worker - no migration in default scheduler
-  // The task will execute on whichever worker picked it up
-  (void)task;  // Unused in default scheduler
+  // Check if this is a periodic Send or Recv task from admin pool
+  Task *task_ptr = task.get();
+  if (task_ptr != nullptr && task_ptr->IsPeriodic()) {
+    if (task_ptr->pool_id_ == chi::kAdminPoolId) {
+      u32 method_id = task_ptr->method_;
+      if (method_id == 14 || method_id == 15) {  // kSend or kRecv
+        // Schedule on network worker
+        if (net_worker_ != nullptr) {
+          return net_worker_->GetId();
+        }
+      }
+    }
+  }
+
+  // All other tasks execute on the current worker
   if (worker != nullptr) {
     return worker->GetId();
   }
@@ -122,6 +142,11 @@ void DefaultScheduler::AdjustPolling(RunContext *run_ctx) {
   if (!run_ctx) {
     return;
   }
+
+  // TEMPORARY: Disable adaptive polling to test if it resolves hanging issues
+  // Just return early without adjusting - tasks will use their configured
+  // period
+  return;
 
   // Maximum polling interval in microseconds (100ms)
   const double kMaxPollingIntervalUs = 100000.0;
@@ -161,45 +186,6 @@ u32 DefaultScheduler::MapByPidTid(u32 num_lanes) {
   size_t combined_hash =
       std::hash<pid_t>{}(pid) ^ (std::hash<void *>{}(&tid) << 1);
   return static_cast<u32>(combined_hash % num_lanes);
-}
-
-void DefaultScheduler::AssignToWorkerType(ThreadType thread_type,
-                                          Future<Task> &future) {
-  if (future.IsNull()) {
-    return;
-  }
-
-  // Select target worker vector based on thread type
-  std::vector<Worker *> *target_workers = nullptr;
-  std::atomic<size_t> *idx = nullptr;
-
-  if (thread_type == kSchedWorker) {
-    target_workers = &scheduler_workers_;
-    idx = &scheduler_idx_;
-  } else if (thread_type == kSlow) {
-    target_workers = &slow_workers_;
-    idx = &slow_idx_;
-  } else {
-    // Process reaper or other types - not supported for task routing
-    return;
-  }
-
-  if (target_workers->empty()) {
-    HLOG(kWarning, "AssignToWorkerType: No workers of type {}",
-          static_cast<int>(thread_type));
-    return;
-  }
-
-  // Round-robin assignment
-  size_t worker_idx = idx->fetch_add(1) % target_workers->size();
-  Worker *worker = (*target_workers)[worker_idx];
-
-  // Get the worker's assigned lane and emplace the task
-  TaskLane *lane = worker->GetLane();
-  if (lane != nullptr) {
-    // Emplace the Future into the lane
-    lane->Emplace(future);
-  }
 }
 
 }  // namespace chi
