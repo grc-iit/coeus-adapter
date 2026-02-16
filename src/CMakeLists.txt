@@ -41,56 +41,46 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         chimaera_rankConsensus_client
         chimaera_rankConsensus_runtime)
 
-# #region agent log — DEBUG DIAGNOSTICS ROUND 2 (remove after investigation)
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R2 START ===")
-set(_CHI_SO "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/lib/libchimaera_cxx.so.1.0.0")
-set(_CHI_HDR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/include/chimaera/pool_query.h")
-set(_CHI_IPC_HDR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/include/chimaera/ipc_manager.h")
-# H-F: Show DEMANGLED PoolQuery symbols in the .so to see exact signatures
+# #region agent log — DEBUG DIAGNOSTICS ROUND 3 (remove after investigation)
+message(STATUS "=== COEUS DEBUG DIAGNOSTICS R3 START ===")
+set(_INST_DIR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/include")
+# R3-1: Show CHI_MAIN_ALLOC_T in INSTALLED types.h (should be ArenaAllocator)
 execute_process(
-  COMMAND nm -D --demangle "${_CHI_SO}"
-  COMMAND grep "PoolQuery"
-  OUTPUT_VARIABLE _PQ_SYMS OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HF] Demangled PoolQuery symbols in .so:\n${_PQ_SYMS}")
-# H-F: Show DEMANGLED AwakenWorker symbols
+  COMMAND grep -n "CHI_MAIN_ALLOC_T" "${_INST_DIR}/chimaera/types.h"
+  OUTPUT_VARIABLE _ALLOC OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+message(STATUS "[R3-1] INSTALLED types.h CHI_MAIN_ALLOC_T:\n${_ALLOC}")
+# R3-2: Show CHI_MAIN_ALLOC_T in LOCAL types.h (should be MultiProcessAllocator)
 execute_process(
-  COMMAND nm -D --demangle "${_CHI_SO}"
-  COMMAND grep "AwakenWorker"
-  OUTPUT_VARIABLE _AW_SYMS OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HF] Demangled AwakenWorker symbols in .so:\n${_AW_SYMS}")
-# H-F/G: Show the INSTALLED pool_query.h content (first 60 lines)
-execute_process(
-  COMMAND head -n 80 "${_CHI_HDR}"
-  OUTPUT_VARIABLE _PQ_CONTENT OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HFG] Installed pool_query.h (first 80 lines):\n${_PQ_CONTENT}")
-# H-G: Check if there's a PoolQuery class at all in the installed header
-execute_process(
-  COMMAND grep -n "PoolQuery" "${_CHI_HDR}"
-  OUTPUT_VARIABLE _PQ_GREP OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HG] grep PoolQuery in installed pool_query.h:\n${_PQ_GREP}")
-# H-G: Check the ipc_manager.h for AwakenWorker declaration
-execute_process(
-  COMMAND grep -n "AwakenWorker" "${_CHI_IPC_HDR}"
-  OUTPUT_VARIABLE _AW_GREP OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HG] grep AwakenWorker in installed ipc_manager.h:\n${_AW_GREP}")
-# H-H: Check what pool_query.h the COMPILER actually resolves
-# (is it the installed one, or a local one from context-runtime?)
-execute_process(
-  COMMAND find "${CMAKE_SOURCE_DIR}" -name "pool_query.h" -not -path "*/build/*"
-  OUTPUT_VARIABLE _LOCAL_PQ OUTPUT_STRIP_TRAILING_WHITESPACE
-  ERROR_QUIET)
-message(STATUS "[DIAG-HH] Local pool_query.h files in source tree:\n${_LOCAL_PQ}")
-# H-H: Show all include paths that hermes_engine will use
-get_target_property(_HE_INCS hermes_engine INCLUDE_DIRECTORIES)
-message(STATUS "[DIAG-HH] hermes_engine INCLUDE_DIRECTORIES = ${_HE_INCS}")
-get_target_property(_HE_IFACE_INCS hermes_engine INTERFACE_INCLUDE_DIRECTORIES)
-message(STATUS "[DIAG-HH] hermes_engine INTERFACE_INCLUDE_DIRECTORIES = ${_HE_IFACE_INCS}")
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R2 END ===")
+  COMMAND grep -n "CHI_MAIN_ALLOC_T" "${CMAKE_SOURCE_DIR}/context-runtime/include/chimaera/types.h"
+  OUTPUT_VARIABLE _LOCAL_ALLOC OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+message(STATUS "[R3-2] LOCAL context-runtime types.h CHI_MAIN_ALLOC_T:\n${_LOCAL_ALLOC}")
+# R3-3: Check INTERFACE_INCLUDE_DIRECTORIES of ALL linked targets
+foreach(_tgt chimaera::cxx chimaera::admin_client chimaera::bdev_client wrp_cte::core_client)
+  if(TARGET ${_tgt})
+    get_target_property(_inc ${_tgt} INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "[R3-3] ${_tgt} INTERFACE_INCLUDE_DIRECTORIES = ${_inc}")
+  else()
+    message(STATUS "[R3-3] ${_tgt} TARGET NOT FOUND")
+  endif()
+endforeach()
+# R3-4: Check HSHM targets too (they come from context-transport-primitives)
+foreach(_tgt hshm::cxx hshm::serialize hshm::lightbeam)
+  if(TARGET ${_tgt})
+    get_target_property(_inc ${_tgt} INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "[R3-4] ${_tgt} INTERFACE_INCLUDE_DIRECTORIES = ${_inc}")
+  else()
+    message(STATUS "[R3-4] ${_tgt} TARGET NOT FOUND")
+  endif()
+endforeach()
+# R3-5: Check if any include path contains context-runtime or context-transport
+# (this would mean local headers shadow installed ones)
+message(STATUS "[R3-5] CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
+message(STATUS "[R3-5] Look for local header pollution in include paths above ^^^")
+message(STATUS "=== COEUS DEBUG DIAGNOSTICS R3 END ===")
+message(STATUS "")
+message(STATUS ">>> ALSO NEEDED: After cmake, please run:")
+message(STATUS ">>>   make VERBOSE=1 2>&1 | grep 'hermes_engine.cc' | head -1")
+message(STATUS ">>> and paste the output. This shows ALL compiler include flags.")
 # #endregion agent log
 
 # Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)
