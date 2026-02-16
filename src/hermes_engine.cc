@@ -19,6 +19,12 @@
 #include <cstdlib>
 #include <cstring>
 
+// #region agent log — Compile-time diagnostic: verify CHI_MAIN_ALLOC_T
+#define _COEUS_STR_(x) #x
+#define _COEUS_STR(x) _COEUS_STR_(x)
+#pragma message("[COMPILE-DEBUG] CHI_MAIN_ALLOC_T = " _COEUS_STR(CHI_MAIN_ALLOC_T))
+// #endregion agent log
+
 namespace coeus {
 /**
  * Construct the HermesEngine.
