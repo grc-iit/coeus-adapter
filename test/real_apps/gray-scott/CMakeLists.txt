@@ -44,6 +44,17 @@ target_link_libraries(inCompact3D_analysis
         MPI::MPI_C
         )
 
+# #region agent log — DEBUG DIAGNOSTICS (Hypothesis D: transitive link propagation)
+set(_DBG_LOG "${CMAKE_SOURCE_DIR}/.cursor/debug.log")
+get_target_property(_IC3D_LINK_LIBS inCompact3D_analysis LINK_LIBRARIES)
+get_target_property(_HE_LINK_LIBS hermes_engine LINK_LIBRARIES)
+get_target_property(_HE_IFACE_LINK hermes_engine INTERFACE_LINK_LIBRARIES)
+file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"D\",\"message\":\"inCompact3D_analysis link info\",\"data\":{\"link_libs\":\"${_IC3D_LINK_LIBS}\",\"he_link_libs\":\"${_HE_LINK_LIBS}\",\"he_iface_link\":\"${_HE_IFACE_LINK}\"}}\n")
+message(STATUS "[DEBUG] inCompact3D_analysis LINK_LIBRARIES=${_IC3D_LINK_LIBS}")
+message(STATUS "[DEBUG] hermes_engine LINK_LIBRARIES=${_HE_LINK_LIBS}")
+message(STATUS "[DEBUG] hermes_engine INTERFACE_LINK_LIBRARIES=${_HE_IFACE_LINK}")
+# #endregion agent log
+
 # Include necessary directories for compilation
 target_include_directories(inCompact3D_analysis PRIVATE
         ${Hermes_INCLUDE_DIRS}

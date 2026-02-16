@@ -24,6 +24,56 @@ target_include_directories(hermes_engine PUBLIC
         ${CMAKE_SOURCE_DIR}/tasks/coeus_mdm/include
         ${CMAKE_SOURCE_DIR}/tasks/rankConsensus/include
         )
+# #region agent log — DEBUG DIAGNOSTICS (Hypothesis A,B,C,D,E)
+set(_DBG_LOG "${CMAKE_SOURCE_DIR}/.cursor/debug.log")
+file(WRITE ${_DBG_LOG} "")
+# Hypothesis A/B: Check chimaera::cxx target type and library location
+if(TARGET chimaera::cxx)
+  get_target_property(_CXX_TYPE chimaera::cxx TYPE)
+  get_target_property(_CXX_LOC  chimaera::cxx IMPORTED_LOCATION)
+  get_target_property(_CXX_LOC_REL chimaera::cxx IMPORTED_LOCATION_RELEASE)
+  get_target_property(_CXX_LOC_NOCONFIG chimaera::cxx IMPORTED_LOCATION_NOCONFIG)
+  get_target_property(_CXX_LINK_LIBS chimaera::cxx INTERFACE_LINK_LIBRARIES)
+  get_target_property(_CXX_INC_DIRS chimaera::cxx INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(_CXX_SONAME chimaera::cxx IMPORTED_SONAME)
+  file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"A\",\"message\":\"chimaera::cxx target info\",\"data\":{\"type\":\"${_CXX_TYPE}\",\"location\":\"${_CXX_LOC}\",\"location_release\":\"${_CXX_LOC_REL}\",\"location_noconfig\":\"${_CXX_LOC_NOCONFIG}\",\"soname\":\"${_CXX_SONAME}\",\"link_libs\":\"${_CXX_LINK_LIBS}\",\"include_dirs\":\"${_CXX_INC_DIRS}\"}}\n")
+  message(STATUS "[DEBUG] chimaera::cxx TYPE=${_CXX_TYPE}")
+  message(STATUS "[DEBUG] chimaera::cxx IMPORTED_LOCATION=${_CXX_LOC}")
+  message(STATUS "[DEBUG] chimaera::cxx IMPORTED_LOCATION_RELEASE=${_CXX_LOC_REL}")
+  message(STATUS "[DEBUG] chimaera::cxx IMPORTED_LOCATION_NOCONFIG=${_CXX_LOC_NOCONFIG}")
+  message(STATUS "[DEBUG] chimaera::cxx INTERFACE_INCLUDE_DIRECTORIES=${_CXX_INC_DIRS}")
+  message(STATUS "[DEBUG] chimaera::cxx INTERFACE_LINK_LIBRARIES=${_CXX_LINK_LIBS}")
+  # Hypothesis B: Check if the library file actually exists
+  if(_CXX_LOC AND NOT _CXX_LOC STREQUAL "_CXX_LOC-NOTFOUND")
+    if(EXISTS "${_CXX_LOC}")
+      file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"B\",\"message\":\"library file EXISTS\",\"data\":{\"path\":\"${_CXX_LOC}\"}}\n")
+      message(STATUS "[DEBUG] chimaera::cxx library file EXISTS at ${_CXX_LOC}")
+    else()
+      file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"B\",\"message\":\"library file MISSING\",\"data\":{\"path\":\"${_CXX_LOC}\"}}\n")
+      message(WARNING "[DEBUG] chimaera::cxx library file MISSING at ${_CXX_LOC}")
+    endif()
+  endif()
+else()
+  file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"A\",\"message\":\"chimaera::cxx TARGET DOES NOT EXIST\"}\n")
+  message(WARNING "[DEBUG] chimaera::cxx TARGET DOES NOT EXIST!")
+endif()
+# Hypothesis C: Check include directories for pool_query.h
+get_target_property(_HE_INC_DIRS hermes_engine INCLUDE_DIRECTORIES)
+file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"C\",\"message\":\"hermes_engine include dirs\",\"data\":{\"dirs\":\"${_HE_INC_DIRS}\"}}\n")
+message(STATUS "[DEBUG] hermes_engine INCLUDE_DIRECTORIES=${_HE_INC_DIRS}")
+# Hypothesis E: Check other chi targets
+foreach(_tgt chimaera::admin_client chimaera::bdev_client wrp_cte::core_client)
+  if(TARGET ${_tgt})
+    get_target_property(_T_TYPE ${_tgt} TYPE)
+    get_target_property(_T_LOC ${_tgt} IMPORTED_LOCATION)
+    file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"E\",\"message\":\"target ${_tgt}\",\"data\":{\"type\":\"${_T_TYPE}\",\"location\":\"${_T_LOC}\"}}\n")
+    message(STATUS "[DEBUG] ${_tgt} TYPE=${_T_TYPE} LOC=${_T_LOC}")
+  else()
+    file(APPEND ${_DBG_LOG} "{\"hypothesisId\":\"E\",\"message\":\"target ${_tgt} NOT FOUND\"}\n")
+    message(WARNING "[DEBUG] ${_tgt} TARGET NOT FOUND")
+  endif()
+endforeach()
+# #endregion agent log
 target_link_libraries(hermes_engine LINK_PUBLIC
         ${ADIOS2_LIBRARIES}
         spdlog
