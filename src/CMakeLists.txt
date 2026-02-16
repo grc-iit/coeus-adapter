@@ -41,46 +41,29 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         chimaera_rankConsensus_client
         chimaera_rankConsensus_runtime)
 
-# #region agent log — DEBUG DIAGNOSTICS ROUND 3 (remove after investigation)
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R3 START ===")
-set(_INST_DIR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/include")
-# R3-1: Show CHI_MAIN_ALLOC_T in INSTALLED types.h (should be ArenaAllocator)
+# #region agent log — DEBUG DIAGNOSTICS ROUND 4 (remove after investigation)
+message(STATUS "=== COEUS DEBUG DIAGNOSTICS R4 START ===")
+set(_IOWARP_CMAKE_DIR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/lib/cmake/iowarp-core")
+# R4-1: List ALL files in the iowarp-core cmake config dir
 execute_process(
-  COMMAND grep -n "CHI_MAIN_ALLOC_T" "${_INST_DIR}/chimaera/types.h"
-  OUTPUT_VARIABLE _ALLOC OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-message(STATUS "[R3-1] INSTALLED types.h CHI_MAIN_ALLOC_T:\n${_ALLOC}")
-# R3-2: Show CHI_MAIN_ALLOC_T in LOCAL types.h (should be MultiProcessAllocator)
+  COMMAND ls -la "${_IOWARP_CMAKE_DIR}"
+  OUTPUT_VARIABLE _LS OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+message(STATUS "[R4-1] iowarp-core cmake config files:\n${_LS}")
+# R4-2: Show the main iowarp-coreConfig.cmake
 execute_process(
-  COMMAND grep -n "CHI_MAIN_ALLOC_T" "${CMAKE_SOURCE_DIR}/context-runtime/include/chimaera/types.h"
-  OUTPUT_VARIABLE _LOCAL_ALLOC OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-message(STATUS "[R3-2] LOCAL context-runtime types.h CHI_MAIN_ALLOC_T:\n${_LOCAL_ALLOC}")
-# R3-3: Check INTERFACE_INCLUDE_DIRECTORIES of ALL linked targets
-foreach(_tgt chimaera::cxx chimaera::admin_client chimaera::bdev_client wrp_cte::core_client)
-  if(TARGET ${_tgt})
-    get_target_property(_inc ${_tgt} INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "[R3-3] ${_tgt} INTERFACE_INCLUDE_DIRECTORIES = ${_inc}")
-  else()
-    message(STATUS "[R3-3] ${_tgt} TARGET NOT FOUND")
-  endif()
-endforeach()
-# R3-4: Check HSHM targets too (they come from context-transport-primitives)
-foreach(_tgt hshm::cxx hshm::serialize hshm::lightbeam)
-  if(TARGET ${_tgt})
-    get_target_property(_inc ${_tgt} INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "[R3-4] ${_tgt} INTERFACE_INCLUDE_DIRECTORIES = ${_inc}")
-  else()
-    message(STATUS "[R3-4] ${_tgt} TARGET NOT FOUND")
-  endif()
-endforeach()
-# R3-5: Check if any include path contains context-runtime or context-transport
-# (this would mean local headers shadow installed ones)
-message(STATUS "[R3-5] CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
-message(STATUS "[R3-5] Look for local header pollution in include paths above ^^^")
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R3 END ===")
-message(STATUS "")
-message(STATUS ">>> ALSO NEEDED: After cmake, please run:")
-message(STATUS ">>>   make VERBOSE=1 2>&1 | grep 'hermes_engine.cc' | head -1")
-message(STATUS ">>> and paste the output. This shows ALL compiler include flags.")
+  COMMAND cat "${_IOWARP_CMAKE_DIR}/iowarp-coreConfig.cmake"
+  OUTPUT_VARIABLE _CFG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+message(STATUS "[R4-2] iowarp-coreConfig.cmake:\n${_CFG}")
+# R4-3: Show IowarpCoreCommon.cmake (if it exists)
+execute_process(
+  COMMAND cat "${_IOWARP_CMAKE_DIR}/IowarpCoreCommon.cmake"
+  OUTPUT_VARIABLE _COMMON OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+message(STATUS "[R4-3] IowarpCoreCommon.cmake:\n${_COMMON}")
+# R4-4: Key summary - the version mismatch
+message(STATUS "[R4-4] INSTALLED CHI_MAIN_ALLOC_T = hipc::ArenaAllocator<false>")
+message(STATUS "[R4-4] LOCAL     CHI_MAIN_ALLOC_T = hipc::MultiProcessAllocator")
+message(STATUS "[R4-4] These are INCOMPATIBLE - this is the root cause")
+message(STATUS "=== COEUS DEBUG DIAGNOSTICS R4 END ===")
 # #endregion agent log
 
 # Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)
