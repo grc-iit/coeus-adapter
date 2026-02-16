@@ -34,8 +34,6 @@
 #ifndef CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORKER_H_
 #define CHIMAERA_INCLUDE_CHIMAERA_WORKERS_WORKER_H_
 
-#include <sys/epoll.h>
-
 #include <chrono>
 #include <coroutine>
 #include <functional>
@@ -52,6 +50,8 @@
 #include "chimaera/task_queue.h"
 #include "chimaera/types.h"
 #include "chimaera/scheduler/scheduler.h"
+#include "hermes_shm/lightbeam/event_manager.h"
+#include "hermes_shm/lightbeam/transport_factory_impl.h"
 #include "hermes_shm/memory/allocator/malloc_allocator.h"
 
 namespace chi {
@@ -228,38 +228,10 @@ class Worker {
   WorkerStats GetWorkerStats() const;
 
   /**
-   * Get the epoll file descriptor for this worker
-   * @return Epoll file descriptor
+   * Get the EventManager for this worker
+   * @return Reference to this worker's EventManager
    */
-  int GetEpollFd() const;
-
-  /**
-   * Register a file descriptor with this worker's epoll for monitoring
-   * Thread-safe: can be called from any thread
-   * @param fd File descriptor to register
-   * @param events Epoll events to monitor (e.g., EPOLLIN, EPOLLOUT)
-   * @param user_data User data to associate with the fd (returned in epoll_event.data.ptr)
-   * @return true if registration successful, false otherwise
-   */
-  bool RegisterEpollFd(int fd, u32 events, void *user_data);
-
-  /**
-   * Unregister a file descriptor from this worker's epoll
-   * Thread-safe: can be called from any thread
-   * @param fd File descriptor to unregister
-   * @return true if unregistration successful, false otherwise
-   */
-  bool UnregisterEpollFd(int fd);
-
-  /**
-   * Modify epoll events for an already registered file descriptor
-   * Thread-safe: can be called from any thread
-   * @param fd File descriptor to modify
-   * @param events New epoll events to monitor
-   * @param user_data New user data to associate with the fd
-   * @return true if modification successful, false otherwise
-   */
-  bool ModifyEpollFd(int fd, u32 events, void *user_data);
+  hshm::lbm::EventManager& GetEventManager();
 
   /**
    * Add run context to blocked queue based on block count
@@ -292,16 +264,29 @@ class Worker {
    */
   TaskLane *GetLane() const;
 
+#if HSHM_ENABLE_CUDA || HSHM_ENABLE_ROCM
+  /**
+   * Set GPU lanes for this worker to process
+   * @param lanes Vector of TaskLane pointers for GPU queues
+   */
+  void SetGpuLanes(const std::vector<TaskLane *> &lanes);
+
+  /**
+   * Get the worker's assigned GPU lanes
+   * @return Reference to vector of GPU TaskLanes
+   */
+  const std::vector<TaskLane *> &GetGpuLanes() const;
+#endif
+
   /**
    * Route a task by calling ResolvePoolQuery and determining local vs global
    * scheduling
    * @param future Future containing the task to route
    * @param lane Pointer to the task lane for execution context
-   * @param container Output parameter for the container to use for task
-   * execution
+   * @param container The container to use for task execution
    * @return true if task was successfully routed, false otherwise
    */
-  bool RouteTask(Future<Task> &future, TaskLane *lane, Container *&container);
+  bool RouteTask(Future<Task> &future, TaskLane *lane, Container *container);
 
   /**
    * Resolve a pool query into concrete physical addresses
@@ -386,11 +371,10 @@ class Worker {
    * Route task locally using container query and Monitor with kLocalSchedule
    * @param future Future containing the task to route locally
    * @param lane Pointer to the task lane for execution context
-   * @param container Output parameter for the container to use for task
-   * execution
+   * @param container The container to use for task execution
    * @return true if local routing successful, false otherwise
    */
-  bool RouteLocal(Future<Task> &future, TaskLane *lane, Container *&container);
+  bool RouteLocal(Future<Task> &future, TaskLane *lane, Container *container);
 
   /**
    * Route task globally using admin client's ClientSendTaskIn method
@@ -408,14 +392,8 @@ class Worker {
    * @param run_ctx Runtime context
    * @param container Container for serialization
    */
-  void EndTaskBeginClientTransfer(const FullPtr<Task> &task_ptr,
-                                  RunContext *run_ctx, Container *container);
-
-  /**
-   * Signal parent task that subtask completed
-   * @param parent_task Parent task's RunContext to signal
-   */
-  void EndTaskSignalParent(RunContext *parent_task);
+  void EndTaskShmTransfer(const FullPtr<Task> &task_ptr,
+                             RunContext *run_ctx, Container *container);
 
   /**
    * End task execution and perform cleanup
@@ -442,19 +420,20 @@ class Worker {
   void ContinueBlockedTasks(bool force);
 
   /**
-   * Process tasks from the worker's assigned lane
+   * Process tasks from a given lane
    * Processes up to MAX_TASKS_PER_ITERATION tasks per call
+   * @param lane The TaskLane to process tasks from
    * @return Number of tasks processed
    */
-  u32 ProcessNewTasks();
+  u32 ProcessNewTasks(TaskLane *lane);
 
   /**
-   * Ensure IPC allocator is registered for a Future
-   * Handles lazy registration of client memory allocators
-   * @param future_shm_full FullPtr to FutureShm to check allocator for
-   * @return true if allocator is registered or registration succeeded, false on failure
+   * Process a single task from a given lane
+   * Handles task retrieval, deserialization, routing, and execution
+   * @param lane The TaskLane to pop a task from
+   * @return true if a task was processed, false if lane was empty
    */
-  bool EnsureIpcRegistered(const hipc::FullPtr<FutureShm> &future_shm_full);
+  bool ProcessNewTask(TaskLane *lane);
 
   /**
    * Get task pointer from Future, copying from client if needed
@@ -526,6 +505,11 @@ class Worker {
   // Single lane assigned to this worker (one lane per worker)
   TaskLane *assigned_lane_;
 
+#if HSHM_ENABLE_CUDA || HSHM_ENABLE_ROCM
+  // GPU lanes assigned to this worker (one lane per GPU)
+  std::vector<TaskLane *> gpu_lanes_;
+#endif
+
   // Note: RunContext cache removed - RunContext is now embedded in Task
 
   // Blocked queue system for cooperative tasks (waiting for subtasks):
@@ -538,10 +522,11 @@ class Worker {
   static constexpr u32 BLOCKED_QUEUE_SIZE = 1024;
   std::queue<RunContext *> blocked_queues_[NUM_BLOCKED_QUEUES];
 
-  // Event queue for waking up tasks when their subtasks complete
+  // Event queue for completing subtask futures on the parent worker's thread
+  // Stores Future<Task> objects to set FUTURE_COMPLETE, avoiding stale RunContext* pointers
   // Allocated from malloc allocator (temporary runtime data, not IPC)
   static constexpr u32 EVENT_QUEUE_DEPTH = 1024;
-  hshm::ipc::mpsc_ring_buffer<RunContext *, hshm::ipc::MallocAllocator> *event_queue_;
+  hshm::ipc::mpsc_ring_buffer<Future<Task, CHI_MAIN_ALLOC_T>, hshm::ipc::MallocAllocator> *event_queue_;
 
   // Periodic queue system for time-based periodic tasks:
   // - Queue[0]: Tasks with yield_time_us_ <= 50us (checked every 16 iterations)
@@ -569,17 +554,15 @@ class Worker {
   u64 sleep_count_;  // Number of times sleep was called in current idle period
   hshm::Timepoint idle_start_;  // Time when worker became idle
 
-  // Epoll file descriptor and events buffer for efficient worker suspension
-  int epoll_fd_;
-  static constexpr u32 MAX_EPOLL_EVENTS = 256;
-  struct epoll_event epoll_events_[MAX_EPOLL_EVENTS];
-
-  // Mutex to protect epoll_ctl operations from multiple threads
-  // Used when external code (e.g., bdev) registers FDs with this worker's epoll
-  hshm::Mutex epoll_mutex_;
+  // EventManager for efficient worker suspension and event monitoring
+  hshm::lbm::EventManager event_manager_;
 
   // Client copy queue - LocalTransfer objects streaming output data to clients
   std::queue<LocalTransfer> client_copy_;
+
+  // SHM lightbeam transport (worker-side)
+  std::unique_ptr<hshm::lbm::Transport> shm_send_transport_;  // For EndTaskShmTransfer
+  std::unique_ptr<hshm::lbm::Transport> shm_recv_transport_;  // For ProcessNewTask
 
   // Scheduler pointer (owned by IpcManager, not Worker)
   Scheduler *scheduler_;

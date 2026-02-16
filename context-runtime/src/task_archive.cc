@@ -57,8 +57,8 @@ void SaveTaskArchive::bulk(hipc::ShmPtr<> ptr, size_t size, uint32_t flags) {
   bulk.flags.bits_ = flags;
 
   // If lbm_client is provided, automatically call Expose for RDMA registration
-  if (lbm_client_) {
-    bulk = lbm_client_->Expose(bulk.data, bulk.size, bulk.flags.bits_);
+  if (lbm_transport_) {
+    bulk = lbm_transport_->Expose(bulk.data, bulk.size, bulk.flags.bits_);
   }
 
   send.push_back(bulk);
@@ -77,43 +77,59 @@ void SaveTaskArchive::bulk(hipc::ShmPtr<> ptr, size_t size, uint32_t flags) {
  * @param flags Transfer flags (BULK_XFER or BULK_EXPOSE)
  */
 void LoadTaskArchive::bulk(hipc::ShmPtr<> &ptr, size_t size, uint32_t flags) {
-  HLOG(kDebug, "[LoadTaskArchive::bulk] Called with size={}, flags={}, msg_type_={}",
-       size, flags, static_cast<int>(msg_type_));
-
   if (msg_type_ == MsgType::kSerializeIn) {
     // SerializeIn mode (input) - Get pointer from recv vector at current index
     // The task itself doesn't have a valid pointer during deserialization,
     // so we look into the recv vector and use the FullPtr at the current index
     if (current_bulk_index_ < recv.size()) {
-      // Cast FullPtr<char>'s shm_ to ShmPtr<>
-      ptr = recv[current_bulk_index_].data.shm_.template Cast<void>();
+      if (!recv[current_bulk_index_].data.shm_.IsNull()) {
+        // Valid ShmPtr: either SHM transport (data in shared memory) or
+        // ZMQ/socket transport (data received into buffer)
+        ptr = recv[current_bulk_index_].data.shm_.template Cast<void>();
+      } else {
+        // Null ShmPtr: BULK_EXPOSE via ZMQ/socket where no data was sent.
+        // Allocate a buffer for the receiver to fill (e.g., ReadTask).
+        hipc::FullPtr<char> buf = CHI_IPC->AllocateBuffer(size);
+        ptr = buf.shm_.template Cast<void>();
+        recv[current_bulk_index_].data = buf;
+      }
       current_bulk_index_++;
-      HLOG(kDebug, "[LoadTaskArchive::bulk] SerializeIn - used recv[{}]", current_bulk_index_ - 1);
     } else {
       // Error: not enough bulk transfers in recv vector
       ptr = hipc::ShmPtr<>::GetNull();
       HLOG(kError, "[LoadTaskArchive::bulk] SerializeIn - recv vector empty or exhausted");
     }
   } else if (msg_type_ == MsgType::kSerializeOut) {
-    // SerializeOut mode (output) - Expose the existing pointer using lbm_server
-    // and append to recv vector for later retrieval
-    HLOG(kDebug, "[LoadTaskArchive::bulk] SerializeOut - lbm_server_={}", (void*)lbm_server_);
-    if (lbm_server_) {
+    if (current_bulk_index_ < recv.size()) {
+      // Post-receive (TCP/IPC path): data arrived in recv buffer
+      if (recv[current_bulk_index_].flags.Any(BULK_XFER)) {
+        // If the task already has a valid buffer (caller-provided),
+        // copy received data into it so the caller's pointer stays valid.
+        // This handles the TCP case where the caller allocated a read buffer
+        // and expects data to appear there (matching SHM behavior).
+        // Note: MallocAllocator uses null alloc_id_, so check IsNull() on
+        // the ShmPtr (which checks offset) rather than alloc_id_.
+        if (!ptr.IsNull()) {
+          hipc::FullPtr<char> dst = CHI_IPC->ToFullPtr(ptr).template Cast<char>();
+          char *src = recv[current_bulk_index_].data.ptr_;
+          size_t copy_size = recv[current_bulk_index_].size;
+          if (dst.ptr_ && src) {
+            memcpy(dst.ptr_, src, copy_size);
+          }
+        } else {
+          // No original buffer — zero-copy, point directly at recv buffer
+          ptr = recv[current_bulk_index_].data.shm_.template Cast<void>();
+        }
+      }
+      current_bulk_index_++;
+    } else if (lbm_transport_) {
+      // Pre-receive: expose task's buffer for RecvBulks (existing RecvOut pattern)
       hipc::FullPtr<char> buffer = CHI_IPC->ToFullPtr(ptr).template Cast<char>();
-      HLOG(kDebug, "[LoadTaskArchive::bulk] SerializeOut - buffer.ptr_={}", (void*)buffer.ptr_);
-      hshm::lbm::Bulk bulk = lbm_server_->Expose(buffer, size, flags);
+      hshm::lbm::Bulk bulk = lbm_transport_->Expose(buffer, size, flags);
       recv.push_back(bulk);
-
-      // Track count of BULK_XFER entries for proper ZMQ_RCVMORE handling
       if (flags & BULK_XFER) {
         recv_bulks++;
       }
-
-      HLOG(kDebug, "[LoadTaskArchive::bulk] SerializeOut - added to recv, now has {} entries", recv.size());
-    } else {
-      // Error: lbm_server not set for output mode
-      ptr = hipc::ShmPtr<>::GetNull();
-      HLOG(kError, "[LoadTaskArchive::bulk] SerializeOut - lbm_server_ is null!");
     }
   }
   // kHeartbeat has no bulk transfers

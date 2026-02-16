@@ -154,6 +154,26 @@ class Container {
   }
 
   /**
+   * Restart container after crash recovery
+   * Default: re-initialize. Override for state restoration.
+   */
+  virtual void Restart(const PoolId& pool_id, const std::string& pool_name,
+                       u32 container_id = 0) {
+    Init(pool_id, pool_name, container_id);
+  }
+
+  /**
+   * Expand container to accommodate a new node in the cluster
+   * Called when a new node is registered via Admin::AddNode.
+   * Default implementation is a no-op.
+   * Override to re-partition data or update routing when nodes join.
+   * @param new_host The newly registered host
+   */
+  virtual void Expand(const Host& new_host) {
+    (void)new_host;
+  }
+
+  /**
    * Serialize task parameters for network transfer (unified method)
    * Must be implemented by derived classes
    * Uses switch-case structure based on method ID to dispatch to appropriate serialization

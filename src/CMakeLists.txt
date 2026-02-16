@@ -41,30 +41,6 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         chimaera_rankConsensus_client
         chimaera_rankConsensus_runtime)
 
-# #region agent log — DEBUG DIAGNOSTICS ROUND 4 (remove after investigation)
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R4 START ===")
-set(_IOWARP_CMAKE_DIR "/home/hxu40/spack/opt/spack/linux-skylake_avx512/iowarp-main-zrgpndlulioi4r7mdjgqycbmhrdefu43/lib/cmake/iowarp-core")
-# R4-1: List ALL files in the iowarp-core cmake config dir
-execute_process(
-  COMMAND ls -la "${_IOWARP_CMAKE_DIR}"
-  OUTPUT_VARIABLE _LS OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-message(STATUS "[R4-1] iowarp-core cmake config files:\n${_LS}")
-# R4-2: Show the main iowarp-coreConfig.cmake
-execute_process(
-  COMMAND cat "${_IOWARP_CMAKE_DIR}/iowarp-coreConfig.cmake"
-  OUTPUT_VARIABLE _CFG OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-message(STATUS "[R4-2] iowarp-coreConfig.cmake:\n${_CFG}")
-# R4-3: Show IowarpCoreCommon.cmake (if it exists)
-execute_process(
-  COMMAND cat "${_IOWARP_CMAKE_DIR}/IowarpCoreCommon.cmake"
-  OUTPUT_VARIABLE _COMMON OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
-message(STATUS "[R4-3] IowarpCoreCommon.cmake:\n${_COMMON}")
-# R4-4: Key summary - the version mismatch
-message(STATUS "[R4-4] INSTALLED CHI_MAIN_ALLOC_T = hipc::ArenaAllocator<false>")
-message(STATUS "[R4-4] LOCAL     CHI_MAIN_ALLOC_T = hipc::MultiProcessAllocator")
-message(STATUS "[R4-4] These are INCOMPATIBLE - this is the root cause")
-message(STATUS "=== COEUS DEBUG DIAGNOSTICS R4 END ===")
-# #endregion agent log
 
 # Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)
 set_target_properties(hermes_engine PROPERTIES

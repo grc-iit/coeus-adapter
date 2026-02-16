@@ -45,14 +45,14 @@
 #include <chimaera/pool_manager.h>
 #include <chimaera/task_archives.h>
 #include <chimaera/worker.h>
-#include <hermes_shm/lightbeam/zmq_transport.h>
-#include <zmq.h>
+#include <hermes_shm/lightbeam/transport_factory_impl.h>
 
 #include <chrono>
 #include <memory>
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <filesystem>
 #include <vector>
 
 namespace chimaera::admin {
@@ -89,9 +89,30 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task,
   // This task polls net_queue_ for send operations
   client_.AsyncSendPoll(chi::PoolQuery::Local(), 0, 500);
 
-  // Spawn periodic Heartbeat task with 5ms period
-  // This task polls for ZMQ heartbeat requests and responds
-  client_.AsyncHeartbeat(chi::PoolQuery::Local(), 5000);
+  // Spawn periodic ClientRecv task for client task reception via lightbeam
+  client_.AsyncClientRecv(chi::PoolQuery::Local(), 100);
+
+  // Spawn periodic ClientSend task for client response sending via lightbeam
+  client_.AsyncClientSend(chi::PoolQuery::Local(), 100);
+
+  // Register client server FDs with worker's EventManager
+  {
+    auto *worker = CHI_CUR_WORKER;
+    auto *ipc_manager = CHI_IPC;
+    if (worker && ipc_manager) {
+      auto &em = worker->GetEventManager();
+      auto *tcp_transport = ipc_manager->GetClientTransport(chi::IpcMode::kTcp);
+      if (tcp_transport) {
+        tcp_transport->RegisterEventManager(em);
+        HLOG(kDebug, "Admin: TCP transport registered with worker EventManager");
+      }
+      auto *ipc_transport = ipc_manager->GetClientTransport(chi::IpcMode::kIpc);
+      if (ipc_transport) {
+        ipc_transport->RegisterEventManager(em);
+        HLOG(kDebug, "Admin: IPC transport registered with worker EventManager");
+      }
+    }
+  }
 
   // Spawn periodic WreapDeadIpcs task with 1 second period
   // This task reaps shared memory segments from dead processes
@@ -101,7 +122,7 @@ chi::TaskResume Runtime::Create(hipc::FullPtr<CreateTask> task,
        "Admin: Container created and initialized for pool: {} (ID: {}, count: "
        "{})",
        pool_name_, task->new_pool_id_, create_count_);
-  HLOG(kDebug, "Admin: Spawned periodic Recv, Send, and Heartbeat tasks");
+  HLOG(kDebug, "Admin: Spawned periodic Recv, Send, ClientConnect, ClientRecv, ClientSend tasks");
   (void)rctx;
   co_return;
 }
@@ -429,17 +450,17 @@ void Runtime::SendIn(hipc::FullPtr<chi::Task> origin_task,
     // Get or create persistent Lightbeam client using connection pool
     auto *config_manager = CHI_CONFIG_MANAGER;
     int port = static_cast<int>(config_manager->GetPort());
-    hshm::lbm::Client *lbm_client =
+    hshm::lbm::Transport *lbm_transport =
         ipc_manager->GetOrCreateClient(target_host->ip_address, port);
 
-    if (!lbm_client) {
+    if (!lbm_transport) {
       HLOG(kError, "[SendIn] Task {} FAILED: Could not get client for {}:{}",
            origin_task->task_id_, target_host->ip_address, port);
       continue;
     }
 
-    // Create SaveTaskArchive with SerializeIn mode and lbm_client
-    chi::SaveTaskArchive archive(chi::MsgType::kSerializeIn, lbm_client);
+    // Create SaveTaskArchive with SerializeIn mode and lbm_transport
+    chi::SaveTaskArchive archive(chi::MsgType::kSerializeIn, lbm_transport);
 
     // Create task copy
     hipc::FullPtr<chi::Task> task_copy =
@@ -465,7 +486,7 @@ void Runtime::SendIn(hipc::FullPtr<chi::Task> origin_task,
     // Send using Lightbeam asynchronously (non-blocking)
     // Note: No lock needed - single net worker processes all Send/Recv tasks
     hshm::lbm::LbmContext ctx(0);  // Non-blocking async send
-    int rc = lbm_client->Send(archive, ctx);
+    int rc = lbm_transport->Send(archive, ctx);
 
     if (rc != 0) {
       HLOG(kError,
@@ -483,6 +504,13 @@ void Runtime::SendIn(hipc::FullPtr<chi::Task> origin_task,
 void Runtime::SendOut(hipc::FullPtr<chi::Task> origin_task) {
   auto *ipc_manager = CHI_IPC;
   auto *pool_manager = CHI_POOL_MANAGER;
+
+  // Flush deferred deletes from previous invocation (zero-copy send safety)
+  static std::vector<hipc::FullPtr<chi::Task>> deferred_deletes;
+  for (auto &t : deferred_deletes) {
+    ipc_manager->DelTask(t);
+  }
+  deferred_deletes.clear();
 
   // Validate origin_task
   if (origin_task.IsNull()) {
@@ -525,18 +553,18 @@ void Runtime::SendOut(hipc::FullPtr<chi::Task> origin_task) {
   // Get or create persistent Lightbeam client using connection pool
   auto *config_manager = CHI_CONFIG_MANAGER;
   int port = static_cast<int>(config_manager->GetPort());
-  hshm::lbm::Client *lbm_client =
+  hshm::lbm::Transport *lbm_transport =
       ipc_manager->GetOrCreateClient(target_host->ip_address, port);
 
-  if (lbm_client == nullptr) {
+  if (lbm_transport == nullptr) {
     HLOG(kError, "[SendOut] Task {} FAILED: Could not get client for {}:{}",
          origin_task->task_id_, target_host->ip_address, port);
     return;
   }
 
-  // Create SaveTaskArchive with SerializeOut mode and lbm_client
+  // Create SaveTaskArchive with SerializeOut mode and lbm_transport
   // The client will automatically call Expose internally during serialization
-  chi::SaveTaskArchive archive(chi::MsgType::kSerializeOut, lbm_client);
+  chi::SaveTaskArchive archive(chi::MsgType::kSerializeOut, lbm_transport);
 
   // Serialize the task outputs using container->SaveTask (Expose called
   // automatically)
@@ -545,7 +573,7 @@ void Runtime::SendOut(hipc::FullPtr<chi::Task> origin_task) {
   // Use non-timed, non-sync context for SendOut
   // Note: No lock needed - single net worker processes all Send/Recv tasks
   hshm::lbm::LbmContext ctx(0);
-  int rc = lbm_client->Send(archive, ctx);
+  int rc = lbm_transport->Send(archive, ctx);
   if (rc != 0) {
     HLOG(kError, "[SendOut] Task {} Lightbeam Send FAILED with error code {}",
          origin_task->task_id_, rc);
@@ -554,8 +582,8 @@ void Runtime::SendOut(hipc::FullPtr<chi::Task> origin_task) {
 
   HLOG(kDebug, "[SendOut] Task {}", origin_task->task_id_);
 
-  // Delete the task after sending outputs
-  ipc_manager->DelTask(origin_task);
+  // Defer task deletion to next invocation for zero-copy send safety
+  deferred_deletes.push_back(origin_task);
 }
 
 /**
@@ -617,11 +645,11 @@ chi::TaskResume Runtime::Send(hipc::FullPtr<SendTask> task,
  * Helper function: Receive task inputs from remote node
  * @param task RecvTask containing control information
  * @param archive Already-parsed LoadTaskArchive containing task info
- * @param lbm_server Lightbeam server for receiving bulk data
+ * @param lbm_transport Lightbeam server for receiving bulk data
  */
 void Runtime::RecvIn(hipc::FullPtr<RecvTask> task,
                      chi::LoadTaskArchive &archive,
-                     hshm::lbm::Server *lbm_server) {
+                     hshm::lbm::Transport *lbm_transport) {
   // Set I/O size to 1MB to ensure routing to slow workers
   task->stat_.io_size_ = 1024 * 1024;  // 1MB
 
@@ -633,22 +661,6 @@ void Runtime::RecvIn(hipc::FullPtr<RecvTask> task,
   // If no tasks to receive
   if (task_infos.empty()) {
     task->SetReturnCode(0);
-    return;
-  }
-
-  // Allocate buffers for bulk data and expose them for receiving
-  // archive.send contains sender's bulk descriptors (populated by RecvMetadata)
-  for (const auto &send_bulk : archive.send) {
-    hipc::FullPtr<char> buffer = ipc_manager->AllocateBuffer(send_bulk.size);
-    archive.recv.push_back(
-        lbm_server->Expose(buffer, send_bulk.size, send_bulk.flags.bits_));
-  }
-
-  // Receive all bulk data using Lightbeam
-  int rc = lbm_server->RecvBulks(archive);
-  if (rc != 0) {
-    HLOG(kError, "Admin: Lightbeam RecvBulks failed with error code {}", rc);
-    task->SetReturnCode(4);
     return;
   }
 
@@ -672,9 +684,12 @@ void Runtime::RecvIn(hipc::FullPtr<RecvTask> task,
       continue;
     }
 
-    // Mark task as remote, set as data owner, unset periodic and TASK_FORCE_NET
+    // Mark task as remote, set as data owner, clear sender-side flags
+    // TASK_RUN_CTX_EXISTS and TASK_STARTED must be cleared so the receiving
+    // worker allocates a fresh RunContext via BeginTask
     task_ptr->SetFlags(TASK_REMOTE | TASK_DATA_OWNER);
-    task_ptr->ClearFlags(TASK_PERIODIC | TASK_FORCE_NET | TASK_ROUTED);
+    task_ptr->ClearFlags(TASK_PERIODIC | TASK_FORCE_NET | TASK_ROUTED |
+                         TASK_RUN_CTX_EXISTS | TASK_STARTED);
 
     // Add task to recv_map for later lookup (use net_key from task_id)
     // Note: No lock needed - single net worker processes all Send/Recv tasks
@@ -697,11 +712,11 @@ void Runtime::RecvIn(hipc::FullPtr<RecvTask> task,
  * Helper function: Receive task outputs from remote node
  * @param task RecvTask containing control information
  * @param archive Already-parsed LoadTaskArchive containing task info
- * @param lbm_server Lightbeam server for receiving bulk data
+ * @param lbm_transport Lightbeam server for receiving bulk data
  */
 void Runtime::RecvOut(hipc::FullPtr<RecvTask> task,
                       chi::LoadTaskArchive &archive,
-                      hshm::lbm::Server *lbm_server) {
+                      hshm::lbm::Transport *lbm_transport) {
   // Set I/O size to 1MB to ensure routing to slow workers
   task->stat_.io_size_ = 1024 * 1024;  // 1MB
 
@@ -715,8 +730,8 @@ void Runtime::RecvOut(hipc::FullPtr<RecvTask> task,
     return;
   }
 
-  // Set lbm_server in archive for bulk transfer exposure in output mode
-  archive.SetLbmServer(lbm_server);
+  // Set lbm_transport in archive for bulk transfer exposure in output mode
+  archive.SetTransport(lbm_transport);
 
   // First pass: Deserialize to expose buffers
   // LoadTask will call ar.bulk() which will expose the pointers and populate
@@ -769,14 +784,6 @@ void Runtime::RecvOut(hipc::FullPtr<RecvTask> task,
     // Deserialize outputs directly into the replica task using LoadTask
     // This exposes buffers via ar.bulk() and populates archive.recv
     container->LoadTask(origin_task->method_, archive, replica);
-  }
-
-  // Receive all bulk data using Lightbeam
-  int rc = lbm_server->RecvBulks(archive);
-  if (rc != 0) {
-    HLOG(kError, "Admin: Lightbeam RecvBulks failed with error code {}", rc);
-    task->SetReturnCode(4);
-    return;
   }
 
   // Second pass: Aggregate results
@@ -871,16 +878,17 @@ chi::TaskResume Runtime::Recv(hipc::FullPtr<RecvTask> task,
   // Get the main server from CHI_IPC (already bound during initialization)
   auto *ipc_manager = CHI_IPC;
 
-  hshm::lbm::Server *lbm_server = ipc_manager->GetMainServer();
-  if (lbm_server == nullptr) {
+  hshm::lbm::Transport *lbm_transport = ipc_manager->GetMainTransport();
+  if (lbm_transport == nullptr) {
     co_return;
   }
 
   // Note: No socket lock needed - single net worker processes all Recv tasks
 
-  // Receive metadata first to determine mode (non-blocking)
+  // Receive metadata + bulks (non-blocking)
   chi::LoadTaskArchive archive;
-  int rc = lbm_server->RecvMetadata(archive);
+  auto info = lbm_transport->Recv(archive);
+  int rc = info.rc;
   if (rc == EAGAIN) {
     // No message available - this is normal for polling, mark as no work done
     task->SetReturnCode(0);
@@ -890,7 +898,7 @@ chi::TaskResume Runtime::Recv(hipc::FullPtr<RecvTask> task,
 
   if (rc != 0) {
     if (rc != -1) {
-      HLOG(kError, "Admin: Lightbeam RecvMetadata failed with error code {}",
+      HLOG(kError, "Admin: Lightbeam Recv failed with error code {}",
            rc);
     }
     task->SetReturnCode(2);
@@ -905,10 +913,10 @@ chi::TaskResume Runtime::Recv(hipc::FullPtr<RecvTask> task,
   chi::MsgType msg_type = archive.GetMsgType();
   switch (msg_type) {
     case chi::MsgType::kSerializeIn:
-      RecvIn(task, archive, lbm_server);
+      RecvIn(task, archive, lbm_transport);
       break;
     case chi::MsgType::kSerializeOut:
-      RecvOut(task, archive, lbm_server);
+      RecvOut(task, archive, lbm_transport);
       break;
     case chi::MsgType::kHeartbeat:
       task->SetReturnCode(0);
@@ -923,42 +931,224 @@ chi::TaskResume Runtime::Recv(hipc::FullPtr<RecvTask> task,
 }
 
 /**
- * Handle Heartbeat - Respond to heartbeat request
- * Polls heartbeat server for ZMQ REQ/REP requests and responds
- * Also sets task response to 0 to indicate runtime is healthy
- * @param task The heartbeat task
+ * Handle ClientConnect - Respond to client connection request
+ * Polls connect server for ZMQ REQ/REP requests and responds
+ * @param task The connect task
  * @param rctx Run context
  */
-chi::TaskResume Runtime::Heartbeat(hipc::FullPtr<HeartbeatTask> task,
-                                   chi::RunContext &rctx) {
-  auto *ipc_manager = CHI_IPC;
+chi::TaskResume Runtime::ClientConnect(hipc::FullPtr<ClientConnectTask> task,
+                                       chi::RunContext &rctx) {
+  task->response_ = 0;
+  task->SetReturnCode(0);
+  rctx.did_work_ = true;
+  co_return;
+}
 
-  // Poll heartbeat socket - RECEIVE request and SEND response
-  // This ensures clients can verify the runtime is running
-  void *hb_socket = ipc_manager->GetHeartbeatSocket();
-  if (hb_socket != nullptr) {
-    // RECEIVE heartbeat request (non-blocking)
-    int32_t request;
-    int rc = zmq_recv(hb_socket, &request, sizeof(request), ZMQ_DONTWAIT);
-    if (rc != -1) {
-      // Received a heartbeat request - SEND response (0 = success)
-      int32_t response = 0;
-      zmq_send(hb_socket, &response, sizeof(response), 0);
-      HLOG(kDebug, "Heartbeat: received request {}, sent response {}", request,
-           response);
-      // Mark that we did work (received and responded to heartbeat)
-      rctx.did_work_ = true;
-    } else {
-      // No heartbeat request available (EAGAIN)
-      rctx.did_work_ = false;
+/**
+ * Handle ClientRecv - Receive tasks from lightbeam client servers
+ * Polls TCP and IPC PULL servers for incoming client task submissions
+ */
+chi::TaskResume Runtime::ClientRecv(hipc::FullPtr<ClientRecvTask> task,
+                                    chi::RunContext &rctx) {
+  auto *ipc_manager = CHI_IPC;
+  auto *pool_manager = CHI_POOL_MANAGER;
+  bool did_work = false;
+  task->tasks_received_ = 0;
+
+  // Process both TCP and IPC servers
+  for (int mode_idx = 0; mode_idx < 2; ++mode_idx) {
+    chi::IpcMode mode = (mode_idx == 0) ? chi::IpcMode::kTcp
+                                         : chi::IpcMode::kIpc;
+    hshm::lbm::Transport *transport = ipc_manager->GetClientTransport(mode);
+    if (!transport) continue;
+
+    // Drain all pending messages from this transport
+    // (Recv handles accept internally for socket transports)
+    while (true) {
+      chi::LoadTaskArchive archive;
+      auto recv_info = transport->Recv(archive);
+      int rc = recv_info.rc;
+      if (rc == EAGAIN) break;
+      if (rc != 0) {
+        HLOG(kError, "ClientRecv: Recv failed: {}", rc);
+        break;
+      }
+
+      const auto &task_infos = archive.GetTaskInfos();
+      if (task_infos.empty()) {
+        HLOG(kError, "ClientRecv: No task_infos in received message");
+        continue;
+      }
+
+      const auto &info = task_infos[0];
+      chi::PoolId pool_id = info.pool_id_;
+      chi::u32 method_id = info.method_id_;
+
+      // Get container for deserialization
+      chi::Container *container = pool_manager->GetContainer(pool_id);
+      if (!container) {
+        HLOG(kError, "ClientRecv: Container not found for pool_id {}", pool_id);
+        continue;
+      }
+
+      // Allocate and deserialize the task
+      hipc::FullPtr<chi::Task> task_ptr =
+          container->AllocLoadTask(method_id, archive);
+
+      if (task_ptr.IsNull()) {
+        HLOG(kError, "ClientRecv: Failed to deserialize task");
+        continue;
+      }
+
+      // Create FutureShm for the task (server-side)
+      hipc::FullPtr<chi::FutureShm> future_shm =
+          ipc_manager->NewObj<chi::FutureShm>();
+      future_shm->pool_id_ = pool_id;
+      future_shm->method_id_ = method_id;
+      future_shm->origin_ = (mode == chi::IpcMode::kTcp)
+                                 ? chi::FutureShm::FUTURE_CLIENT_TCP
+                                 : chi::FutureShm::FUTURE_CLIENT_IPC;
+      future_shm->client_task_vaddr_ = info.task_id_.net_key_;
+      future_shm->client_pid_ = info.task_id_.pid_;
+      // Store transport and routing info for response
+      future_shm->response_transport_ = transport;
+      future_shm->response_fd_ = recv_info.fd_;
+      // Store ZMQ identity from recv frame for response routing
+      if (!recv_info.identity_.empty() &&
+          recv_info.identity_.size() <= sizeof(future_shm->response_identity_)) {
+        std::memcpy(future_shm->response_identity_,
+                    recv_info.identity_.data(),
+                    recv_info.identity_.size());
+        future_shm->response_identity_len_ =
+            static_cast<chi::u32>(recv_info.identity_.size());
+      }
+      // No copy_space for ZMQ path — ShmTransferInfo defaults are fine
+      // Mark as copied so the worker routes the completed task back via lightbeam
+      // rather than treating it as a runtime-internal task
+      future_shm->flags_.SetBits(chi::FutureShm::FUTURE_WAS_COPIED);
+
+      // Create Future and enqueue to worker
+      chi::Future<chi::Task> future(future_shm.shm_, task_ptr);
+
+      // Map task to lane using scheduler
+      chi::LaneId lane_id =
+          ipc_manager->GetScheduler()->ClientMapTask(ipc_manager, future);
+      auto *worker_queues = ipc_manager->GetTaskQueue();
+      auto &lane_ref = worker_queues->GetLane(lane_id, 0);
+      bool was_empty = lane_ref.Empty();
+      lane_ref.Push(future);
+      if (was_empty) {
+        ipc_manager->AwakenWorker(&lane_ref);
+      }
+
+      did_work = true;
+      task->tasks_received_++;
     }
-  } else {
-    // No heartbeat socket available
-    rctx.did_work_ = false;
   }
 
-  // Set task response to indicate runtime is healthy
-  task->response_ = 0;
+  rctx.did_work_ = did_work;
+  task->SetReturnCode(0);
+  co_return;
+}
+
+/**
+ * Handle ClientSend - Send completed task outputs to clients via lightbeam
+ * Polls net_queue_ kClientSendTcp and kClientSendIpc priorities
+ */
+chi::TaskResume Runtime::ClientSend(hipc::FullPtr<ClientSendTask> task,
+                                    chi::RunContext &rctx) {
+  auto *ipc_manager = CHI_IPC;
+  auto *pool_manager = CHI_POOL_MANAGER;
+  bool did_work = false;
+  task->tasks_sent_ = 0;
+
+  // Flush deferred deletes from previous invocation.
+  // Zero-copy send (zmq_msg_init_data) lets ZMQ's IO thread read from the
+  // task buffer after zmq_msg_send returns. Deferring DelTask by one
+  // invocation guarantees the IO thread has flushed the message.
+  static std::vector<hipc::FullPtr<chi::Task>> deferred_deletes;
+  for (auto &t : deferred_deletes) {
+    ipc_manager->DelTask(t);
+  }
+  deferred_deletes.clear();
+
+  // Process both TCP and IPC queues
+  for (int mode_idx = 0; mode_idx < 2; ++mode_idx) {
+    chi::NetQueuePriority priority =
+        (mode_idx == 0) ? chi::NetQueuePriority::kClientSendTcp
+                        : chi::NetQueuePriority::kClientSendIpc;
+    chi::IpcMode mode =
+        (mode_idx == 0) ? chi::IpcMode::kTcp : chi::IpcMode::kIpc;
+
+    chi::Future<chi::Task> queued_future;
+    while (ipc_manager->TryPopNetTask(priority, queued_future)) {
+      auto origin_task = queued_future.GetTaskPtr();
+      if (origin_task.IsNull()) continue;
+
+      // Get the FutureShm to find client's net_key
+      auto future_shm = queued_future.GetFutureShm();
+      if (future_shm.IsNull()) continue;
+
+      // Get container to serialize outputs
+      chi::Container *container =
+          pool_manager->GetContainer(origin_task->pool_id_);
+      if (!container) {
+        HLOG(kError, "ClientSend: Container not found for pool_id {}",
+             origin_task->pool_id_);
+        continue;
+      }
+
+      // Get response transport and routing info from FutureShm
+      hshm::lbm::Transport *response_transport =
+          future_shm->response_transport_;
+      if (!response_transport) {
+        HLOG(kError, "ClientSend: No response transport for mode {} pid {}",
+             mode_idx, future_shm->client_pid_);
+        continue;
+      }
+
+      // Preserve client's net_key for response routing
+      origin_task->task_id_.net_key_ = future_shm->client_task_vaddr_;
+
+      // Serialize task outputs using network archive
+      chi::SaveTaskArchive archive(chi::MsgType::kSerializeOut, response_transport);
+      container->SaveTask(origin_task->method_, archive, origin_task);
+
+      // Set routing info for the response
+      if (mode == chi::IpcMode::kTcp) {
+        // TCP (ZMQ ROUTER): identity-based routing
+        // Use the actual ZMQ identity from the recv frame
+        if (future_shm->response_identity_len_ > 0) {
+          archive.client_info_.identity_ = std::string(
+              future_shm->response_identity_,
+              future_shm->response_identity_len_);
+        } else {
+          // Fallback: construct from PID (legacy 4-byte identity)
+          chi::u32 client_pid = future_shm->client_pid_;
+          archive.client_info_.identity_ = std::string(
+              reinterpret_cast<const char *>(&client_pid),
+              sizeof(client_pid));
+        }
+      } else if (mode == chi::IpcMode::kIpc) {
+        // IPC (Socket): fd-based routing on accepted connection
+        archive.client_info_.fd_ = future_shm->response_fd_;
+      }
+
+      // Send via lightbeam
+      int rc = response_transport->Send(archive, hshm::lbm::LbmContext());
+      if (rc != 0) {
+        HLOG(kError, "ClientSend: lightbeam Send failed: {}", rc);
+      }
+
+      // Defer task deletion to next invocation for zero-copy send safety
+      deferred_deletes.push_back(origin_task);
+
+      did_work = true;
+      task->tasks_sent_++;
+    }
+  }
+
+  rctx.did_work_ = did_work;
   task->SetReturnCode(0);
   co_return;
 }
@@ -1074,6 +1264,114 @@ chi::TaskResume Runtime::SubmitBatch(hipc::FullPtr<SubmitBatchTask> task,
        total_tasks);
 
   (void)rctx;
+  co_return;
+}
+
+chi::TaskResume Runtime::RegisterMemory(hipc::FullPtr<RegisterMemoryTask> task,
+                                        chi::RunContext &rctx) {
+  auto *ipc_manager = CHI_IPC;
+  hipc::AllocatorId alloc_id(task->alloc_major_, task->alloc_minor_);
+
+  HLOG(kInfo, "Admin::RegisterMemory: Registering alloc_id ({}.{})",
+       alloc_id.major_, alloc_id.minor_);
+
+  task->success_ = ipc_manager->RegisterMemory(alloc_id);
+  task->SetReturnCode(task->success_ ? 0 : 1);
+
+  (void)rctx;
+  co_return;
+}
+
+chi::TaskResume Runtime::RestartContainers(
+    hipc::FullPtr<RestartContainersTask> task, chi::RunContext &rctx) {
+  HLOG(kDebug, "Admin: Executing RestartContainers task");
+
+  task->containers_restarted_ = 0;
+  task->error_message_ = "";
+
+  try {
+    auto *config_manager = CHI_CONFIG_MANAGER;
+    std::string restart_dir = config_manager->GetConfDir() + "/restart";
+
+    namespace fs = std::filesystem;
+    if (!fs::exists(restart_dir) || !fs::is_directory(restart_dir)) {
+      HLOG(kDebug, "Admin: No restart directory found at {}", restart_dir);
+      task->SetReturnCode(0);
+      co_return;
+    }
+
+    for (const auto &entry : fs::directory_iterator(restart_dir)) {
+      if (entry.path().extension() != ".yaml") continue;
+
+      // Load pool config from YAML file
+      chi::ConfigManager temp_config;
+      if (!temp_config.LoadYaml(entry.path().string())) {
+        HLOG(kError, "Admin: Failed to load restart config: {}",
+             entry.path().string());
+        continue;
+      }
+
+      const auto &compose_config = temp_config.GetComposeConfig();
+      for (const auto &pool_config : compose_config.pools_) {
+        HLOG(kInfo, "Admin: Restarting pool {} (module: {})",
+             pool_config.pool_name_, pool_config.mod_name_);
+
+        auto future = client_.AsyncCompose(pool_config);
+        co_await future;
+
+        chi::u32 rc = future->GetReturnCode();
+        if (rc != 0) {
+          HLOG(kError, "Admin: Failed to restart pool {}: rc={}",
+               pool_config.pool_name_, rc);
+          continue;
+        }
+
+        task->containers_restarted_++;
+        HLOG(kInfo, "Admin: Successfully restarted pool {}",
+             pool_config.pool_name_);
+      }
+    }
+
+    task->SetReturnCode(0);
+    HLOG(kInfo, "Admin: RestartContainers completed, {} containers restarted",
+         task->containers_restarted_);
+  } catch (const std::exception &e) {
+    task->return_code_ = 99;
+    std::string error_msg =
+        std::string("Exception during RestartContainers: ") + e.what();
+    task->error_message_ = chi::priv::string(HSHM_MALLOC, error_msg);
+    HLOG(kError, "Admin: RestartContainers failed: {}", e.what());
+  }
+  (void)rctx;
+  co_return;
+}
+
+chi::TaskResume Runtime::AddNode(
+    hipc::FullPtr<AddNodeTask> task, chi::RunContext &rctx) {
+  (void)rctx;
+  HLOG(kInfo, "Admin: Executing AddNode for {}:{}",
+       task->new_node_ip_.str(), task->new_node_port_);
+
+  auto *ipc_manager = CHI_IPC;
+  auto *pool_manager = CHI_POOL_MANAGER;
+
+  // Add the new node to the IpcManager's hostfile
+  chi::u64 new_node_id = ipc_manager->AddNode(
+      task->new_node_ip_.str(), task->new_node_port_);
+  task->new_node_id_ = new_node_id;
+
+  // Notify all containers about the new node
+  chi::Host new_host(task->new_node_ip_.str(), new_node_id);
+  std::vector<chi::PoolId> pool_ids = pool_manager->GetAllPoolIds();
+  for (const auto &pool_id : pool_ids) {
+    chi::Container *container = pool_manager->GetContainer(pool_id);
+    if (container) {
+      container->Expand(new_host);
+    }
+  }
+
+  HLOG(kInfo, "Admin: AddNode complete, assigned node_id={}", new_node_id);
+  task->SetReturnCode(0);
   co_return;
 }
 

@@ -185,11 +185,22 @@ public:
   chi::TaskResume Recv(hipc::FullPtr<RecvTask> task, chi::RunContext &rctx);
 
   /**
-   * Handle Heartbeat - Respond to heartbeat request
+   * Handle ClientConnect - Respond to client connection request
    * Sets response to 0 to indicate runtime is healthy
-   * Returns TaskResume for consistency with other methods called from Run
    */
-  chi::TaskResume Heartbeat(hipc::FullPtr<HeartbeatTask> task, chi::RunContext &rctx);
+  chi::TaskResume ClientConnect(hipc::FullPtr<ClientConnectTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle ClientRecv - Receive tasks from ZMQ clients (TCP/IPC)
+   * Polls ZMQ ROUTER sockets for incoming task submissions
+   */
+  chi::TaskResume ClientRecv(hipc::FullPtr<ClientRecvTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle ClientSend - Send completed task outputs to ZMQ clients
+   * Polls net_queue_ kClientSendTcp/kClientSendIpc priorities
+   */
+  chi::TaskResume ClientSend(hipc::FullPtr<ClientSendTask> task, chi::RunContext &rctx);
 
   /**
    * Handle WreapDeadIpcs - Periodic task to reap shared memory from dead processes
@@ -206,6 +217,25 @@ public:
   chi::TaskResume Monitor(hipc::FullPtr<MonitorTask> task, chi::RunContext &rctx);
 
   /**
+   * Handle RegisterMemory - Register client shared memory with runtime
+   * Called by SHM-mode clients after IncreaseMemory() to tell the runtime
+   * to attach to the new shared memory segment
+   */
+  chi::TaskResume RegisterMemory(hipc::FullPtr<RegisterMemoryTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle RestartContainers - Re-create pools from saved restart configs
+   * Reads conf_dir/restart/ directory and re-creates pools from saved YAML
+   */
+  chi::TaskResume RestartContainers(hipc::FullPtr<RestartContainersTask> task, chi::RunContext &rctx);
+
+  /**
+   * Handle AddNode - Register a new node with this runtime
+   * Updates IpcManager's hostfile and calls Expand on all containers
+   */
+  chi::TaskResume AddNode(hipc::FullPtr<AddNodeTask> task, chi::RunContext &rctx);
+
+  /**
    * Handle SubmitBatch - Submit a batch of tasks in a single RPC
    * Deserializes tasks from the batch and executes them in parallel
    * up to 32 tasks at a time, then co_awaits their completion
@@ -217,12 +247,12 @@ public:
   /**
    * Helper: Receive task inputs from remote node
    */
-  void RecvIn(hipc::FullPtr<RecvTask> task, chi::LoadTaskArchive& archive, hshm::lbm::Server* lbm_server);
+  void RecvIn(hipc::FullPtr<RecvTask> task, chi::LoadTaskArchive& archive, hshm::lbm::Transport* lbm_transport);
 
   /**
    * Helper: Receive task outputs from remote node
    */
-  void RecvOut(hipc::FullPtr<RecvTask> task, chi::LoadTaskArchive& archive, hshm::lbm::Server* lbm_server);
+  void RecvOut(hipc::FullPtr<RecvTask> task, chi::LoadTaskArchive& archive, hshm::lbm::Transport* lbm_transport);
 
   /**
    * Get remaining work count for this admin container

@@ -173,8 +173,8 @@ bool Config::Validate() const {
     return false;
   }
 
-  if (performance_.stat_targets_period_ms_ == 0 || performance_.stat_targets_period_ms_ > 60000) {
-    HLOG(kError, "Config validation error: Invalid stat_targets_period_ms {} (must be 1-60000)", performance_.stat_targets_period_ms_);
+  if (performance_.stat_targets_period_ms_ < 10 || performance_.stat_targets_period_ms_ > 60000) {
+    HLOG(kError, "Config validation error: Invalid stat_targets_period_ms {} (must be 10-60000)", performance_.stat_targets_period_ms_);
     return false;
   }
 
@@ -342,6 +342,14 @@ void Config::EmitYaml(YAML::Emitter &emitter) const {
   emitter << YAML::Key << "max_concurrent_operations" << YAML::Value << performance_.max_concurrent_operations_;
   emitter << YAML::Key << "score_threshold" << YAML::Value << performance_.score_threshold_;
   emitter << YAML::Key << "score_difference_threshold" << YAML::Value << performance_.score_difference_threshold_;
+  emitter << YAML::Key << "flush_metadata_period_ms" << YAML::Value << performance_.flush_metadata_period_ms_;
+  if (!performance_.metadata_log_path_.empty()) {
+    emitter << YAML::Key << "metadata_log_path" << YAML::Value << performance_.metadata_log_path_;
+  }
+  emitter << YAML::Key << "transaction_log_capacity"
+          << YAML::Value << FormatSizeBytes(performance_.transaction_log_capacity_bytes_);
+  emitter << YAML::Key << "flush_data_period_ms" << YAML::Value << performance_.flush_data_period_ms_;
+  emitter << YAML::Key << "flush_data_min_persistence" << YAML::Value << performance_.flush_data_min_persistence_;
   emitter << YAML::EndMap;
 
   // Emit target configuration
@@ -405,6 +413,28 @@ bool Config::ParsePerformanceConfig(const YAML::Node &node) {
 
   if (node["score_difference_threshold"]) {
     performance_.score_difference_threshold_ = node["score_difference_threshold"].as<float>();
+  }
+
+  if (node["flush_metadata_period_ms"]) {
+    performance_.flush_metadata_period_ms_ = node["flush_metadata_period_ms"].as<chi::u32>();
+  }
+
+  if (node["metadata_log_path"]) {
+    std::string path = node["metadata_log_path"].as<std::string>();
+    performance_.metadata_log_path_ = hshm::ConfigParse::ExpandPath(path);
+  }
+
+  if (node["flush_data_period_ms"]) {
+    performance_.flush_data_period_ms_ = node["flush_data_period_ms"].as<chi::u32>();
+  }
+
+  if (node["flush_data_min_persistence"]) {
+    performance_.flush_data_min_persistence_ = node["flush_data_min_persistence"].as<int>();
+  }
+
+  if (node["transaction_log_capacity"]) {
+    std::string cap_str = node["transaction_log_capacity"].as<std::string>();
+    ParseSizeString(cap_str, performance_.transaction_log_capacity_bytes_);
   }
 
   return true;

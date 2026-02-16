@@ -206,28 +206,69 @@ class Client : public chi::ContainerClient {
   }
 
   /**
-   * Heartbeat - Check if runtime is alive (asynchronous)
-   * Polls for ZMQ heartbeat requests and responds
+   * ClientConnect - Check if runtime is alive (asynchronous)
+   * Polls for ZMQ connect requests and responds
    * @param pool_query Pool routing information
    * @param period_us Period in microseconds (default 5000us = 5ms, 0 =
    * one-shot)
-   * @return Future for the heartbeat task
+   * @return Future for the connect task
    */
-  chi::Future<HeartbeatTask> AsyncHeartbeat(const chi::PoolQuery& pool_query,
-                                            double period_us = 5000) {
+  chi::Future<ClientConnectTask> AsyncClientConnect(
+      const chi::PoolQuery& pool_query, double period_us = 5000) {
     auto* ipc_manager = CHI_IPC;
 
-    // Allocate HeartbeatTask
-    auto task = ipc_manager->NewTask<HeartbeatTask>(chi::CreateTaskId(),
-                                                    pool_id_, pool_query);
+    auto task = ipc_manager->NewTask<ClientConnectTask>(chi::CreateTaskId(),
+                                                        pool_id_, pool_query);
 
-    // Set task as periodic if period is specified
     if (period_us > 0) {
       task->SetPeriod(period_us, chi::kMicro);
       task->SetFlags(TASK_PERIODIC);
     }
 
-    // Submit to runtime and return Future
+    return ipc_manager->Send(task);
+  }
+
+  /**
+   * ClientRecv - Receive tasks from ZMQ clients (asynchronous, periodic)
+   * Polls ZMQ ROUTER sockets for incoming client task submissions
+   * @param pool_query Pool routing information
+   * @param period_us Period in microseconds (default 100us)
+   * @return Future for the client recv task
+   */
+  chi::Future<ClientRecvTask> AsyncClientRecv(const chi::PoolQuery& pool_query,
+                                              double period_us = 100) {
+    auto* ipc_manager = CHI_IPC;
+
+    auto task = ipc_manager->NewTask<ClientRecvTask>(chi::CreateTaskId(),
+                                                     pool_id_, pool_query);
+
+    if (period_us > 0) {
+      task->SetPeriod(period_us, chi::kMicro);
+      task->SetFlags(TASK_PERIODIC);
+    }
+
+    return ipc_manager->Send(task);
+  }
+
+  /**
+   * ClientSend - Send completed task outputs to ZMQ clients (asynchronous, periodic)
+   * Polls net_queue_ kClientSendTcp/kClientSendIpc priorities
+   * @param pool_query Pool routing information
+   * @param period_us Period in microseconds (default 100us)
+   * @return Future for the client send task
+   */
+  chi::Future<ClientSendTask> AsyncClientSend(const chi::PoolQuery& pool_query,
+                                              double period_us = 100) {
+    auto* ipc_manager = CHI_IPC;
+
+    auto task = ipc_manager->NewTask<ClientSendTask>(chi::CreateTaskId(),
+                                                     pool_id_, pool_query);
+
+    if (period_us > 0) {
+      task->SetPeriod(period_us, chi::kMicro);
+      task->SetFlags(TASK_PERIODIC);
+    }
+
     return ipc_manager->Send(task);
   }
 
@@ -302,6 +343,52 @@ class Client : public chi::ContainerClient {
         chi::CreateTaskId(), pool_id_, pool_query, batch);
 
     // Submit to runtime and return Future
+    return ipc_manager->Send(task);
+  }
+  /**
+   * RegisterMemory - Tell runtime to attach to a client shared memory segment
+   * @param pool_query Pool routing information
+   * @param alloc_id Allocator ID (major=pid, minor=index) to register
+   * @return Future for RegisterMemoryTask
+   */
+  chi::Future<RegisterMemoryTask> AsyncRegisterMemory(
+      const chi::PoolQuery& pool_query, const hipc::AllocatorId& alloc_id) {
+    auto* ipc_manager = CHI_IPC;
+
+    auto task = ipc_manager->NewTask<RegisterMemoryTask>(
+        chi::CreateTaskId(), pool_id_, pool_query, alloc_id);
+
+    return ipc_manager->SendZmq(task, chi::IpcMode::kTcp);
+  }
+  /**
+   * RestartContainers - Re-create pools from saved restart configs
+   * @param pool_query Pool routing information
+   * @return Future for the RestartContainers task
+   */
+  chi::Future<RestartContainersTask> AsyncRestartContainers(
+      const chi::PoolQuery& pool_query) {
+    auto* ipc_manager = CHI_IPC;
+
+    auto task = ipc_manager->NewTask<RestartContainersTask>(
+        chi::CreateTaskId(), pool_id_, pool_query);
+
+    return ipc_manager->Send(task);
+  }
+
+  /**
+   * AddNode - Register a new node with all nodes in the cluster
+   * @param pool_query Pool routing (use Broadcast to reach all nodes)
+   * @param new_node_ip IP address of the new node
+   * @param new_node_port Port of the new node's runtime
+   * @return Future for the AddNode task
+   */
+  chi::Future<AddNodeTask> AsyncAddNode(const chi::PoolQuery& pool_query,
+                                        const std::string& new_node_ip,
+                                        chi::u32 new_node_port) {
+    auto* ipc_manager = CHI_IPC;
+    auto task = ipc_manager->NewTask<AddNodeTask>(
+        chi::CreateTaskId(), pool_id_, pool_query,
+        new_node_ip, new_node_port);
     return ipc_manager->Send(task);
   }
 };
