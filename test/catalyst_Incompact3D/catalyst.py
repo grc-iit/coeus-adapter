@@ -11,6 +11,8 @@ from paraview import catalyst
 
 options = catalyst.Options()
 options.GlobalTrigger = "TimeStep"
+# if you want to run in ares using the following line
+# options.CatalystLiveURL = "172.20.1.1:22222"
 options.EnableCatalystLive = 1
 options.CatalystLiveTrigger = "TimeStep"
 options.ExtractsOutputDirectory = "/tmp"

@@ -3,7 +3,7 @@ This is the instrmentation on how to use catalyst for adios2 as I/O engine
 Paraview installation
 
 ```
-spack install paraview@5.13.3 +adios2^python@3.12 + qt +fides +mpi +libcatalyst +python ^py-mpi4py ^python-venv
+spack  install paraview@5.13.3   +adios2 +fides +mpi +libcatalyst +python   ~qt   ^python@3.12   ^py-mpi4py   ^hdf5@1.12.3   ^osmesa  
 ```
 
 **Important**: ParaView 5.13.3 is not compatible with Python 3.14. Use Python 3.11 or 3.12 instead. If you encounter segmentation faults during Catalyst initialization, ensure you're using a compatible Python version.
