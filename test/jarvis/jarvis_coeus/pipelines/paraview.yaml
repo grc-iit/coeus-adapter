@@ -1,4 +1,4 @@
-name: coeus-xcompact3d
+name: coeus-paraview
 
 pkgs: 
   - pkg_type: jarvis_coeus.paraview
