@@ -82,11 +82,7 @@ class Paraview(Application):
         if self.config['force_offscreen_rendering']:
             condition += ' --force-offscreen-rendering'
 
-        Exec(f'pvserver --server-port={port_Id}',
-             MpiExecInfo(nprocs=self.config['nprocs'],
-                         ppn=self.config['ppn'],
-                         env=self.mod_env
-                        ))
+        Exec(f'pvserver --server-port={port_Id}')
 
         pass
 
