@@ -21,16 +21,11 @@ spack load paraview@5.13.3
 
 # Find ParaView installation path
 PARAVIEW_PREFIX=$(spack location -i paraview@5.13.3)
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ spack load iowarp@main 
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ spack load paraview
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ export PATH=~/Desktop/software/coeus-adapter/build/bin/:$PATH
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ export LD_LIBRARY_PATH=~/Desktop/software/coeus-adapter/build/bin/:$LD_LIBRARY_PATH 
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ export CATALYST_IMPLEMENTATION_NAME=paraview
-ubuntu@ubuntu-ASUS-TUF-Gaming-A16-FA617NS-FA617NS:~$ export CATALYST_IMPLEMENTATION_PATHS=/home/ubuntu/spack/opt/spack/linux-zen3/paraview-5.13.3-io3vyb7uixi2ycm7fxmhummamlgbzxgd/lib/catalyst
-# Set ADIOS2 plugin path (adjust if ADIOS2 is installed separately)
-export ADIOS2_PLUGIN_PATH=${ADIOS2_PLUGIN_PATH:-$PARAVIEW_PREFIX/lib}
-
-# Set Catalyst implementation
+spack load iowarp@main 
+spack load paraview
+export PATH=~/Desktop/software/coeus-adapter/build/bin/:$PATH
+export LD_LIBRARY_PATH=~/Desktop/software/coeus-adapter/build/bin/:$LD_LIBRARY_PATH 
+# Set atalyst implementation
 export CATALYST_IMPLEMENTATION_NAME=paraview
 export CATALYST_IMPLEMENTATION_PATHS=$PARAVIEW_PREFIX/lib/catalyst
 
