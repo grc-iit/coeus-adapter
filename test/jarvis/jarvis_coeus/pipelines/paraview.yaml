@@ -4,8 +4,8 @@ pkgs:
   - pkg_type: jarvis_coeus.paraview
     pkg_name: paraview
     benchmarks: "pipe_flow"
-    nprocss:1
-    port_id:11112
+    nprocs: 1
+    port_id: 11112
 
     # CTE Configuration Parameters
    
