@@ -2,8 +2,9 @@
 This module provides classes and methods to launch the Paraview application.
 Paraview is ....
 """
-from jarvis_cd.basic.pkg import Application
-from jarvis_util import *
+from jarvis_cd.core.pkg import Application
+from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm
+import os
 
 
 class Paraview(Application):
