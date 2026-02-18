@@ -1,11 +1,14 @@
 This is the instrmentation on how to use catalyst for adios2 as I/O engine
 
 Paraview installation
-
+Install in Ares
 ```
 spack  install paraview@5.13.3   +adios2 +fides +mpi +libcatalyst +python   ~qt   ^python@3.12   ^py-mpi4py   ^hdf5@1.12.3   ^osmesa  
 ```
-
+Install in personal computer:
+```
+spack  install paraview@5.13.3 +qt  +adios2 +fides +mpi +libcatalyst +python    ^python@3.12   ^py-mpi4py   ^hdf5@1.12.3    
+```
 **Important**: ParaView 5.13.3 is not compatible with Python 3.14. Use Python 3.11 or 3.12 instead. If you encounter segmentation faults during Catalyst initialization, ensure you're using a compatible Python version.
 
 Please note that the plugin uses the ADIOS inline engine to pass data pointers to ParaView's Fides reader and uses ParaView Catalyst to process a user python script that contains a ParaView pipeline. Fides is a library that provides a schema for reading ADIOS data into visualization services such as ParaView. By integrating it with ParaView Catalyst, it is now possible to perform in situ visualization with ADIOS2-enabled codes without writing adaptors.

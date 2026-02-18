@@ -52,7 +52,7 @@
         "array" : {
           "array_type" : "basic",
           "data_source": "source",
-          "variable" : "uv"
+          "variable" : "uy"
         }
       },
        {
