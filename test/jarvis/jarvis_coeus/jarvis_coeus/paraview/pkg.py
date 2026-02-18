@@ -82,9 +82,12 @@ class Paraview(Application):
         if self.config['force_offscreen_rendering']:
             condition += ' --force-offscreen-rendering'
 
-        Exec(f'pvserver --server-port={port_Id}')
-
-        pass
+        Exec(f'pvserver --server-port={port_Id} --timeout={time_out}{condition}',
+             MpiExecInfo(nprocs=self.config['nprocs'],
+                         ppn=self.config['ppn'],
+                         hostfile=self.jarvis.hostfile,
+                         env=self.mod_env,
+                         )).run()
 
     def stop(self):
         """
