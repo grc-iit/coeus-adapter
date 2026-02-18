@@ -54,34 +54,6 @@ fi
 python3 -c "import paraview; print('ParaView Python support: OK')" || echo "ERROR: ParaView Python modules not found"
 ```
 
-**Quick setup script:**
-
-You can create a setup script to automate this:
-
-```bash
-#!/bin/bash
-# setup_catalyst_env.sh
-
-spack load paraview@5.13.3
-PARAVIEW_PREFIX=$(spack location -i paraview@5.13.3)
-export CATALYST_IMPLEMENTATION_NAME=paraview
-export CATALYST_IMPLEMENTATION_PATHS=$PARAVIEW_PREFIX/lib/catalyst
-
-# Find and add ParaView Python modules to PYTHONPATH
-PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-PARAVIEW_PYTHON_DIR="$PARAVIEW_PREFIX/lib/python$PYTHON_VERSION/site-packages"
-if [ -d "$PARAVIEW_PYTHON_DIR" ]; then
-    export PYTHONPATH="$PARAVIEW_PYTHON_DIR:$PYTHONPATH"
-else
-    # Fallback: search for paraview module
-    PARAVIEW_PYTHON_DIR=$(find $PARAVIEW_PREFIX -type d -path "*/site-packages/paraview" 2>/dev/null | head -1 | xargs dirname)
-    [ -n "$PARAVIEW_PYTHON_DIR" ] && export PYTHONPATH="$PARAVIEW_PYTHON_DIR:$PYTHONPATH"
-fi
-
-echo "ParaView prefix: $PARAVIEW_PREFIX"
-echo "PYTHONPATH: $PYTHONPATH"
-python3 -c "import paraview; print('✓ ParaView Python support: OK')" 2>&1
-```
 
 ## run the experiment
 
@@ -95,55 +67,7 @@ This video shows how to use the Paraview GUI with the catalyst setup:
 
 **[Watch the demonstration video on YouTube](https://youtu.be/FD0nAeOLC8s)**
 
-## Troubleshooting
 
-### "Python support not enabled, 'catalyst/scripts' are ignored"
-
-This error indicates that ParaView was built without Python scripting support. To fix this:
-
-**Solution:**
-1. **Verify Python support in your ParaView installation:**
-   ```bash
-   # Check if ParaView has Python modules
-   ls $PARAVIEW_PREFIX/lib/python*/site-packages/paraview/ 2>/dev/null || echo "Python modules not found"
-   
-   # Or check the spack spec
-   spack find -d paraview@5.13.3 | grep python
-   ```
-
-2. **Rebuild ParaView with explicit Python support:**
-   ```bash
-   # Uninstall the current ParaView
-   spack uninstall paraview@5.13.3
-   
-   # Reinstall with Python 3.12 (ensure Python is specified for all dependencies)
-   spack install paraview@5.13.3 +adios2^python@3.12 +qt +fides +mpi +libcatalyst +python ^py-mpi4py ^python@3.12
-   ```
-
-3. **Verify the build succeeded:**
-   ```bash
-   # Load the ParaView module
-   spack load paraview@5.13.3
-   
-   # Find ParaView installation and set PYTHONPATH
-   PARAVIEW_PREFIX=$(spack location -i paraview@5.13.3)
-   PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-   export PYTHONPATH="$PARAVIEW_PREFIX/lib/python$PYTHON_VERSION/site-packages:$PYTHONPATH"
-   
-   # Check if Python support is available
-   python3 -c "import paraview; print('ParaView Python support: OK')" 2>&1
-   ```
-   
-   **Note:** If you get `ModuleNotFoundError: No module named 'paraview'`, you need to set `PYTHONPATH` as shown above. The ParaView Python modules are installed in the ParaView installation directory, not in the system Python path.
-
-4. **If building from source (alternative to spack):**
-   Ensure these CMake flags are set:
-   ```bash
-   -DPARAVIEW_USE_PYTHON=ON
-   -DPARAVIEW_USE_MPI=ON
-   -DPARAVIEW_ENABLE_FIDES=ON
-   -DPARAVIEW_ENABLE_CATALYST=ON
-   ```
 
 ### Segmentation Fault During Catalyst Initialization
 

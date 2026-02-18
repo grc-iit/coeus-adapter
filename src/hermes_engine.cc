@@ -352,13 +352,45 @@ HermesEngine::~HermesEngine() {
  * */
 
 bool HermesEngine::Promote(int step){
-    
-    return true;
+    if (!hermes_) {
+      engine_logger->error("Promote: CTE not connected");
+      return false;
+    }
+
+    std::string tag_name = "step_" + std::to_string(step)
+                                + "_rank" + std::to_string(rank);
+
+    auto metadata_vector = db->GetAllVariableMetadata(step, rank);
+    bool success = true;
+    for (auto &variableMetadata : metadata_vector) {
+      if (!hermes_->Prefetch(tag_name, variableMetadata.name)) {
+        engine_logger->warn("Promote: Prefetch failed for blob '{}' in tag '{}'",
+                            variableMetadata.name, tag_name);
+        success = false;
+      }
+    }
+    return success;
 }
 
 bool HermesEngine::Demote(int step){
+    if (!hermes_) {
+      engine_logger->error("Demote: CTE not connected");
+      return false;
+    }
 
-    return true;
+    std::string tag_name = "step_" + std::to_string(step)
+                                + "_rank" + std::to_string(rank);
+
+    auto metadata_vector = db->GetAllVariableMetadata(step, rank);
+    bool success = true;
+    for (auto &variableMetadata : metadata_vector) {
+      if (!hermes_->Demote(tag_name, variableMetadata.name)) {
+        engine_logger->warn("Demote: Demote failed for blob '{}' in tag '{}'",
+                            variableMetadata.name, tag_name);
+        success = false;
+      }
+    }
+    return success;
 }
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
