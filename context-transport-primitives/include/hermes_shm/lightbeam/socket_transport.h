@@ -156,7 +156,7 @@ class SocketTransport : public Transport {
     }
   }
 
-  ~SocketTransport() override {
+  ~SocketTransport() {
     if (IsClient()) {
       sock::Close(fd_);
     } else {
@@ -171,7 +171,7 @@ class SocketTransport : public Transport {
   }
 
   Bulk Expose(const hipc::FullPtr<char>& ptr, size_t data_size,
-              u32 flags) override {
+              u32 flags) {
     Bulk bulk;
     bulk.data = ptr;
     bulk.size = data_size;
@@ -179,7 +179,7 @@ class SocketTransport : public Transport {
     return bulk;
   }
 
-  void ClearRecvHandles(LbmMeta& meta) override {
+  void ClearRecvHandles(LbmMeta<>& meta) {
     for (auto& bulk : meta.recv) {
       if (bulk.data.ptr_) {
         std::free(bulk.data.ptr_);
@@ -188,13 +188,9 @@ class SocketTransport : public Transport {
     }
   }
 
-  std::string GetAddress() const override { return addr_; }
+  std::string GetAddress() const { return addr_; }
 
-  int GetFd() const override {
-    return IsClient() ? fd_ : listen_fd_;
-  }
-
-  void RegisterEventManager(EventManager &em) override {
+  void RegisterEventManager(EventManager &em) {
     em_ = &em;
     if (IsClient()) {
       em.AddEvent(fd_, EPOLLIN, &fired_action_);
@@ -359,12 +355,18 @@ class SocketTransport : public Transport {
     rc = sock::RecvExact(fd, &meta_str[0], meta_len);
     if (rc != 0) return -1;
 
+    if (meta_len == 0) {
+      HLOG(kError,
+           "Socket RecvMetadata: Received empty metadata (len=0), "
+           "likely a peer disconnect");
+      return -1;
+    }
     try {
       std::istringstream iss(meta_str, std::ios::binary);
       cereal::BinaryInputArchive ar(iss);
       ar(meta);
     } catch (const std::exception& e) {
-      HLOG(kFatal, "Socket RecvMetadata: Deserialization failed - {} (len={})",
+      HLOG(kError, "Socket RecvMetadata: Deserialization failed - {} (len={})",
            e.what(), meta_len);
       return -1;
     }

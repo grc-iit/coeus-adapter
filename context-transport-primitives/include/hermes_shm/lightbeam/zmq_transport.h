@@ -54,7 +54,7 @@ static inline void zmq_noop_free(void *data, void *hint) {
 }
 
 /** Free zmq_msg_t handles stored in Bulk::desc from zero-copy recv */
-static inline void ClearZmqRecvHandles(LbmMeta &meta) {
+static inline void ClearZmqRecvHandles(LbmMeta<> &meta) {
   for (auto &bulk : meta.recv) {
     if (bulk.desc) {
       zmq_msg_t *msg = static_cast<zmq_msg_t*>(bulk.desc);
@@ -127,6 +127,14 @@ class ZeroMqTransport : public Transport {
       int rcvbuf = 4 * 1024 * 1024;
       zmq_setsockopt(socket_, ZMQ_RCVBUF, &rcvbuf, sizeof(rcvbuf));
 
+      // ZMTP heartbeat: detect dead connections within seconds
+      int hb_ivl = 1000;    // Send ZMTP PING every 1 second
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_IVL, &hb_ivl, sizeof(hb_ivl));
+      int hb_timeout = 3000; // Consider dead after 3s of no traffic
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_TIMEOUT, &hb_timeout, sizeof(hb_timeout));
+      int hb_ttl = 3000;     // Tell remote peer: drop me if no traffic for 3s
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_TTL, &hb_ttl, sizeof(hb_ttl));
+
       int rc = zmq_connect(socket_, full_url.c_str());
       if (rc == -1) {
         std::string err = "ZeroMqTransport(DEALER) failed to connect to URL '" +
@@ -166,6 +174,14 @@ class ZeroMqTransport : public Transport {
       int sndbuf = 4 * 1024 * 1024;
       zmq_setsockopt(socket_, ZMQ_SNDBUF, &sndbuf, sizeof(sndbuf));
 
+      // ZMTP heartbeat: detect dead client connections
+      int hb_ivl = 1000;
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_IVL, &hb_ivl, sizeof(hb_ivl));
+      int hb_timeout = 3000;
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_TIMEOUT, &hb_timeout, sizeof(hb_timeout));
+      int hb_ttl = 3000;
+      zmq_setsockopt(socket_, ZMQ_HEARTBEAT_TTL, &hb_ttl, sizeof(hb_ttl));
+
       HLOG(kDebug, "ZeroMqTransport(ROUTER) binding to URL: {}", full_url);
       int rc = zmq_bind(socket_, full_url.c_str());
       if (rc == -1) {
@@ -179,7 +195,7 @@ class ZeroMqTransport : public Transport {
     }
   }
 
-  ~ZeroMqTransport() override {
+  ~ZeroMqTransport() {
     HLOG(kDebug, "ZeroMqTransport destructor - closing socket to {}:{}", addr_,
          port_);
 
@@ -194,7 +210,7 @@ class ZeroMqTransport : public Transport {
   }
 
   Bulk Expose(const hipc::FullPtr<char>& ptr, size_t data_size,
-              u32 flags) override {
+              u32 flags) {
     Bulk bulk;
     bulk.data = ptr;
     bulk.size = data_size;
@@ -204,7 +220,6 @@ class ZeroMqTransport : public Transport {
 
   template <typename MetaT>
   int Send(MetaT& meta, const LbmContext& ctx = LbmContext()) {
-    // Compute send_bulks before serialization so receiver knows how many
     meta.send_bulks = 0;
     for (size_t i = 0; i < meta.send.size(); ++i) {
       if (meta.send[i].flags.Any(BULK_XFER)) {
@@ -220,31 +235,39 @@ class ZeroMqTransport : public Transport {
     std::string meta_str = oss.str();
     size_t write_bulk_count = meta.send_bulks;
 
+    // Track whether we've queued any ZMQ_SNDMORE frames.
+    // If a later frame fails, we must complete the partial multipart
+    // message to avoid poisoning the socket for all future sends.
+    bool in_multipart = false;
+
     // ROUTER mode: prepend identity frame + empty delimiter
     if (IsServer() && !meta.client_info_.identity_.empty()) {
-      // Send identity frame
       int rc = zmq_send(socket_, meta.client_info_.identity_.data(),
                         meta.client_info_.identity_.size(), ZMQ_SNDMORE);
       if (rc == -1) {
+        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(ROUTER) - identity frame FAILED: {}",
-             zmq_strerror(zmq_errno()));
-        return zmq_errno();
+             zmq_strerror(err));
+        return err;
       }
-      // Send empty delimiter frame
+      in_multipart = true;
       rc = zmq_send(socket_, "", 0, ZMQ_SNDMORE);
       if (rc == -1) {
+        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(ROUTER) - delimiter frame FAILED: {}",
-             zmq_strerror(zmq_errno()));
-        return zmq_errno();
+             zmq_strerror(err));
+        FlushPartialMultipart();
+        return err;
       }
     } else if (IsClient()) {
-      // DEALER mode: send empty delimiter frame
       int rc = zmq_send(socket_, "", 0, ZMQ_SNDMORE);
       if (rc == -1) {
+        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(DEALER) - delimiter frame FAILED: {}",
-             zmq_strerror(zmq_errno()));
-        return zmq_errno();
+             zmq_strerror(err));
+        return err;
       }
+      in_multipart = true;
     }
 
     int base_flags = 0;
@@ -255,10 +278,13 @@ class ZeroMqTransport : public Transport {
 
     int rc = zmq_send(socket_, meta_str.data(), meta_str.size(), flags);
     if (rc == -1) {
+      int err = zmq_errno();
       HLOG(kError, "ZeroMqTransport::Send - meta FAILED: {}",
-           zmq_strerror(zmq_errno()));
-      return zmq_errno();
+           zmq_strerror(err));
+      if (in_multipart) FlushPartialMultipart();
+      return err;
     }
+    if (write_bulk_count > 0) in_multipart = true;
 
     size_t sent_count = 0;
     for (size_t i = 0; i < meta.send.size(); ++i) {
@@ -277,10 +303,14 @@ class ZeroMqTransport : public Transport {
                          zmq_noop_free, nullptr);
       rc = zmq_msg_send(&msg, socket_, flags);
       if (rc == -1) {
+        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send - bulk {} FAILED: {}", i,
-             zmq_strerror(zmq_errno()));
+             zmq_strerror(err));
         zmq_msg_close(&msg);
-        return zmq_errno();
+        if (in_multipart && sent_count < write_bulk_count) {
+          FlushPartialMultipart();
+        }
+        return err;
       }
     }
     return 0;
@@ -290,10 +320,11 @@ class ZeroMqTransport : public Transport {
   ClientInfo Recv(MetaT& meta, const LbmContext& ctx = LbmContext()) {
     ClientInfo info;
     info.rc = RecvMetadata(meta, ctx);
-    if (info.rc != 0) return info;
-    // Copy identity from recv into ClientInfo
+    if (info.rc != 0) {
+      DrainMultipart();
+      return info;
+    }
     info.identity_ = meta.client_info_.identity_;
-    // Set up recv entries from send descriptors
     for (const auto& send_bulk : meta.send) {
       Bulk recv_bulk;
       recv_bulk.size = send_bulk.size;
@@ -302,7 +333,44 @@ class ZeroMqTransport : public Transport {
       meta.recv.push_back(recv_bulk);
     }
     info.rc = RecvBulks(meta, ctx);
+    if (info.rc != 0) {
+      DrainMultipart();
+    }
     return info;
+  }
+
+  /**
+   * Complete a partial multipart send with an empty final frame.
+   * After a ZMQ_SNDMORE frame is queued, the socket is in a multipart
+   * state. If a subsequent frame fails, the stale queued frames will be
+   * prepended to the NEXT Send, corrupting it.  Sending a 0-byte frame
+   * without ZMQ_SNDMORE completes (and flushes) the broken message so
+   * the socket is clean for the next caller.
+   */
+  void FlushPartialMultipart() {
+    zmq_send(socket_, "", 0, 0);
+  }
+
+  /**
+   * Drain any remaining frames of a partially-received multipart message.
+   * ZMQ delivers multipart messages atomically, so after reading the
+   * first frame the rest are already buffered.  If RecvMetadata or
+   * RecvBulks fails mid-message, the unconsumed frames would be read
+   * by the NEXT Recv call as if they were a new message, causing
+   * cascading frame misalignment (e.g. an empty delimiter read as
+   * metadata → msg_size=0).
+   */
+  void DrainMultipart() {
+    int more = 0;
+    size_t more_size = sizeof(more);
+    zmq_getsockopt(socket_, ZMQ_RCVMORE, &more, &more_size);
+    while (more) {
+      zmq_msg_t discard;
+      zmq_msg_init(&discard);
+      zmq_msg_recv(&discard, socket_, 0);
+      zmq_msg_close(&discard);
+      zmq_getsockopt(socket_, ZMQ_RCVMORE, &more, &more_size);
+    }
   }
 
  private:
@@ -330,9 +398,17 @@ class ZeroMqTransport : public Transport {
       zmq_msg_t delim_msg;
       zmq_msg_init(&delim_msg);
       rc = zmq_msg_recv(&delim_msg, socket_, 0);
-      zmq_msg_close(&delim_msg);
       if (rc == -1) {
+        zmq_msg_close(&delim_msg);
         return zmq_errno();
+      }
+      int delim_more = zmq_msg_more(&delim_msg);
+      zmq_msg_close(&delim_msg);
+      if (!delim_more) {
+        HLOG(kError,
+             "ZeroMQ RecvMetadata: Malformed multipart message - "
+             "no metadata frame after delimiter (ROUTER)");
+        return -1;
       }
     } else {
       // DEALER mode: receive and discard empty delimiter frame
@@ -344,7 +420,14 @@ class ZeroMqTransport : public Transport {
         zmq_msg_close(&delim_msg);
         return err;
       }
+      int delim_more = zmq_msg_more(&delim_msg);
       zmq_msg_close(&delim_msg);
+      if (!delim_more) {
+        HLOG(kError,
+             "ZeroMQ RecvMetadata: Malformed multipart message - "
+             "no metadata frame after delimiter (DEALER)");
+        return -1;
+      }
     }
 
     // Receive metadata frame
@@ -359,13 +442,20 @@ class ZeroMqTransport : public Transport {
     }
 
     size_t msg_size = zmq_msg_size(&msg);
+    if (msg_size == 0) {
+      HLOG(kError,
+           "ZeroMQ RecvMetadata: Received empty metadata frame (msg_size=0), "
+           "likely a peer disconnect or heartbeat event");
+      zmq_msg_close(&msg);
+      return -1;
+    }
     try {
       std::string meta_str(static_cast<char*>(zmq_msg_data(&msg)), msg_size);
       std::istringstream iss(meta_str, std::ios::binary);
       cereal::BinaryInputArchive ar(iss);
       ar(meta);
     } catch (const std::exception& e) {
-      HLOG(kFatal,
+      HLOG(kError,
            "ZeroMQ RecvMetadata: Deserialization failed - {} (msg_size={})",
            e.what(), msg_size);
       zmq_msg_close(&msg);
@@ -419,25 +509,20 @@ class ZeroMqTransport : public Transport {
   }
 
  public:
-  void ClearRecvHandles(LbmMeta& meta) override {
+  void ClearRecvHandles(LbmMeta<>& meta) {
     ClearZmqRecvHandles(meta);
   }
 
-  void RegisterEventManager(EventManager &em) override {
-    int fd = GetFd();
+  void RegisterEventManager(EventManager &em) {
+    int fd;
+    size_t fd_size = sizeof(fd);
+    zmq_getsockopt(socket_, ZMQ_FD, &fd, reinterpret_cast<::size_t *>(&fd_size));
     if (fd >= 0) {
       em.AddEvent(fd, EPOLLIN);
     }
   }
 
-  std::string GetAddress() const override { return addr_; }
-
-  int GetFd() const override {
-    int fd;
-    size_t fd_size = sizeof(fd);
-    zmq_getsockopt(socket_, ZMQ_FD, &fd, reinterpret_cast<::size_t *>(&fd_size));
-    return fd;
-  }
+  std::string GetAddress() const { return addr_; }
 
  private:
   std::string addr_;

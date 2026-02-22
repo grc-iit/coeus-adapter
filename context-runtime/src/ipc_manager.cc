@@ -51,6 +51,7 @@
 #include <zmq.h>
 #include <hermes_shm/lightbeam/transport_factory_impl.h>
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -63,7 +64,6 @@
 #include "chimaera/chimaera_manager.h"
 #include "chimaera/config_manager.h"
 #include "chimaera/scheduler/scheduler_factory.h"
-#include "chimaera/task_queue.h"
 
 // Global pointer variable definition for IPC manager singleton
 HSHM_DEFINE_GLOBAL_PTR_VAR_CC(chi::IpcManager, g_ipc_manager);
@@ -84,6 +84,10 @@ bool IpcManager::ClientInit() {
 
   // Parse CHI_IPC_MODE environment variable (default: TCP)
   const char *ipc_mode_env = std::getenv("CHI_IPC_MODE");
+  // #region agent log
+  HLOG(kInfo, "[DEBUG-H-C] ClientInit: CHI_IPC_MODE env = '{}'",
+       ipc_mode_env ? ipc_mode_env : "(not set, defaulting to TCP)");
+  // #endregion
   if (ipc_mode_env != nullptr) {
     std::string mode_str(ipc_mode_env);
     if (mode_str == "SHM" || mode_str == "shm") {
@@ -97,6 +101,14 @@ bool IpcManager::ClientInit() {
   HLOG(kInfo, "IpcManager::ClientInit: IPC mode = {}",
        ipc_mode_ == IpcMode::kShm ? "SHM" :
        ipc_mode_ == IpcMode::kIpc ? "IPC" : "TCP");
+
+  // Parse retry timeout environment variable
+  const char *retry_env = std::getenv("CHI_CLIENT_RETRY_TIMEOUT");
+  if (retry_env) {
+    client_retry_timeout_ = static_cast<float>(std::atof(retry_env));
+  }
+  HLOG(kInfo, "IpcManager::ClientInit: retry_timeout = {}s",
+       client_retry_timeout_);
 
   // Create lightbeam transport for client-server communication
   {
@@ -178,14 +190,26 @@ bool IpcManager::ClientInit() {
         hshm::lbm::TransportMode::kServer);
   }
 
-  // Retrieve node ID from shared header and store in this_host_
+  // #region agent log
+  HLOG(kInfo, "[DEBUG-H-A] ClientInit: ipc_mode_={}, shared_header_={}, "
+       "this_host_.node_id={}, client_generation_={}",
+       ipc_mode_ == IpcMode::kShm ? "SHM" :
+       ipc_mode_ == IpcMode::kIpc ? "IPC" : "TCP",
+       shared_header_ ? "non-null" : "null",
+       this_host_.node_id,
+       client_generation_);
+  // #endregion
+  // Retrieve node ID: prefer shared header (SHM mode), fall back to
+  // the value already set by WaitForLocalServer (TCP/IPC mode)
   if (shared_header_) {
     this_host_.node_id = shared_header_->node_id;
     HLOG(kDebug, "Retrieved node ID from shared memory: 0x{:x}",
          this_host_.node_id);
+  } else if (this_host_.node_id != 0) {
+    HLOG(kInfo, "Using node ID from server handshake: {}",
+         this_host_.node_id);
   } else {
-    HLOG(kError, "Warning: Could not access shared header during ClientInit");
-    this_host_ = Host();  // Default constructor gives node_id = 0
+    HLOG(kInfo, "Node ID is 0 (single-node or first node in cluster)");
   }
 
   // Initialize HSHM TLS key for task counter
@@ -489,6 +513,10 @@ bool IpcManager::ServerInitQueues() {
     shared_header_->node_id = 0;  // Will be set after host identification
     shared_header_->runtime_pid =
         getpid();  // Store runtime's PID for client tgkill
+    shared_header_->server_generation.store(
+        static_cast<u64>(
+            std::chrono::steady_clock::now().time_since_epoch().count()),
+        std::memory_order_release);
 
     // Get worker counts from ConfigManager
     ConfigManager *config = CHI_CONFIG_MANAGER;
@@ -650,7 +678,7 @@ bool IpcManager::StartLocalServer() {
         hshm::lbm::TransportMode::kServer, protocol, port);
 
     if (local_transport_ != nullptr) {
-      HLOG(kInfo, "Successfully started local server at {}:{}", addr, port);
+      HLOG(kSuccess, "Successfully started local server at {}:{}", addr, port);
       return true;
     }
 
@@ -689,7 +717,15 @@ bool IpcManager::WaitForLocalServer() {
   }
 
   if (task->response_ == 0) {
-    HLOG(kInfo, "Successfully connected to runtime");
+    client_generation_ = task->server_generation_;
+    this_host_.node_id = task->node_id_;
+    // #region agent log
+    HLOG(kInfo, "[DEBUG-H-B] WaitForLocalServer: response={}, "
+         "server_generation_={}, node_id={}",
+         task->response_, task->server_generation_, task->node_id_);
+    // #endregion
+    HLOG(kInfo, "Successfully connected to runtime (generation={})",
+         client_generation_);
     return true;
   }
 
@@ -799,6 +835,89 @@ const std::vector<Host> &IpcManager::GetAllHosts() const {
 
 size_t IpcManager::GetNumHosts() const { return hostfile_map_.size(); }
 
+bool IpcManager::IsAlive(u64 node_id) const {
+  auto it = hostfile_map_.find(node_id);
+  if (it == hostfile_map_.end()) return false;
+  return it->second.state == NodeState::kAlive;
+}
+
+void IpcManager::SetDead(u64 node_id) {
+  auto it = hostfile_map_.find(node_id);
+  if (it == hostfile_map_.end()) return;
+  if (it->second.state == NodeState::kDead) return;  // Already dead
+
+  SetNodeState(node_id, NodeState::kDead);
+
+  // Record dead-node entry for retry tracking
+  DeadNodeEntry entry;
+  entry.node_id = node_id;
+  entry.detected_at = std::chrono::steady_clock::now();
+  dead_nodes_.push_back(entry);
+
+  // Remove cached client connections to the dead node
+  {
+    std::lock_guard<std::mutex> lock(client_pool_mutex_);
+    auto *config_manager = CHI_CONFIG_MANAGER;
+    int port = static_cast<int>(config_manager->GetPort());
+    std::string key = it->second.ip_address + ":" + std::to_string(port);
+    client_pool_.erase(key);
+  }
+
+  HLOG(kWarning, "IpcManager: Node {} ({}) marked as DEAD",
+       node_id, it->second.ip_address);
+}
+
+void IpcManager::SetAlive(u64 node_id) {
+  auto it = hostfile_map_.find(node_id);
+  if (it == hostfile_map_.end()) return;
+  if (it->second.state == NodeState::kAlive) return;  // Already alive
+
+  SetNodeState(node_id, NodeState::kAlive);
+
+  // Remove from dead_nodes_ list
+  dead_nodes_.erase(
+      std::remove_if(dead_nodes_.begin(), dead_nodes_.end(),
+                     [node_id](const DeadNodeEntry &e) {
+                       return e.node_id == node_id;
+                     }),
+      dead_nodes_.end());
+
+  HLOG(kInfo, "IpcManager: Node {} ({}) marked as ALIVE",
+       node_id, it->second.ip_address);
+}
+
+NodeState IpcManager::GetNodeState(u64 node_id) const {
+  auto it = hostfile_map_.find(node_id);
+  if (it == hostfile_map_.end()) return NodeState::kDead;
+  return it->second.state;
+}
+
+void IpcManager::SetNodeState(u64 node_id, NodeState new_state) {
+  auto it = hostfile_map_.find(node_id);
+  if (it == hostfile_map_.end()) return;
+  it->second.state = new_state;
+  it->second.state_changed_at = std::chrono::steady_clock::now();
+  hosts_cache_valid_ = false;
+}
+
+void IpcManager::SetSelfFenced(bool fenced) {
+  self_fenced_ = fenced;
+}
+
+u64 IpcManager::GetLeaderNodeId() const {
+  u64 leader = std::numeric_limits<u64>::max();
+  for (const auto& [id, host] : hostfile_map_) {
+    if (host.state == NodeState::kAlive && host.node_id < leader) {
+      leader = host.node_id;
+    }
+  }
+  return (leader == std::numeric_limits<u64>::max()) ? 0 : leader;
+}
+
+bool IpcManager::IsLeader() const {
+  return GetNodeId() == GetLeaderNodeId();
+}
+
 u64 IpcManager::AddNode(const std::string& ip_address, u32 port) {
   (void)port;  // Port stored elsewhere (ConfigManager) for now
 
@@ -886,10 +1005,10 @@ bool IpcManager::IdentifyThisHost() {
   HLOG(kError, "           sudo lsof -nP -iTCP:{} | grep LISTEN", port);
   HLOG(kError, "");
   HLOG(kError, "To stop the Chimaera runtime, run:");
-  HLOG(kError, "  chimaera_stop_runtime");
+  HLOG(kError, "  chimaera runtime stop");
   HLOG(kError, "");
   HLOG(kError, "Or kill the process directly:");
-  HLOG(kError, "  pkill -9 chimaera_start_runtime");
+  HLOG(kError, "  pkill -9 chimaera");
   HLOG(kFatal, "  kill -9 <PID>");
   return false;
 }
@@ -1588,6 +1707,75 @@ bool IpcManager::GetIsClientThread() const {
 //==============================================================================
 // GPU Memory Management
 //==============================================================================
+
+//==============================================================================
+// Client Retry / Reconnect Methods
+//==============================================================================
+
+bool IpcManager::IsServerAlive() const {
+  // SHM mode: check runtime PID is still running
+  if (ipc_mode_ == IpcMode::kShm && shared_header_) {
+    pid_t pid = shared_header_->runtime_pid;
+    if (kill(pid, 0) == -1 && errno == ESRCH) return false;
+  }
+  // For ZMQ modes, assume alive until proven otherwise by timeout
+  return true;
+}
+
+bool IpcManager::ClientReconnect() {
+  HLOG(kInfo, "ClientReconnect: Attempting to reconnect to restarted server");
+
+  if (ipc_mode_ == IpcMode::kShm) {
+    // Detach old shared memory (don't destroy — server owns it)
+    main_allocator_ = nullptr;
+    shared_header_ = nullptr;
+    worker_queues_ = hipc::FullPtr<TaskQueue>();
+    main_backend_ = hipc::PosixShmMmap();
+
+    // Re-attach to new shared memory
+    if (!ClientInitShm()) return false;
+    if (!ClientInitQueues()) return false;
+
+    // Re-create SHM lightbeam transports
+    shm_send_transport_ = hshm::lbm::TransportFactory::Get(
+        "", hshm::lbm::TransportType::kShm,
+        hshm::lbm::TransportMode::kClient);
+    shm_recv_transport_ = hshm::lbm::TransportFactory::Get(
+        "", hshm::lbm::TransportType::kShm,
+        hshm::lbm::TransportMode::kServer);
+
+    // Re-register per-process shared memory segments with new server
+    for (auto *alloc : alloc_vector_) {
+      auto alloc_id = alloc->GetId();
+      auto reg_task = NewTask<chimaera::admin::RegisterMemoryTask>(
+          chi::CreateTaskId(), chi::kAdminPoolId,
+          chi::PoolQuery::Local(), alloc_id);
+      SendZmq(reg_task, IpcMode::kTcp).Wait();
+    }
+  }
+
+  // Re-verify server via ClientConnectTask (updates client_generation_)
+  if (!WaitForLocalServer()) return false;
+
+  HLOG(kInfo, "ClientReconnect: Reconnected, new generation={}",
+       client_generation_);
+  return true;
+}
+
+bool IpcManager::WaitForServerAndReconnect(
+    std::chrono::steady_clock::time_point start) {
+  while (true) {
+    float elapsed = std::chrono::duration<float>(
+                        std::chrono::steady_clock::now() - start)
+                        .count();
+    if (client_retry_timeout_ > 0 && elapsed >= client_retry_timeout_) {
+      HLOG(kError, "WaitForServerAndReconnect: Timed out after {}s", elapsed);
+      return false;
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    if (ClientReconnect()) return true;
+  }
+}
 
 //==============================================================================
 // ZMQ Transport Methods

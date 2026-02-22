@@ -1,0 +1,21 @@
+# Chimaera Configuration for Expand/Induction Testing
+# Nodes 1-2 start with hostfile_initial, node 3 starts with hostfile_full
+# The hostfile path is set per-container via CONTAINER_HOSTFILE env var
+
+# Network configuration
+networking:
+  port: 5556
+  neighborhood_size: 3
+  hostfile: "${CONTAINER_HOSTFILE}"
+
+# Logging configuration
+logging:
+  level: "info"
+  file: "/tmp/chimaera.log"
+
+# Runtime configuration
+runtime:
+  num_threads: 8
+  queue_depth: 1024
+  local_sched: "default"
+  first_busy_wait: 50

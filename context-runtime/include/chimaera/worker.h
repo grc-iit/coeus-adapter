@@ -43,11 +43,8 @@
 #include <vector>
 
 #include "chimaera/container.h"
-#include "chimaera/integer_timer.h"
-#include "chimaera/local_transfer.h"
 #include "chimaera/pool_query.h"
 #include "chimaera/task.h"
-#include "chimaera/task_queue.h"
 #include "chimaera/types.h"
 #include "chimaera/scheduler/scheduler.h"
 #include "hermes_shm/lightbeam/event_manager.h"
@@ -74,6 +71,7 @@ struct WorkerStats {
   u32 num_queued_tasks_;     /**< Number of tasks waiting to be processed */
   u32 num_blocked_tasks_;    /**< Number of tasks in blocked queue */
   u32 num_periodic_tasks_;   /**< Number of periodic tasks on this worker */
+  u32 num_retry_tasks_;      /**< Number of tasks in retry queue */
   u32 suspend_period_us_;    /**< Time in microseconds before the worker would suspend */
   u32 idle_iterations_;      /**< Number of consecutive idle iterations */
   bool is_running_;          /**< Whether the worker is currently running */
@@ -86,6 +84,7 @@ struct WorkerStats {
         num_queued_tasks_(0),
         num_blocked_tasks_(0),
         num_periodic_tasks_(0),
+        num_retry_tasks_(0),
         suspend_period_us_(0),
         idle_iterations_(0),
         is_running_(false),
@@ -95,15 +94,15 @@ struct WorkerStats {
   template <typename Archive>
   void save(Archive& ar) const {
     ar(num_tasks_processed_, num_queued_tasks_, num_blocked_tasks_,
-       num_periodic_tasks_, suspend_period_us_, idle_iterations_,
-       is_running_, is_active_, worker_id_);
+       num_periodic_tasks_, num_retry_tasks_, suspend_period_us_,
+       idle_iterations_, is_running_, is_active_, worker_id_);
   }
 
   template <typename Archive>
   void load(Archive& ar) {
     ar(num_tasks_processed_, num_queued_tasks_, num_blocked_tasks_,
-       num_periodic_tasks_, suspend_period_us_, idle_iterations_,
-       is_running_, is_active_, worker_id_);
+       num_periodic_tasks_, num_retry_tasks_, suspend_period_us_,
+       idle_iterations_, is_running_, is_active_, worker_id_);
   }
 };
 
@@ -243,6 +242,12 @@ class Worker {
   void AddToBlockedQueue(RunContext *run_ctx_ptr, bool wait_for_task = false);
 
   /**
+   * Add a task to the retry queue (container migrated or plugged)
+   * @param run_ctx_ptr Pointer to RunContext for the task
+   */
+  void AddToRetryQueue(RunContext *run_ctx_ptr);
+
+  /**
    * Reschedule a periodic task for next execution
    * Checks if lane still maps to this worker - if so, adds to blocked queue
    * Otherwise, reschedules task back to the lane
@@ -344,17 +349,12 @@ class Worker {
   void ProcessEventQueue();
 
   /**
-   * Copy task output data to copy space for streaming to clients
-   * Processes client_copy_ queue with time budget of up to 10ms per call
-   * For each task:
-   * - Acquires reader lock on IpcManager::allocator_map_lock_
-   * - Checks if FUTURE_NEW_DATA flag is set
-   * - If not set: copies data to copy space, sets FUTURE_NEW_DATA flag
-   * - Waits up to 1ms for client to consume data (unset FUTURE_NEW_DATA)
-   * - If still set after 1ms: pushes task to back of queue, continues to next
-   * - If data fully copied: sets FUTURE_COMPLETE, removes from queue
+   * Process retry queue: re-check containers and re-route as needed
+   * Tasks with plugged containers stay in retry queue.
+   * Tasks with nullptr containers get re-routed via RouteGlobal.
    */
-  void CopyTaskOutputToClient();
+  void ProcessRetryQueue();
+
 
  public:
   /**
@@ -522,6 +522,13 @@ class Worker {
   static constexpr u32 BLOCKED_QUEUE_SIZE = 1024;
   std::queue<RunContext *> blocked_queues_[NUM_BLOCKED_QUEUES];
 
+  // Retry queue for tasks whose containers migrated away
+  // Tasks are retried every 32 iterations. During retry:
+  //   - If container is plugged: put back in retry queue
+  //   - If container is nullptr: re-route via RouteGlobal
+  //   - If container is available: execute locally
+  std::queue<RunContext *> retry_queue_;
+
   // Event queue for completing subtask futures on the parent worker's thread
   // Stores Future<Task> objects to set FUTURE_COMPLETE, avoiding stale RunContext* pointers
   // Allocated from malloc allocator (temporary runtime data, not IPC)
@@ -557,12 +564,9 @@ class Worker {
   // EventManager for efficient worker suspension and event monitoring
   hshm::lbm::EventManager event_manager_;
 
-  // Client copy queue - LocalTransfer objects streaming output data to clients
-  std::queue<LocalTransfer> client_copy_;
-
   // SHM lightbeam transport (worker-side)
-  std::unique_ptr<hshm::lbm::Transport> shm_send_transport_;  // For EndTaskShmTransfer
-  std::unique_ptr<hshm::lbm::Transport> shm_recv_transport_;  // For ProcessNewTask
+  hshm::lbm::TransportPtr shm_send_transport_;  // For EndTaskShmTransfer
+  hshm::lbm::TransportPtr shm_recv_transport_;  // For ProcessNewTask
 
   // Scheduler pointer (owned by IpcManager, not Worker)
   Scheduler *scheduler_;
