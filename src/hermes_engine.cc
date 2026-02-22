@@ -15,6 +15,7 @@
 #include "common/CatalystHelper.h"
 #include "comms/CTEHermes.h"
 #include <chimaera/module_manager.h>
+#include <chimaera/ipc_manager.h>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -340,6 +341,9 @@ HermesEngine::~HermesEngine() {
   if (hermes_) {
     delete hermes_;
     hermes_ = nullptr;
+  }
+  if (CHI_IPC) {
+    CHI_IPC->ClientFinalize();
   }
 }
 
