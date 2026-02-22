@@ -61,14 +61,14 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
  public:
   coeus::IHermes* hermes_ = nullptr;  // CTE Hermes interface for blob operations
   std::string uid;
-  SQLiteWrapper* db;
+  SQLiteWrapper* db = nullptr;
   std::string db_file;
   std::string adiosOutput;
   int lookahead;
   int index = 0;
   chimaera::coeus_mdm::Client client;
   int num_layers = 4;
-  int ppn;
+  int ppn = 1;
   int limit = 0;
   chimaera::rankConsensus::Client rank_consensus;
   chi::PoolId coeus_mdm_pool_id_;

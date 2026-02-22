@@ -250,15 +250,12 @@ void HermesEngine::Init_() {
     }
   }
 
-  // Chimaera setup for metadata management
-  // NOTE: When re-enabling coeus_mdm, use the same pattern as rankConsensus above:
-  //   only mpi_rank==0 calls Create(), then Barrier(), then others call Init().
-
-  // if (params.find("db_file") != params.end()) {
-  //   db_file = params["db_file"];
-  //   db = new SQLiteWrapper(db_file);
-  //   coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
-  //   client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
+  // Chimaera setup for metadata management (coeus_mdm)
+  if (params.find("db_file") != params.end()) {
+    db_file = params["db_file"];
+    db = new SQLiteWrapper(db_file);
+    coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
+    client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
     if (mpi_rank == 0) {
       client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     }
@@ -266,12 +263,10 @@ void HermesEngine::Init_() {
     if (mpi_rank != 0) {
       client.Init(coeus_mdm_pool_id_);
     }
-  //   if (rank % ppn == 0) {
-  //     db->createTables();
-  //   }
-  // } else {
-  //   throw std::invalid_argument("db_file not found in parameters");
-  // }
+    if (rank % ppn == 0) {
+      db->createTables();
+    }
+  }
   // if(params.find("execution_order") != params.end()) {
   //     adiosOutput = params["execution_order"];
   // }
@@ -341,6 +336,7 @@ HermesEngine::~HermesEngine() {
   }
   #endif
   delete db;
+  db = nullptr;
   if (hermes_) {
     delete hermes_;
     hermes_ = nullptr;
