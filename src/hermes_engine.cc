@@ -430,10 +430,14 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   // if two same run happened in one pipeline
   //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
     // Get or create CTE tag using IHermes interface
-    if (!hermes_ || !hermes_->GetTag(tag_name)) {
-      throw std::runtime_error("Failed to get/create tag: " + tag_name);
+    if (!hermes_) {
+      throw std::runtime_error("BeginStep: hermes_ is null (CTE not initialized)");
     }
-
+    if (!hermes_->GetTag(tag_name)) {
+      throw std::runtime_error("BeginStep: Failed to get/create tag '" + tag_name
+                               + "'. Check that the CTE core runtime is running "
+                               "and the CTE pool is properly deployed.");
+    }
 
   return adios2::StepStatus::OK;
 }

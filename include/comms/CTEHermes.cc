@@ -60,7 +60,24 @@ bool CTEHermes::connect() {
     // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
     pool_id_ = wrp_cte::core::kCtePoolId;
     Init(wrp_cte::core::kCtePoolId);
-    std::cout << "CTEHermes::connect: Using existing CTE core pool" << std::endl;
+    std::cout << "CTEHermes::connect: Attached to existing CTE core pool (id="
+              << pool_id_.IsNull() << ")" << std::endl;
+
+    // Verify pool is reachable by attempting a tag operation
+    try {
+      auto test_task = AsyncGetOrCreateTag("__cte_connect_test__");
+      test_task.Wait();
+      int rc = test_task->GetReturnCode();
+      if (rc != 0) {
+        std::cerr << "WARNING: CTE pool connectivity check failed (code: " << rc
+                  << "). The CTE core pool may not be deployed." << std::endl;
+      } else if (test_task->tag_id_ == wrp_cte::core::TagId::GetNull()) {
+        std::cerr << "WARNING: CTE pool returned null tag_id during connectivity check. "
+                  << "The CTE core pool may not be properly configured." << std::endl;
+      }
+    } catch (const std::exception& e) {
+      std::cerr << "WARNING: CTE pool connectivity check threw: " << e.what() << std::endl;
+    }
   } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;
@@ -113,11 +130,19 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
   try {
     auto tag_task = AsyncGetOrCreateTag(tag_name);
     tag_task.Wait();
-    if (tag_task->GetReturnCode() != 0) {
-      std::cerr << "ERROR: GetOrCreateTag failed for '" << tag_name << "'" << std::endl;
+    int rc = tag_task->GetReturnCode();
+    if (rc != 0) {
+      std::cerr << "ERROR: GetOrCreateTag failed for '" << tag_name
+                << "' (return code: " << rc << ")" << std::endl;
       return false;
     }
     wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    if (tag_id == wrp_cte::core::TagId::GetNull()) {
+      std::cerr << "ERROR: GetOrCreateTag returned null tag_id for '" << tag_name
+                << "' (CTE pool " << pool_id_.IsNull()
+                << "). Is the CTE core pool deployed and running?" << std::endl;
+      return false;
+    }
     current_tag_id_ = tag_id;
     tag = new CTETagClient(this, tag_id, tag_name);
     return true;
