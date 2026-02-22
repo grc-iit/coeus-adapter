@@ -257,24 +257,24 @@ void HermesEngine::Init_() {
 
   // Chimaera setup for metadata management
 
-  if (params.find("db_file") != params.end()) {
-    db_file = params["db_file"];
-    db = new SQLiteWrapper(db_file);
+  // if (params.find("db_file") != params.end()) {
+  //   db_file = params["db_file"];
+  //   db = new SQLiteWrapper(db_file);
     
-    // Create coeus_mdm pool
-    coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
-    client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
-    client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
+  //   // Create coeus_mdm pool
+  //   coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
+  //   client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
+  //   client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     
-    if (rank % ppn == 0) {
-      db->createTables();
-    }
-  } else {
-    throw std::invalid_argument("db_file not found in parameters");
-  }
-  if(params.find("execution_order") != params.end()) {
-      adiosOutput = params["execution_order"];
-  }
+  //   if (rank % ppn == 0) {
+  //     db->createTables();
+  //   }
+  // } else {
+  //   throw std::invalid_argument("db_file not found in parameters");
+  // }
+  // if(params.find("execution_order") != params.end()) {
+  //     adiosOutput = params["execution_order"];
+  // }
   #ifdef COEUS_HAVE_CATALYST
   // Optional Catalyst/Fides activation if parameters provided
   bool enableCatalyst = (params.find("Script") != params.end()) && (params.find("DataModel") != params.end());
@@ -765,8 +765,8 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
-  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  client.Mdm_insert(chi::PoolQuery::Local(), db_op);
+  //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  //client.Mdm_insert(chi::PoolQuery::Local(), db_op);
 
 }
 
@@ -796,8 +796,8 @@ void HermesEngine::DoPutDeferred_(
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
-  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  client.Mdm_insert(chi::PoolQuery::Local(), db_op);
+  //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  //client.Mdm_insert(chi::PoolQuery::Local(), db_op);
 
 
 }
