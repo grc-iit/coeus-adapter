@@ -3,23 +3,27 @@ name: coeus-gray-scott
 pkgs:
   - pkg_type: jarvis_iowarp.wrp_runtime
     pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    ipc_mode: "tcp"
+    log_level: "info"
+    sleep: 0
 
   - pkg_type: jarvis_iowarp.wrp_cte
     pkg_name: cte_core
     devices:
-      - ["${HOME}/cte_benchmark/storage1.bin", "5GB", 0.8]
-  
+      - ["ram::cte_ram_tier1", "4GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 2
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
 
-    # CTE Configuration Parameters
-    dpe_type: "max_bw"                   # Data placement engine: random, round_robin, max_bw
-    neighborhood: 4                      # Number of targets (nodes CTE can buffer to)
-    default_target_timeout_ms: 30000     # Target timeout (ms)
-    poll_period_ms: 5000                 # Period to rescan targets for statistics (capacity, bandwidth, etc.) (ms)
 
   - pkg_type: jarvis_coeus.adios2_gray_scott
     pkg_name: jarvis_coeus.adios2_gray_scott
-    L: 64
-    nprocs: 1                            # Number of MPI processes
+    L: 128
+    nprocs: 32                            # Number of MPI processes
     ppn: 16                               # Processes per node
     out_file: "${HOME}/iowarp/gsbench.bp"
     steps: 10000
