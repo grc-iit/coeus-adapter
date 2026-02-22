@@ -68,7 +68,7 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   int index = 0;
   chimaera::coeus_mdm::Client client;
   int num_layers = 4;
-  int ppn = 1;
+  int ppn;
   int limit = 0;
   chimaera::rankConsensus::Client rank_consensus;
   chi::PoolId coeus_mdm_pool_id_;
