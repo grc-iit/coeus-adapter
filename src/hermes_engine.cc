@@ -259,13 +259,13 @@ void HermesEngine::Init_() {
   //   db = new SQLiteWrapper(db_file);
   //   coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
   //   client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
-  //   if (mpi_rank == 0) {
-  //     client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
-  //   }
-  //   m_Comm.Barrier("Init_:coeus_mdm_pool_created");
-  //   if (mpi_rank != 0) {
-  //     client.Init(coeus_mdm_pool_id_);
-  //   }
+    if (mpi_rank == 0) {
+      client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
+    }
+    m_Comm.Barrier("Init_:coeus_mdm_pool_created");
+    if (mpi_rank != 0) {
+      client.Init(coeus_mdm_pool_id_);
+    }
   //   if (rank % ppn == 0) {
   //     db->createTables();
   //   }

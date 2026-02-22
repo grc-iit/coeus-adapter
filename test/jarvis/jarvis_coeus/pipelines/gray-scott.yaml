@@ -26,7 +26,7 @@ pkgs:
     nprocs: 32                            # Number of MPI processes
     ppn: 16                               # Processes per node
     out_file: "${HOME}/iowarp/gsbench.bp"
-    steps: 10000
+    steps: 200
     engine: "hermes"
 
 # Environment configuration (optional)
