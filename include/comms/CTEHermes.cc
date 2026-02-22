@@ -57,27 +57,9 @@ bool CTEHermes::connect() {
   const bool use_pre_deployed = true;
 
   if (use_pre_deployed) {
-    // Use existing CTE core pool (must match pre-deployed config, e.g. pool_id: 512.0)
     pool_id_ = wrp_cte::core::kCtePoolId;
     Init(wrp_cte::core::kCtePoolId);
-    std::cout << "CTEHermes::connect: Attached to existing CTE core pool (id="
-              << pool_id_.IsNull() << ")" << std::endl;
-
-    // Verify pool is reachable by attempting a tag operation
-    try {
-      auto test_task = AsyncGetOrCreateTag("__cte_connect_test__");
-      test_task.Wait();
-      int rc = test_task->GetReturnCode();
-      if (rc != 0) {
-        std::cerr << "WARNING: CTE pool connectivity check failed (code: " << rc
-                  << "). The CTE core pool may not be deployed." << std::endl;
-      } else if (test_task->tag_id_ == wrp_cte::core::TagId::GetNull()) {
-        std::cerr << "WARNING: CTE pool returned null tag_id during connectivity check. "
-                  << "The CTE core pool may not be properly configured." << std::endl;
-      }
-    } catch (const std::exception& e) {
-      std::cerr << "WARNING: CTE pool connectivity check threw: " << e.what() << std::endl;
-    }
+    std::cout << "CTEHermes::connect: Attached to existing CTE core pool" << std::endl;
   } else {
     // Create CTE container (or GetOrCreate if already exists)
     wrp_cte::core::CreateParams params;

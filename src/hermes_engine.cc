@@ -156,54 +156,49 @@ void HermesEngine::Init_() {
   }
   std::cout << "Initialized Chimaera (client mode)" << std::endl;
 
-  // Load required ChiMod modules (rankConsensus and coeus_mdm)
+  // Get MPI rank/size from ADIOS2 communicator for coordinating pool creation.
+  // Only one rank should create pools to avoid flooding the runtime with
+  // duplicate Create tasks (which causes 30s "SendIn task timed out" errors).
+  int mpi_rank = m_Comm.Rank();
+
+  // Verify required ChiMod modules are discoverable (diagnostic only)
   if (CHI_MODULE_MANAGER) {
-    // Initialize ModuleManager if not already initialized
     if (!CHI_MODULE_MANAGER->IsInitialized()) {
-      if (!CHI_MODULE_MANAGER->ServerInit()) {
-        engine_logger->warn("ModuleManager auto-discovery failed, modules may not be loaded");
-      } else {
-        engine_logger->info("ModuleManager initialized, modules auto-discovered");
-      }
+      CHI_MODULE_MANAGER->ServerInit();
     }
-    
-    // Verify required modules are loaded
     auto* rankConsensus_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_rankConsensus");
     auto* coeus_mdm_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_coeus_mdm");
-    
-    if (!rankConsensus_mod) {
-      engine_logger->warn("rankConsensus module not found - may fail during pool creation");
-    } else {
-      engine_logger->info("rankConsensus module loaded: {}", rankConsensus_mod->lib_path);
+    if (mpi_rank == 0) {
+      if (rankConsensus_mod) {
+        engine_logger->info("rankConsensus module loaded: {}", rankConsensus_mod->lib_path);
+      } else {
+        engine_logger->warn("rankConsensus module not found - may fail during pool creation");
+      }
+      if (coeus_mdm_mod) {
+        engine_logger->info("coeus_mdm module loaded: {}", coeus_mdm_mod->lib_path);
+      } else {
+        engine_logger->warn("coeus_mdm module not found - may fail during pool creation");
+      }
     }
-    
-    if (!coeus_mdm_mod) {
-      engine_logger->warn("coeus_mdm module not found - may fail during pool creation");
-    } else {
-      engine_logger->info("coeus_mdm module loaded: {}", coeus_mdm_mod->lib_path);
-    }
-  } else {
-    engine_logger->warn("CHI_MODULE_MANAGER not available - modules may not be loaded");
   }
 
-  // Create admin client (required for pool management)
-  chimaera::admin::Client admin_client(chi::kAdminPoolId);
-  auto admin_create_task = admin_client.AsyncCreate(chi::PoolQuery::Dynamic(), "admin", chi::kAdminPoolId);
-  admin_create_task.Wait();
-  if (admin_create_task->GetReturnCode() != 0) {
-    engine_logger->error("Failed to create admin container");
-    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
-  }
-  admin_client.Init(admin_create_task->new_pool_id_);
+  // NOTE: The admin pool is built-in to the Chimaera runtime.
+  // Do NOT create it from client mode -- it already exists.
 
-  // Initialize rank consensus pool first to get rank
-  // Note: rank is initialized to 0 by default, but we'll get the actual rank from consensus
+  // Initialize rank consensus pool (only MPI rank 0 creates it)
   rankConsensus_pool_id_ = chi::PoolId(8001, 0);
   rank_consensus = chimaera::rankConsensus::Client(rankConsensus_pool_id_);
-  rank_consensus.Create(chi::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
+  if (mpi_rank == 0) {
+    rank_consensus.Create(chi::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
+    std::cout << "Rank 0: rankConsensus pool created" << std::endl;
+  }
+  m_Comm.Barrier("Init_:rankConsensus_pool_created");
+  if (mpi_rank != 0) {
+    rank_consensus.Init(rankConsensus_pool_id_);
+  }
   rank = rank_consensus.GetRank(chi::PoolQuery::Local());
   
-  std::cout << "Rank consensus initialized, assigned rank: " << rank << std::endl;
+  std::cout << "MPI rank " << mpi_rank << " -> consensus rank: " << rank << std::endl;
  
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
@@ -256,16 +251,21 @@ void HermesEngine::Init_() {
   }
 
   // Chimaera setup for metadata management
+  // NOTE: When re-enabling coeus_mdm, use the same pattern as rankConsensus above:
+  //   only mpi_rank==0 calls Create(), then Barrier(), then others call Init().
 
   // if (params.find("db_file") != params.end()) {
   //   db_file = params["db_file"];
   //   db = new SQLiteWrapper(db_file);
-    
-  //   // Create coeus_mdm pool
   //   coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
   //   client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
-  //   client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
-    
+  //   if (mpi_rank == 0) {
+  //     client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
+  //   }
+  //   m_Comm.Barrier("Init_:coeus_mdm_pool_created");
+  //   if (mpi_rank != 0) {
+  //     client.Init(coeus_mdm_pool_id_);
+  //   }
   //   if (rank % ppn == 0) {
   //     db->createTables();
   //   }
@@ -323,7 +323,10 @@ void HermesEngine::DoClose(const int transportIndex) {
   }
   #endif
   // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)
-
+  // if (hermes_ && hermes_->tag) {
+  //   delete hermes_->tag;
+  //   hermes_->tag = nullptr;
+  // }
   
   open = false;
 }
