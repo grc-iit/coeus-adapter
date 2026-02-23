@@ -11,7 +11,7 @@ options = catalyst.Options()
 options.GlobalTrigger = "TimeStep"
 options.EnableCatalystLive = 1
 # if you want to run in ares using the following line
-# options.CatalystLiveURL = "172.20.1.1:22222"
+# options.CatalystLiveURL = "172.20.101.28:22222"
 options.CatalystLiveTrigger = "TimeStep"
 options.ExtractsOutputDirectory = "/tmp"
 # options.ExtractsOutputDirectory = '.'

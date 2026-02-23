@@ -303,6 +303,12 @@ void HermesEngine::Init_() {
     CatalystInit();
   }
   #endif
+
+  // Synchronize all ranks after pool setup and optional Catalyst/Inline init.
+  // Prevents deadlock when the application (or ADIOS2) performs a collective
+  // immediately after opening the engine (e.g. first BeginStep or Put).
+  m_Comm.Barrier("Init_:setup_complete");
+
   open = true;
 
 }
