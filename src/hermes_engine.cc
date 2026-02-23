@@ -268,6 +268,12 @@ void HermesEngine::Init_() {
       db->createTables();
     }
   }
+
+  // Synchronize before Catalyst/Inline setup so all ranks enter together.
+  // Otherwise ranks that skip createTables() can reach Open()/catalyst_initialize()
+  // while others are still in createTables(); if those calls are collective, we deadlock.
+  m_Comm.Barrier("Init_:before_catalyst");
+
   // if(params.find("execution_order") != params.end()) {
   //     adiosOutput = params["execution_order"];
   // }
