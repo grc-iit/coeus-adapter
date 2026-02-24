@@ -14,9 +14,9 @@
             <parameter key="VarFile" value="##VARFILE##"/>
             <parameter key="OPFile" value="##OPFILE##"/>
             <parameter key="db_file" value="##DBFILE##"/>
-            <parameter key="execution_order" value="##Order##"/>
             <parameter key="DataModel" value="##DATAMODEL##"/>
             <parameter key="Script" value="##SCRIPT##"/>
+            <parameter key="CatalystStream" value="SST"/>
         </engine>
     </io>
 

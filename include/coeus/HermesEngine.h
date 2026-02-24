@@ -93,13 +93,22 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   ~HermesEngine() override;
   #ifdef COEUS_HAVE_CATALYST
   // In-situ Catalyst/Fides integration state
+  // Single-node: InlineIO/InlineWriter (Catalyst reads in-process).
+  // Multi-node: SSTIO/SSTWriter (Catalyst connects as external SST reader).
   struct CatalystImpl {
     adios2::core::IO *InlineIO = nullptr;
     adios2::core::Engine *InlineWriter = nullptr;
+    adios2::core::IO *SSTIO = nullptr;
+    adios2::core::Engine *SSTWriter = nullptr;
     std::string ScriptFileName;
     std::string JSONFileName;
+    std::string CatalystStreamName;  // If non-empty, use SST for multi-node
+    bool UseSST() const { return SSTWriter != nullptr; }
+    adios2::core::Engine *CatalystWriter() const {
+      return SSTWriter ? SSTWriter : InlineWriter;
+    }
   };
-  
+
 #endif
 
   /**

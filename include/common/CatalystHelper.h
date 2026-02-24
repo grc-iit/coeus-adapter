@@ -62,8 +62,10 @@ void HermesEngine::CatalystInit()
 
 void HermesEngine::CatalystExecute()
 {
-  // Safety check: ensure CatalystState is valid
-  if (!CatalystState || !CatalystState->InlineWriter) {
+  // Only run in-process Catalyst for inline (single-node); SST uses external reader
+  if (!CatalystState || CatalystState->UseSST() || !CatalystState->InlineWriter) {
+    if (CatalystState && CatalystState->UseSST())
+      return;  // normal: SST mode, reader is external
     engine_logger->warn("CatalystExecute called but InlineWriter is null");
     return;
   }

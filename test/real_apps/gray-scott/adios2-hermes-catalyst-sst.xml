@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!-- Hermes engine with Catalyst over SST for multi-node simulation.
+         Simulation writes to Hermes (CTE) and mirrors data to an SST stream.
+         A separate Catalyst reader (e.g. ParaView with gs-pipeline.py --staging)
+         connects to the stream at host:streamName (e.g. localhost:gs.bp.sst). -->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="/tmp/myFile.bp" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <parameter key="OpFile" value="op.yaml"/>
+            <parameter key="VarFile" value="var.yaml"/>
+            <!-- Catalyst multi-node: stream name for SST (reader connects to host:value) -->
+            <parameter key="CatalystStream" value="gs.bp.sst"/>
+            <parameter key="Script" value="catalyst/gs-pipeline.py"/>
+            <parameter key="DataModel" value="catalyst/gs-fides.json"/>
+            <!-- Optional: SST data transport: MPI (default) or WAN -->
+            <!-- <parameter key="SSTDataTransport" value="WAN"/> -->
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="/tmp/ckpt.bp" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+        </engine>
+    </io>
+</adios-config>

@@ -306,14 +306,54 @@ void HermesEngine::Init_() {
     CatalystState = std::unique_ptr<CatalystImpl>(new CatalystImpl());
     CatalystState->ScriptFileName = params["Script"];
     CatalystState->JSONFileName = params["DataModel"];
-
-    // Create internal Inline IO and writer and mirror variables
-    CatalystState->InlineIO = &m_IO.m_ADIOS.DeclareIO("InlinePluginIO");
-    CatalystState->InlineIO->SetEngine("inline");
+    if (params.find("CatalystStream") != params.end()) {
+      CatalystState->CatalystStreamName = params["CatalystStream"];
+    }
 
     const auto &varMap = m_IO.GetVariables();
-    for (const auto &it : varMap)
+
+    if (!CatalystState->CatalystStreamName.empty())
     {
+      // Multi-node: use SST so a separate Catalyst reader can connect
+      CatalystState->SSTIO = &m_IO.m_ADIOS.DeclareIO("CatalystSSTIO");
+      CatalystState->SSTIO->SetEngine("SST");
+      CatalystState->SSTIO->SetParameter("RendezvousReaderCount", "1");
+      CatalystState->SSTIO->SetParameter("QueueLimit", "1");
+      CatalystState->SSTIO->SetParameter("QueueFullPolicy", "Discard");
+      CatalystState->SSTIO->SetParameter("OpenTimeoutSecs", "60.0");
+      if (params.find("SSTDataTransport") != params.end()) {
+        CatalystState->SSTIO->SetParameter("DataTransport", params["SSTDataTransport"]);
+      } else {
+        CatalystState->SSTIO->SetParameter("DataTransport", "MPI");
+      }
+
+      for (const auto &it : varMap)
+      {
+   #define declare_type_sst(T) \
+     if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
+     { \
+       CatalystState->SSTIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
+         it.second->m_Count, it.second->IsConstantDims()); \
+       continue; \
+     }
+        ADIOS2_FOREACH_STDTYPE_1ARG(declare_type_sst)
+   #undef declare_type_sst
+      }
+
+      CatalystState->SSTWriter = &CatalystState->SSTIO->Open(
+          CatalystState->CatalystStreamName, adios2::Mode::Write);
+      if (rank == 0) {
+        engine_logger->info("Catalyst SST stream: {} (multi-node)", CatalystState->CatalystStreamName);
+      }
+    }
+    else
+    {
+      // Single-node: Inline engine (Catalyst reads in-process)
+      CatalystState->InlineIO = &m_IO.m_ADIOS.DeclareIO("InlinePluginIO");
+      CatalystState->InlineIO->SetEngine("inline");
+
+      for (const auto &it : varMap)
+      {
    #define declare_type(T) \
      if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
      { \
@@ -321,13 +361,13 @@ void HermesEngine::Init_() {
          it.second->m_Count, it.second->IsConstantDims()); \
        continue; \
      }
-       ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+        ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
    #undef declare_type
-     }
+      }
 
-    CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
-
-    CatalystInit();
+      CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
+      CatalystInit();
+    }
   }
   #endif
 
@@ -346,9 +386,9 @@ void HermesEngine::Init_() {
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
   #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState && CatalystState->InlineWriter)
+  if (CatalystState && CatalystState->CatalystWriter())
   {
-    CatalystState->InlineWriter->Close(transportIndex);
+    CatalystState->CatalystWriter()->Close(transportIndex);
   }
   #endif
   // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)
@@ -363,9 +403,9 @@ void HermesEngine::DoClose(const int transportIndex) {
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
   #ifdef COEUS_HAVE_CATALYST
-  if (CatalystState)
+  if (CatalystState && !CatalystState->UseSST())
   {
-    conduit_cpp::Node node; 
+    conduit_cpp::Node node;
     catalyst_finalize(conduit_cpp::c_node(&node));
   }
   #endif
@@ -433,12 +473,12 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
   #ifdef COEUS_HAVE_CATALYST
   inline_writer_in_step_ = false;
 
-  if (CatalystState && CatalystState->InlineWriter)
+  if (CatalystState && CatalystState->CatalystWriter())
   {
     try
     {
       adios2::StepStatus status =
-          CatalystState->InlineWriter->BeginStep(mode, timeoutSeconds);
+          CatalystState->CatalystWriter()->BeginStep(mode, timeoutSeconds);
 
       inline_writer_in_step_ = (status == adios2::StepStatus::OK);
     }
@@ -567,8 +607,9 @@ size_t HermesEngine::CurrentStep() const {
 void HermesEngine::EndStep()
 {
   #ifdef COEUS_HAVE_CATALYST
-  bool catalyst_active =
-      (CatalystState && CatalystState->InlineWriter && inline_writer_in_step_);
+  adios2::core::Engine *catWriter = CatalystState ? CatalystState->CatalystWriter() : nullptr;
+  bool catalyst_active = (catWriter && inline_writer_in_step_);
+  bool use_inline = CatalystState && !CatalystState->UseSST();
   #endif
 
   try
@@ -578,9 +619,9 @@ void HermesEngine::EndStep()
   catch (...)
   {
   #ifdef COEUS_HAVE_CATALYST
-    if (catalyst_active)
+    if (catalyst_active && catWriter)
     {
-      CatalystState->InlineWriter->EndStep();
+      catWriter->EndStep();
       inline_writer_in_step_ = false;
     }
   #endif
@@ -588,10 +629,12 @@ void HermesEngine::EndStep()
   }
 
   #ifdef COEUS_HAVE_CATALYST
-   if (catalyst_active)
+   if (catalyst_active && catWriter)
    {
-    CatalystState->InlineWriter->EndStep();
-    CatalystExecute();
+    catWriter->EndStep();
+    if (use_inline) {
+      CatalystExecute();
+    }
     inline_writer_in_step_ = false;
    }
   #endif
@@ -779,14 +822,15 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   #ifdef COEUS_HAVE_CATALYST
-   if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+   if (CatalystState && CatalystState->CatalystWriter())
    {
-     adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-     if (inlineVar)
+     adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
+     adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
+     if (catVar)
      {
-       CatalystState->InlineWriter->Put(*inlineVar, values);
+       CatalystState->CatalystWriter()->Put(*catVar, values);
      }
-   } 
+   }
   #endif
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
@@ -811,12 +855,13 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   #ifdef COEUS_HAVE_CATALYST
-   if (CatalystState && CatalystState->InlineIO && CatalystState->InlineWriter)
+   if (CatalystState && CatalystState->CatalystWriter())
    {
-     adios2::core::Variable<T> *inlineVar = CatalystState->InlineIO->InquireVariable<T>(variable.m_Name);
-     if (inlineVar)
+     adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
+     adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
+     if (catVar)
      {
-       CatalystState->InlineWriter->Put(*inlineVar, values);
+       CatalystState->CatalystWriter()->Put(*catVar, values);
      }
    }
   #endif
