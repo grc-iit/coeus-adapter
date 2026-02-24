@@ -570,6 +570,7 @@ struct SendTask : public chi::Task {
     task_flags_.Clear();
     pool_query_ = pool_query;
     stat_.io_size_ = 1024 * 1024;  // 1MB
+    task_group_ = chi::TaskGroup(0);  // Network tasks in affinity group 0
   }
 
   /**
@@ -639,6 +640,7 @@ struct RecvTask : public chi::Task {
     task_flags_.Clear();
     pool_query_ = pool_query;
     stat_.io_size_ = 1024 * 1024;  // 1MB
+    task_group_ = chi::TaskGroup(0);  // Network tasks in affinity group 0
   }
 
   /**
@@ -687,11 +689,9 @@ struct ClientConnectTask : public chi::Task {
   // Connect response
   OUT int32_t response_;  ///< 0 = success, non-zero = error
   OUT chi::u64 server_generation_;  ///< Server's generation counter for restart detection
-  OUT chi::u64 node_id_;  ///< Server's node ID so TCP/IPC clients can learn their node
 
   /** SHM default constructor */
-  ClientConnectTask()
-      : chi::Task(), response_(-1), server_generation_(0), node_id_(0) {}
+  ClientConnectTask() : chi::Task(), response_(-1), server_generation_(0) {}
 
   /** Emplace constructor */
   explicit ClientConnectTask(const chi::TaskId &task_node,
@@ -699,8 +699,7 @@ struct ClientConnectTask : public chi::Task {
                              const chi::PoolQuery &pool_query)
       : chi::Task(task_node, pool_id, pool_query, Method::kClientConnect),
         response_(-1),
-        server_generation_(0),
-        node_id_(0) {
+        server_generation_(0) {
     task_id_ = task_node;
     pool_id_ = pool_id;
     method_ = Method::kClientConnect;
@@ -716,14 +715,13 @@ struct ClientConnectTask : public chi::Task {
   template <typename Archive>
   void SerializeOut(Archive &ar) {
     Task::SerializeOut(ar);
-    ar(response_, server_generation_, node_id_);
+    ar(response_, server_generation_);
   }
 
   void Copy(const hipc::FullPtr<ClientConnectTask> &other) {
     Task::Copy(other.template Cast<Task>());
     response_ = other->response_;
     server_generation_ = other->server_generation_;
-    node_id_ = other->node_id_;
   }
 
   void Aggregate(const hipc::FullPtr<ClientConnectTask> &other) {

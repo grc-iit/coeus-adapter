@@ -41,9 +41,11 @@
 
 #include "../simple_test.h"
 
+#ifndef _WIN32
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #include <chrono>
 #include <cstdlib>
@@ -147,11 +149,11 @@ pid_t StartServerProcess() {
   pid_t server_pid = fork();
   if (server_pid == 0) {
     // Redirect child's stdout to /dev/null but stderr to temp file for timing
-    freopen("/dev/null", "w", stdout);
-    freopen("/tmp/chimaera_server_timing.log", "w", stderr);
+    (void)freopen("/dev/null", "w", stdout);
+    (void)freopen("/tmp/chimaera_server_timing.log", "w", stderr);
 
     // Child process: Start runtime server
-    setenv("CHIMAERA_WITH_RUNTIME", "1", 1);
+    setenv("CHI_WITH_RUNTIME", "1", 1);
     bool success = CHIMAERA_INIT(ChimaeraMode::kServer, true);
     if (!success) {
       _exit(1);
@@ -171,8 +173,9 @@ pid_t StartServerProcess() {
 bool WaitForServer(int max_attempts = 50) {
   // The main shared memory segment name is "chi_main_segment_${USER}"
   const char *user = std::getenv("USER");
-  std::string memfd_path = std::string("/tmp/chimaera_memfd/chi_main_segment_") +
-                           (user ? user : "");
+  std::string memfd_path = std::string("/tmp/chimaera_") +
+                           (user ? user : "unknown") +
+                           "/chi_main_segment_" + (user ? user : "");
 
   for (int i = 0; i < max_attempts; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -194,8 +197,9 @@ bool WaitForServer(int max_attempts = 50) {
  */
 void CleanupSharedMemory() {
   const char *user = std::getenv("USER");
-  std::string memfd_path = std::string("/tmp/chimaera_memfd/chi_main_segment_") +
-                           (user ? user : "");
+  std::string memfd_path = std::string("/tmp/chimaera_") +
+                           (user ? user : "unknown") +
+                           "/chi_main_segment_" + (user ? user : "");
   unlink(memfd_path.c_str());
 }
 
@@ -211,6 +215,20 @@ void CleanupServer(pid_t server_pid) {
   }
 }
 
+/**
+ * RAII guard that always kills the forked server process, even if a
+ * REQUIRE assertion throws and unwinds the stack before the explicit
+ * CleanupServer() call.
+ */
+struct ServerGuard {
+  pid_t pid;
+  explicit ServerGuard(pid_t p) : pid(p) {}
+  ~ServerGuard() { CleanupServer(pid); }
+  // Non-copyable
+  ServerGuard(const ServerGuard &) = delete;
+  ServerGuard &operator=(const ServerGuard &) = delete;
+};
+
 // ============================================================================
 // IPC Transport Mode Tests
 // ============================================================================
@@ -220,6 +238,7 @@ TEST_CASE("IpcTransportMode - SHM Client Connection",
   // Start server in background
   pid_t server_pid = StartServerProcess();
   REQUIRE(server_pid > 0);
+  ServerGuard guard(server_pid);
 
   // Wait for server to be ready
   bool server_ready = WaitForServer();
@@ -227,7 +246,7 @@ TEST_CASE("IpcTransportMode - SHM Client Connection",
 
   // Set SHM mode and connect as external client
   setenv("CHI_IPC_MODE", "SHM", 1);
-  setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+  setenv("CHI_WITH_RUNTIME", "0", 1);
   bool success = CHIMAERA_INIT(ChimaeraMode::kClient, false);
   REQUIRE(success);
 
@@ -241,9 +260,6 @@ TEST_CASE("IpcTransportMode - SHM Client Connection",
 
   // Submit real tasks through the transport layer
   SubmitTasksForMode("shm");
-
-  // Cleanup
-  CleanupServer(server_pid);
 }
 
 TEST_CASE("IpcTransportMode - TCP Client Connection",
@@ -251,6 +267,7 @@ TEST_CASE("IpcTransportMode - TCP Client Connection",
   // Start server in background
   pid_t server_pid = StartServerProcess();
   REQUIRE(server_pid > 0);
+  ServerGuard guard(server_pid);
 
   // Wait for server to be ready
   bool server_ready = WaitForServer();
@@ -258,7 +275,7 @@ TEST_CASE("IpcTransportMode - TCP Client Connection",
 
   // Set TCP mode and connect as external client
   setenv("CHI_IPC_MODE", "TCP", 1);
-  setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+  setenv("CHI_WITH_RUNTIME", "0", 1);
   bool success = CHIMAERA_INIT(ChimaeraMode::kClient, false);
   REQUIRE(success);
 
@@ -272,9 +289,6 @@ TEST_CASE("IpcTransportMode - TCP Client Connection",
 
   // Submit real tasks through the transport layer
   SubmitTasksForMode("tcp");
-
-  // Cleanup
-  CleanupServer(server_pid);
 }
 
 TEST_CASE("IpcTransportMode - IPC Client Connection",
@@ -282,6 +296,7 @@ TEST_CASE("IpcTransportMode - IPC Client Connection",
   // Start server in background
   pid_t server_pid = StartServerProcess();
   REQUIRE(server_pid > 0);
+  ServerGuard guard(server_pid);
 
   // Wait for server to be ready
   bool server_ready = WaitForServer();
@@ -289,7 +304,7 @@ TEST_CASE("IpcTransportMode - IPC Client Connection",
 
   // Set IPC (Unix Domain Socket) mode and connect as external client
   setenv("CHI_IPC_MODE", "IPC", 1);
-  setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+  setenv("CHI_WITH_RUNTIME", "0", 1);
   bool success = CHIMAERA_INIT(ChimaeraMode::kClient, false);
   REQUIRE(success);
 
@@ -303,9 +318,6 @@ TEST_CASE("IpcTransportMode - IPC Client Connection",
 
   // Submit real tasks through the transport layer
   SubmitTasksForMode("ipc");
-
-  // Cleanup
-  CleanupServer(server_pid);
 }
 
 TEST_CASE("IpcTransportMode - Default Mode Is TCP",
@@ -313,6 +325,7 @@ TEST_CASE("IpcTransportMode - Default Mode Is TCP",
   // Start server in background
   pid_t server_pid = StartServerProcess();
   REQUIRE(server_pid > 0);
+  ServerGuard guard(server_pid);
 
   // Wait for server to be ready
   bool server_ready = WaitForServer();
@@ -320,7 +333,7 @@ TEST_CASE("IpcTransportMode - Default Mode Is TCP",
 
   // Unset CHI_IPC_MODE to test default behavior
   unsetenv("CHI_IPC_MODE");
-  setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+  setenv("CHI_WITH_RUNTIME", "0", 1);
   bool success = CHIMAERA_INIT(ChimaeraMode::kClient, false);
   REQUIRE(success);
 
@@ -328,9 +341,6 @@ TEST_CASE("IpcTransportMode - Default Mode Is TCP",
   REQUIRE(ipc != nullptr);
   REQUIRE(ipc->IsInitialized());
   REQUIRE(ipc->GetIpcMode() == IpcMode::kTcp);
-
-  // Cleanup
-  CleanupServer(server_pid);
 }
 
 SIMPLE_TEST_MAIN()

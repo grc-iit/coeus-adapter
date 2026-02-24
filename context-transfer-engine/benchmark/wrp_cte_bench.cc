@@ -495,7 +495,7 @@ int main(int argc, char **argv) {
     HLOG(kError, "");
     HLOG(kError, "Environment variables:");
     HLOG(kError,
-         "  CHIMAERA_WITH_RUNTIME: Set to '1', 'true', 'yes', or 'on' to "
+         "  CHI_WITH_RUNTIME: Set to '1', 'true', 'yes', or 'on' to "
          "initialize runtime");
     HLOG(kError, "                         Default: assumes runtime already initialized");
     return 1;
@@ -509,6 +509,18 @@ int main(int argc, char **argv) {
     HLOG(kError, "Failed to initialize Chimaera runtime");
     return 1;
   }
+
+  // RAII guard: call ClientFinalize() on every return path so the background
+  // ZMQ receive thread is joined and the DEALER socket is closed before the
+  // ZMQ shared-context static destructor runs.
+  struct ClientFinalizeGuard {
+    ~ClientFinalizeGuard() {
+      auto* mgr = CHI_CHIMAERA_MANAGER;
+      if (mgr) {
+        mgr->ClientFinalize();
+      }
+    }
+  } finalize_guard;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
 

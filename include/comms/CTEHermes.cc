@@ -45,9 +45,14 @@ bool CTEHermes::connect() {
     return true;  // Already connected
   }
 
-  // Initialize CTE subsystem (Chimaera + global client if needed)
+  // Initialize CTE subsystem (Chimaera + global client if needed).
+  // WRP_CTE_CLIENT_INIT calls Chimaera init then creates/attaches to the CTE
+  // pool; the Chimaera runtime must already be running (started separately).
   if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
-    std::cerr << "ERROR: Failed to initialize CTE subsystem" << std::endl;
+    std::cerr << "ERROR: Failed to initialize CTE subsystem." << std::endl;
+    std::cerr << "  CTE requires the Chimaera runtime to be running." << std::endl;
+    std::cerr << "  - Start the runtime first (e.g. chimaera_start_runtime or your launcher)" << std::endl;
+    std::cerr << "  See context-runtime and context-transfer-engine documentation." << std::endl;
     return false;
   }
 

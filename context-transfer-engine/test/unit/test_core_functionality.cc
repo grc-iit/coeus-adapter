@@ -80,11 +80,11 @@ namespace fs = std::filesystem;
 
 /**
  * Helper function to check if runtime should be initialized
- * Reads CHIMAERA_WITH_RUNTIME environment variable
+ * Reads CHI_WITH_RUNTIME environment variable
  * Returns true if unset or set to any value except "0", "false", "no", "off"
  */
 bool ShouldInitializeRuntime() {
-  const char *env_val = std::getenv("CHIMAERA_WITH_RUNTIME");
+  const char *env_val = std::getenv("CHI_WITH_RUNTIME");
   if (env_val == nullptr) {
     return true;  // Default: initialize runtime
   }
@@ -140,11 +140,8 @@ class CTECoreFunctionalTestFixture {
   CTECoreFunctionalTestFixture() {
     INFO("=== Initializing CTE Core Functional Test Environment ===");
 
-    // Initialize test storage path in home directory
-    std::string home_dir = hshm::SystemInfo::Getenv("HOME");
-    REQUIRE(!home_dir.empty());
-
-    test_storage_path_ = home_dir + "/cte_functional_test.dat";
+    // Initialize test storage path in /tmp (always writable)
+    test_storage_path_ = "/tmp/cte_functional_test.dat";
 
     // Clean up any existing test file
     if (fs::exists(test_storage_path_)) {
@@ -154,12 +151,12 @@ class CTECoreFunctionalTestFixture {
 
     // Initialize Chimaera runtime and client for functional testing
     if (ShouldInitializeRuntime()) {
-      INFO("Initializing runtime (CHIMAERA_WITH_RUNTIME not set or enabled)");
+      INFO("Initializing runtime (CHI_WITH_RUNTIME not set or enabled)");
       bool success = chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true);
       REQUIRE(success);
     } else {
-      INFO("Runtime already initialized externally (CHIMAERA_WITH_RUNTIME="
-           << std::getenv("CHIMAERA_WITH_RUNTIME") << ")");
+      INFO("Runtime already initialized externally (CHI_WITH_RUNTIME="
+           << std::getenv("CHI_WITH_RUNTIME") << ")");
       bool success = chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, true);
       REQUIRE(success);
     }

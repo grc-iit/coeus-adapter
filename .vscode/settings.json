@@ -89,6 +89,7 @@
         "xutility": "cpp",
         "coroutine": "cpp",
         "resumable": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "semaphore": "cpp"
     }
 }

@@ -47,8 +47,10 @@
 
 #include <mpi.h>
 
+#ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 #include <chrono>
 #include <cstdlib>
@@ -78,8 +80,9 @@ inline chi::priv::vector<chimaera::bdev::Block> WrapBlock(
 
 bool WaitForServer(int max_attempts = 100) {
   const char* user = std::getenv("USER");
-  std::string memfd_path = std::string("/tmp/chimaera_memfd/chi_main_segment_") +
-                           (user ? user : "");
+  std::string memfd_path = std::string("/tmp/chimaera_") +
+                           (user ? user : "unknown") +
+                           "/chi_main_segment_" + (user ? user : "");
 
   for (int i = 0; i < max_attempts; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -95,8 +98,9 @@ bool WaitForServer(int max_attempts = 100) {
 
 void CleanupSharedMemory() {
   const char* user = std::getenv("USER");
-  std::string memfd_path = std::string("/tmp/chimaera_memfd/chi_main_segment_") +
-                           (user ? user : "");
+  std::string memfd_path = std::string("/tmp/chimaera_") +
+                           (user ? user : "unknown") +
+                           "/chi_main_segment_" + (user ? user : "");
   unlink(memfd_path.c_str());
 }
 
@@ -254,7 +258,7 @@ int main(int argc, char* argv[]) {
     // Cleanup stale shared memory
     CleanupSharedMemory();
 
-    setenv("CHIMAERA_WITH_RUNTIME", "1", 1);
+    setenv("CHI_WITH_RUNTIME", "1", 1);
     bool success = CHIMAERA_INIT(ChimaeraMode::kServer, true);
     if (!success) {
       HLOG(kError, "[Rank 0] CHIMAERA_INIT(kServer) failed!");
@@ -284,6 +288,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Cleanup
+    chi::CHIMAERA_FINALIZE();
     CleanupSharedMemory();
     MPI_Finalize();
     return (global_pass == 1) ? 0 : 1;
@@ -303,7 +308,7 @@ int main(int argc, char* argv[]) {
 
     // Set transport mode
     setenv("CHI_IPC_MODE", mode_name.c_str(), 1);
-    setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+    setenv("CHI_WITH_RUNTIME", "0", 1);
 
     HLOG(kInfo, "[Rank {}] Connecting as {} client...", rank, mode_name);
 
@@ -334,6 +339,7 @@ int main(int argc, char* argv[]) {
     MPI_Reduce(&local_pass, &global_pass, 1, MPI_INT, MPI_MIN,
                0, MPI_COMM_WORLD);
 
+    chi::CHIMAERA_FINALIZE();
     MPI_Finalize();
     return (local_pass == 1) ? 0 : 1;
   }

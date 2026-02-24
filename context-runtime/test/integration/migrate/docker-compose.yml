@@ -14,8 +14,11 @@ services:
   # Node 1 - Test coordinator
   iowarp-node1:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-migrate-node1
     hostname: iowarp-node1
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-migrate-cluster:
         ipv4_address: 172.28.0.10
@@ -26,7 +29,7 @@ services:
       - NODE_IP=172.28.0.10
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/migrate/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/migrate/hostfile
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - CHI_NUM_CONTAINERS=4
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
@@ -45,8 +48,11 @@ services:
   # Node 2
   iowarp-node2:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-migrate-node2
     hostname: iowarp-node2
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-migrate-cluster:
         ipv4_address: 172.28.0.11
@@ -57,7 +63,7 @@ services:
       - NODE_IP=172.28.0.11
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/migrate/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/migrate/hostfile
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - CHI_NUM_CONTAINERS=4
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
@@ -73,8 +79,11 @@ services:
   # Node 3
   iowarp-node3:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-migrate-node3
     hostname: iowarp-node3
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-migrate-cluster:
         ipv4_address: 172.28.0.12
@@ -85,7 +94,7 @@ services:
       - NODE_IP=172.28.0.12
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/migrate/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/migrate/hostfile
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - CHI_NUM_CONTAINERS=4
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
@@ -101,8 +110,11 @@ services:
   # Node 4
   iowarp-node4:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-migrate-node4
     hostname: iowarp-node4
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-migrate-cluster:
         ipv4_address: 172.28.0.13
@@ -113,7 +125,7 @@ services:
       - NODE_IP=172.28.0.13
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/migrate/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/migrate/hostfile
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - CHI_NUM_CONTAINERS=4
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH

@@ -33,7 +33,9 @@
 
 #pragma once
 #if HSHM_ENABLE_ZMQ
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <zmq.h>
 
 #include <chrono>
@@ -42,8 +44,10 @@
 #include <mutex>
 #include <thread>
 
+#include "hermes_shm/introspect/system_info.h"
 #include "hermes_shm/util/logging.h"
 #include "lightbeam.h"
+#include "posix_socket.h"
 
 namespace hshm::lbm {
 
@@ -65,19 +69,52 @@ static inline void ClearZmqRecvHandles(LbmMeta<> &meta) {
   }
 }
 
+/** Action that reads ZMQ_EVENTS when epoll fires on ZMQ_FD.
+ *  Required by ZMQ docs: the FD is edge-triggered and won't
+ *  re-arm until the application reads ZMQ_EVENTS. */
+class ZmqFiredAction : public EventAction {
+ public:
+  void *socket_;
+  explicit ZmqFiredAction(void *socket) : socket_(socket) {}
+  void Run(const EventInfo &event) override {
+    (void)event;
+    int zmq_events = 0;
+    size_t opt_len = sizeof(zmq_events);
+    zmq_getsockopt(socket_, ZMQ_EVENTS, &zmq_events, &opt_len);
+  }
+};
+
 class ZeroMqTransport : public Transport {
  private:
   static void* GetSharedContext() {
-    static void* shared_ctx = nullptr;
-    static std::mutex ctx_mutex;
-
-    std::lock_guard<std::mutex> lock(ctx_mutex);
-    if (!shared_ctx) {
-      shared_ctx = zmq_ctx_new();
-      zmq_ctx_set(shared_ctx, ZMQ_IO_THREADS, 2);
+    // CtxOwner holds the shared ZMQ context and destroys it at program exit,
+    // ensuring libzmq releases its internal resources and LeakSanitizer is clean.
+    struct CtxOwner {
+      void* ctx = nullptr;
+      std::mutex mtx;
+      ~CtxOwner() {
+        if (ctx) {
+          // zmq_ctx_shutdown() causes all blocking ZMQ calls on open sockets
+          // to return immediately with ETERM.  This unblocks any background
+          // receive threads (e.g. RecvZmqClientThread) that are polling the
+          // socket, allowing them to exit cleanly.  zmq_ctx_destroy() would
+          // otherwise block forever if a socket is still open (because the
+          // Chimaera singleton is heap-allocated and its destructor -- which
+          // calls ClientFinalize / closes the socket -- is never invoked).
+          zmq_ctx_shutdown(ctx);
+          zmq_ctx_destroy(ctx);
+          ctx = nullptr;
+        }
+      }
+    };
+    static CtxOwner owner;
+    std::lock_guard<std::mutex> lock(owner.mtx);
+    if (!owner.ctx) {
+      owner.ctx = zmq_ctx_new();
+      zmq_ctx_set(owner.ctx, ZMQ_IO_THREADS, 2);
       HLOG(kInfo, "[ZeroMqTransport] Created shared context with 2 I/O threads");
     }
-    return shared_ctx;
+    return owner.ctx;
   }
 
  public:
@@ -86,8 +123,10 @@ class ZeroMqTransport : public Transport {
       : Transport(mode),
         addr_(addr),
         protocol_(protocol),
-        port_(port) {
+        port_(port),
+        zmq_fired_action_(nullptr) {
     type_ = TransportType::kZeroMq;
+    sock::InitSocketLib();
 
     std::string full_url;
     if (protocol_ == "ipc") {
@@ -107,7 +146,7 @@ class ZeroMqTransport : public Transport {
       // (where multiple processes may have the same PID in different namespaces)
       char hostname_buf[64] = {};
       gethostname(hostname_buf, sizeof(hostname_buf) - 1);
-      uint32_t pid = static_cast<uint32_t>(getpid());
+      uint32_t pid = static_cast<uint32_t>(hshm::SystemInfo::GetPid());
       std::string identity = std::string(hostname_buf) + ":" +
                               std::to_string(pid);
       zmq_setsockopt(socket_, ZMQ_IDENTITY, identity.data(),
@@ -157,6 +196,7 @@ class ZeroMqTransport : public Transport {
       }
 
       HLOG(kDebug, "ZeroMqTransport(DEALER) connected to {} (pid={})", full_url, pid);
+      zmq_fired_action_.socket_ = socket_;
     } else {
       // ROUTER socket for server
       ctx_ = zmq_ctx_new();
@@ -192,6 +232,7 @@ class ZeroMqTransport : public Transport {
         throw std::runtime_error(err);
       }
       HLOG(kDebug, "ZeroMqTransport(ROUTER) bound successfully to {}", full_url);
+      zmq_fired_action_.socket_ = socket_;
     }
   }
 
@@ -199,7 +240,7 @@ class ZeroMqTransport : public Transport {
     HLOG(kDebug, "ZeroMqTransport destructor - closing socket to {}:{}", addr_,
          port_);
 
-    int linger = 5000;
+    int linger = 0;
     zmq_setsockopt(socket_, ZMQ_LINGER, &linger, sizeof(linger));
 
     zmq_close(socket_);
@@ -220,6 +261,7 @@ class ZeroMqTransport : public Transport {
 
   template <typename MetaT>
   int Send(MetaT& meta, const LbmContext& ctx = LbmContext()) {
+    // Compute send_bulks before serialization so receiver knows how many
     meta.send_bulks = 0;
     for (size_t i = 0; i < meta.send.size(); ++i) {
       if (meta.send[i].flags.Any(BULK_XFER)) {
@@ -235,39 +277,31 @@ class ZeroMqTransport : public Transport {
     std::string meta_str = oss.str();
     size_t write_bulk_count = meta.send_bulks;
 
-    // Track whether we've queued any ZMQ_SNDMORE frames.
-    // If a later frame fails, we must complete the partial multipart
-    // message to avoid poisoning the socket for all future sends.
-    bool in_multipart = false;
-
     // ROUTER mode: prepend identity frame + empty delimiter
     if (IsServer() && !meta.client_info_.identity_.empty()) {
+      // Send identity frame
       int rc = zmq_send(socket_, meta.client_info_.identity_.data(),
                         meta.client_info_.identity_.size(), ZMQ_SNDMORE);
       if (rc == -1) {
-        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(ROUTER) - identity frame FAILED: {}",
-             zmq_strerror(err));
-        return err;
+             zmq_strerror(zmq_errno()));
+        return zmq_errno();
       }
-      in_multipart = true;
+      // Send empty delimiter frame
       rc = zmq_send(socket_, "", 0, ZMQ_SNDMORE);
       if (rc == -1) {
-        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(ROUTER) - delimiter frame FAILED: {}",
-             zmq_strerror(err));
-        FlushPartialMultipart();
-        return err;
+             zmq_strerror(zmq_errno()));
+        return zmq_errno();
       }
     } else if (IsClient()) {
+      // DEALER mode: send empty delimiter frame
       int rc = zmq_send(socket_, "", 0, ZMQ_SNDMORE);
       if (rc == -1) {
-        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send(DEALER) - delimiter frame FAILED: {}",
-             zmq_strerror(err));
-        return err;
+             zmq_strerror(zmq_errno()));
+        return zmq_errno();
       }
-      in_multipart = true;
     }
 
     int base_flags = 0;
@@ -278,13 +312,10 @@ class ZeroMqTransport : public Transport {
 
     int rc = zmq_send(socket_, meta_str.data(), meta_str.size(), flags);
     if (rc == -1) {
-      int err = zmq_errno();
       HLOG(kError, "ZeroMqTransport::Send - meta FAILED: {}",
-           zmq_strerror(err));
-      if (in_multipart) FlushPartialMultipart();
-      return err;
+           zmq_strerror(zmq_errno()));
+      return zmq_errno();
     }
-    if (write_bulk_count > 0) in_multipart = true;
 
     size_t sent_count = 0;
     for (size_t i = 0; i < meta.send.size(); ++i) {
@@ -303,14 +334,10 @@ class ZeroMqTransport : public Transport {
                          zmq_noop_free, nullptr);
       rc = zmq_msg_send(&msg, socket_, flags);
       if (rc == -1) {
-        int err = zmq_errno();
         HLOG(kError, "ZeroMqTransport::Send - bulk {} FAILED: {}", i,
-             zmq_strerror(err));
+             zmq_strerror(zmq_errno()));
         zmq_msg_close(&msg);
-        if (in_multipart && sent_count < write_bulk_count) {
-          FlushPartialMultipart();
-        }
-        return err;
+        return zmq_errno();
       }
     }
     return 0;
@@ -320,11 +347,10 @@ class ZeroMqTransport : public Transport {
   ClientInfo Recv(MetaT& meta, const LbmContext& ctx = LbmContext()) {
     ClientInfo info;
     info.rc = RecvMetadata(meta, ctx);
-    if (info.rc != 0) {
-      DrainMultipart();
-      return info;
-    }
+    if (info.rc != 0) return info;
+    // Copy identity from recv into ClientInfo
     info.identity_ = meta.client_info_.identity_;
+    // Set up recv entries from send descriptors
     for (const auto& send_bulk : meta.send) {
       Bulk recv_bulk;
       recv_bulk.size = send_bulk.size;
@@ -333,44 +359,7 @@ class ZeroMqTransport : public Transport {
       meta.recv.push_back(recv_bulk);
     }
     info.rc = RecvBulks(meta, ctx);
-    if (info.rc != 0) {
-      DrainMultipart();
-    }
     return info;
-  }
-
-  /**
-   * Complete a partial multipart send with an empty final frame.
-   * After a ZMQ_SNDMORE frame is queued, the socket is in a multipart
-   * state. If a subsequent frame fails, the stale queued frames will be
-   * prepended to the NEXT Send, corrupting it.  Sending a 0-byte frame
-   * without ZMQ_SNDMORE completes (and flushes) the broken message so
-   * the socket is clean for the next caller.
-   */
-  void FlushPartialMultipart() {
-    zmq_send(socket_, "", 0, 0);
-  }
-
-  /**
-   * Drain any remaining frames of a partially-received multipart message.
-   * ZMQ delivers multipart messages atomically, so after reading the
-   * first frame the rest are already buffered.  If RecvMetadata or
-   * RecvBulks fails mid-message, the unconsumed frames would be read
-   * by the NEXT Recv call as if they were a new message, causing
-   * cascading frame misalignment (e.g. an empty delimiter read as
-   * metadata → msg_size=0).
-   */
-  void DrainMultipart() {
-    int more = 0;
-    size_t more_size = sizeof(more);
-    zmq_getsockopt(socket_, ZMQ_RCVMORE, &more, &more_size);
-    while (more) {
-      zmq_msg_t discard;
-      zmq_msg_init(&discard);
-      zmq_msg_recv(&discard, socket_, 0);
-      zmq_msg_close(&discard);
-      zmq_getsockopt(socket_, ZMQ_RCVMORE, &more, &more_size);
-    }
   }
 
  private:
@@ -398,17 +387,9 @@ class ZeroMqTransport : public Transport {
       zmq_msg_t delim_msg;
       zmq_msg_init(&delim_msg);
       rc = zmq_msg_recv(&delim_msg, socket_, 0);
-      if (rc == -1) {
-        zmq_msg_close(&delim_msg);
-        return zmq_errno();
-      }
-      int delim_more = zmq_msg_more(&delim_msg);
       zmq_msg_close(&delim_msg);
-      if (!delim_more) {
-        HLOG(kError,
-             "ZeroMQ RecvMetadata: Malformed multipart message - "
-             "no metadata frame after delimiter (ROUTER)");
-        return -1;
+      if (rc == -1) {
+        return zmq_errno();
       }
     } else {
       // DEALER mode: receive and discard empty delimiter frame
@@ -420,14 +401,7 @@ class ZeroMqTransport : public Transport {
         zmq_msg_close(&delim_msg);
         return err;
       }
-      int delim_more = zmq_msg_more(&delim_msg);
       zmq_msg_close(&delim_msg);
-      if (!delim_more) {
-        HLOG(kError,
-             "ZeroMQ RecvMetadata: Malformed multipart message - "
-             "no metadata frame after delimiter (DEALER)");
-        return -1;
-      }
     }
 
     // Receive metadata frame
@@ -442,20 +416,13 @@ class ZeroMqTransport : public Transport {
     }
 
     size_t msg_size = zmq_msg_size(&msg);
-    if (msg_size == 0) {
-      HLOG(kError,
-           "ZeroMQ RecvMetadata: Received empty metadata frame (msg_size=0), "
-           "likely a peer disconnect or heartbeat event");
-      zmq_msg_close(&msg);
-      return -1;
-    }
     try {
       std::string meta_str(static_cast<char*>(zmq_msg_data(&msg)), msg_size);
       std::istringstream iss(meta_str, std::ios::binary);
       cereal::BinaryInputArchive ar(iss);
       ar(meta);
     } catch (const std::exception& e) {
-      HLOG(kError,
+      HLOG(kFatal,
            "ZeroMQ RecvMetadata: Deserialization failed - {} (msg_size={})",
            e.what(), msg_size);
       zmq_msg_close(&msg);
@@ -518,7 +485,7 @@ class ZeroMqTransport : public Transport {
     size_t fd_size = sizeof(fd);
     zmq_getsockopt(socket_, ZMQ_FD, &fd, reinterpret_cast<::size_t *>(&fd_size));
     if (fd >= 0) {
-      em.AddEvent(fd, EPOLLIN);
+      em.AddEvent(fd, kDefaultReadEvent, nullptr);
     }
   }
 
@@ -531,6 +498,7 @@ class ZeroMqTransport : public Transport {
   void* ctx_;
   bool owns_ctx_;
   void* socket_;
+  ZmqFiredAction zmq_fired_action_;
 };
 
 }  // namespace hshm::lbm

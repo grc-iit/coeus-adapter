@@ -14,6 +14,7 @@
 #include "coeus/HermesEngine.h"
 #include "common/CatalystHelper.h"
 #include "comms/CTEHermes.h"
+#include <chimaera/chimaera.h>
 #include <chimaera/module_manager.h>
 #include <chimaera/ipc_manager.h>
 #include <chrono>
@@ -38,18 +39,28 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
+  // CTE requires Chimaera to be initialized first (WRP_CTE_CLIENT_INIT calls
+  // CHIMAERA_INIT internally; initializing here gives a clear error if runtime is down).
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+    std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
   hermes_ = new coeus::CTEHermes();
-  
-  // Initialize CTE via CTEHermes::connect()
+  // Initialize CTE via CTEHermes::connect() (creates/attaches to CTE pool)
   if (!hermes_->connect()) {
     delete hermes_;
     hermes_ = nullptr;
-    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect()");
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect(). "
+                            "Ensure Chimaera runtime is running (see error above or start with chimaera_start_runtime).");
   }
-  
-  //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
   Init_();
-
 }
 
 /**
@@ -59,12 +70,23 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io, const std::string &name,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
+  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+    std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
   hermes_ = new coeus::CTEHermes();
-  
   if (!hermes_->connect()) {
     delete hermes_;
     hermes_ = nullptr;
-    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect()");
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect(). "
+                            "Ensure Chimaera runtime is running (see error above or start with chimaera_start_runtime).");
   }
   Init_();
 }
@@ -129,20 +151,20 @@ void HermesEngine::Init_() {
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-  // Initialize Chimaera (Context-Runtime) for task management
-  // Note: CTEHermes::connect() already initializes Chimaera via WRP_CTE_CLIENT_INIT
-  // We use default_with_runtime=false to avoid starting runtime on every MPI rank
-  // Runtime should be started separately via chimaera_start_runtime or set CHIMAERA_WITH_RUNTIME=1
-  
-  // Check for CHIMAERA_WITH_RUNTIME environment variable and warn if set
-  const char* with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");
-  if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 || 
+  // Chimaera is already initialized in the constructor (before CTE connect).
+  // This call is idempotent; we use default_with_runtime=false so runtime is
+  // started separately (chimaera_start_runtime or CHI_WITH_RUNTIME=1).
+  const char* with_runtime_env = std::getenv("CHI_WITH_RUNTIME");
+  if (!with_runtime_env) {
+    with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");  // legacy
+  }
+  if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 ||
                            std::strcmp(with_runtime_env, "true") == 0 ||
                            std::strcmp(with_runtime_env, "TRUE") == 0)) {
-    std::cout << "WARNING: CHIMAERA_WITH_RUNTIME=1 is set. This will start runtime on every MPI rank." << std::endl;
+    std::cout << "WARNING: CHI_WITH_RUNTIME=1 (or CHIMAERA_WITH_RUNTIME=1) is set. "
+              << "This will start runtime on every MPI rank." << std::endl;
     std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
   }
-  
   if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
     std::cout << "ERROR: Could not initialize Chimaera" << std::endl;
     std::cout << "This usually means:" << std::endl;
@@ -151,7 +173,6 @@ void HermesEngine::Init_() {
     std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
     std::cout << "Solutions:" << std::endl;
     std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
-    std::cout << "  - Or set CHIMAERA_WITH_RUNTIME=1 to start runtime (only on rank 0 recommended)" << std::endl;
     std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }

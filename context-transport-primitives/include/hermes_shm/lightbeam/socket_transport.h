@@ -66,6 +66,7 @@ class SocketTransport : public Transport {
         em_(nullptr),
         fired_action_(&fired_events_) {
     type_ = TransportType::kSocket;
+    sock::InitSocketLib();
 
     if (mode == TransportMode::kClient) {
       // Client mode: connect
@@ -111,7 +112,7 @@ class SocketTransport : public Transport {
     } else {
       // Server mode: bind + listen
       if (protocol_ == "ipc") {
-        ::unlink(addr_.c_str());
+        sock::UnlinkPath(addr_.c_str());
         listen_fd_ = ::socket(AF_UNIX, SOCK_STREAM, 0);
         if (listen_fd_ == sock::kInvalidSocket) {
           throw std::runtime_error("SocketTransport: failed to create Unix socket");
@@ -165,7 +166,7 @@ class SocketTransport : public Transport {
       }
       sock::Close(listen_fd_);
       if (protocol_ == "ipc") {
-        ::unlink(addr_.c_str());
+        sock::UnlinkPath(addr_.c_str());
       }
     }
   }
@@ -193,13 +194,13 @@ class SocketTransport : public Transport {
   void RegisterEventManager(EventManager &em) {
     em_ = &em;
     if (IsClient()) {
-      em.AddEvent(fd_, EPOLLIN, &fired_action_);
+      em.AddEvent(fd_, kDefaultReadEvent, &fired_action_);
     } else {
       // listen_fd_: no action — just wakes epoll for new connections
-      em.AddEvent(listen_fd_, EPOLLIN, nullptr);
+      em.AddEvent(listen_fd_, kDefaultReadEvent, nullptr);
       // client fds: action populates fired_events_ for recv
       for (auto fd : client_fds_) {
-        em.AddEvent(fd, EPOLLIN, &fired_action_);
+        em.AddEvent(fd, kDefaultReadEvent, &fired_action_);
       }
     }
   }
@@ -237,27 +238,27 @@ class SocketTransport : public Transport {
       }
     }
 
-    std::vector<struct iovec> iov(iov_count);
+    std::vector<sock::IoBuffer> iov(iov_count);
     int idx = 0;
-    iov[idx].iov_base = &meta_len;
-    iov[idx].iov_len = sizeof(meta_len);
+    iov[idx].base = &meta_len;
+    iov[idx].len = sizeof(meta_len);
     idx++;
-    iov[idx].iov_base = const_cast<char*>(meta_str.data());
-    iov[idx].iov_len = meta_str.size();
+    iov[idx].base = const_cast<char*>(meta_str.data());
+    iov[idx].len = meta_str.size();
     idx++;
 
     for (size_t i = 0; i < meta.send.size(); ++i) {
       if (!meta.send[i].flags.Any(BULK_XFER)) continue;
-      iov[idx].iov_base = meta.send[i].data.ptr_;
-      iov[idx].iov_len = meta.send[i].size;
+      iov[idx].base = meta.send[i].data.ptr_;
+      iov[idx].len = meta.send[i].size;
       idx++;
     }
 
     // 3. Single writev syscall
     ssize_t sent = sock::SendV(send_fd, iov.data(), idx);
     if (sent < 0) {
-      HLOG(kError, "SocketTransport::Send - writev failed: {}", strerror(errno));
-      return errno;
+      HLOG(kError, "SocketTransport::Send - writev failed: {}", sock::GetErrorString());
+      return sock::GetError();
     }
     return 0;
   }
@@ -270,11 +271,12 @@ class SocketTransport : public Transport {
       if (em_) {
         auto it = std::find_if(fired_events_.begin(), fired_events_.end(),
             [this](const EventInfo &e) { return e.trigger_.fd_ == fd_; });
-        if (it == fired_events_.end()) { info.rc = EAGAIN; return info; }
+        if (it != fired_events_.end()) {
+          fired_events_.erase(it);
+        }
       }
       info.rc = RecvAll(fd_, meta, ctx);
       info.fd_ = fd_;
-      if (info.rc == EAGAIN) RemoveFiredEvent(fd_);
       return info;
     }
 
@@ -301,11 +303,11 @@ class SocketTransport : public Transport {
         }
         return info;
       }
-      info.rc = EAGAIN;
-      return info;
+      // Fall through to poll all client fds directly when fired_events_
+      // is exhausted (data may be on sockets that epoll hasn't re-armed yet)
     }
 
-    // Fallback: no EventManager — poll all client fds directly
+    // Poll all client fds directly
     for (size_t i = 0; i < client_fds_.size(); ++i) {
       sock::socket_t fd = client_fds_[i];
       info.rc = RecvAll(fd, meta, ctx);
@@ -355,18 +357,12 @@ class SocketTransport : public Transport {
     rc = sock::RecvExact(fd, &meta_str[0], meta_len);
     if (rc != 0) return -1;
 
-    if (meta_len == 0) {
-      HLOG(kError,
-           "Socket RecvMetadata: Received empty metadata (len=0), "
-           "likely a peer disconnect");
-      return -1;
-    }
     try {
       std::istringstream iss(meta_str, std::ios::binary);
       cereal::BinaryInputArchive ar(iss);
       ar(meta);
     } catch (const std::exception& e) {
-      HLOG(kError, "Socket RecvMetadata: Deserialization failed - {} (len={})",
+      HLOG(kFatal, "Socket RecvMetadata: Deserialization failed - {} (len={})",
            e.what(), meta_len);
       return -1;
     }
@@ -399,7 +395,7 @@ class SocketTransport : public Transport {
 
       if (rc != 0) {
         if (allocated) std::free(buf);
-        return errno;
+        return sock::GetError();
       }
 
       if (allocated) {
@@ -423,7 +419,7 @@ class SocketTransport : public Transport {
     sock::SetNonBlocking(fd, true);
     client_fds_.push_back(fd);
     if (em_) {
-      em_->AddEvent(fd, EPOLLIN, &fired_action_);
+      em_->AddEvent(fd, kDefaultReadEvent, &fired_action_);
     }
   }
 

@@ -53,6 +53,10 @@ start_docker_cluster() {
     log_info "Starting Docker cluster with $NUM_NODES nodes..."
     cd "$SCRIPT_DIR"
 
+    # Pass host UID/GID so container processes match host file ownership
+    export HOST_UID=$(id -u)
+    export HOST_GID=$(id -g)
+
     docker compose up -d
 
     log_info "Waiting for containers to initialize..."
@@ -75,7 +79,7 @@ stop_docker_cluster() {
 run_single_test() {
     local filter="$1"
     docker exec iowarp-recovery-node1 bash -c "
-        export CHIMAERA_WITH_RUNTIME=0
+        export CHI_WITH_RUNTIME=0
         chimaera_recovery_tests '$filter'
     "
 }

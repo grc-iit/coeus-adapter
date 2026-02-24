@@ -40,8 +40,10 @@
 
 #include "../simple_test.h"
 
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #include "chimaera/chimaera.h"
 #include "chimaera/ipc_manager.h"
@@ -57,6 +59,7 @@ static bool InitializeRuntime() {
   if (!initialized) {
     bool success = CHIMAERA_INIT(ChimaeraMode::kClient, true);
     initialized = success;
+    if (success) SimpleTest::g_test_finalize = chi::CHIMAERA_FINALIZE;
     return success;
   }
   return true;
@@ -97,7 +100,7 @@ TEST_CASE("Cleanup - Client Finalization", "[cleanup][ipc]") {
   pid_t server_pid = fork();
   if (server_pid == 0) {
     // Child: Start server
-    setenv("CHIMAERA_WITH_RUNTIME", "1", 1);
+    setenv("CHI_WITH_RUNTIME", "1", 1);
     CHIMAERA_INIT(ChimaeraMode::kServer, true);
     sleep(300);
     exit(0);
@@ -107,7 +110,7 @@ TEST_CASE("Cleanup - Client Finalization", "[cleanup][ipc]") {
   sleep(1);
 
   // Connect as client only
-  setenv("CHIMAERA_WITH_RUNTIME", "0", 1);
+  setenv("CHI_WITH_RUNTIME", "0", 1);
   bool success = CHIMAERA_INIT(ChimaeraMode::kClient, false);
   REQUIRE(success);
 

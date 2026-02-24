@@ -11,8 +11,11 @@ services:
   # Node 1 - Initial cluster member
   iowarp-node1:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-expand-node1
     hostname: iowarp-node1
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-expand-cluster:
         ipv4_address: 172.28.0.10
@@ -23,7 +26,7 @@ services:
       - NODE_IP=172.28.0.10
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/expand/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/expand/hostfile_initial
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
     mem_limit: 16g
@@ -41,8 +44,11 @@ services:
   # Node 2 - Initial cluster member
   iowarp-node2:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-expand-node2
     hostname: iowarp-node2
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       iowarp-expand-cluster:
         ipv4_address: 172.28.0.11
@@ -53,7 +59,7 @@ services:
       - NODE_IP=172.28.0.11
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/expand/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/expand/hostfile_initial
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
     mem_limit: 16g
@@ -68,8 +74,11 @@ services:
   # Node 3 - Inducted node (joins after cluster is up)
   iowarp-node3:
     image: iowarp/deps-cpu:latest
+    security_opt:
+      - seccomp:unconfined
     container_name: iowarp-expand-node3
     hostname: iowarp-node3
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     depends_on:
       - iowarp-node1
       - iowarp-node2
@@ -83,7 +92,7 @@ services:
       - NODE_IP=172.28.0.12
       - CHI_SERVER_CONF=/workspace/context-runtime/test/integration/expand/wrp_conf.yaml
       - CONTAINER_HOSTFILE=/workspace/context-runtime/test/integration/expand/hostfile_full
-      - CHIMAERA_WITH_RUNTIME=0
+      - CHI_WITH_RUNTIME=0
       - PATH=/workspace/build/bin:/usr/local/bin:/usr/bin:/bin
       - LD_LIBRARY_PATH=/workspace/build/bin:$LD_LIBRARY_PATH
     mem_limit: 16g
