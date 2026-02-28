@@ -155,8 +155,10 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
 void CatalystConfig();
 void CatalystInit();
 void CatalystExecute();
-std::unique_ptr<CatalystImpl> CatalystState;
-bool inline_writer_in_step_ = false;  // Track if InlineWriter BeginStep was called
+  std::unique_ptr<CatalystImpl> CatalystState;
+  bool inline_writer_in_step_ = false;  // Track if InlineWriter BeginStep was called
+  /** Accumulated time (microseconds) spent in SST Put calls during current step (in-transit). */
+  int64_t sst_put_time_us_ = 0;
 #endif
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;

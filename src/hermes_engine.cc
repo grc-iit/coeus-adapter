@@ -21,8 +21,6 @@
 #include <cstdlib>
 #include <cstring>
 
-
-
 namespace coeus {
 /**
  * Construct the HermesEngine.
@@ -324,7 +322,7 @@ void HermesEngine::Init_() {
       if (params.find("SSTDataTransport") != params.end()) {
         CatalystState->SSTIO->SetParameter("DataTransport", params["SSTDataTransport"]);
       } else {
-        CatalystState->SSTIO->SetParameter("DataTransport", "MPI");
+        CatalystState->SSTIO->SetParameter("DataTransport", "WAM");
       }
 
       for (const auto &it : varMap)
@@ -341,7 +339,7 @@ void HermesEngine::Init_() {
       }
 
       CatalystState->SSTWriter = &CatalystState->SSTIO->Open(
-          CatalystState->CatalystStreamName, adios2::Mode::Write);
+          CatalystState->CatalystStreamName, adios2::Mode::Write, m_Comm.Duplicate());
       if (rank == 0) {
         engine_logger->info("Catalyst SST stream: {} (multi-node)", CatalystState->CatalystStreamName);
       }
@@ -472,6 +470,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
   #ifdef COEUS_HAVE_CATALYST
   inline_writer_in_step_ = false;
+  if (CatalystState && CatalystState->UseSST()) {
+    sst_put_time_us_ = 0;  // Reset per-step SST Put timing for in-transit metrics
+  }
 
   if (CatalystState && CatalystState->CatalystWriter())
   {
@@ -631,9 +632,26 @@ void HermesEngine::EndStep()
   #ifdef COEUS_HAVE_CATALYST
    if (catalyst_active && catWriter)
    {
-    catWriter->EndStep();
-    if (use_inline) {
-      CatalystExecute();
+    if (CatalystState->UseSST())
+    {
+      auto sst_endstep_t0 = std::chrono::high_resolution_clock::now();
+      catWriter->EndStep();
+      auto sst_endstep_t1 = std::chrono::high_resolution_clock::now();
+      int64_t sst_endstep_us = static_cast<int64_t>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              sst_endstep_t1 - sst_endstep_t0).count());
+      if (rank == 0) {
+        engine_logger->info(
+            "SST in-transit step {}: Put time (us): {}, EndStep time (us): {}",
+            currentStep, sst_put_time_us_, sst_endstep_us);
+      }
+    }
+    else
+    {
+      catWriter->EndStep();
+      if (use_inline) {
+        CatalystExecute();
+      }
     }
     inline_writer_in_step_ = false;
    }
@@ -828,7 +846,15 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
      adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
      if (catVar)
      {
-       CatalystState->CatalystWriter()->Put(*catVar, values);
+       if (CatalystState->UseSST()) {
+         auto t0 = std::chrono::high_resolution_clock::now();
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+         auto t1 = std::chrono::high_resolution_clock::now();
+         sst_put_time_us_ += static_cast<int64_t>(
+             std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
+       } else {
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+       }
      }
    }
   #endif
@@ -861,7 +887,15 @@ void HermesEngine::DoPutDeferred_(
      adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
      if (catVar)
      {
-       CatalystState->CatalystWriter()->Put(*catVar, values);
+       if (CatalystState->UseSST()) {
+         auto t0 = std::chrono::high_resolution_clock::now();
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+         auto t1 = std::chrono::high_resolution_clock::now();
+         sst_put_time_us_ += static_cast<int64_t>(
+             std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
+       } else {
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+       }
      }
    }
   #endif
