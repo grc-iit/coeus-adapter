@@ -322,7 +322,7 @@ void HermesEngine::Init_() {
       if (params.find("SSTDataTransport") != params.end()) {
         CatalystState->SSTIO->SetParameter("DataTransport", params["SSTDataTransport"]);
       } else {
-        CatalystState->SSTIO->SetParameter("DataTransport", "WAM");
+        CatalystState->SSTIO->SetParameter("DataTransport", "WAN");
       }
 
       for (const auto &it : varMap)
