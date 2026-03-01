@@ -16,7 +16,7 @@
             <parameter key="db_file" value="##DBFILE##"/>
             <parameter key="DataModel" value="##DATAMODEL##"/>
             <parameter key="Script" value="##SCRIPT##"/>
-            <parameter key="CatalystStream" value="SST"/>
+            <parameter key="CatalystStream" value="gs.bp"/>
         </engine>
     </io>
 
@@ -36,16 +36,7 @@
         </engine>
     </io>
 
-<!--    <io name="SimulationCheckpoint">-->
-<!--        <engine type="Plugin">-->
-<!--            <parameter key="PluginName" value="hermes_checkpoint" />-->
-<!--            <parameter key="PluginLibrary" value="hermes_engine" />-->
 
-<!--            <parameter key="VarFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/var.yaml"/>-->
-<!--            <parameter key="OPFile" value="/home/jcernudagarcia/jarvis-pipelines/coeus_io_comp/io_comp/operator.yaml"/>-->
-<!--            <parameter key="db_file" value="/mnt/nvme/jcernudagarcia/metadata.db"/>-->
-<!--        </engine>-->
-<!--    </io>-->
     <io name="SimulationCheckpoint">
         <engine type="BP5">
         </engine>
