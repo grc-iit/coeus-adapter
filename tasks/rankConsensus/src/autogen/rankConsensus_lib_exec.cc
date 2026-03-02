@@ -264,19 +264,16 @@ hipc::FullPtr<chi::Task> Runtime::NewTask(chi::u32 method) {
 }
 
 void Runtime::Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> origin_task_ptr,
-                         hipc::FullPtr<chi::Task> replica_task_ptr) {
+                        const hipc::FullPtr<chi::Task>& replica_task_ptr) {
   switch (method) {
     case Method::kCreate: {
       auto origin_task = origin_task_ptr.template Cast<CreateTask>();
-      auto replica_task = replica_task_ptr.template Cast<CreateTask>();
-      // Call Aggregate (uses task-specific Aggregate if available, otherwise base Task::Aggregate)
-      origin_task->Aggregate(replica_task);
+      origin_task->Aggregate(replica_task_ptr);
       break;
     }
     case Method::kDestroy: {
       auto origin_task = origin_task_ptr.template Cast<DestroyTask>();
-      auto replica_task = replica_task_ptr.template Cast<DestroyTask>();
-      origin_task->Aggregate(replica_task);
+      origin_task->Aggregate(replica_task_ptr);
       break;
     }
     case Method::kGetRank: {

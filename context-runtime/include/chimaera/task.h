@@ -111,8 +111,9 @@ struct TaskGroup {
  * the individual task) and are used to route all group tasks consistently.
  */
 struct TaskStat {
-  size_t io_size_{0}; /**< I/O size in bytes */
-  size_t compute_{0}; /**< Normalized compute time in microseconds */
+  size_t io_size_{0};    /**< I/O size in bytes */
+  size_t compute_{0};    /**< Normalized compute time in microseconds */
+  float wall_time_{0};   /**< Normalized wall time input for InferWallClockTime */
 };
 
 // Define macros for container template
@@ -142,8 +143,13 @@ class Task {
       return_code_; /**< Task return code (0=success, non-zero=error) */
   OUT hipc::atomic<ContainerId>
       completer_; /**< Container ID that completed this task */
-  TaskStat stat_;        /**< Task statistics for I/O and compute tracking */
   TaskGroup task_group_; /**< Scheduling affinity group (null = no affinity) */
+
+  /**
+   * Non-virtual destructor - tasks are deleted via Container::DelTask
+   * which dispatches through typed pointers, not vtable
+   */
+  ~Task() = default;
 
   /**
    * Default constructor
@@ -188,7 +194,6 @@ class Task {
     // The RunContext will be initialized when the task is executed
     return_code_.store(other->return_code_.load());
     completer_.store(other->completer_.load());
-    stat_ = other->stat_;
     task_group_ = other->task_group_;
   }
 
@@ -207,8 +212,6 @@ class Task {
 #endif
     return_code_.store(0);  // Initialize as success
     completer_.store(0);    // Initialize as null (0 is invalid container ID)
-    stat_.io_size_ = 0;
-    stat_.compute_ = 0;
     task_group_ = TaskGroup();  // null group
   }
 
@@ -388,28 +391,18 @@ class Task {
    *
    * @param replica_task The replica task to aggregate from
    */
-  template <typename TaskT>
-  HSHM_CROSS_FUN void Aggregate(const hipc::FullPtr<TaskT>& replica_task) {
-    // Cast to base Task for aggregation
-    auto base_replica = replica_task.template Cast<Task>();
+  void Aggregate(const hipc::FullPtr<Task>& replica_task) {
     // Propagate return code from replica to this task
-    if (!base_replica.IsNull() && base_replica->GetReturnCode() != 0) {
-      SetReturnCode(base_replica->GetReturnCode());
+    if (!replica_task.IsNull() && replica_task->GetReturnCode() != 0) {
+      SetReturnCode(replica_task->GetReturnCode());
     }
     // Copy the completer from the replica task
-    if (!base_replica.IsNull()) {
-      SetCompleter(base_replica->GetCompleter());
+    if (!replica_task.IsNull()) {
+      SetCompleter(replica_task->GetCompleter());
     }
     HLOG(kDebug, "[COMPLETER] Aggregated task {} with completer {}", task_id_,
          GetCompleter());
   }
-
-  /**
-   * Estimate CPU time for this task based on I/O size and compute time
-   * Formula: (io_size / 4GBps) + compute + 5us
-   * @return Estimated CPU time in microseconds
-   */
-  HSHM_CROSS_FUN size_t EstCpuTime() const;
 
   /**
    * Get the copy space size for serialized task output
@@ -610,6 +603,11 @@ class Future {
    * Sets the task pointer to null afterwards
    */
   HSHM_CROSS_FUN void Destroy(bool post_wait = false);
+
+  /**
+   * Explicitly delete the underlying task via CHI_IPC->DelTask
+   */
+  HSHM_CROSS_FUN void DelTask();
 
   /**
    * Copy constructor - does not transfer ownership
@@ -849,7 +847,12 @@ class Future {
    * @return True if task is complete, false if coroutine should suspend
    */
   bool await_ready() const noexcept {
-    return IsComplete();
+    if (IsComplete()) return true;
+    if (!task_ptr_.IsNull() &&
+        task_ptr_->task_flags_.Any(TASK_FIRE_AND_FORGET)) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -881,6 +884,14 @@ class Future {
    * case). Calls PostWait() on the task for post-completion actions.
    */
   void await_resume() noexcept {
+    if (!task_ptr_.IsNull() &&
+        task_ptr_->task_flags_.Any(TASK_FIRE_AND_FORGET)) {
+      // Fire-and-forget: detach without destroying. The task is still
+      // in-flight on the network; the remote EndTask will clean it up.
+      task_ptr_.SetNull();
+      future_shm_.SetNull();
+      return;
+    }
     Destroy(true);
   }
 };
@@ -972,6 +983,11 @@ struct RunContext {
                                      queue additions */
   double true_period_ns_;       /**< Original period from task->period_ns_ */
   bool did_work_;               /**< Whether task did work in last execution */
+  hshm::CpuTimer cpu_timer_;   /**< Accumulates thread CPU time across yields */
+  float predicted_load_ = 0;   /**< Predicted CPU time from InferModel (us) */
+  hshm::HighResMonotonicTimer wall_timer_;  /**< Wall clock time across yields */
+  float predicted_wall_us_ = 0;  /**< Predicted wall time from InferWallClockTime */
+  TaskStat predicted_stat_;      /**< TaskStat used for prediction (for reinforcement) */
 
   RunContext()
       : coro_handle_(nullptr),
@@ -1008,7 +1024,12 @@ struct RunContext {
         future_(std::move(other.future_)),
         is_notified_(other.is_notified_.load()),
         true_period_ns_(other.true_period_ns_),
-        did_work_(other.did_work_) {
+        did_work_(other.did_work_),
+        cpu_timer_(other.cpu_timer_),
+        predicted_load_(other.predicted_load_),
+        wall_timer_(other.wall_timer_),
+        predicted_wall_us_(other.predicted_wall_us_),
+        predicted_stat_(other.predicted_stat_) {
     other.coro_handle_ = nullptr;
     other.event_queue_ = nullptr;
   }
@@ -1035,6 +1056,11 @@ struct RunContext {
       is_notified_.store(other.is_notified_.load());
       true_period_ns_ = other.true_period_ns_;
       did_work_ = other.did_work_;
+      cpu_timer_ = other.cpu_timer_;
+      predicted_load_ = other.predicted_load_;
+      wall_timer_ = other.wall_timer_;
+      predicted_wall_us_ = other.predicted_wall_us_;
+      predicted_stat_ = other.predicted_stat_;
       other.coro_handle_ = nullptr;
       other.event_queue_ = nullptr;
     }
@@ -1059,6 +1085,11 @@ struct RunContext {
     is_notified_.store(false);
     true_period_ns_ = 0.0;
     did_work_ = false;
+    cpu_timer_.time_ns_ = 0;
+    predicted_load_ = 0;
+    wall_timer_.time_ns_ = 0;
+    predicted_wall_us_ = 0;
+    predicted_stat_ = TaskStat();
   }
 };
 
@@ -1474,34 +1505,6 @@ inline YieldAwaiter yield(double us = 0.0) { return YieldAwaiter(us); }
 // Cleanup macros
 #undef CLASS_NAME
 #undef CLASS_NEW_ARGS
-
-/**
- * SFINAE-based compile-time detection and invocation for Aggregate method
- * Usage: CHI_AGGREGATE_OR_COPY(origin_ptr, replica_ptr)
- */
-namespace detail {
-// Primary template - assumes no Aggregate method, calls Copy
-template <typename T, typename = void>
-struct aggregate_or_copy {
-  static void call(hipc::FullPtr<T> origin, hipc::FullPtr<T> replica) {
-    origin->Copy(replica);
-  }
-};
-
-// Specialization for types with Aggregate method - calls Aggregate
-template <typename T>
-struct aggregate_or_copy<T, std::void_t<decltype(std::declval<T*>()->Aggregate(
-                                std::declval<hipc::FullPtr<T>>()))>> {
-  static void call(hipc::FullPtr<T> origin, hipc::FullPtr<T> replica) {
-    origin->Aggregate(replica);
-  }
-};
-}  // namespace detail
-
-// Macro for convenient usage - automatically dispatches to Aggregate or Copy
-#define CHI_AGGREGATE_OR_COPY(origin_ptr, replica_ptr)         \
-  chi::detail::aggregate_or_copy<typename std::remove_pointer< \
-      decltype((origin_ptr).ptr_)>::type>::call((origin_ptr), (replica_ptr))
 
 }  // namespace chi
 

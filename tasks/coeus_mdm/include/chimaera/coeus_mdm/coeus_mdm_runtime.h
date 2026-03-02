@@ -106,7 +106,7 @@ class Runtime : public chi::Container {
    * Aggregate replica results into origin task
    */
   void Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> origin_task_ptr,
-                 hipc::FullPtr<chi::Task> replica_task_ptr) override;
+                 const hipc::FullPtr<chi::Task>& replica_task_ptr) override;
 
   //===========================================================================
   // Method implementations

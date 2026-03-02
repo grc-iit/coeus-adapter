@@ -236,6 +236,12 @@ class Runtime : public chi::Container {
   ~Runtime() override;
 
   /**
+   * Get live task statistics per method.
+   * For Read/Write, returns default 1MB io_size routing hint.
+   */
+  chi::TaskStat GetTaskStats(chi::u32 method_id) const override;
+
+  /**
    * Create the container (Method::kCreate)
    * This method both creates and initializes the container
    */
@@ -267,6 +273,11 @@ class Runtime : public chi::Container {
   chi::TaskResume GetStats(hipc::FullPtr<GetStatsTask> task, chi::RunContext& ctx);
 
   /**
+   * Monitor container state (Method::kMonitor)
+   */
+  chi::TaskResume Monitor(hipc::FullPtr<MonitorTask> task, chi::RunContext &rctx);
+
+  /**
    * Destroy the container (Method::kDestroy)
    */
   chi::TaskResume Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext& ctx);
@@ -286,11 +297,6 @@ class Runtime : public chi::Container {
    */
   chi::TaskResume Run(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr,
                       chi::RunContext& rctx) override;
-
-  /**
-   * Delete/cleanup a task - using autogen dispatcher
-   */
-  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
 
   /**
    * Get remaining work count for this container
@@ -341,13 +347,9 @@ class Runtime : public chi::Container {
    * Create a new task of the specified method type
    */
   hipc::FullPtr<chi::Task> NewTask(chi::u32 method) override;
-
-  /**
-   * Aggregate a replica task into the origin task (for merging replica results)
-   */
-  void Aggregate(chi::u32 method,
-                 hipc::FullPtr<chi::Task> origin_task_ptr,
-                 hipc::FullPtr<chi::Task> replica_task_ptr) override;
+  void Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> orig_task,
+                 const hipc::FullPtr<chi::Task>& replica_task) override;
+  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
 
  private:
   // Client for making calls to this ChiMod

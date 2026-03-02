@@ -47,7 +47,7 @@ namespace chi {
 // Static factory methods
 // Note: PoolQuery::Local() is now inline in pool_query.h for GPU compatibility
 
-PoolQuery PoolQuery::DirectId(ContainerId container_id) {
+PoolQuery PoolQuery::DirectId(ContainerId container_id, float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::DirectId;
   query.hash_value_ = 0;
@@ -55,10 +55,11 @@ PoolQuery PoolQuery::DirectId(ContainerId container_id) {
   query.range_offset_ = 0;
   query.range_count_ = 0;
   query.node_id_ = 0;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
-PoolQuery PoolQuery::DirectHash(u32 hash) {
+PoolQuery PoolQuery::DirectHash(u32 hash, float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::DirectHash;
   query.hash_value_ = hash;
@@ -66,10 +67,11 @@ PoolQuery PoolQuery::DirectHash(u32 hash) {
   query.range_offset_ = 0;
   query.range_count_ = 0;
   query.node_id_ = 0;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
-PoolQuery PoolQuery::Range(u32 offset, u32 count) {
+PoolQuery PoolQuery::Range(u32 offset, u32 count, float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::Range;
   query.hash_value_ = 0;
@@ -77,10 +79,11 @@ PoolQuery PoolQuery::Range(u32 offset, u32 count) {
   query.range_offset_ = offset;
   query.range_count_ = count;
   query.node_id_ = 0;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
-PoolQuery PoolQuery::Broadcast() {
+PoolQuery PoolQuery::Broadcast(float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::Broadcast;
   query.hash_value_ = 0;
@@ -88,10 +91,11 @@ PoolQuery PoolQuery::Broadcast() {
   query.range_offset_ = 0;
   query.range_count_ = 0;
   query.node_id_ = 0;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
-PoolQuery PoolQuery::Physical(u32 node_id) {
+PoolQuery PoolQuery::Physical(u32 node_id, float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::Physical;
   query.hash_value_ = 0;
@@ -99,10 +103,11 @@ PoolQuery PoolQuery::Physical(u32 node_id) {
   query.range_offset_ = 0;
   query.range_count_ = 0;
   query.node_id_ = node_id;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
-PoolQuery PoolQuery::Dynamic() {
+PoolQuery PoolQuery::Dynamic(float net_timeout) {
   PoolQuery query;
   query.routing_mode_ = RoutingMode::Dynamic;
   query.hash_value_ = 0;
@@ -110,6 +115,7 @@ PoolQuery PoolQuery::Dynamic() {
   query.range_offset_ = 0;
   query.range_count_ = 0;
   query.node_id_ = 0;
+  query.net_timeout_ = net_timeout;
   return query;
 }
 
@@ -121,10 +127,53 @@ PoolQuery PoolQuery::FromString(const std::string& str) {
 
   if (lower_str == "local") {
     return PoolQuery::Local();
+  } else if (lower_str == "broadcast") {
+    return PoolQuery::Broadcast();
   } else if (lower_str == "dynamic") {
     return PoolQuery::Dynamic();
+  } else if (lower_str.rfind("direct_id:", 0) == 0) {
+    u32 id = std::stoul(lower_str.substr(10));
+    return PoolQuery::DirectId(id);
+  } else if (lower_str.rfind("direct_hash:", 0) == 0) {
+    u32 hash = std::stoul(lower_str.substr(12));
+    return PoolQuery::DirectHash(hash);
+  } else if (lower_str.rfind("range:", 0) == 0) {
+    // Format: range:<offset>:<count>
+    size_t first_colon = 5;  // after "range"
+    size_t second_colon = lower_str.find(':', first_colon + 1);
+    if (second_colon == std::string::npos) {
+      throw std::invalid_argument("Invalid range format, expected 'range:<offset>:<count>'");
+    }
+    u32 offset = std::stoul(lower_str.substr(first_colon + 1, second_colon - first_colon - 1));
+    u32 count = std::stoul(lower_str.substr(second_colon + 1));
+    return PoolQuery::Range(offset, count);
+  } else if (lower_str.rfind("physical:", 0) == 0) {
+    u32 node_id = std::stoul(lower_str.substr(9));
+    return PoolQuery::Physical(node_id);
   } else {
-    throw std::invalid_argument("Invalid PoolQuery string, expected 'local' or 'dynamic'");
+    throw std::invalid_argument(
+        "Invalid PoolQuery string: '" + str + "'");
+  }
+}
+
+std::string PoolQuery::ToString() const {
+  switch (routing_mode_) {
+    case RoutingMode::Local:
+      return "local";
+    case RoutingMode::Broadcast:
+      return "broadcast";
+    case RoutingMode::Dynamic:
+      return "dynamic";
+    case RoutingMode::DirectId:
+      return "direct_id:" + std::to_string(container_id_);
+    case RoutingMode::DirectHash:
+      return "direct_hash:" + std::to_string(hash_value_);
+    case RoutingMode::Range:
+      return "range:" + std::to_string(range_offset_) + ":" + std::to_string(range_count_);
+    case RoutingMode::Physical:
+      return "physical:" + std::to_string(node_id_);
+    default:
+      return "unknown";
   }
 }
 

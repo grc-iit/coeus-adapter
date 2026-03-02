@@ -69,12 +69,14 @@ Worker::Worker(u32 worker_id)
     : worker_id_(worker_id),
       is_running_(false),
       is_initialized_(false),
+      load_(0),
       did_work_(false),
       task_did_work_(false),
       current_run_context_(nullptr),
       assigned_lane_(nullptr),
       event_queue_(nullptr),
       last_long_queue_check_(0),
+      num_tasks_processed_(0),
       iteration_count_(0),
       idle_iterations_(0),
       current_sleep_us_(0),
@@ -166,9 +168,8 @@ WorkerStats Worker::GetWorkerStats() const {
   stats.suspend_period_us_ =
       (suspend_period < 0) ? 0 : static_cast<u32>(suspend_period);
 
-  // Note: num_tasks_processed_ would require adding a counter to the worker
-  // For now, set to 0 - can be added later if needed
-  stats.num_tasks_processed_ = 0;
+  stats.num_tasks_processed_ = num_tasks_processed_;
+  stats.load_ = load_;
 
   return stats;
 }
@@ -692,13 +693,29 @@ void Worker::ExecTask(const FullPtr<Task> &task_ptr, RunContext *run_ctx,
     run_ctx->container_ = exec_container;
   }
 
+  // Start CPU and wall timers before execution
+  run_ctx->cpu_timer_.Resume();
+  run_ctx->wall_timer_.Resume();
+
   // Call appropriate coroutine function based on task state
   if (is_started) {
     ResumeCoroutine(task_ptr, run_ctx);
   } else {
     StartCoroutine(task_ptr, run_ctx);
     task_ptr->SetFlags(TASK_STARTED);
+
+    // Predict load for new tasks
+    if (run_ctx->container_) {
+      run_ctx->predicted_stat_ = run_ctx->container_->GetTaskStats(task_ptr->method_);
+      run_ctx->predicted_load_ = run_ctx->container_->InferCpuTime(task_ptr->method_, run_ctx->predicted_stat_);
+      run_ctx->predicted_wall_us_ = run_ctx->container_->InferWallClockTime(task_ptr->method_, run_ctx->predicted_stat_);
+      load_ += run_ctx->predicted_load_;
+    }
   }
+
+  // Pause CPU and wall timers after execution
+  run_ctx->cpu_timer_.Pause();
+  run_ctx->wall_timer_.Pause();
 
   // For periodic tasks, only set task_did_work_ if the task reported
   // actual work done (e.g., received data, sent data). This prevents
@@ -750,6 +767,9 @@ void Worker::EndTaskShmTransfer(const FullPtr<Task> &task_ptr,
 
   // Set FUTURE_COMPLETE and clean up task
   future_shm->flags_.SetBits(FutureShm::FUTURE_COMPLETE);
+  // Clear TASK_DATA_OWNER before deletion so the destructor
+  // doesn't try to FreeBuffer on transport-allocated data
+  task_ptr->ClearFlags(TASK_DATA_OWNER);
   container->DelTask(task_ptr->method_, task_ptr);
 }
 
@@ -761,6 +781,22 @@ void Worker::EndTask(const FullPtr<Task> &task_ptr, RunContext *run_ctx,
     HLOG(kError, "EndTask: container is null");
     return;
   }
+
+  // Track completed tasks
+  ++num_tasks_processed_;
+
+  // Subtract predicted load from worker
+  load_ -= run_ctx->predicted_load_;
+
+  // Reinforce model with actual CPU and wall time
+  float actual_cpu_us = static_cast<float>(run_ctx->cpu_timer_.GetUsec());
+  float actual_wall_us = static_cast<float>(run_ctx->wall_timer_.GetUsec());
+  container->ReinforceCpuModel(
+      task_ptr->method_, run_ctx->predicted_load_, actual_cpu_us,
+      run_ctx->predicted_stat_);
+  container->ReinforceWallModel(
+      task_ptr->method_, run_ctx->predicted_wall_us_, actual_wall_us,
+      run_ctx->predicted_stat_);
 
   // Get task properties at the start
   bool is_remote = task_ptr->IsRemote();
@@ -775,6 +811,13 @@ void Worker::EndTask(const FullPtr<Task> &task_ptr, RunContext *run_ctx,
   // Decrement work remaining for non-periodic tasks
   if (!is_periodic) {
     container->UpdateWork(task_ptr, *run_ctx, -1);
+  }
+
+  // Fire-and-forget: skip all response paths, just delete the task
+  if (task_ptr->task_flags_.Any(TASK_FIRE_AND_FORGET)) {
+    task_ptr->ClearFlags(TASK_DATA_OWNER);
+    container->DelTask(task_ptr->method_, task_ptr);
+    return;
   }
 
   // If task is remote, enqueue to net_queue_ for SendOut
@@ -1169,6 +1212,13 @@ void Worker::ReschedulePeriodicTask(RunContext *run_ctx,
   if (!run_ctx || task_ptr.IsNull() || !task_ptr->IsPeriodic()) {
     return;
   }
+
+  // Reset timers and predictions for next period
+  run_ctx->cpu_timer_.time_ns_ = 0;
+  run_ctx->wall_timer_.time_ns_ = 0;
+  run_ctx->predicted_load_ = 0;
+  run_ctx->predicted_wall_us_ = 0;
+  run_ctx->predicted_stat_ = TaskStat();
 
   // Get the lane from the run context
   TaskLane *lane = run_ctx->lane_;

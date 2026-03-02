@@ -95,11 +95,6 @@ public:
    */
   chi::TaskResume Run(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr, chi::RunContext& rctx) override;
 
-  /**
-   * Delete/cleanup a task
-   */
-  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
-
   //===========================================================================
   // Method implementations
   //===========================================================================
@@ -145,6 +140,12 @@ public:
    * Returns TaskResume for coroutine-based async operations
    */
   chi::TaskResume GpuSubmit(hipc::FullPtr<GpuSubmitTask> task, chi::RunContext& rctx);
+
+  /**
+   * Handle Monitor task - return msgpack-encoded test data
+   * Part of the unified kMonitor:9 interface
+   */
+  chi::TaskResume Monitor(hipc::FullPtr<MonitorTask> task, chi::RunContext &rctx);
 
   /**
    * Handle Destroy task - Alias for DestroyPool (DestroyTask = DestroyPoolTask)
@@ -205,13 +206,10 @@ public:
    * Create a new task of the specified method type
    */
   hipc::FullPtr<chi::Task> NewTask(chi::u32 method) override;
+  void Aggregate(chi::u32 method, hipc::FullPtr<chi::Task> orig_task,
+                 const hipc::FullPtr<chi::Task>& replica_task) override;
+  void DelTask(chi::u32 method, hipc::FullPtr<chi::Task> task_ptr) override;
 
-  /**
-   * Aggregate a replica task into the origin task (for merging replica results)
-   */
-  void Aggregate(chi::u32 method,
-                 hipc::FullPtr<chi::Task> origin_task_ptr,
-                 hipc::FullPtr<chi::Task> replica_task_ptr) override;
 };
 
 } // namespace chimaera::MOD_NAME
