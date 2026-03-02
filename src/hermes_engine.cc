@@ -218,9 +218,7 @@ void HermesEngine::Init_() {
     rank_consensus.Init(rankConsensus_pool_id_);
   }
   rank = rank_consensus.GetRank(chi::PoolQuery::Local());
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:220\",\"message\":\"after_get_rank\",\"data\":{\"mpi_rank\":" << mpi_rank << ",\"rank\":" << rank << "},\"hypothesisId\":\"E\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
+
 
   std::cout << "MPI rank " << mpi_rank << " -> consensus rank: " << rank << std::endl;
  
@@ -266,18 +264,14 @@ void HermesEngine::Init_() {
     std::string varFile = params["VarFile"];
     if (rank == 0)
       std::cout << "varFile: " << varFile << std::endl;
-    // #region agent log
-    { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:266\",\"message\":\"before_varfile_parse\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"A\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-    // #endregion
+ 
     try {
       variableMap = YAMLParser(varFile).parse();
     } catch (std::exception &e) {
       engine_logger->warn("Could not parse variable file", rank);
       throw e;
     }
-    // #region agent log
-    { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:272\",\"message\":\"after_varfile_parse\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"A\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-    // #endregion
+
   }
 
   // Chimaera setup for metadata management (coeus_mdm)
@@ -290,36 +284,26 @@ void HermesEngine::Init_() {
       client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     }
     // #region agent log
-    { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:282\",\"message\":\"before_barrier_coeus_mdm\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
+    
     // #endregion
     m_Comm.Barrier("Init_:coeus_mdm_pool_created");
-    // #region agent log
-    { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:286\",\"message\":\"after_barrier_coeus_mdm\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-    // #endregion
+ 
     if (mpi_rank != 0) {
       client.Init(coeus_mdm_pool_id_);
     }
     if (rank % ppn == 0) {
-      // #region agent log
-      { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:291\",\"message\":\"before_createTables\",\"data\":{\"mpi_rank\":" << mpi_rank << ",\"rank\":" << rank << "},\"hypothesisId\":\"D\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-      // #endregion
+
       db->createTables();
-      // #region agent log
-      { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:295\",\"message\":\"after_createTables\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"D\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-      // #endregion
+
     }
   }
 
   // Synchronize before Catalyst/Inline setup so all ranks enter together.
   // Otherwise ranks that skip createTables() can reach Open()/catalyst_initialize()
   // while others are still in createTables(); if those calls are collective, we deadlock.
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:305\",\"message\":\"before_barrier_before_catalyst\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"C\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
+
   m_Comm.Barrier("Init_:before_catalyst");
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:310\",\"message\":\"after_barrier_before_catalyst\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"C\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
+
 
   // if(params.find("execution_order") != params.end()) {
   //     adiosOutput = params["execution_order"];
@@ -366,14 +350,10 @@ void HermesEngine::Init_() {
    #undef declare_type_sst
       }
 
-      // #region agent log
-      { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:352\",\"message\":\"before_sst_open\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"E2\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-      // #endregion
+  
       CatalystState->SSTWriter = &CatalystState->SSTIO->Open(
           CatalystState->CatalystStreamName, adios2::Mode::Write, m_Comm.Duplicate());
-      // #region agent log
-      { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:356\",\"message\":\"after_sst_open\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"E2\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-      // #endregion
+  
       if (rank == 0) {
         engine_logger->info("Catalyst SST stream: {} (multi-node)", CatalystState->CatalystStreamName);
       }
@@ -541,6 +521,9 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
   std::string tag_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
+  // #region agent log
+ 
+  // #endregion
   // if two same run happened in one pipeline
   //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
     // Get or create CTE tag using IHermes interface
@@ -900,6 +883,9 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   #endif
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
+  // #region agent log
+  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-6450bd.log", std::ios::app); _f << "{\"sessionId\":\"6450bd\",\"location\":\"hermes_engine.cc:DoPutSync_\",\"message\":\"put_blob_sync\",\"data\":{\"name\":\"" << name << "\",\"blob_size\":" << blob_size << ",\"currentStep\":" << currentStep << ",\"rank\":" << rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
+  // #endregion
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutSync_: Put failed for " + name);
   }
@@ -940,6 +926,9 @@ void HermesEngine::DoPutDeferred_(
    }
   #endif
 
+  // #region agent log
+  { const size_t sel = variable.SelectionSize(); auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-6450bd.log", std::ios::app); _f << "{\"sessionId\":\"6450bd\",\"location\":\"hermes_engine.cc:DoPutDeferred_\",\"message\":\"put_blob\",\"data\":{\"name\":\"" << name << "\",\"blob_size\":" << blob_size << ",\"selection_size\":" << sel << ",\"currentStep\":" << currentStep << ",\"rank\":" << rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
+  // #endregion
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
   }
