@@ -21,12 +21,12 @@ GS_FIDES_JSON="${SCRIPT_DIR}/catalyst/gs-fides.json"
 SSH_WRAPPER="${SCRIPT_DIR}/ssh-spack-wrapper.sh"
 # The simulation's CWD is the home directory, so the SST contact file
 # (gs.bp.sst) is created there (CatalystStream=gs.bp is a relative path).
-GS_BP="${GS_BP:-/home/hxu40/gs.bp}"
+GS_BP="/home/hxu40/gs.bp"
 
 # ---- Node assignments ----
 # NOTE: Cross-node SaveScreenshot hangs due to IceT compositing issues
 # with the current MPI/network config.  Use a single reader node.
-READER_NODES="${READER_NODES:-ares-comp-18:16}"
+READER_NODES="ares-comp-18:16"
 
 # ---- Working directory (run from project root) ----
 cd "${SCRIPT_DIR}"
