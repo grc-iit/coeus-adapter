@@ -20,6 +20,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 #include <fstream>
 
 namespace coeus {
@@ -386,13 +387,8 @@ void HermesEngine::Init_() {
   // Synchronize all ranks after pool setup and optional Catalyst/Inline init.
   // Prevents deadlock when the application (or ADIOS2) performs a collective
   // immediately after opening the engine (e.g. first BeginStep or Put).
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:388\",\"message\":\"before_barrier_setup_complete\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"C\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
   m_Comm.Barrier("Init_:setup_complete");
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-09f806.log", std::ios::app); _f << "{\"sessionId\":\"09f806\",\"location\":\"hermes_engine.cc:392\",\"message\":\"after_barrier_setup_complete\",\"data\":{\"mpi_rank\":" << mpi_rank << "},\"hypothesisId\":\"C\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
+ 
 
   open = true;
 
@@ -403,10 +399,44 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
+  int mpi_rank = m_Comm.Rank();
+  // Ensure all ranks have completed EndStep before closing SST collectively.
+  
+  m_Comm.Barrier("DoClose:before_sst_close");
+  
   #ifdef COEUS_HAVE_CATALYST
   if (CatalystState && CatalystState->CatalystWriter())
   {
-    CatalystState->CatalystWriter()->Close(transportIndex);
+    if (CatalystState->UseSST()) {
+      // SST Close() blocks indefinitely waiting for the reader to
+      // acknowledge EndOfStream.  Skip it — RemoveIO below destroys
+      // the engine (closing TCP sockets), and the reader will detect
+      // the disconnect.
+      engine_logger->info("DoClose: MPI rank {} skipping SST Close", mpi_rank);
+      // Give the reader time to finish processing the last step.
+      // Without this delay, destroying the SST engine immediately causes
+      // "Writer failed before returning data" abort on the reader side
+      // (C++ std::runtime_error that cannot be caught in Python).
+      engine_logger->info("DoClose: MPI rank {} waiting 4s for reader to finish last step", mpi_rank);
+      std::this_thread::sleep_for(std::chrono::seconds(4));
+      engine_logger->info("DoClose: MPI rank {} done waiting, destroying SST engine", mpi_rank);
+      // Remove the SST contact file so external watchdogs can detect
+      // that the writer has exited.  Only rank 0 needs to do this.
+      if (mpi_rank == 0 && !CatalystState->CatalystStreamName.empty()) {
+        std::string sst_contact = CatalystState->CatalystStreamName + ".sst";
+        if (std::remove(sst_contact.c_str()) == 0) {
+          engine_logger->info("DoClose: removed SST contact file '{}'", sst_contact);
+        }
+      }
+      CatalystState->SSTWriter = nullptr;
+      CatalystState->SSTIO = nullptr;
+      // Remove the IO so the ADIOS2 destructor (which runs after
+      // MPI_Finalize) does not attempt a late SST cleanup.
+      try { m_IO.m_ADIOS.RemoveIO("CatalystSSTIO"); }
+      catch (...) { engine_logger->warn("DoClose: RemoveIO(CatalystSSTIO) failed"); }
+    } else {
+      CatalystState->CatalystWriter()->Close(transportIndex);
+    }
   }
   #endif
   // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)

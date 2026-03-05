@@ -7,7 +7,7 @@ from jarvis_cd.core.pkg import Application
 from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm, PscpExec, PscpExecInfo
 import json
 import os
-
+import shutil
 
 class Adios2GrayScott(Application):
     """
@@ -304,6 +304,13 @@ class Adios2GrayScott(Application):
 
         :return: None
         """
+        os.environ['OMPI_MCA_pml'] = 'ob1'
+        os.environ['OMPI_MCA_btl'] = 'tcp,self'
+        os.environ['OMPI_MCA_osc'] = '^ucx'
+        # Note: Network interface 'eno1' is hardcoded - may need to be configurable
+        # for different systems. Consider adding network_interface parameter to config.
+        os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
+        os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
         # Ensure paths are initialized
         if self.settings_json_path is None:
             self._ensure_directories()

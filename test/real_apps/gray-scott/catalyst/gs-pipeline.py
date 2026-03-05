@@ -10,10 +10,14 @@ DISABLE_EXTRACTOR = False
 from paraview import catalyst
 options = catalyst.Options()
 options.GlobalTrigger = 'TimeStep'
-options.EnableCatalystLive = 1
-options.CatalystLiveTrigger = 'TimeStep'
 options.ExtractsOutputDirectory = '/tmp'
 #options.ExtractsOutputDirectory = '.'
+
+# Catalyst Live only works with a single process;
+# disable it when running in __main__ (streaming) mode with MPI.
+if __name__ != '__main__':
+    options.EnableCatalystLive = 1
+    options.CatalystLiveTrigger = 'TimeStep'
 
 
 # setup and returns the view
@@ -133,42 +137,92 @@ def ParseArgs():
     parser.add_argument("-j", "--json_filename", help="path to Fides JSON file", type=str, required=False)
     parser.add_argument("-b", "--bp_filename", help="path to bp file", type=str, required=True)
     parser.add_argument("--staging", help="use SST engine", action='store_true')
+    parser.add_argument("--num-steps", help="total number of writer steps (exit after receiving all)", type=int, default=0)
     args = parser.parse_args()
     return args
 
 
 def StreamingVis(args):
+    import sys, time
+
     # adios/fides step status
     OK = 0
     NotReady = 1
     EndOfStream = 2
 
     # setup the reader, view, pipeline
+    print(f'[Reader] Setting up Fides reader ...', flush=True)
     fides = SetupFidesReader(args.json_filename, args.bp_filename, args.staging)
+    print(f'[Reader] Fides reader ready', flush=True)
+
+    print(f'[Reader] Setting up render view ...', flush=True)
     view = SetupRenderView()
+    print(f'[Reader] Render view ready', flush=True)
 
     step = 0
     while True:
+      try:
         status = NotReady
+        retries = 0
+        t0 = time.time()
+        print(f'[Reader] Waiting for step {step} ...', flush=True)
         while status == NotReady:
             # must call PrepareNextStep to get Fides ready to read the
             # next step
             fides.PrepareNextStep()
             fides.UpdatePipelineInformation()
             status = fides.NextStepStatus
+            retries += 1
+            elapsed = time.time() - t0
+            if retries % 10 == 0:
+                print(f'[Reader]   PrepareNextStep attempt {retries}, '
+                      f'status={status}, elapsed={elapsed:.1f}s', flush=True)
+        elapsed = time.time() - t0
+        print(f'[Reader] Step {step}: status={status} '
+              f'(retries={retries}, {elapsed:.1f}s)', flush=True)
         if status == EndOfStream:
-            # done reading the file
+            print(f'[Reader] EndOfStream received — exiting', flush=True)
             return
         if step == 0:
             # set up the pipeline on the first step
+            print(f'[Reader] Setting up vis pipeline ...', flush=True)
             pipeline, display = SetupVisPipeline(fides, view)
+            print(f'[Reader] Vis pipeline ready', flush=True)
 
         # need to update the pipeline and then save the output
+        print(f'[Reader] Updating pipeline ...', flush=True)
         pipeline.UpdatePipeline()
+        print(f'[Reader] Pipeline updated, rescaling ...', flush=True)
         display.RescaleTransferFunctionToDataRange()
         output = f'output-{step:05d}.png'
+        # Print data ranges to verify data was received
+        try:
+            u_range = fides.PointData['U'].GetRange(0)
+            v_range = fides.PointData['V'].GetRange(0)
+            print(f'[Reader] Step {step}: U-range={u_range}, V-range={v_range}',
+                  flush=True)
+        except Exception as e:
+            print(f'[Reader] Step {step}: could not read ranges: {e}', flush=True)
+
+        output = f'output-{step:05d}.png'
+        print(f'[Reader] Saving {output} ...', flush=True)
         SaveScreenshot(output, view, ImageResolution=[800, 800])
+        print(f'[Reader] Saved {output}', flush=True)
         step += 1
+        if args.num_steps > 0 and step >= args.num_steps:
+            print(f'[Reader] Received all {step} steps — exiting', flush=True)
+            return
+      except RuntimeError as e:
+        msg = str(e)
+        if 'Writer failed' in msg or 'remote peer' in msg.lower():
+            print(f'[Reader] Writer disconnected after {step} steps: {e}', flush=True)
+            print(f'[Reader] Exiting gracefully.', flush=True)
+            return
+        else:
+            raise
+      except Exception as e:
+        print(f'[Reader] Unexpected error at step {step}: {e}', flush=True)
+        raise
 
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':
