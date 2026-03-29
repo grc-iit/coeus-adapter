@@ -41,18 +41,24 @@ simulation data streamed via ADIOS2 SST.
 
 ## Quick Start
 
-### Step 1: Start pvserver
+### Step 1: Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Step 2: Start pvserver
 
 ```bash
 pvserver --multi-clients --server-port=11111
 ```
 
-### Step 2: (Optional) Connect ParaView GUI
+### Step 3: (Optional) Connect ParaView GUI
 
 Open ParaView GUI → File → Connect → localhost:11111.
 This lets you see the visualization live alongside the AI agent.
 
-### Step 3: Start the Gray-Scott simulation
+### Step 4: Start the Gray-Scott simulation
 
 ```bash
 cd test/insitu_agent
@@ -61,7 +67,7 @@ mpirun -n 4 adios2-gray-scott settings-staging.json
 
 This writes to the SST stream `gs.bp` using the config in `adios2-sst.xml`.
 
-### Step 4: Start the streaming bridge
+### Step 5: Start the streaming bridge
 
 ```bash
 pvpython insitu_streaming.py \
@@ -76,18 +82,33 @@ pvpython insitu_streaming.py \
 The `--paused` flag starts in paused mode so the AI agent controls when to
 advance timesteps. Remove it for auto-advance mode (2s delay between steps).
 
-### Step 5: Start the MCP server
+### Step 6: Run the AI agent
+
+The agent launches the MCP server internally — you don't need to start it separately.
 
 ```bash
-python insitu_mcp_server.py \
-    --server localhost \
-    --port 11111 \
-    --status-file streaming_status.json
+# With OpenAI
+export OPENAI_API_KEY=sk-...
+python insitu_agent.py --provider openai --model gpt-4o
+
+# With Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+python insitu_agent.py --provider anthropic --model claude-sonnet-4-20250514
+
+# Single-shot mode (one prompt, no interactive loop)
+python insitu_agent.py --provider openai --prompt "Create an isosurface of V at 0.5 and take a screenshot"
 ```
 
-### Step 6: Configure your AI agent
+The agent will:
+1. Launch `insitu_mcp_server.py` as a subprocess (stdio MCP transport)
+2. Connect to the same pvserver where the streaming bridge is running
+3. Discover all available tools (streaming control + ParaView visualization)
+4. Enter an interactive loop where you type prompts and the LLM calls tools
 
-Add to your MCP configuration (e.g., Cursor `mcp.json` or Claude Desktop config):
+### Alternative: Use the MCP server with Cursor / Claude Desktop
+
+Instead of `insitu_agent.py`, you can connect the MCP server to any MCP-compatible
+client. Add to your MCP configuration (e.g., Cursor `mcp.json` or Claude Desktop config):
 
 ```json
 {
@@ -134,42 +155,76 @@ Add to your MCP configuration (e.g., Cursor `mcp.json` or Claude Desktop config)
 | `get_available_arrays` | List data arrays (U, V) |
 | `compute_surface_area` | Compute surface area of active mesh |
 
-## Example AI Agent Interaction
+## Example Agent Session
 
 ```
-Agent: Let me check the streaming status.
-→ calls get_streaming_status()
-← "Current timestep: 0, Paused: true, Pipeline ready: true"
+$ python insitu_agent.py --provider openai --model gpt-4o
 
-Agent: I'll advance to the first timestep and take a look.
-→ calls advance_step()
-→ calls get_screenshot()
-← [image of raw volume data]
+Launching MCP server: python insitu_mcp_server.py --server localhost --port 11111 ...
+Using LLM: openai/gpt-4o
 
-Agent: Let me create an isosurface of the V field at 0.5.
-→ calls create_isosurface(value=0.5, field="V")
-→ calls get_screenshot()
-← [image showing isosurface]
+Discovered 24 MCP tools:
+  - get_streaming_status: Get the current status of the in-situ streaming...
+  - pause_streaming: Pause the streaming pipeline...
+  - advance_step: Advance the stream by exactly one timestep...
+  - create_isosurface: Create an isosurface visualization on the live...
+  - create_slice: Create a slice through the live simulation volume...
+  - get_screenshot: Capture a screenshot of the current view...
+  ...
 
-Agent: Interesting pattern. Let me also add a slice to see the interior.
-→ calls create_slice(normal_x=0, normal_y=0, normal_z=1)
-→ calls color_by(field="V")
-→ calls get_screenshot()
-← [image with slice colored by V]
+============================================================
+  In-Situ AI Agent — Interactive Mode
+  Type your prompts. Type 'quit' or 'exit' to stop.
+============================================================
 
-Agent: Let me advance a few steps to see how the pattern evolves.
-→ calls advance_step()  (×5)
-→ calls get_screenshot()
-← [image showing evolved pattern]
+👤 You: Check the status and show me what the data looks like
+
+  🔧 Calling: get_streaming_status({})
+  ✅ Result: Streaming status: Current timestep: 0, Paused: true...
+  🔧 Calling: advance_step({})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+  🔧 Calling: get_screenshot({})
+  ✅ Result: [Image: 45231 bytes]
+
+🤖 Agent: The simulation is at timestep 1. I can see the initial volume data
+   colored by V. The domain shows early-stage pattern formation. Would you like
+   me to create an isosurface to highlight the reaction fronts?
+
+👤 You: Yes, show me isosurfaces of V at 0.3 and 0.5
+
+  🔧 Calling: create_isosurface({"value": 0.3, "field": "V"})
+  ✅ Result: Created isosurface at value 0.3. Filter registered as 'Contour1'.
+  🔧 Calling: get_screenshot({})
+  ✅ Result: [Image: 52108 bytes]
+
+🤖 Agent: I've created an isosurface at V=0.3 showing the outer boundary of
+   the reaction zone. Let me advance a few steps to see evolution...
+
+👤 You: Advance 5 steps and take a screenshot after each
+
+  🔧 Calling: advance_step({})
+  🔧 Calling: get_screenshot({})
+  ... (repeats 5 times)
+
+🤖 Agent: The pattern is clearly evolving — the V=0.3 isosurface shows
+   expanding spots that are beginning to merge. Want me to add a slice
+   to see the interior structure?
+
+👤 You: quit
+Exiting.
 ```
 
-## Configuration Files
+## Files
 
 | File | Purpose |
 |------|---------|
+| `insitu_agent.py` | **AI agent** — LLM loop that calls MCP tools interactively |
+| `insitu_mcp_server.py` | **MCP server** — streaming control + ParaView tools via MCP |
+| `insitu_streaming.py` | **Streaming bridge** — reads SST data into pvserver via Fides |
 | `adios2-sst.xml` | ADIOS2 config: SST engine with QueueLimit=3, Discard policy |
 | `gs-fides.json` | Fides data model: maps U, V arrays to VTK Cartesian grid |
 | `settings-staging.json` | Gray-Scott simulation settings pointing to SST config |
+| `requirements.txt` | Python dependencies |
 | `streaming_status.json` | Runtime: current step/pause state (auto-generated) |
 | `streaming_command.json` | Runtime: MCP→bridge commands (auto-generated) |
 
