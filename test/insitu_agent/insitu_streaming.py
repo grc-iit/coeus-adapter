@@ -1,0 +1,287 @@
+"""
+In-situ streaming bridge: reads Gray-Scott SST data step-by-step via Fides
+into a pvserver, exposing live data for interactive AI agent manipulation
+through the ParaView MCP server.
+
+Architecture:
+  Gray-Scott sim (SST writer) --> [this script via pvpython on pvserver] --> pvserver
+                                                                              ^
+                                                                              |
+                                                                     ParaView MCP server
+                                                                              ^
+                                                                              |
+                                                                         AI Agent
+
+Usage:
+  # Terminal 1: start pvserver
+  pvserver --multi-clients --server-port=11111
+
+  # Terminal 2: (optional) connect ParaView GUI to pvserver for live viewing
+
+  # Terminal 3: start the simulation (SST writer)
+  mpirun -n 4 adios2-gray-scott settings-staging.json
+
+  # Terminal 4: start this streaming bridge (connects to pvserver, reads SST)
+  pvpython insitu_streaming.py -j gs-fides.json -b gs.bp --staging --server localhost --port 11111
+
+  # Terminal 5: start the MCP server (connects to same pvserver)
+  python insitu_mcp_server.py --server localhost --port 11111
+"""
+
+import argparse
+import threading
+import time
+import json
+import os
+
+from paraview.simple import *
+
+
+class StreamingState:
+    """Shared state between the streaming loop and the MCP control interface."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.step = 0
+        self.paused = False
+        self.ended = False
+        self.advance_one = False
+        self.fides = None
+        self.view = None
+        self.pipeline_ready = False
+        self._status_file = None
+        self._command_file = None
+
+    def set_status_file(self, path):
+        self._status_file = path
+        self._command_file = path.replace("streaming_status.json", "streaming_command.json")
+
+    def write_status(self):
+        """Write current state to a JSON file so the MCP server can read it."""
+        if not self._status_file:
+            return
+        with self.lock:
+            status = {
+                "step": self.step,
+                "paused": self.paused,
+                "ended": self.ended,
+                "pipeline_ready": self.pipeline_ready,
+            }
+        try:
+            with open(self._status_file, "w") as f:
+                json.dump(status, f)
+        except OSError:
+            pass
+
+    def poll_commands(self):
+        """Check for commands written by the MCP server."""
+        if not self._command_file or not os.path.exists(self._command_file):
+            return
+        try:
+            with open(self._command_file, "r") as f:
+                cmd = json.load(f)
+            os.remove(self._command_file)
+
+            action = cmd.get("action", "")
+            if action == "pause":
+                with self.lock:
+                    self.paused = True
+                print("[insitu_streaming] Paused by MCP command")
+            elif action == "resume":
+                with self.lock:
+                    self.paused = False
+                print("[insitu_streaming] Resumed by MCP command")
+            elif action == "advance_one":
+                with self.lock:
+                    self.advance_one = True
+                    self.paused = False
+                print("[insitu_streaming] Advancing one step by MCP command")
+        except (json.JSONDecodeError, OSError):
+            pass
+
+
+# Global streaming state — the MCP server reads/writes this
+streaming_state = StreamingState()
+
+
+def setup_fides_reader(json_file, bp_file, use_sst):
+    """Create a Fides reader configured for SST streaming or BP file reading."""
+    if json_file is None:
+        fides = FidesReader(StreamSteps=1, FileName=bp_file)
+        return fides
+
+    fides = FidesJSONReader(StreamSteps=1, FileName=json_file)
+    if use_sst:
+        fides.DataSourceEngines = ["source", "SST"]
+    fides.DataSourcePath = ["source", bp_file]
+    fides.UpdatePipelineInformation()
+    return fides
+
+
+def setup_render_view():
+    """Create and configure a render view."""
+    view = CreateView("RenderView")
+    camera = GetActiveCamera()
+    camera.Azimuth(45)
+    camera.Elevation(45)
+    SetActiveView(None)
+
+    layout = CreateLayout(name="Layout #1")
+    layout.AssignView(0, view)
+    layout.SetSize(1024, 768)
+
+    SetActiveView(view)
+    return view
+
+
+def setup_initial_display(fides, view):
+    """Show the raw data on the first step so the MCP agent has something to work with."""
+    display = Show(fides, view, "UniformGridRepresentation")
+    view.ResetCamera()
+
+    uLUT = GetColorTransferFunction("V")
+    uLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
+    uLUT.RescaleOnVisibilityChange = 1
+
+    return display
+
+
+def streaming_loop(args, state):
+    """
+    Main streaming loop. Reads SST steps one at a time.
+    When paused, it holds the current step's data in the pipeline
+    so the AI agent can interactively explore it via MCP tools.
+    """
+    NOT_READY = 1
+    END_OF_STREAM = 2
+
+    fides = setup_fides_reader(args.json_filename, args.bp_filename, args.staging)
+    view = setup_render_view()
+
+    with state.lock:
+        state.fides = fides
+        state.view = view
+
+    state.write_status()
+    display = None
+
+    while True:
+        # Poll for MCP commands and wait while paused
+        while state.paused and not state.ended:
+            state.poll_commands()
+            state.write_status()
+            time.sleep(0.5)
+
+        state.poll_commands()
+
+        if state.ended:
+            break
+
+        # Poll for next SST step
+        status = NOT_READY
+        while status == NOT_READY:
+            fides.PrepareNextStep()
+            fides.UpdatePipelineInformation()
+            status = fides.NextStepStatus
+            if status == NOT_READY:
+                state.poll_commands()
+                time.sleep(0.1)
+
+        if status == END_OF_STREAM:
+            with state.lock:
+                state.ended = True
+            state.write_status()
+            print(f"[insitu_streaming] End of stream after {state.step} steps")
+            return
+
+        with state.lock:
+            if state.step == 0:
+                display = setup_initial_display(fides, view)
+                state.pipeline_ready = True
+            state.step += 1
+
+        if display:
+            display.RescaleTransferFunctionToDataRange()
+
+        Render(view)
+        state.write_status()
+        print(f"[insitu_streaming] Step {state.step} ready")
+
+        # If advance_one was requested, pause after this step
+        with state.lock:
+            if state.advance_one:
+                state.advance_one = False
+                state.paused = True
+                print(f"[insitu_streaming] Paused after single-step advance")
+
+        # Brief pause to let the AI agent observe/interact before moving on
+        if not state.paused:
+            time.sleep(args.step_delay)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="In-situ streaming bridge for AI agent interaction"
+    )
+    parser.add_argument(
+        "-j", "--json_filename",
+        help="Path to Fides JSON data model file",
+        type=str, required=False,
+    )
+    parser.add_argument(
+        "-b", "--bp_filename",
+        help="ADIOS2 stream name (e.g. gs.bp)",
+        type=str, required=True,
+    )
+    parser.add_argument(
+        "--staging", help="Use SST engine for live streaming",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--server", help="pvserver hostname",
+        type=str, default="localhost",
+    )
+    parser.add_argument(
+        "--port", help="pvserver port",
+        type=int, default=11111,
+    )
+    parser.add_argument(
+        "--step-delay",
+        help="Seconds to wait between steps in auto-advance mode (default: 2.0)",
+        type=float, default=2.0,
+    )
+    parser.add_argument(
+        "--paused",
+        help="Start in paused mode (agent must call advance_step)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--status-file",
+        help="Path to write JSON status file for MCP server",
+        type=str, default="streaming_status.json",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+
+    # Connect to the pvserver
+    print(f"[insitu_streaming] Connecting to pvserver at {args.server}:{args.port}")
+    Connect(f"{args.server}:{args.port}")
+
+    streaming_state.paused = args.paused
+    streaming_state.set_status_file(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), args.status_file)
+    )
+
+    print(f"[insitu_streaming] Starting streaming loop (paused={args.paused})")
+    print(f"[insitu_streaming] Status file: {args.status_file}")
+
+    streaming_loop(args, streaming_state)
+
+    print("[insitu_streaming] Done.")
+
+
+if __name__ == "__main__":
+    main()

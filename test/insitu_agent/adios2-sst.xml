@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!--
+        ADIOS2 config for Gray-Scott SST streaming to AI agent.
+        The simulation writes via SST; the insitu_streaming.py bridge reads it.
+
+        RendezvousReaderCount=1: writer waits for the reader to connect.
+        QueueLimit=3: buffer up to 3 steps so the agent has time to interact.
+        QueueFullPolicy=Discard: drop old steps if the agent is slow (non-blocking sim).
+        DataTransport=WAN: use TCP so reader can be a separate process/node.
+    -->
+
+    <io name="SimulationOutput">
+        <engine type="SST">
+            <parameter key="RendezvousReaderCount" value="1"/>
+            <parameter key="QueueLimit" value="3"/>
+            <parameter key="QueueFullPolicy" value="Discard"/>
+            <parameter key="DataTransport" value="WAN"/>
+            <parameter key="OpenTimeoutSecs" value="60.0"/>
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5"/>
+    </io>
+
+</adios-config>
