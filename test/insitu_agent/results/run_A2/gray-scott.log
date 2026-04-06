@@ -1,0 +1,107 @@
+Simulation writes data using engine type:              SST
+IO parameters:  
+    DataTransport = WAN
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Block
+    QueueLimit = 5
+    RendezvousReaderCount = 1
+========================================
+grid:             256x256x256
+restart:          no
+steps:            200
+plotgap:          10
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-05
+output:           gs.bp
+adios_config:     adios2-sst-blocking.xml
+process layout:   4x4x4
+local grid size:  64x64x64
+========================================
+Simulation at step 10 writing output step     1
+Simulation at step 20 writing output step     2
+Simulation at step 30 writing output step     3
+Simulation at step 40 writing output step     4
+Simulation at step 50 writing output step     5
+Simulation at step 60 writing output step     6
+Simulation at step 70 writing output step     7
+Simulation at step 80 writing output step     8
+Simulation at step 90 writing output step     9
+Simulation at step 100 writing output step     10
+Simulation at step 110 writing output step     11
+Simulation at step 120 writing output step     12
+Simulation at step 130 writing output step     13
+Simulation at step 140 writing output step     14
+Simulation at step 150 writing output step     15
+Simulation at step 160 writing output step     16
+Simulation at step 170 writing output step     17
+Simulation at step 180 writing output step     18
+Simulation at step 190 writing output step     19
+Simulation at step 200 writing output step     20
+Rank 0 - ET 157362 - milliseconds
+Rank 4 - ET 157362 - milliseconds
+Rank 8 - ET 157362 - milliseconds
+Rank 9 - ET 157362 - milliseconds
+Rank 6 - ET 157362 - milliseconds
+Rank 7 - ET 157362 - milliseconds
+Rank 11 - ET 157362 - milliseconds
+Rank 1 - ET 157362 - milliseconds
+Rank 2 - ET 157362 - milliseconds
+Rank 10 - ET 157362 - milliseconds
+Rank 3 - ET 157362 - milliseconds
+Rank 18 - ET 157362 - milliseconds
+Rank 5 - ET 157362 - milliseconds
+Rank 17 - ET 157362 - milliseconds
+Rank 36 - ET 157362 - milliseconds
+Rank 58 - ET 157362 - milliseconds
+Rank 14 - ET 157362 - milliseconds
+Rank 20 - ET 157362 - milliseconds
+Rank 33 - ET 157362 - milliseconds
+Rank 60 - ET 157362 - milliseconds
+Rank 12 - ET 157362 - milliseconds
+Rank 19 - ET 157362 - milliseconds
+Rank 44 - ET 157362 - milliseconds
+Rank 62 - ET 157362 - milliseconds
+Rank 15 - ET 157362 - milliseconds
+Rank 16 - ET 157362 - milliseconds
+Rank 32 - ET 157362 - milliseconds
+Rank 48 - ET 157362 - milliseconds
+Rank 13 - ET 157362 - milliseconds
+Rank 24 - ET 157362 - milliseconds
+Rank 40 - ET 157362 - milliseconds
+Rank 59 - ET 157362 - milliseconds
+Rank 25 - ET 157362 - milliseconds
+Rank 34 - ET 157362 - milliseconds
+Rank 50 - ET 157362 - milliseconds
+Rank 23 - ET 157362 - milliseconds
+Rank 41 - ET 157362 - milliseconds
+Rank 61 - ET 157362 - milliseconds
+Rank 27 - ET 157362 - milliseconds
+Rank 37 - ET 157362 - milliseconds
+Rank 57 - ET 157362 - milliseconds
+Rank 22 - ET 157362 - milliseconds
+Rank 42 - ET 157362 - milliseconds
+Rank 54 - ET 157362 - milliseconds
+Rank 21 - ET 157362 - milliseconds
+Rank 35 - ET 157362 - milliseconds
+Rank 51 - ET 157362 - milliseconds
+Rank 26 - ET 157362 - milliseconds
+Rank 43 - ET 157362 - milliseconds
+Rank 52 - ET 157362 - milliseconds
+Rank 29 - ET 157362 - milliseconds
+Rank 38 - ET 157362 - milliseconds
+Rank 49 - ET 157362 - milliseconds
+Rank 28 - ET 157362 - milliseconds
+Rank 39 - ET 157362 - milliseconds
+Rank 53 - ET 157362 - milliseconds
+Rank 31 - ET 157362 - milliseconds
+Rank 46 - ET 157362 - milliseconds
+Rank 63 - ET 157362 - milliseconds
+Rank 30 - ET 157362 - milliseconds
+Rank 45 - ET 157362 - milliseconds
+Rank 55 - ET 157362 - milliseconds
+Rank 47 - ET 157362 - milliseconds
+Rank 56 - ET 157362 - milliseconds

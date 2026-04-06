@@ -277,8 +277,8 @@ async def main():
         help="pvserver hostname (default: localhost)",
     )
     parser.add_argument(
-        "--server-port", type=int, default=11111,
-        help="pvserver port (default: 11111)",
+        "--server-port", type=int, default=11112,
+        help="pvserver port (default: 11112)",
     )
     parser.add_argument(
         "--status-file", type=str, default=None,
@@ -287,6 +287,14 @@ async def main():
     parser.add_argument(
         "--paraview-package-path", type=str, default=None,
         help="Path to the ParaView Python package",
+    )
+    parser.add_argument(
+        "--pvpython", type=str, default=None,
+        help="Path to pvpython binary for MCP server (default: sys.executable)",
+    )
+    parser.add_argument(
+        "--timing-file", type=str, default=None,
+        help="Path to write per-tool timing JSONL (passed to MCP server)",
     )
 
     args = parser.parse_args()
@@ -306,14 +314,18 @@ async def main():
     ]
     if args.paraview_package_path:
         mcp_args.extend(["--paraview_package_path", args.paraview_package_path])
+    if args.timing_file:
+        mcp_args.extend(["--timing-file", args.timing_file])
+
+    mcp_command = args.pvpython or sys.executable
 
     server_params = StdioServerParameters(
-        command=sys.executable,
+        command=mcp_command,
         args=mcp_args,
         env={**os.environ},
     )
 
-    print(f"Launching MCP server: {sys.executable} {' '.join(mcp_args)}")
+    print(f"Launching MCP server: {mcp_command} {' '.join(mcp_args)}")
     print(f"Using LLM: {args.provider}/{args.model}")
 
     async with stdio_client(server_params) as (read, write):

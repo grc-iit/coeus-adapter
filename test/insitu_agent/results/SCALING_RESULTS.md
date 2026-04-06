@@ -1,0 +1,170 @@
+# Scalability Evaluation Results — Full Report
+
+## Test Environment
+- **Cluster**: Ares (ares-comp-XX, 16 cores/node)
+- **Grid**: L=256 (16.8M cells, ~268 MB/step for U+V float64)
+- **Simulation**: Gray-Scott, steps=200, plotgap=10, 20 SST output steps
+- **SST Config**: Blocking, QueueLimit=5, WAN/TCP
+- **Agent**: Haiku (claude-haiku-4-5-20251001) via Anthropic SDK proxy
+- **Date**: 2026-04-05
+
+---
+
+## Dimension A: Simulation Scaling
+
+pvserver fixed at 1 process on localhost (ares-comp-21).
+
+### MCP Tool Timing (avg ms)
+
+| Tool | A1 PV | A1 MCP | A2 PV | A2 MCP | A3 PV | A3 MCP |
+|------|--------|--------|--------|--------|--------|--------|
+| `get_streaming_status` |     0.0 |     1.2 |     0.0 |     1.2 |     0.0 |     1.2 |
+| `advance_step` |     0.0 |     1.6 |     0.0 |     2.3 |     0.0 |     1.8 |
+| `get_available_arrays` |     0.0 |  2795.2 |     0.0 |  2876.1 |     0.0 |  2815.4 |
+| `create_isosurface` |   793.4 |   793.5 |   859.1 |   859.1 |   920.8 |   920.9 |
+| `get_screenshot` |   274.5 |   274.7 |   300.0 |   300.2 |   303.0 |   303.1 |
+
+### Streaming Per-Step Timing (ms)
+
+| Metric | 2 nodes, 32p | 4 nodes, 64p | 8 nodes, 128p |
+|--------|-------------------|-------------------|-------------------|
+| SST wait avg |    86.0 |     7.9 |    10.3 |
+| SST wait max |   786.1 |    13.3 |    16.6 |
+| Pipeline avg |    76.5 |    77.0 |    82.1 |
+| Render avg |  1461.0 |  1309.3 |  1356.9 |
+| Render max |  2743.1 |  2319.5 |  1990.1 |
+| **Step total avg** |  1623.5 |  1394.2 |  1449.3 |
+| Step total max |  3529.6 |  2329.6 |  2135.0 |
+
+### Per-Step Detail: A2 (4 nodes, 64 procs)
+
+| Step | SST Wait (ms) | Pipeline (ms) | Render (ms) | Total (ms) |
+|------|--------------|--------------|------------|-----------|
+| 1 |     5.1 |  1533.6 |   439.4 |  1978.1 |
+| 2 |    11.7 |     0.6 |  1716.0 |  1728.3 |
+| 3 |     9.2 |     0.3 |  1701.5 |  1711.1 |
+| 4 |     6.2 |     0.4 |  1617.1 |  1623.6 |
+| 5 |     7.9 |     0.4 |  1609.8 |  1618.0 |
+| 6 |     8.0 |     0.4 |  1352.1 |  1360.4 |
+| 7 |    13.3 |     0.3 |  1270.6 |  1284.2 |
+| 8 |     3.5 |     0.3 |  1220.6 |  1224.5 |
+| 9 |     7.7 |     0.4 |  1401.2 |  1409.2 |
+| 10 |     7.5 |     0.4 |  1158.2 |  1166.1 |
+| 11 |     9.4 |     0.3 |  1790.1 |  1799.9 |
+| 12 |     7.5 |     0.3 |  1962.8 |  1970.6 |
+| 13 |     6.9 |     0.4 |  1501.7 |  1509.0 |
+| 14 |     9.7 |     0.4 |  2319.5 |  2329.6 |
+| 15 |     7.7 |     0.4 |  1018.0 |  1026.1 |
+| 16 |     7.2 |     0.4 |  1119.7 |  1127.3 |
+| 17 |     7.2 |     0.4 |   746.9 |   754.5 |
+| 18 |     7.0 |     0.4 |   745.3 |   752.6 |
+| 19 |     7.2 |     0.4 |   790.0 |   797.6 |
+| 20 |     7.7 |     0.4 |   704.7 |   712.8 |
+
+---
+
+## Dimension B: pvserver Scaling
+
+Simulation fixed at 8 nodes, 128 procs, L=256.
+
+### MCP Tool Timing (avg ms)
+
+| Tool | B1 (1p) PV | MCP | B_pv2 (2p) PV | MCP | B_pv4 (4p) PV | MCP | B_pv8 (8p) PV | MCP | B2 (16p) PV | MCP | B_pv32 (32p) PV | MCP | B_pv64 (64p) PV | MCP |
+|------|--------|------|--------|------|--------|------|--------|------|--------|------|--------|------|--------|------|
+| `create_isosurface` |   915.7 |   915.7 |   791.1 |   791.1 |   656.9 |   657.0 |   620.4 |   620.5 |   527.0 |   527.1 |   618.3 |   618.4 |   547.5 |   547.6 |
+| `get_screenshot` |   344.2 |   344.4 |   324.5 |   324.7 |   334.8 |   335.0 |   330.3 |   330.5 |   313.6 |   313.8 |   344.3 |   344.6 |   345.1 |   345.3 |
+
+### Streaming Per-Step Timing (ms)
+
+| Metric | B1 (1p) | B_pv2 (2p) | B_pv4 (4p) | B_pv8 (8p) | B2 (16p) | B_pv32 (32p) | B_pv64 (64p) |
+|--------|-----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| SST wait avg |    10.5 |     9.0 |     8.5 |     8.5 |     9.1 |     8.9 |     9.1 |
+| Render avg |  1324.5 |  2534.9 |  2358.3 |  2283.2 |  2255.6 |  1153.6 | **612.5** |
+| **Step total avg** |  1415.2 |  2693.2 |  2503.6 |  2425.1 |  2395.2 |  1256.0 | **670.6** |
+| Render max |  2010.2 |  2698.6 |  2514.7 |  2406.5 |  2367.9 |  1204.7 |   633.9 |
+| Step total max |  2190.7 |  3526.0 |  3259.1 |  3157.7 |  3200.0 |  2404.2 |  1541.8 |
+
+### Per-Step Detail: B_pv32 (32 procs, 2 nodes)
+
+| Step | SST Wait (ms) | Pipeline (ms) | Render (ms) | Total (ms) |
+|------|--------------|--------------|------------|-----------|
+| 1 |     3.3 |  1863.1 |   537.9 |  2404.2 |
+| 2 |    19.7 |     0.5 |  1204.7 |  1224.9 |
+| 3 |     8.7 |     0.4 |  1188.5 |  1197.6 |
+| 4 |     8.2 |     0.3 |  1185.3 |  1193.8 |
+| 5 |     8.3 |     0.3 |  1187.6 |  1196.1 |
+| 6 |     9.9 |     0.2 |  1190.2 |  1200.4 |
+| 7 |     9.9 |     0.2 |  1188.5 |  1198.7 |
+| 8 |     8.0 |     0.2 |  1186.8 |  1195.1 |
+| 9 |     7.9 |     0.3 |  1189.9 |  1198.1 |
+| 10 |     8.8 |     0.3 |  1184.3 |  1193.4 |
+| 11 |     8.3 |     0.3 |  1182.8 |  1191.5 |
+| 12 |    10.3 |     0.3 |  1182.7 |  1193.4 |
+| 13 |     8.3 |     0.2 |  1183.8 |  1192.3 |
+| 14 |     7.9 |     0.3 |  1182.3 |  1190.5 |
+| 15 |     8.2 |     0.2 |  1180.5 |  1188.9 |
+| 16 |     8.6 |     0.4 |  1185.2 |  1194.1 |
+| 17 |     8.2 |     0.2 |  1182.1 |  1190.5 |
+| 18 |     8.2 |     0.2 |  1183.6 |  1192.0 |
+| 19 |     8.2 |     0.2 |  1182.9 |  1191.3 |
+| 20 |     9.7 |     0.2 |  1182.8 |  1192.7 |
+
+---
+
+## Cross-Node pvserver Diagnosis
+
+### Initial Failure (B2 on ares-comp-22)
+
+The first attempt to run pvserver on a remote node (ares-comp-22) failed with 60s
+timeouts on all ParaView operations. **Root cause**: the SSH wrapper for mpirun
+(`ssh-spack-wrapper.sh`) only injects the ADIOS2 spack PATH, not ParaView's.
+When prterun tried to launch `pvserver` on the remote node via the wrapper,
+it could not find the executable in PATH.
+
+### Fix
+
+Changed the mpirun launch to use `bash -c "spack load paraview && pvserver ..."`
+instead of invoking `pvserver` directly. This ensures each MPI rank loads the
+ParaView spack environment before starting pvserver.
+
+### Result After Fix
+
+32-proc pvserver across 2 nodes (ares-comp-21 + ares-comp-22) **works correctly**:
+- Connect: 2.6s (MPI barrier + client-server handshake)
+- Render: 1.4s (includes IceT cross-node compositing)
+- SaveScreenshot: 44ms (IceT compositing over TCP works)
+- Full eval run: 301s wall time, all 20 steps processed
+
+**IceT compositing over TCP works on Ares** when the MPI environment is properly
+configured (OMPI_MCA pml=ob1, btl=tcp,self, btl_tcp_if_include=eno1).
+The earlier assumption that cross-node pvserver would fail due to IceT hangs
+was incorrect — the issue was purely a PATH/environment problem.
+
+---
+
+## Summary
+
+### Time Breakdown by Layer
+
+| Layer | Typical Time | % of Step |
+|-------|-------------|-----------|
+| SST data transfer | 8-10 ms | <1% |
+| Pipeline update | <1 ms (after step 1) | <0.1% |
+| ParaView render (1 proc) | 1,325 ms | ~92% |
+| ParaView render (64 procs, 4 nodes) | 613 ms | ~91% |
+| MCP protocol overhead | <2 ms per tool call | negligible |
+| ParaView isosurface (1 proc) | 916 ms | per-call |
+| ParaView isosurface (64 procs) | 548 ms | per-call |
+| ParaView screenshot (any config) | 314-345 ms | per-call |
+
+### Key Takeaways
+
+1. **Rendering is the bottleneck** (90-95% of per-step time), not data transfer or MCP.
+2. **MCP adds <2ms overhead** — the protocol is essentially free.
+3. **Simulation scaling (Dim A)** has minimal impact on reader/visualization time.
+4. **pvserver parallelism (Dim B)** shows single-node vs multi-node pattern:
+   - Single-node (2-16 procs): SLOWER due to IceT compositing + CPU contention.
+   - Multi-node (32-64 procs): FASTER. **64p on 4 nodes = 2.2x speedup** (613ms vs 1325ms).
+5. **Cross-node pvserver works** when MPI environment is properly configured.
+   The initial failure was a PATH issue, not an IceT/network limitation.
+6. **Optimal config for L=256**: 4 pvserver nodes (64 procs), 671ms avg step total.

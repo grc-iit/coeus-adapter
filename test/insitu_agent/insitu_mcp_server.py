@@ -16,16 +16,32 @@ Usage:
 
 import os
 import sys
+import io
 import json
 import logging
 import argparse
 from pathlib import Path
 
+# pvpython replaces sys.stdout/stdin with VTK wrappers that lack .buffer,
+# breaking MCP's stdio transport. Restore real file descriptors before
+# importing MCP.
+if not hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(io.FileIO(1, 'wb', closefd=False), write_through=True)
+if not hasattr(sys.stdin, 'buffer'):
+    sys.stdin = io.TextIOWrapper(io.FileIO(0, 'rb', closefd=False))
+
 from mcp.server.fastmcp import FastMCP, Image
+
+# Ares cluster MPI environment — needed when MCP server runs under pvpython
+os.environ['OMPI_MCA_pml'] = 'ob1'
+os.environ['OMPI_MCA_btl'] = 'tcp,self'
+os.environ['OMPI_MCA_osc'] = '^ucx'
+os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
+os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
 
 # Add the paraview_mcp directory to the path so we can import ParaViewManager
 SCRIPT_DIR = Path(__file__).resolve().parent
-PARAVIEW_MCP_DIR = SCRIPT_DIR.parent.parent / "paraview_mcp"
+PARAVIEW_MCP_DIR = Path.home() / "software" / "paraview_mcp"
 sys.path.insert(0, str(PARAVIEW_MCP_DIR))
 
 from paraview_manager import ParaViewManager
@@ -76,7 +92,61 @@ Pause the stream before doing multi-step explorations on a single timestep.
 pv_manager = ParaViewManager()
 mcp = FastMCP("InSitu-ParaView", instructions=INSITU_PROMPT)
 
+# Lazy connection state — pvserver may not be running when MCP starts
+_pv_connected = False
+_pv_server = "localhost"
+_pv_port = 11112
+
+
+def _ensure_connected():
+    """Lazily connect to pvserver on first tool call."""
+    global _pv_connected
+    if not _pv_connected:
+        logger.info(f"Lazy-connecting to pvserver at {_pv_server}:{_pv_port}")
+        _pv_connected = pv_manager.connect(_pv_server, _pv_port)
+        if not _pv_connected:
+            logger.warning("Failed to connect to pvserver — visualization tools will fail")
+    return _pv_connected
+
 STATUS_FILE_PATH = None
+TIMING_FILE = None
+
+
+def timed_tool(func):
+    """Decorator: measures total MCP tool time and PV operation time."""
+    import functools
+    import time as _time
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = _time.monotonic()
+        result = func(*args, **kwargs)
+        mcp_total_ms = (_time.monotonic() - t0) * 1000
+        pv_op_ms = getattr(wrapper, '_last_pv_ms', 0)
+        if TIMING_FILE:
+            try:
+                with open(TIMING_FILE, "a") as f:
+                    json.dump({
+                        "tool": func.__name__,
+                        "pv_operation_ms": round(pv_op_ms, 2),
+                        "mcp_total_ms": round(mcp_total_ms, 2),
+                        "mcp_overhead_ms": round(mcp_total_ms - pv_op_ms, 2),
+                        "timestamp": _time.time(),
+                    }, f)
+                    f.write("\n")
+            except OSError:
+                pass
+        return result
+    return wrapper
+
+
+def _timed_pv(tool_wrapper, pv_method, *args, **kwargs):
+    """Time a ParaViewManager method call and store on the tool wrapper."""
+    import time as _time
+    t0 = _time.monotonic()
+    result = pv_method(*args, **kwargs)
+    tool_wrapper._last_pv_ms = (_time.monotonic() - t0) * 1000
+    return result
 
 
 def _read_streaming_status():
@@ -110,6 +180,7 @@ def _write_streaming_command(command):
 # ============================================================================
 
 @mcp.tool()
+@timed_tool
 def get_streaming_status() -> str:
     """
     Get the current status of the in-situ streaming pipeline.
@@ -134,6 +205,7 @@ def get_streaming_status() -> str:
 
 
 @mcp.tool()
+@timed_tool
 def pause_streaming() -> str:
     """
     Pause the streaming pipeline. Data stays at the current timestep,
@@ -149,6 +221,7 @@ def pause_streaming() -> str:
 
 
 @mcp.tool()
+@timed_tool
 def resume_streaming() -> str:
     """
     Resume the streaming pipeline. New timesteps will be read automatically.
@@ -163,6 +236,7 @@ def resume_streaming() -> str:
 
 
 @mcp.tool()
+@timed_tool
 def advance_step() -> str:
     """
     Advance the stream by exactly one timestep, then pause again.
@@ -182,6 +256,7 @@ def advance_step() -> str:
 # ============================================================================
 
 @mcp.tool()
+@timed_tool
 def get_screenshot():
     """
     Capture a screenshot of the current view and display it in chat.
@@ -189,13 +264,16 @@ def get_screenshot():
     Returns:
         Image data or error message
     """
-    success, message, img_path = pv_manager.get_screenshot()
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, img_path = _timed_pv(get_screenshot, pv_manager.get_screenshot)
     if not success:
         return message
     return Image(path=img_path)
 
 
 @mcp.tool()
+@timed_tool
 def create_isosurface(value: float, field: str = None) -> str:
     """
     Create an isosurface visualization on the live simulation data.
@@ -207,13 +285,16 @@ def create_isosurface(value: float, field: str = None) -> str:
     Returns:
         Status message
     """
-    success, message, _, contour_name = pv_manager.create_isosurface(value, field)
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _, contour_name = _timed_pv(create_isosurface, pv_manager.create_isosurface, value, field)
     if success:
         return f"{message}. Filter registered as '{contour_name}'."
     return message
 
 
 @mcp.tool()
+@timed_tool
 def create_slice(
     origin_x: float = None, origin_y: float = None, origin_z: float = None,
     normal_x: float = 0, normal_y: float = 0, normal_z: float = 1,
@@ -228,13 +309,16 @@ def create_slice(
     Returns:
         Status message
     """
-    success, message, _, slice_name = pv_manager.create_slice(
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _, slice_name = _timed_pv(create_slice, pv_manager.create_slice,
         origin_x, origin_y, origin_z, normal_x, normal_y, normal_z
     )
     return message if success else f"Error creating slice: {message}"
 
 
 @mcp.tool()
+@timed_tool
 def toggle_volume_rendering(enable: bool = True) -> str:
     """
     Toggle volume rendering for the simulation data.
@@ -245,6 +329,8 @@ def toggle_volume_rendering(enable: bool = True) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, source_name = pv_manager.create_volume_rendering(enable)
     if success:
         return f"{message}. Source: '{source_name}'."
@@ -252,6 +338,7 @@ def toggle_volume_rendering(enable: bool = True) -> str:
 
 
 @mcp.tool()
+@timed_tool
 def toggle_visibility(enable: bool = True) -> str:
     """
     Toggle visibility for the active source.
@@ -262,6 +349,8 @@ def toggle_visibility(enable: bool = True) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, source_name = pv_manager.toggle_visibility(enable)
     if success:
         return f"{message}. Source: '{source_name}'."
@@ -269,6 +358,7 @@ def toggle_visibility(enable: bool = True) -> str:
 
 
 @mcp.tool()
+@timed_tool
 def set_active_source(name: str) -> str:
     """
     Set the active pipeline object by its name.
@@ -279,11 +369,14 @@ def set_active_source(name: str) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.set_active_source(name)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def get_active_source_names_by_type(source_type: str = None) -> str:
     """
     Get a list of source names filtered by type.
@@ -294,6 +387,8 @@ def get_active_source_names_by_type(source_type: str = None) -> str:
     Returns:
         List of source names
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, source_names = pv_manager.get_active_source_names_by_type(source_type)
     if success and source_names:
         return f"{message}:\n- " + "\n- ".join(source_names)
@@ -301,6 +396,7 @@ def get_active_source_names_by_type(source_type: str = None) -> str:
 
 
 @mcp.tool()
+@timed_tool
 def color_by(field: str, component: int = -1) -> str:
     """
     Color the active visualization by a specific field.
@@ -312,11 +408,14 @@ def color_by(field: str, component: int = -1) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.color_by(field, component)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def set_color_map(field_name: str, color_points: list[dict]) -> str:
     """
     Set the color transfer function for a field.
@@ -332,11 +431,14 @@ def set_color_map(field_name: str, color_points: list[dict]) -> str:
         formatted = [(pt["value"], tuple(pt["rgb"])) for pt in color_points]
     except Exception as e:
         return f"Invalid format for color_points: {e}"
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.set_color_map(field_name, formatted)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def edit_volume_opacity(field_name: str, opacity_points: list[dict[str, float]]) -> str:
     """
     Edit the opacity transfer function for a field.
@@ -348,12 +450,15 @@ def edit_volume_opacity(field_name: str, opacity_points: list[dict[str, float]])
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     formatted = [[pt["value"], pt["alpha"]] for pt in opacity_points]
     success, message = pv_manager.edit_volume_opacity(field_name, formatted)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def set_representation_type(rep_type: str) -> str:
     """
     Set the representation type for the active source.
@@ -364,11 +469,14 @@ def set_representation_type(rep_type: str) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.set_representation_type(rep_type)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def get_pipeline() -> str:
     """
     Get the current pipeline structure showing all sources and filters.
@@ -376,11 +484,14 @@ def get_pipeline() -> str:
     Returns:
         Pipeline description
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.get_pipeline()
     return message
 
 
 @mcp.tool()
+@timed_tool
 def get_available_arrays() -> str:
     """
     Get available data arrays (fields) in the active source.
@@ -388,11 +499,14 @@ def get_available_arrays() -> str:
     Returns:
         List of point and cell data arrays
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.get_available_arrays()
     return message
 
 
 @mcp.tool()
+@timed_tool
 def compute_surface_area() -> str:
     """
     Compute the surface area of the active surface mesh.
@@ -400,11 +514,14 @@ def compute_surface_area() -> str:
     Returns:
         Surface area value
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, _ = pv_manager.compute_surface_area()
     return message
 
 
 @mcp.tool()
+@timed_tool
 def save_contour_as_stl(stl_filename: str = "contour.stl") -> str:
     """
     Save the active contour/surface as an STL file.
@@ -415,11 +532,14 @@ def save_contour_as_stl(stl_filename: str = "contour.stl") -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, _ = pv_manager.save_contour_as_stl(stl_filename)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def rotate_camera(azimuth: float = 30.0, elevation: float = 0.0) -> str:
     """
     Rotate the camera by specified angles.
@@ -431,11 +551,14 @@ def rotate_camera(azimuth: float = 30.0, elevation: float = 0.0) -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.rotate_camera(azimuth, elevation)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def reset_camera() -> str:
     """
     Reset the camera to show all data.
@@ -443,11 +566,14 @@ def reset_camera() -> str:
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message = pv_manager.reset_camera()
     return message
 
 
 @mcp.tool()
+@timed_tool
 def plot_over_line(
     point1: list[float] = None, point2: list[float] = None, resolution: int = 100
 ) -> str:
@@ -462,11 +588,14 @@ def plot_over_line(
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, _ = pv_manager.plot_over_line(point1, point2, resolution)
     return message
 
 
 @mcp.tool()
+@timed_tool
 def create_streamline(
     seed_point_number: int,
     vector_field: str = None,
@@ -489,6 +618,8 @@ def create_streamline(
     Returns:
         Status message
     """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
     success, message, _, tube_name = pv_manager.create_stream_tracer(
         vector_field=vector_field,
         base_source=None,
@@ -504,6 +635,7 @@ def create_streamline(
 
 
 @mcp.tool()
+@timed_tool
 def list_commands() -> str:
     """
     List all available commands in this in-situ ParaView MCP server.
@@ -557,8 +689,8 @@ def main():
         help="ParaView server hostname (default: localhost)",
     )
     parser.add_argument(
-        "--port", type=int, default=11111,
-        help="ParaView server port (default: 11111)",
+        "--port", type=int, default=11112,
+        help="ParaView server port (default: 11112)",
     )
     parser.add_argument(
         "--status-file", type=str, default="streaming_status.json",
@@ -568,6 +700,10 @@ def main():
         "--paraview_package_path", type=str, default=None,
         help="Path to the ParaView Python package",
     )
+    parser.add_argument(
+        "--timing-file", type=str, default=None,
+        help="Path to write per-tool timing JSONL file",
+    )
 
     args = parser.parse_args()
 
@@ -576,11 +712,15 @@ def main():
 
     STATUS_FILE_PATH = os.path.abspath(args.status_file)
 
-    pv_manager.connect(args.server, args.port)
+    # Store connection params for lazy connect (pvserver may not be up yet)
+    global _pv_server, _pv_port, TIMING_FILE
+    _pv_server = args.server
+    _pv_port = args.port
+    TIMING_FILE = args.timing_file
 
     try:
         logger.info("Starting In-Situ ParaView MCP Server")
-        logger.info(f"ParaView server: {args.server}:{args.port}")
+        logger.info(f"ParaView server: {args.server}:{args.port} (lazy connect)")
         logger.info(f"Status file: {STATUS_FILE_PATH}")
         mcp.run()
     except KeyboardInterrupt:

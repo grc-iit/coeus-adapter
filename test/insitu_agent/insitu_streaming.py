@@ -146,6 +146,18 @@ def setup_initial_display(fides, view):
     return display
 
 
+def _write_timing_record(timing_file, record):
+    """Append a timing record as a JSON line."""
+    if not timing_file:
+        return
+    try:
+        with open(timing_file, "a") as f:
+            json.dump(record, f)
+            f.write("\n")
+    except OSError:
+        pass
+
+
 def streaming_loop(args, state):
     """
     Main streaming loop. Reads SST steps one at a time.
@@ -154,6 +166,8 @@ def streaming_loop(args, state):
     """
     NOT_READY = 1
     END_OF_STREAM = 2
+
+    timing_file = getattr(args, 'timing_file', None)
 
     fides = setup_fides_reader(args.json_filename, args.bp_filename, args.staging)
     view = setup_render_view()
@@ -177,6 +191,9 @@ def streaming_loop(args, state):
         if state.ended:
             break
 
+        # --- Timing: SST wait ---
+        t_sst_start = time.monotonic()
+
         # Poll for next SST step
         status = NOT_READY
         while status == NOT_READY:
@@ -187,12 +204,17 @@ def streaming_loop(args, state):
                 state.poll_commands()
                 time.sleep(0.1)
 
+        t_sst_end = time.monotonic()
+
         if status == END_OF_STREAM:
             with state.lock:
                 state.ended = True
             state.write_status()
             print(f"[insitu_streaming] End of stream after {state.step} steps")
             return
+
+        # --- Timing: pipeline setup / update ---
+        t_pipeline_start = time.monotonic()
 
         with state.lock:
             if state.step == 0:
@@ -203,9 +225,29 @@ def streaming_loop(args, state):
         if display:
             display.RescaleTransferFunctionToDataRange()
 
+        t_pipeline_end = time.monotonic()
+
+        # --- Timing: render ---
+        t_render_start = time.monotonic()
         Render(view)
+        t_render_end = time.monotonic()
+
         state.write_status()
-        print(f"[insitu_streaming] Step {state.step} ready")
+
+        # Write timing record
+        _write_timing_record(timing_file, {
+            "step": state.step,
+            "sst_wait_ms": round((t_sst_end - t_sst_start) * 1000, 2),
+            "pipeline_update_ms": round((t_pipeline_end - t_pipeline_start) * 1000, 2),
+            "render_ms": round((t_render_end - t_render_start) * 1000, 2),
+            "step_total_ms": round((t_render_end - t_sst_start) * 1000, 2),
+            "timestamp": time.time(),
+        })
+
+        print(f"[insitu_streaming] Step {state.step} ready "
+              f"(sst={t_sst_end - t_sst_start:.3f}s "
+              f"pipeline={t_pipeline_end - t_pipeline_start:.3f}s "
+              f"render={t_render_end - t_render_start:.3f}s)")
 
         # If advance_one was requested, pause after this step
         with state.lock:
@@ -243,7 +285,7 @@ def parse_args():
     )
     parser.add_argument(
         "--port", help="pvserver port",
-        type=int, default=11111,
+        type=int, default=11112,
     )
     parser.add_argument(
         "--step-delay",
@@ -259,6 +301,11 @@ def parse_args():
         "--status-file",
         help="Path to write JSON status file for MCP server",
         type=str, default="streaming_status.json",
+    )
+    parser.add_argument(
+        "--timing-file",
+        help="Path to write per-step timing JSONL file",
+        type=str, default=None,
     )
     return parser.parse_args()
 

@@ -1,0 +1,38 @@
+[insitu_streaming] Connecting to pvserver at localhost:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=2.730s render=0.526s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 2 ready (sst=0.021s pipeline=0.001s render=2.515s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 3 ready (sst=0.009s pipeline=0.000s render=2.486s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 4 ready (sst=0.007s pipeline=0.000s render=2.448s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 5 ready (sst=0.009s pipeline=0.001s render=2.467s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 6 ready (sst=0.008s pipeline=0.000s render=2.464s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 7 ready (sst=0.010s pipeline=0.000s render=2.455s)
+[insitu_streaming] Step 8 ready (sst=0.008s pipeline=0.000s render=2.442s)
+[insitu_streaming] Step 9 ready (sst=0.008s pipeline=0.000s render=2.489s)
+[insitu_streaming] Step 10 ready (sst=0.009s pipeline=0.000s render=2.459s)
+[insitu_streaming] Step 11 ready (sst=0.008s pipeline=0.000s render=2.438s)
+[insitu_streaming] Step 12 ready (sst=0.008s pipeline=0.000s render=2.437s)
+[insitu_streaming] Step 13 ready (sst=0.008s pipeline=0.000s render=2.438s)
+[insitu_streaming] Step 14 ready (sst=0.007s pipeline=0.000s render=2.434s)
+[insitu_streaming] Step 15 ready (sst=0.007s pipeline=0.000s render=2.422s)
+[insitu_streaming] Step 16 ready (sst=0.007s pipeline=0.000s render=2.484s)
+[insitu_streaming] Step 17 ready (sst=0.009s pipeline=0.000s render=2.459s)
+[insitu_streaming] Step 18 ready (sst=0.008s pipeline=0.000s render=2.426s)
+[insitu_streaming] Step 19 ready (sst=0.008s pipeline=0.000s render=2.436s)
+[insitu_streaming] Step 20 ready (sst=0.007s pipeline=0.000s render=2.441s)
+[insitu_streaming] End of stream after 20 steps
+[insitu_streaming] Done.
