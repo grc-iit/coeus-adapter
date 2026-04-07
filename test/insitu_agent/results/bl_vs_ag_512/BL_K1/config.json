@@ -1,0 +1,13 @@
+{
+    "variant": "BL_K1",
+    "L": 512,
+    "steps": 400,
+    "plotgap": 10,
+    "output_steps": 40,
+    "sim_hosts": "ares-comp-10:16,ares-comp-11:16,ares-comp-12:16,ares-comp-13:16,ares-comp-14:16,ares-comp-15:16,ares-comp-16:16,ares-comp-17:16",
+    "sim_nprocs": 128,
+    "pvserver_hosts": "ares-comp-21:16,ares-comp-22:16,ares-comp-18:16,ares-comp-19:16",
+    "pvserver_nprocs": 64,
+    "wall_time_s": 276.474657675,
+    "consumer_exit": 0
+}

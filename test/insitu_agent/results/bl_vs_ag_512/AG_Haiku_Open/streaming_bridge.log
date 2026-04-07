@@ -1,0 +1,92 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=5.528s render=0.520s)
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 2 ready (sst=0.021s pipeline=0.001s render=5.156s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 3 ready (sst=0.009s pipeline=0.000s render=0.055s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 4 ready (sst=0.006s pipeline=0.000s render=0.038s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 5 ready (sst=0.006s pipeline=0.000s render=0.051s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 6 ready (sst=0.006s pipeline=0.000s render=0.047s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 7 ready (sst=0.007s pipeline=0.000s render=0.055s)
+[insitu_streaming] Step 8 ready (sst=0.006s pipeline=0.000s render=0.048s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 9 ready (sst=0.006s pipeline=0.000s render=0.046s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 10 ready (sst=0.005s pipeline=0.000s render=0.059s)
+[insitu_streaming] Step 11 ready (sst=0.005s pipeline=0.000s render=0.046s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 12 ready (sst=0.005s pipeline=0.000s render=0.044s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 13 ready (sst=0.005s pipeline=0.000s render=0.043s)
+[insitu_streaming] Step 14 ready (sst=0.005s pipeline=0.000s render=0.073s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 15 ready (sst=0.006s pipeline=0.001s render=0.058s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 16 ready (sst=0.006s pipeline=0.000s render=0.051s)
+[insitu_streaming] Step 17 ready (sst=0.005s pipeline=0.000s render=0.055s)
+[insitu_streaming] Step 18 ready (sst=0.007s pipeline=0.000s render=0.044s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 19 ready (sst=0.005s pipeline=0.000s render=0.042s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 20 ready (sst=0.017s pipeline=0.000s render=4.821s)
+[insitu_streaming] Step 21 ready (sst=0.011s pipeline=0.000s render=4.816s)
+[insitu_streaming] Step 22 ready (sst=0.013s pipeline=0.000s render=4.817s)
+[insitu_streaming] Step 23 ready (sst=0.019s pipeline=0.000s render=4.862s)
+[insitu_streaming] Step 24 ready (sst=0.013s pipeline=0.000s render=4.836s)
+[insitu_streaming] Step 25 ready (sst=0.021s pipeline=0.000s render=4.849s)
+[insitu_streaming] Step 26 ready (sst=0.015s pipeline=0.000s render=4.799s)
+[insitu_streaming] Step 27 ready (sst=0.013s pipeline=0.000s render=4.867s)
+[insitu_streaming] Step 28 ready (sst=0.011s pipeline=0.000s render=4.841s)
+[insitu_streaming] Step 29 ready (sst=0.011s pipeline=0.000s render=4.804s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 30 ready (sst=0.015s pipeline=0.000s render=4.847s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 31 ready (sst=0.010s pipeline=0.000s render=4.850s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 32 ready (sst=0.012s pipeline=0.000s render=4.874s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 33 ready (sst=0.014s pipeline=0.000s render=4.889s)
+[insitu_streaming] Step 34 ready (sst=0.020s pipeline=0.000s render=4.910s)
+[insitu_streaming] Step 35 ready (sst=0.013s pipeline=0.000s render=4.848s)
+[insitu_streaming] Step 36 ready (sst=0.017s pipeline=0.000s render=4.827s)
+[insitu_streaming] Step 37 ready (sst=0.013s pipeline=0.000s render=4.914s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 38 ready (sst=0.011s pipeline=0.000s render=4.861s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 39 ready (sst=0.016s pipeline=0.000s render=4.859s)
+[insitu_streaming] Step 40 ready (sst=0.012s pipeline=0.000s render=4.838s)
+[insitu_streaming] Step 41 ready (sst=0.013s pipeline=0.000s render=4.833s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 42 ready (sst=0.015s pipeline=0.000s render=4.856s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 43 ready (sst=0.011s pipeline=0.000s render=4.839s)
+[insitu_streaming] Step 44 ready (sst=0.012s pipeline=0.000s render=4.839s)
+[insitu_streaming] Step 45 ready (sst=0.011s pipeline=0.000s render=4.833s)
+[insitu_streaming] Step 46 ready (sst=0.010s pipeline=0.000s render=4.843s)
+[insitu_streaming] Step 47 ready (sst=0.011s pipeline=0.000s render=4.882s)
+[insitu_streaming] Step 48 ready (sst=0.011s pipeline=0.000s render=4.820s)
+[insitu_streaming] Step 49 ready (sst=0.012s pipeline=0.000s render=4.889s)
+[insitu_streaming] Step 50 ready (sst=0.011s pipeline=0.000s render=4.908s)
+[insitu_streaming] Step 51 ready (sst=0.013s pipeline=0.000s render=4.907s)
+[insitu_streaming] Step 52 ready (sst=0.011s pipeline=0.000s render=4.944s)
+[insitu_streaming] Step 53 ready (sst=0.013s pipeline=0.000s render=4.796s)
+[insitu_streaming] Step 54 ready (sst=0.011s pipeline=0.000s render=4.833s)
+[insitu_streaming] Step 55 ready (sst=0.011s pipeline=0.000s render=4.790s)
+[insitu_streaming] Paused by MCP command
+[insitu_streaming] Step 56 ready (sst=0.011s pipeline=0.000s render=4.808s)
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] End of stream after 56 steps
+[insitu_streaming] Done.

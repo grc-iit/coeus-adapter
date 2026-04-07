@@ -1,0 +1,23 @@
+=============================================
+  L=512 BL vs AG run: AG_Haiku_Goal
+  Sim: 128 procs on 8 nodes
+  pvserver: 64 procs on 4 nodes
+  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/bl_vs_ag_512/AG_Haiku_Goal
+=============================================
+[Tue Apr  7 11:55:46 AM CDT 2026] Starting pvserver (np=64, hosts=ares-comp-21:16,ares-comp-22:16,ares-comp-18:16,ares-comp-19:16)...
+[Tue Apr  7 11:56:11 AM CDT 2026] pvserver PID: 1027234
+[Tue Apr  7 11:56:11 AM CDT 2026] Starting Gray-Scott (L=512, 400 steps, plotgap=10)...
+[Tue Apr  7 11:56:12 AM CDT 2026] Waiting for SST contact file...
+[Tue Apr  7 11:56:20 AM CDT 2026] SST contact file found after 5s
+[Tue Apr  7 11:56:20 AM CDT 2026] Starting streaming bridge...
+[Tue Apr  7 11:56:20 AM CDT 2026] Waiting for bridge to initialize...
+[Tue Apr  7 11:56:34 AM CDT 2026] Bridge ready after 8s
+[Tue Apr  7 11:56:34 AM CDT 2026] Running consumer for variant AG_Haiku_Goal...
+[Tue Apr  7 12:02:58 PM CDT 2026] Consumer finished (exit: 0)
+[Tue Apr  7 12:02:58 PM CDT 2026] Draining remaining steps...
+[Tue Apr  7 12:03:55 PM CDT 2026] Total wall time: 463.571401169s
+=============================================
+  AG_Haiku_Goal complete
+  Wall time: 463.571401169s
+  Results in: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/bl_vs_ag_512/AG_Haiku_Goal
+=============================================

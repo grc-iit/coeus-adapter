@@ -1,0 +1,40 @@
+{"output_step": 1, "visualize": false, "advance_total_ms": 6817.6, "timestamp": 1775580169.2542517}
+{"output_step": 2, "visualize": false, "advance_total_ms": 6303.69, "timestamp": 1775580175.5733552}
+{"output_step": 3, "visualize": false, "advance_total_ms": 5904.91, "timestamp": 1775580181.4945273}
+{"output_step": 4, "visualize": false, "advance_total_ms": 6245.35, "timestamp": 1775580187.7574205}
+{"output_step": 5, "visualize": false, "advance_total_ms": 6185.48, "timestamp": 1775580193.9703066}
+{"output_step": 6, "visualize": false, "advance_total_ms": 5964.02, "timestamp": 1775580199.9610083}
+{"output_step": 7, "visualize": false, "advance_total_ms": 6184.44, "timestamp": 1775580206.170982}
+{"output_step": 8, "visualize": false, "advance_total_ms": 5969.32, "timestamp": 1775580212.1657774}
+{"output_step": 9, "visualize": false, "advance_total_ms": 6179.26, "timestamp": 1775580218.369978}
+{"output_step": 10, "visualize": true, "advance_total_ms": 6169.4, "timestamp": 1775580224.5662043, "create_isosurface_ms": 3826.22, "create_isosurface_msg": "Created isosurface at value 0.3. Filter registered as 'Contour1'.", "get_screenshot_ms": 1149.79, "screenshot_path": "screenshots/step_0010.png", "image_bytes": 24902}
+{"output_step": 11, "visualize": false, "advance_total_ms": 5915.78, "timestamp": 1775580235.4792583}
+{"output_step": 12, "visualize": false, "advance_total_ms": 5939.85, "timestamp": 1775580241.4453819}
+{"output_step": 13, "visualize": false, "advance_total_ms": 5735.25, "timestamp": 1775580247.2024572}
+{"output_step": 14, "visualize": false, "advance_total_ms": 5935.54, "timestamp": 1775580253.161763}
+{"output_step": 15, "visualize": false, "advance_total_ms": 5918.63, "timestamp": 1775580259.0995076}
+{"output_step": 16, "visualize": false, "advance_total_ms": 5949.93, "timestamp": 1775580265.075669}
+{"output_step": 17, "visualize": false, "advance_total_ms": 5897.65, "timestamp": 1775580271.0004106}
+{"output_step": 18, "visualize": false, "advance_total_ms": 5715.57, "timestamp": 1775580276.743263}
+{"output_step": 19, "visualize": false, "advance_total_ms": 5925.1, "timestamp": 1775580282.693721}
+{"output_step": 20, "visualize": true, "advance_total_ms": 5834.16, "timestamp": 1775580288.5456254, "get_screenshot_ms": 194.02, "screenshot_path": "screenshots/step_0020.png", "image_bytes": 24902}
+{"output_step": 21, "visualize": false, "advance_total_ms": 5652.14, "timestamp": 1775580294.4227827}
+{"output_step": 22, "visualize": false, "advance_total_ms": 5891.23, "timestamp": 1775580300.330073}
+{"output_step": 23, "visualize": false, "advance_total_ms": 5838.22, "timestamp": 1775580306.1954765}
+{"output_step": 24, "visualize": false, "advance_total_ms": 5876.09, "timestamp": 1775580312.0867276}
+{"output_step": 25, "visualize": false, "advance_total_ms": 5946.42, "timestamp": 1775580318.0510926}
+{"output_step": 26, "visualize": false, "advance_total_ms": 5830.41, "timestamp": 1775580323.90496}
+{"output_step": 27, "visualize": false, "advance_total_ms": 5876.56, "timestamp": 1775580329.7986643}
+{"output_step": 28, "visualize": false, "advance_total_ms": 5945.68, "timestamp": 1775580335.7689753}
+{"output_step": 29, "visualize": false, "advance_total_ms": 5952.45, "timestamp": 1775580341.7448266}
+{"output_step": 30, "visualize": true, "advance_total_ms": 5731.0, "timestamp": 1775580347.5002775, "get_screenshot_ms": 188.45, "screenshot_path": "screenshots/step_0030.png", "image_bytes": 24902}
+{"output_step": 31, "visualize": false, "advance_total_ms": 5725.33, "timestamp": 1775580353.4452636}
+{"output_step": 32, "visualize": false, "advance_total_ms": 5950.58, "timestamp": 1775580359.4229774}
+{"output_step": 33, "visualize": false, "advance_total_ms": 5940.03, "timestamp": 1775580365.3847203}
+{"output_step": 34, "visualize": false, "advance_total_ms": 5719.41, "timestamp": 1775580371.1270013}
+{"output_step": 35, "visualize": false, "advance_total_ms": 5948.03, "timestamp": 1775580377.101829}
+{"output_step": 36, "visualize": false, "advance_total_ms": 5891.93, "timestamp": 1775580383.0185323}
+{"output_step": 37, "visualize": false, "advance_total_ms": 5914.88, "timestamp": 1775580388.9463885}
+{"output_step": 38, "visualize": false, "advance_total_ms": 5713.17, "timestamp": 1775580394.6881433}
+{"output_step": 39, "visualize": false, "advance_total_ms": 5943.22, "timestamp": 1775580400.6550663}
+{"output_step": 40, "visualize": true, "advance_total_ms": 5707.51, "timestamp": 1775580406.3858101, "get_screenshot_ms": 208.89, "screenshot_path": "screenshots/step_0040.png", "image_bytes": 24902}

@@ -19,7 +19,7 @@ SSH_WRAPPER="/home/hxu40/software/gray-scott/ssh-spack-wrapper.sh"
 PVPYTHON="/mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/bin/pvpython"
 
 # Sim config: fixed at A3 (8 nodes, 128 procs)
-SIM_HOSTS="ares-comp-25:16,ares-comp-26:16,ares-comp-27:16,ares-comp-28:16,ares-comp-29:16,ares-comp-17:16,ares-comp-18:16,ares-comp-19:16"
+SIM_HOSTS="ares-comp-10:16,ares-comp-11:16,ares-comp-12:16,ares-comp-13:16,ares-comp-14:16,ares-comp-15:16,ares-comp-16:16,ares-comp-17:16"
 SIM_NP=128
 
 # Environment
@@ -57,9 +57,11 @@ if [ "${PV_NP}" -eq 1 ]; then
     PVSERVER_PID=$!
 else
     # MPI parallel pvserver (use bash -c + spack load for cross-node support)
+    # --bind-to none allows oversubscription beyond physical cores (uses HT cores)
     nohup mpirun \
         --mca plm_rsh_agent "${SSH_WRAPPER}" \
         --mca plm_ssh_no_tree_spawn 1 \
+        --bind-to none \
         ${PV_HOSTS:+--host ${PV_HOSTS}} \
         -np ${PV_NP} \
         bash -c "
@@ -115,7 +117,7 @@ echo "[$(date)] Starting streaming bridge..."
 nohup ${PVPYTHON} -u "${SCRIPT_DIR}/insitu_streaming.py" \
     -j "${SCRIPT_DIR}/gs-fides.json" \
     -b "${SCRIPT_DIR}/gs.bp" \
-    --staging --server localhost --port 11112 \
+    --staging --server ares-comp-21 --port 11112 \
     --paused \
     --timing-file "${RESULTS_DIR}/streaming_timing.jsonl" \
     > "${RESULTS_DIR}/streaming_bridge.log" 2>&1 &
@@ -137,7 +139,7 @@ echo "[$(date)] Running agent (scripted_basic)..."
     --provider anthropic \
     --model claude-haiku-4-5-20251001 \
     --pvpython "${PVPYTHON}" \
-    --server-host localhost \
+    --server-host ares-comp-21 \
     --server-port 11112 \
     --timing-file "${RESULTS_DIR}/mcp_tool_timing.jsonl" \
     --prompt "Execute this sequence precisely:

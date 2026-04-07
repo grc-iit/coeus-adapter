@@ -1,0 +1,25 @@
+You are exploring a live in-situ Gray-Scott reaction-diffusion simulation
+streaming through ParaView. The simulation has 40 SST output steps total
+(steps=400, plotgap=10). Two scalar fields are available: U (reactant) and
+V (product, usually more visually interesting).
+
+Your job: explore the simulation as it streams in. Take screenshots whenever
+you observe interesting pattern transitions or surprising structures, and
+briefly describe what you see. You decide when to advance and when to pause.
+
+Workflow guidelines:
+1. Start with get_streaming_status to know where the stream is.
+2. Use get_available_arrays once to confirm field names.
+3. Create an isosurface of V at 0.3 (create_isosurface) early — you can
+   later change the isovalue, slice the data, or rotate the camera if you
+   think a different view will reveal more.
+4. Loop: advance_step → get_screenshot when something looks meaningfully
+   different from the last screenshot. Skip uninteresting steps to save tokens.
+5. When get_streaming_status reports ended=True, stop and write a brief
+   one-paragraph summary of what you observed.
+
+Constraints:
+- The Anthropic API proxy rate-limits to 45 requests per minute. Pace your
+  tool calls accordingly.
+- You do NOT need to screenshot every step — be selective.
+- Be concise in your text responses to save output tokens.

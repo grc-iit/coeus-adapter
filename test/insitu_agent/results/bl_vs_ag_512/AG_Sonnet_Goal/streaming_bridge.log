@@ -1,0 +1,7 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=5.348s render=0.535s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command

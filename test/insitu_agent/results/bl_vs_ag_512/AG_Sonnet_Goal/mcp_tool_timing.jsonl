@@ -1,0 +1,13 @@
+{"tool": "get_streaming_status", "pv_operation_ms": 0, "mcp_total_ms": 1.33, "mcp_overhead_ms": 1.33, "timestamp": 1775584924.1217773}
+{"tool": "get_available_arrays", "pv_operation_ms": 0, "mcp_total_ms": 2756.95, "mcp_overhead_ms": 2756.95, "timestamp": 1775584926.9021273}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 2.1, "mcp_overhead_ms": 2.1, "timestamp": 1775584948.3239267}
+{"tool": "get_streaming_status", "pv_operation_ms": 0, "mcp_total_ms": 1.56, "mcp_overhead_ms": 1.56, "timestamp": 1775584964.007067}
+{"tool": "create_isosurface", "pv_operation_ms": 866.06, "mcp_total_ms": 866.12, "mcp_overhead_ms": 0.07, "timestamp": 1775584970.840669}
+{"tool": "color_by", "pv_operation_ms": 0, "mcp_total_ms": 496.58, "mcp_overhead_ms": 496.58, "timestamp": 1775584988.1255465}
+{"tool": "reset_camera", "pv_operation_ms": 0, "mcp_total_ms": 800.03, "mcp_overhead_ms": 800.03, "timestamp": 1775584988.9422858}
+{"tool": "set_active_source", "pv_operation_ms": 0, "mcp_total_ms": 2.44, "mcp_overhead_ms": 2.44, "timestamp": 1775584994.1399608}
+{"tool": "set_representation_type", "pv_operation_ms": 0, "mcp_total_ms": 17.74, "mcp_overhead_ms": 17.74, "timestamp": 1775584997.136456}
+{"tool": "color_by", "pv_operation_ms": 0, "mcp_total_ms": 34.19, "mcp_overhead_ms": 34.19, "timestamp": 1775585001.2148669}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 2.17, "mcp_overhead_ms": 2.17, "timestamp": 1775585011.2632084}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 2.24, "mcp_overhead_ms": 2.24, "timestamp": 1775585029.8886805}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 2.67, "mcp_overhead_ms": 2.67, "timestamp": 1775585035.077716}

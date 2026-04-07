@@ -1,0 +1,23 @@
+=============================================
+  L=512 BL vs AG run: BL_K2
+  Sim: 128 procs on 8 nodes
+  pvserver: 64 procs on 4 nodes
+  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/bl_vs_ag_512/BL_K2
+=============================================
+[Tue Apr  7 11:24:58 AM CDT 2026] Starting pvserver (np=64, hosts=ares-comp-21:16,ares-comp-22:16,ares-comp-18:16,ares-comp-19:16)...
+[Tue Apr  7 11:25:23 AM CDT 2026] pvserver PID: 1019553
+[Tue Apr  7 11:25:23 AM CDT 2026] Starting Gray-Scott (L=512, 400 steps, plotgap=10)...
+[Tue Apr  7 11:25:23 AM CDT 2026] Waiting for SST contact file...
+[Tue Apr  7 11:25:31 AM CDT 2026] SST contact file found after 5s
+[Tue Apr  7 11:25:31 AM CDT 2026] Starting streaming bridge...
+[Tue Apr  7 11:25:31 AM CDT 2026] Waiting for bridge to initialize...
+[Tue Apr  7 11:25:45 AM CDT 2026] Bridge ready after 8s
+[Tue Apr  7 11:25:45 AM CDT 2026] Running consumer for variant BL_K2...
+[Tue Apr  7 11:29:56 AM CDT 2026] Consumer finished (exit: 0)
+[Tue Apr  7 11:29:56 AM CDT 2026] Draining remaining steps...
+[Tue Apr  7 11:29:59 AM CDT 2026] Total wall time: 276.379220899s
+=============================================
+  BL_K2 complete
+  Wall time: 276.379220899s
+  Results in: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/bl_vs_ag_512/BL_K2
+=============================================

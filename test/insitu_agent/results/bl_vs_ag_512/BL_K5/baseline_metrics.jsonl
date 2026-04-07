@@ -1,0 +1,40 @@
+{"output_step": 1, "visualize": false, "advance_total_ms": 6612.87, "timestamp": 1775579853.221256}
+{"output_step": 2, "visualize": false, "advance_total_ms": 6171.96, "timestamp": 1775579859.4191139}
+{"output_step": 3, "visualize": false, "advance_total_ms": 6176.31, "timestamp": 1775579865.6228113}
+{"output_step": 4, "visualize": false, "advance_total_ms": 6188.99, "timestamp": 1775579871.833706}
+{"output_step": 5, "visualize": true, "advance_total_ms": 5944.78, "timestamp": 1775579877.8064537, "create_isosurface_ms": 3842.78, "create_isosurface_msg": "Created isosurface at value 0.3. Filter registered as 'Contour1'.", "get_screenshot_ms": 1134.99, "screenshot_path": "screenshots/step_0005.png", "image_bytes": 24874}
+{"output_step": 6, "visualize": false, "advance_total_ms": 5926.99, "timestamp": 1775579888.755536}
+{"output_step": 7, "visualize": false, "advance_total_ms": 5924.96, "timestamp": 1775579894.711494}
+{"output_step": 8, "visualize": false, "advance_total_ms": 5871.94, "timestamp": 1775579900.5972376}
+{"output_step": 9, "visualize": false, "advance_total_ms": 5876.01, "timestamp": 1775579906.489818}
+{"output_step": 10, "visualize": true, "advance_total_ms": 5754.71, "timestamp": 1775579912.2655654, "get_screenshot_ms": 184.2, "screenshot_path": "screenshots/step_0010.png", "image_bytes": 24874}
+{"output_step": 11, "visualize": false, "advance_total_ms": 5736.61, "timestamp": 1775579918.2062752}
+{"output_step": 12, "visualize": false, "advance_total_ms": 5714.95, "timestamp": 1775579923.9457374}
+{"output_step": 13, "visualize": false, "advance_total_ms": 5875.51, "timestamp": 1775579929.840116}
+{"output_step": 14, "visualize": false, "advance_total_ms": 5935.75, "timestamp": 1775579935.7972512}
+{"output_step": 15, "visualize": true, "advance_total_ms": 5969.18, "timestamp": 1775579941.79116, "get_screenshot_ms": 181.61, "screenshot_path": "screenshots/step_0015.png", "image_bytes": 24874}
+{"output_step": 16, "visualize": false, "advance_total_ms": 5664.67, "timestamp": 1775579947.6561568}
+{"output_step": 17, "visualize": false, "advance_total_ms": 5946.57, "timestamp": 1775579953.625631}
+{"output_step": 18, "visualize": false, "advance_total_ms": 5720.14, "timestamp": 1775579959.367142}
+{"output_step": 19, "visualize": false, "advance_total_ms": 5952.67, "timestamp": 1775579965.34719}
+{"output_step": 20, "visualize": true, "advance_total_ms": 5731.29, "timestamp": 1775579971.1062648, "get_screenshot_ms": 192.99, "screenshot_path": "screenshots/step_0020.png", "image_bytes": 24874}
+{"output_step": 21, "visualize": false, "advance_total_ms": 5719.43, "timestamp": 1775579977.0501046}
+{"output_step": 22, "visualize": false, "advance_total_ms": 5951.67, "timestamp": 1775579983.0278957}
+{"output_step": 23, "visualize": false, "advance_total_ms": 5937.2, "timestamp": 1775579988.986767}
+{"output_step": 24, "visualize": false, "advance_total_ms": 5952.45, "timestamp": 1775579994.9641402}
+{"output_step": 25, "visualize": true, "advance_total_ms": 5948.77, "timestamp": 1775580000.939347, "get_screenshot_ms": 183.56, "screenshot_path": "screenshots/step_0025.png", "image_bytes": 24874}
+{"output_step": 26, "visualize": false, "advance_total_ms": 5647.0, "timestamp": 1775580006.7869914}
+{"output_step": 27, "visualize": false, "advance_total_ms": 5865.05, "timestamp": 1775580012.6662405}
+{"output_step": 28, "visualize": false, "advance_total_ms": 5764.55, "timestamp": 1775580018.4456267}
+{"output_step": 29, "visualize": false, "advance_total_ms": 5949.73, "timestamp": 1775580024.4216104}
+{"output_step": 30, "visualize": true, "advance_total_ms": 5932.56, "timestamp": 1775580030.3809423, "get_screenshot_ms": 186.1, "screenshot_path": "screenshots/step_0030.png", "image_bytes": 24874}
+{"output_step": 31, "visualize": false, "advance_total_ms": 5712.55, "timestamp": 1775580036.301563}
+{"output_step": 32, "visualize": false, "advance_total_ms": 5707.7, "timestamp": 1775580042.0358577}
+{"output_step": 33, "visualize": false, "advance_total_ms": 5944.25, "timestamp": 1775580048.0064962}
+{"output_step": 34, "visualize": false, "advance_total_ms": 5947.04, "timestamp": 1775580053.980293}
+{"output_step": 35, "visualize": true, "advance_total_ms": 5714.08, "timestamp": 1775580059.7196596, "get_screenshot_ms": 206.94, "screenshot_path": "screenshots/step_0035.png", "image_bytes": 24874}
+{"output_step": 36, "visualize": false, "advance_total_ms": 5654.14, "timestamp": 1775580065.5994232}
+{"output_step": 37, "visualize": false, "advance_total_ms": 5904.94, "timestamp": 1775580071.5264666}
+{"output_step": 38, "visualize": false, "advance_total_ms": 5866.17, "timestamp": 1775580077.4102168}
+{"output_step": 39, "visualize": false, "advance_total_ms": 5897.24, "timestamp": 1775580083.3210568}
+{"output_step": 40, "visualize": true, "advance_total_ms": 5912.73, "timestamp": 1775580089.2539387, "get_screenshot_ms": 200.3, "screenshot_path": "screenshots/step_0040.png", "image_bytes": 24874}

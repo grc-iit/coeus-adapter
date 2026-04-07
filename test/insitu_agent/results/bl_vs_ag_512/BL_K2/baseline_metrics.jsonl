@@ -1,0 +1,40 @@
+{"output_step": 1, "visualize": false, "advance_total_ms": 6871.99, "timestamp": 1775579158.7981946}
+{"output_step": 2, "visualize": true, "advance_total_ms": 6126.75, "timestamp": 1775579164.948746, "create_isosurface_ms": 3763.35, "create_isosurface_msg": "Created isosurface at value 0.3. Filter registered as 'Contour1'.", "get_screenshot_ms": 1117.39, "screenshot_path": "screenshots/step_0002.png", "image_bytes": 24872}
+{"output_step": 3, "visualize": false, "advance_total_ms": 5731.34, "timestamp": 1775579175.583958}
+{"output_step": 4, "visualize": true, "advance_total_ms": 5953.09, "timestamp": 1775579181.5652642, "get_screenshot_ms": 183.94, "screenshot_path": "screenshots/step_0004.png", "image_bytes": 24872}
+{"output_step": 5, "visualize": false, "advance_total_ms": 5665.51, "timestamp": 1775579187.4344144}
+{"output_step": 6, "visualize": true, "advance_total_ms": 6058.26, "timestamp": 1775579193.508266, "get_screenshot_ms": 161.09, "screenshot_path": "screenshots/step_0006.png", "image_bytes": 24872}
+{"output_step": 7, "visualize": false, "advance_total_ms": 5649.48, "timestamp": 1775579199.338231}
+{"output_step": 8, "visualize": true, "advance_total_ms": 6081.43, "timestamp": 1775579205.4342504, "get_screenshot_ms": 164.52, "screenshot_path": "screenshots/step_0008.png", "image_bytes": 24872}
+{"output_step": 9, "visualize": false, "advance_total_ms": 5660.9, "timestamp": 1775579211.2790256}
+{"output_step": 10, "visualize": true, "advance_total_ms": 5891.0, "timestamp": 1775579217.184553, "get_screenshot_ms": 171.08, "screenshot_path": "screenshots/step_0010.png", "image_bytes": 24872}
+{"output_step": 11, "visualize": false, "advance_total_ms": 5942.04, "timestamp": 1775579223.3203337}
+{"output_step": 12, "visualize": true, "advance_total_ms": 5903.45, "timestamp": 1775579229.2420309, "get_screenshot_ms": 194.03, "screenshot_path": "screenshots/step_0012.png", "image_bytes": 24872}
+{"output_step": 13, "visualize": false, "advance_total_ms": 5674.18, "timestamp": 1775579235.1297953}
+{"output_step": 14, "visualize": true, "advance_total_ms": 5957.92, "timestamp": 1775579241.1196156, "get_screenshot_ms": 178.14, "screenshot_path": "screenshots/step_0014.png", "image_bytes": 24872}
+{"output_step": 15, "visualize": false, "advance_total_ms": 5604.24, "timestamp": 1775579246.9225564}
+{"output_step": 16, "visualize": true, "advance_total_ms": 5877.87, "timestamp": 1775579252.815866, "get_screenshot_ms": 165.37, "screenshot_path": "screenshots/step_0016.png", "image_bytes": 24872}
+{"output_step": 17, "visualize": false, "advance_total_ms": 5869.61, "timestamp": 1775579258.8677144}
+{"output_step": 18, "visualize": true, "advance_total_ms": 5896.92, "timestamp": 1775579264.7802167, "get_screenshot_ms": 166.46, "screenshot_path": "screenshots/step_0018.png", "image_bytes": 24872}
+{"output_step": 19, "visualize": false, "advance_total_ms": 5612.66, "timestamp": 1775579270.5782502}
+{"output_step": 20, "visualize": true, "advance_total_ms": 6076.87, "timestamp": 1775579276.6657631, "get_screenshot_ms": 182.08, "screenshot_path": "screenshots/step_0020.png", "image_bytes": 24872}
+{"output_step": 21, "visualize": false, "advance_total_ms": 5457.74, "timestamp": 1775579282.3330274}
+{"output_step": 22, "visualize": true, "advance_total_ms": 5908.7, "timestamp": 1775579288.2621884, "get_screenshot_ms": 167.67, "screenshot_path": "screenshots/step_0022.png", "image_bytes": 24872}
+{"output_step": 23, "visualize": false, "advance_total_ms": 5656.23, "timestamp": 1775579294.1066582}
+{"output_step": 24, "visualize": true, "advance_total_ms": 5997.08, "timestamp": 1775579300.1200643, "get_screenshot_ms": 175.37, "screenshot_path": "screenshots/step_0024.png", "image_bytes": 24872}
+{"output_step": 25, "visualize": false, "advance_total_ms": 5694.9, "timestamp": 1775579306.0100386}
+{"output_step": 26, "visualize": true, "advance_total_ms": 6010.52, "timestamp": 1775579312.0458808, "get_screenshot_ms": 176.47, "screenshot_path": "screenshots/step_0026.png", "image_bytes": 24872}
+{"output_step": 27, "visualize": false, "advance_total_ms": 5703.42, "timestamp": 1775579317.9422858}
+{"output_step": 28, "visualize": true, "advance_total_ms": 5818.76, "timestamp": 1775579323.7853968, "get_screenshot_ms": 178.27, "screenshot_path": "screenshots/step_0028.png", "image_bytes": 24872}
+{"output_step": 29, "visualize": false, "advance_total_ms": 5598.04, "timestamp": 1775579329.5864987}
+{"output_step": 30, "visualize": true, "advance_total_ms": 5932.38, "timestamp": 1775579335.5407271, "get_screenshot_ms": 182.04, "screenshot_path": "screenshots/step_0030.png", "image_bytes": 24872}
+{"output_step": 31, "visualize": false, "advance_total_ms": 5681.02, "timestamp": 1775579341.4260888}
+{"output_step": 32, "visualize": true, "advance_total_ms": 5951.96, "timestamp": 1775579347.4052606, "get_screenshot_ms": 185.59, "screenshot_path": "screenshots/step_0032.png", "image_bytes": 24872}
+{"output_step": 33, "visualize": false, "advance_total_ms": 5491.99, "timestamp": 1775579353.1150594}
+{"output_step": 34, "visualize": true, "advance_total_ms": 5937.31, "timestamp": 1775579359.0691473, "get_screenshot_ms": 178.4, "screenshot_path": "screenshots/step_0034.png", "image_bytes": 24872}
+{"output_step": 35, "visualize": false, "advance_total_ms": 5921.8, "timestamp": 1775579365.1873167}
+{"output_step": 36, "visualize": true, "advance_total_ms": 5959.97, "timestamp": 1775579371.1756492, "get_screenshot_ms": 173.88, "screenshot_path": "screenshots/step_0036.png", "image_bytes": 24872}
+{"output_step": 37, "visualize": false, "advance_total_ms": 5615.68, "timestamp": 1775579376.9857805}
+{"output_step": 38, "visualize": true, "advance_total_ms": 6121.94, "timestamp": 1775579383.1224694, "get_screenshot_ms": 177.27, "screenshot_path": "screenshots/step_0038.png", "image_bytes": 24872}
+{"output_step": 39, "visualize": false, "advance_total_ms": 5609.96, "timestamp": 1775579388.9233835}
+{"output_step": 40, "visualize": true, "advance_total_ms": 5728.91, "timestamp": 1775579394.6710992, "get_screenshot_ms": 184.56, "screenshot_path": "screenshots/step_0040.png", "image_bytes": 24872}

@@ -1,0 +1,18 @@
+{
+  "input_tokens": 2489,
+  "output_tokens": 6135,
+  "cache_creation_input_tokens": 229595,
+  "cache_read_input_tokens": 918180,
+  "num_llm_calls": 111,
+  "num_tool_calls": 116,
+  "num_screenshots": 14,
+  "total_image_bytes": 34242,
+  "model": "claude-sonnet-4-5-20250929",
+  "provider": "anthropic",
+  "wall_time_s": 628.943,
+  "estimated_cost_usd": 0.0995,
+  "pricing_per_million": {
+    "in": 3.0,
+    "out": 15.0
+  }
+}

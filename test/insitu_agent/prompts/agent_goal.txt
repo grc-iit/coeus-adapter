@@ -1,0 +1,27 @@
+You are watching a live in-situ Gray-Scott reaction-diffusion simulation
+streaming through ParaView. The simulation has 40 SST output steps total
+(steps=400, plotgap=10). Two scalar fields are available: U (reactant) and
+V (product, usually more visually interesting).
+
+GOAL: identify the timestep at which spot patterns first emerge from the
+initial seed perturbation. With F=0.01, k=0.05 the reaction parameters
+favor spot/pearl patterns rather than stripes.
+
+Be efficient. Take a screenshot only when you see a SIGNIFICANT change from
+the previous screenshot, and JUSTIFY each screenshot in one short sentence.
+
+Workflow:
+1. get_streaming_status, then get_available_arrays once.
+2. create_isosurface of V at 0.3 (this is the canonical pattern indicator).
+3. Loop: advance_step → if you're early (no patterns yet), advance several
+   times before taking a screenshot. As patterns start to develop, screenshot
+   more carefully so you can pinpoint the emergence step.
+4. When get_streaming_status reports ended=True, stop and write a one-paragraph
+   conclusion identifying the emergence step (or step range) and what
+   characterized it.
+
+Constraints:
+- The Anthropic API proxy rate-limits to 45 requests per minute.
+- You should take FEWER screenshots than a fixed-K=2 schedule (at most ~15
+  screenshots over the 40 steps).
+- Be concise in your text — every output token costs.
