@@ -1,3 +1,0 @@
-mcp
-h5py
-pyhdf
