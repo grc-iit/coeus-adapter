@@ -135,14 +135,48 @@ def setup_render_view():
 
 
 def setup_initial_display(fides, view):
-    """Show the raw data on the first step so the MCP agent has something to work with."""
+    """
+    Set up a meaningful visualization of the V field that renders on
+    every bridge step. We use Volume rendering on the raw uniform grid
+    colored by V: no coordinate/origin tuning needed, shows the full 3D
+    pattern evolving, and works reliably across clients.
+
+    We first force a pipeline update on the Fides source so data
+    information (field arrays, bounds) is known before we configure the
+    display. Then we show, switch to Volume representation, and set the
+    color mapping. If Volume rendering is unavailable for whatever reason
+    we fall back to Outline so the bridge still produces a non-empty
+    image instead of just the axes widget.
+    """
+    # Make sure the Fides source has executed once so its field metadata
+    # is populated before we query or color by V.
+    fides.UpdatePipeline()
+
     display = Show(fides, view, "UniformGridRepresentation")
+    # Default to Outline so we always have SOMETHING visible.
+    try:
+        display.SetRepresentationType("Outline")
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: set Outline failed: {e}")
+
     view.ResetCamera()
 
-    uLUT = GetColorTransferFunction("V")
-    uLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
-    uLUT.RescaleOnVisibilityChange = 1
+    # Try to upgrade to a Volume rendering of V (the interesting Gray-Scott
+    # field). This is the real visualization; the Outline was just a safety
+    # net in case Volume isn't supported.
+    try:
+        display.SetRepresentationType("Volume")
+        ColorBy(display, ("POINTS", "V"))
 
+        vLUT = GetColorTransferFunction("V")
+        vLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
+        vLUT.RescaleOnVisibilityChange = 1
+        display.RescaleTransferFunctionToDataRange(True, False)
+        print("[insitu_streaming] Using Volume rendering of V")
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: Volume rendering unavailable ({e}); keeping Outline")
+
+    SetActiveSource(fides)
     return display
 
 
@@ -168,6 +202,26 @@ def streaming_loop(args, state):
     END_OF_STREAM = 2
 
     timing_file = getattr(args, 'timing_file', None)
+    max_steps = getattr(args, 'max_steps', 0) or 0  # 0 = unlimited
+    screenshot_file = getattr(args, 'screenshot_file', None)
+
+    # Which steps should actually render + save a screenshot? Default "all".
+    # Skipping render/save on non-interesting steps avoids the ~1.6 s of
+    # Fides UpdatePipeline + volume rendering per step when the agent will
+    # never look at those frames (Phase 1 skip and Phase 3 drain).
+    render_steps_raw = getattr(args, 'render_steps', None) or "all"
+    if str(render_steps_raw).lower() == "all":
+        render_steps = None
+    else:
+        render_steps = set()
+        for s in str(render_steps_raw).split(","):
+            s = s.strip()
+            if s:
+                try:
+                    render_steps.add(int(s))
+                except ValueError:
+                    print(f"[insitu_streaming] WARN: ignoring invalid render step '{s}'")
+        print(f"[insitu_streaming] Render-only steps: {sorted(render_steps)}")
 
     fides = setup_fides_reader(args.json_filename, args.bp_filename, args.staging)
     view = setup_render_view()
@@ -222,15 +276,43 @@ def streaming_loop(args, state):
                 state.pipeline_ready = True
             state.step += 1
 
-        if display:
-            display.RescaleTransferFunctionToDataRange()
+        # Decide whether this step is in the "render set" — if yes, do the
+        # full pipeline update + render + save; if no, just advance SST and
+        # record timing. This is the optimization that lets Phase 1 and
+        # Phase 3 flash through without wasting compute on frames the agent
+        # never inspects.
+        should_render = (render_steps is None) or (state.step in render_steps)
 
-        t_pipeline_end = time.monotonic()
+        if should_render:
+            # Force the Fides source to re-pull data for the newly-prepared
+            # step so downstream filters re-execute on fresh V values.
+            fides.UpdatePipeline()
 
-        # --- Timing: render ---
-        t_render_start = time.monotonic()
-        Render(view)
-        t_render_end = time.monotonic()
+            if display:
+                display.RescaleTransferFunctionToDataRange()
+
+            t_pipeline_end = time.monotonic()
+
+            # --- Timing: render ---
+            t_render_start = time.monotonic()
+            Render(view)
+            t_render_end = time.monotonic()
+
+            # Save the bridge's view to disk so MCP get_screenshot can serve it.
+            if screenshot_file:
+                try:
+                    base, ext = os.path.splitext(screenshot_file)
+                    tmp_path = base + ".tmp" + (ext or ".png")
+                    SaveScreenshot(tmp_path, view)
+                    os.replace(tmp_path, screenshot_file)
+                except Exception as e:
+                    print(f"[insitu_streaming] WARN: failed to save screenshot: {e}")
+        else:
+            # Skip pipeline/render/save. The Fides reader has already been
+            # advanced by PrepareNextStep + UpdatePipelineInformation above.
+            t_pipeline_end = time.monotonic()
+            t_render_start = t_pipeline_end
+            t_render_end = t_pipeline_end
 
         state.write_status()
 
@@ -244,10 +326,19 @@ def streaming_loop(args, state):
             "timestamp": time.time(),
         })
 
-        print(f"[insitu_streaming] Step {state.step} ready "
+        tag = "RENDER" if should_render else "SKIP  "
+        print(f"[insitu_streaming] Step {state.step} {tag} "
               f"(sst={t_sst_end - t_sst_start:.3f}s "
               f"pipeline={t_pipeline_end - t_pipeline_start:.3f}s "
               f"render={t_render_end - t_render_start:.3f}s)")
+
+        # --- SAFETY: hard step cap ---
+        if max_steps > 0 and state.step >= max_steps:
+            with state.lock:
+                state.ended = True
+            state.write_status()
+            print(f"[insitu_streaming] MAX_STEPS={max_steps} reached — stopping gracefully.")
+            return
 
         # If advance_one was requested, pause after this step
         with state.lock:
@@ -306,6 +397,29 @@ def parse_args():
         "--timing-file",
         help="Path to write per-step timing JSONL file",
         type=str, default=None,
+    )
+    parser.add_argument(
+        "--max-steps",
+        help="Hard cap on number of SST steps to consume (0 = unlimited). "
+             "Prevents run-away step counting if writer crashes without "
+             "signalling END_OF_STREAM.",
+        type=int, default=0,
+    )
+    parser.add_argument(
+        "--screenshot-file",
+        help="Path to save a PNG after each Render(). The MCP server's "
+             "get_screenshot tool reads this file so the agent sees the "
+             "bridge's own view (including the slice visualization the "
+             "bridge sets up) instead of the MCP client's empty view.",
+        type=str, default=None,
+    )
+    parser.add_argument(
+        "--render-steps",
+        help="Comma-separated list of step numbers where the bridge will "
+             "actually do Fides UpdatePipeline + Render + SaveScreenshot. "
+             "Other steps just consume the SST step and record timing. "
+             "Default 'all' renders every step.",
+        type=str, default="all",
     )
     return parser.parse_args()
 

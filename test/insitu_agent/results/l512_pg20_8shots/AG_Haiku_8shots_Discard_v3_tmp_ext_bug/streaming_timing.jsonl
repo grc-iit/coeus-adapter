@@ -1,0 +1,15 @@
+{"step": 1, "sst_wait_ms": 3.62, "pipeline_update_ms": 6126.85, "render_ms": 3938.76, "step_total_ms": 10069.25, "timestamp": 1775600215.1472168}
+{"step": 2, "sst_wait_ms": 18.03, "pipeline_update_ms": 4976.31, "render_ms": 183.08, "step_total_ms": 5177.42, "timestamp": 1775600243.9521172}
+{"step": 3, "sst_wait_ms": 11.76, "pipeline_update_ms": 4917.22, "render_ms": 61.53, "step_total_ms": 4990.52, "timestamp": 1775600249.4677782}
+{"step": 4, "sst_wait_ms": 12.66, "pipeline_update_ms": 4931.7, "render_ms": 49.52, "step_total_ms": 4993.88, "timestamp": 1775600254.973293}
+{"step": 5, "sst_wait_ms": 13.06, "pipeline_update_ms": 4954.86, "render_ms": 54.75, "step_total_ms": 5022.68, "timestamp": 1775600264.0213149}
+{"step": 6, "sst_wait_ms": 12.57, "pipeline_update_ms": 4838.46, "render_ms": 56.18, "step_total_ms": 4907.22, "timestamp": 1775600269.446508}
+{"step": 7, "sst_wait_ms": 13.48, "pipeline_update_ms": 4951.74, "render_ms": 76.85, "step_total_ms": 5042.07, "timestamp": 1775600302.1377354}
+{"step": 8, "sst_wait_ms": 10.41, "pipeline_update_ms": 4915.07, "render_ms": 53.71, "step_total_ms": 4979.19, "timestamp": 1775600313.1632428}
+{"step": 9, "sst_wait_ms": 11.92, "pipeline_update_ms": 4869.34, "render_ms": 51.75, "step_total_ms": 4933.0, "timestamp": 1775600338.7138731}
+{"step": 10, "sst_wait_ms": 8.75, "pipeline_update_ms": 4963.73, "render_ms": 49.63, "step_total_ms": 5022.12, "timestamp": 1775600368.3777742}
+{"step": 11, "sst_wait_ms": 10.59, "pipeline_update_ms": 4786.25, "render_ms": 61.47, "step_total_ms": 4858.32, "timestamp": 1775600400.3825421}
+{"step": 12, "sst_wait_ms": 13.54, "pipeline_update_ms": 4750.03, "render_ms": 61.74, "step_total_ms": 4825.32, "timestamp": 1775600440.3636687}
+{"step": 13, "sst_wait_ms": 13.91, "pipeline_update_ms": 4832.84, "render_ms": 62.89, "step_total_ms": 4909.65, "timestamp": 1775600487.9591744}
+{"step": 14, "sst_wait_ms": 13.65, "pipeline_update_ms": 4792.08, "render_ms": 62.48, "step_total_ms": 4868.22, "timestamp": 1775600519.4686732}
+{"step": 15, "sst_wait_ms": 13.29, "pipeline_update_ms": 4766.53, "render_ms": 63.6, "step_total_ms": 4843.43, "timestamp": 1775600534.3790665}

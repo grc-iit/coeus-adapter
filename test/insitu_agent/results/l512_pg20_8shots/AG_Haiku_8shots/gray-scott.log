@@ -1,0 +1,171 @@
+Simulation writes data using engine type:              SST
+IO parameters:  
+    DataTransport = WAN
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Block
+    QueueLimit = 5
+    RendezvousReaderCount = 1
+========================================
+grid:             512x512x512
+restart:          no
+steps:            400
+plotgap:          20
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-05
+output:           gs.bp
+adios_config:     adios2-sst-blocking.xml
+process layout:   8x4x4
+local grid size:  64x128x128
+========================================
+Simulation at step 20 writing output step     1
+Simulation at step 40 writing output step     2
+Simulation at step 60 writing output step     3
+Simulation at step 80 writing output step     4
+Simulation at step 100 writing output step     5
+Simulation at step 120 writing output step     6
+Simulation at step 140 writing output step     7
+Simulation at step 160 writing output step     8
+Simulation at step 180 writing output step     9
+Simulation at step 200 writing output step     10
+Simulation at step 220 writing output step     11
+Simulation at step 240 writing output step     12
+Simulation at step 260 writing output step     13
+Simulation at step 280 writing output step     14
+Simulation at step 300 writing output step     15
+Simulation at step 320 writing output step     16
+Simulation at step 340 writing output step     17
+Simulation at step 360 writing output step     18
+Simulation at step 380 writing output step     19
+Simulation at step 400 writing output step     20
+Rank 0 - ET 399826 - milliseconds
+Rank 1 - ET 399826 - milliseconds
+Rank 8 - ET 399826 - milliseconds
+Rank 9 - ET 399826 - milliseconds
+Rank 4 - ET 399826 - milliseconds
+Rank 2 - ET 399826 - milliseconds
+Rank 6 - ET 399826 - milliseconds
+Rank 7 - ET 399826 - milliseconds
+Rank 5 - ET 399826 - milliseconds
+Rank 13 - ET 399826 - milliseconds
+Rank 3 - ET 399826 - milliseconds
+Rank 14 - ET 399826 - milliseconds
+Rank 15 - ET 399826 - milliseconds
+Rank 10 - ET 399826 - milliseconds
+Rank 11 - ET 399826 - milliseconds
+Rank 12 - ET 399826 - milliseconds
+Rank 41 - ET 399825 - milliseconds
+Rank 38 - ET 399825 - milliseconds
+Rank 40 - ET 399825 - milliseconds
+Rank 69 - ET 399826 - milliseconds
+Rank 121 - ET 399821 - milliseconds
+Rank 37 - ET 399825 - milliseconds
+Rank 64 - ET 399826 - milliseconds
+Rank 113 - ET 399821 - milliseconds
+Rank 47 - ET 399825 - milliseconds
+Rank 71 - ET 399826 - milliseconds
+Rank 112 - ET 399821 - milliseconds
+Rank 104 - ET 399826 - milliseconds
+Rank 33 - ET 399825 - milliseconds
+Rank 72 - ET 399826 - milliseconds
+Rank 123 - ET 399821 - milliseconds
+Rank 97 - ET 399826 - milliseconds
+Rank 17 - ET 399826 - milliseconds
+Rank 91 - ET 399825 - milliseconds
+Rank 50 - ET 399826 - milliseconds
+Rank 36 - ET 399825 - milliseconds
+Rank 67 - ET 399826 - milliseconds
+Rank 115 - ET 399821 - milliseconds
+Rank 98 - ET 399826 - milliseconds
+Rank 25 - ET 399826 - milliseconds
+Rank 90 - ET 399825 - milliseconds
+Rank 48 - ET 399826 - milliseconds
+Rank 42 - ET 399825 - milliseconds
+Rank 73 - ET 399826 - milliseconds
+Rank 120 - ET 399821 - milliseconds
+Rank 100 - ET 399826 - milliseconds
+Rank 27 - ET 399826 - milliseconds
+Rank 92 - ET 399825 - milliseconds
+Rank 56 - ET 399826 - milliseconds
+Rank 34 - ET 399825 - milliseconds
+Rank 79 - ET 399826 - milliseconds
+Rank 127 - ET 399821 - milliseconds
+Rank 96 - ET 399826 - milliseconds
+Rank 20 - ET 399826 - milliseconds
+Rank 93 - ET 399825 - milliseconds
+Rank 57 - ET 399826 - milliseconds
+Rank 39 - ET 399825 - milliseconds
+Rank 66 - ET 399826 - milliseconds
+Rank 116 - ET 399821 - milliseconds
+Rank 101 - ET 399826 - milliseconds
+Rank 26 - ET 399826 - milliseconds
+Rank 94 - ET 399825 - milliseconds
+Rank 53 - ET 399826 - milliseconds
+Rank 44 - ET 399825 - milliseconds
+Rank 65 - ET 399826 - milliseconds
+Rank 126 - ET 399821 - milliseconds
+Rank 102 - ET 399826 - milliseconds
+Rank 18 - ET 399826 - milliseconds
+Rank 95 - ET 399825 - milliseconds
+Rank 51 - ET 399826 - milliseconds
+Rank 32 - ET 399825 - milliseconds
+Rank 70 - ET 399826 - milliseconds
+Rank 114 - ET 399821 - milliseconds
+Rank 111 - ET 399826 - milliseconds
+Rank 21 - ET 399826 - milliseconds
+Rank 80 - ET 399825 - milliseconds
+Rank 49 - ET 399826 - milliseconds
+Rank 35 - ET 399825 - milliseconds
+Rank 76 - ET 399826 - milliseconds
+Rank 125 - ET 399821 - milliseconds
+Rank 105 - ET 399826 - milliseconds
+Rank 30 - ET 399826 - milliseconds
+Rank 82 - ET 399825 - milliseconds
+Rank 52 - ET 399826 - milliseconds
+Rank 43 - ET 399825 - milliseconds
+Rank 68 - ET 399826 - milliseconds
+Rank 117 - ET 399821 - milliseconds
+Rank 99 - ET 399826 - milliseconds
+Rank 24 - ET 399826 - milliseconds
+Rank 81 - ET 399825 - milliseconds
+Rank 54 - ET 399826 - milliseconds
+Rank 45 - ET 399825 - milliseconds
+Rank 75 - ET 399826 - milliseconds
+Rank 118 - ET 399821 - milliseconds
+Rank 103 - ET 399826 - milliseconds
+Rank 16 - ET 399826 - milliseconds
+Rank 84 - ET 399825 - milliseconds
+Rank 59 - ET 399826 - milliseconds
+Rank 46 - ET 399825 - milliseconds
+Rank 77 - ET 399826 - milliseconds
+Rank 119 - ET 399821 - milliseconds
+Rank 107 - ET 399826 - milliseconds
+Rank 29 - ET 399826 - milliseconds
+Rank 89 - ET 399825 - milliseconds
+Rank 55 - ET 399826 - milliseconds
+Rank 78 - ET 399826 - milliseconds
+Rank 124 - ET 399821 - milliseconds
+Rank 109 - ET 399826 - milliseconds
+Rank 28 - ET 399826 - milliseconds
+Rank 86 - ET 399825 - milliseconds
+Rank 61 - ET 399826 - milliseconds
+Rank 74 - ET 399826 - milliseconds
+Rank 122 - ET 399821 - milliseconds
+Rank 108 - ET 399826 - milliseconds
+Rank 19 - ET 399826 - milliseconds
+Rank 88 - ET 399825 - milliseconds
+Rank 58 - ET 399826 - milliseconds
+Rank 106 - ET 399826 - milliseconds
+Rank 23 - ET 399826 - milliseconds
+Rank 83 - ET 399825 - milliseconds
+Rank 63 - ET 399826 - milliseconds
+Rank 110 - ET 399826 - milliseconds
+Rank 31 - ET 399826 - milliseconds
+Rank 85 - ET 399825 - milliseconds
+Rank 60 - ET 399826 - milliseconds
+Rank 22 - ET 399826 - milliseconds
+Rank 87 - ET 399825 - milliseconds
+Rank 62 - ET 399826 - milliseconds

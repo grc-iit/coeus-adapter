@@ -1,0 +1,1280 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Using Volume rendering of V
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=1.582s render=2.543s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  57.145s) [paraview        ]    vtkOutputWindow.cxx:67     ERR| ERROR: In vtkSocketCommunicator.cxx, line 839
+vtkSocketCommunicator (0x563d77240e60): Tag mismatch: got 42000, expecting 1.
+
+[0m
+[0m[31m(  57.161s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.162s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.163s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.163s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.163s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.163s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.164s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.164s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.165s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.165s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.165s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.165s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.165s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.166s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.184s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.184s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.185s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.185s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.185s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.186s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.186s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.186s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  57.242s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 2 ready (sst=0.013s pipeline=1.203s render=0.341s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  61.263s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.263s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.263s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.263s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.263s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.264s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  61.286s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  61.287s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.287s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.287s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.287s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  61.287s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.288s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.288s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.289s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.290s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.290s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.290s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.292s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.293s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.293s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.293s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.312s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.314s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.315s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.316s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.316s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.316s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.321s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.321s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.321s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.321s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.322s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.322s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.339s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.339s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.339s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.340s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.340s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.340s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.340s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.340s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.386s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  61.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 3 ready (sst=0.024s pipeline=0.004s render=0.020s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  65.914s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.914s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.914s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.915s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.915s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.915s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.915s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.916s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.916s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.916s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.916s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.916s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  65.916s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  65.917s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.917s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.917s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.917s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m(  65.918s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m(  65.919s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.919s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.921s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.922s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.922s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.922s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  65.923s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.923s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.923s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.923s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.923s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.925s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.943s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.945s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.946s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.946s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.946s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.947s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.947s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.947s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.950s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.971s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.971s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.971s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.972s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.972s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.972s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.972s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  65.972s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.040s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.040s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.040s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.041s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.041s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  66.041s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 4 ready (sst=0.003s pipeline=0.002s render=0.023s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  74.578s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.578s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.578s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.579s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  74.579s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  74.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.580s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m(  74.581s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m(  74.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.584s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.601s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.603s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.603s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.603s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.605s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.605s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.605s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.606s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.608s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.608s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.608s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.608s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.608s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.609s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.630s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.631s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.631s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.631s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.632s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.632s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.633s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.633s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.680s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.681s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.681s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.681s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.681s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  74.681s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 5 ready (sst=0.002s pipeline=0.001s render=0.019s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  77.197s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.197s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.197s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.197s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.197s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  77.198s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.198s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m(  77.199s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m(  77.199s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.199s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.201s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.202s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.202s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.202s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.223s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.225s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.225s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.226s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.227s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.227s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.228s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.228s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.230s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.231s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.231s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.231s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.231s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.232s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.253s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.254s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.254s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.254s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.255s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.255s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.255s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.255s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.319s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.319s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.320s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.320s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.320s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  77.320s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 6 ready (sst=0.002s pipeline=0.001s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.370s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  88.371s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.371s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m(  88.372s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m(  88.372s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.372s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.373s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.374s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.375s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.394s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.396s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.396s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.396s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.396s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.397s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.397s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.397s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.397s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.398s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.398s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.399s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.399s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.401s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.401s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.401s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.401s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.402s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.402s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.425s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.426s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.426s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.427s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.428s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.428s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.428s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.428s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.478s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.479s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.479s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.479s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.479s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  88.479s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 7 ready (sst=0.002s pipeline=0.001s render=0.020s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  93.510s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.511s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.511s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.511s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.511s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.512s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m(  93.513s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m(  93.513s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.513s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.513s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.514s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m(  93.515s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m(  93.516s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.516s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.518s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.518s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.519s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.519s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m(  93.519s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.519s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.520s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.520s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.520s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.520s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.521s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.539s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.541s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.541s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.542s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.543s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.543s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.544s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.544s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.547s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.547s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.547s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.547s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.568s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.568s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.568s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.569s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.569s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.569s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.569s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.569s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.636s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.637s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.637s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.637s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.637s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m(  93.638s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 8 ready (sst=0.004s pipeline=0.002s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.179s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 103.180s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 103.180s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.181s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.181s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.181s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 103.182s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 103.183s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.183s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.185s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.186s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.186s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.186s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 103.187s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.187s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.187s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.187s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.187s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.188s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.189s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.207s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.209s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.209s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.210s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.210s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.210s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.210s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.210s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.211s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.211s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.211s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.212s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.212s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.214s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.215s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.215s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.215s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.215s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.215s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.237s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.237s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.237s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.237s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.238s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.238s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.238s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.238s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.305s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.306s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.306s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.306s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.306s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 103.306s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 9 ready (sst=0.002s pipeline=0.002s render=0.023s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 118.378s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.378s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.378s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.378s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.378s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.379s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.379s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.379s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.379s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.379s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.380s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.380s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 118.380s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 118.380s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.380s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.381s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.381s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 118.382s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 118.383s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.383s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.385s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.385s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.386s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.386s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 118.386s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.386s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.386s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.387s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.388s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.407s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.412s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.412s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.412s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.412s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.413s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.413s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.413s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.416s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.416s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.417s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.420s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.420s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.420s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.420s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.421s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.421s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.437s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.437s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.437s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.437s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.437s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.438s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.438s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.438s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 118.484s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 10 ready (sst=0.003s pipeline=0.002s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 137.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 137.582s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 137.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.583s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 137.584s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 137.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.587s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.588s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.588s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.588s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 137.589s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.589s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.589s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.589s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.589s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.590s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.591s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.611s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.615s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.615s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.617s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.619s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.619s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.623s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.656s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.656s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.657s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.657s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.657s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.657s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.657s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.658s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.658s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.658s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.658s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.726s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 137.728s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 11 ready (sst=0.003s pipeline=0.002s render=0.024s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 151.794s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.795s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.795s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.795s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.795s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.796s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 151.796s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 151.797s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.797s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.797s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.797s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 151.798s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 151.798s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.798s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.800s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.800s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.802s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.847s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.850s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.850s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.851s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.852s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.852s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.853s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.853s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.856s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.856s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.856s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.856s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.856s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.857s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.876s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.877s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.877s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.877s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.877s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.878s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.878s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.878s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 151.924s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 12 ready (sst=0.003s pipeline=0.002s render=0.046s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 162.979s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.979s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.979s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.980s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.981s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.981s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.981s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 162.981s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 162.982s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.982s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.982s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.982s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 162.983s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 162.984s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.984s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.986s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.987s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.987s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.987s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 162.987s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.988s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.988s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.988s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.988s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.988s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 162.989s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.007s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.009s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.010s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.010s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.011s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.011s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.011s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.013s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.013s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.014s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.014s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.014s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.014s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.042s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.042s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.043s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.043s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.044s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.044s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.044s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.044s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.114s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.114s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.114s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.114s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.114s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 163.115s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 13 ready (sst=0.003s pipeline=0.002s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 187.728s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.729s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.729s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.729s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.729s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.729s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.730s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 187.730s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 187.731s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.731s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.731s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.731s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 187.733s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 187.733s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.733s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.736s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 187.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.738s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.739s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.756s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.758s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.758s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.759s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.759s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.759s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.759s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.759s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.760s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.760s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.761s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.761s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.761s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.764s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.764s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.764s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.764s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.764s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.765s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.778s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.779s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.779s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.779s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.779s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.779s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 187.826s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 14 ready (sst=0.003s pipeline=0.002s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 204.406s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.406s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.406s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.407s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.407s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.407s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.407s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.408s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.408s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.408s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.408s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.408s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 204.408s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 204.409s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.409s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.409s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.409s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 204.410s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 204.411s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.411s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.413s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.414s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 204.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.415s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.416s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.417s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.443s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.448s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.448s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.449s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.449s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.449s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.449s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.450s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.450s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.451s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.451s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.452s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.452s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.456s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.456s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.456s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.456s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.456s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.457s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.477s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.477s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.477s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.477s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.478s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.478s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.478s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.478s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.546s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 204.547s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 15 ready (sst=0.003s pipeline=0.002s render=0.024s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 219.611s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.611s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 219.612s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 219.613s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.613s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.613s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.613s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 219.614s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 219.614s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.614s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.615s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.615s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.616s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.617s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.635s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.640s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.640s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.641s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.641s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.641s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.641s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.641s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.642s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.643s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.644s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.644s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.645s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.648s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.648s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.649s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.649s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.649s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.650s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.665s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.665s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.665s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.665s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.666s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.666s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.666s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.666s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.712s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.713s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.713s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.713s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.713s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 219.713s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 16 ready (sst=0.002s pipeline=0.001s render=0.019s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 240.309s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.309s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.309s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.309s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.309s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.310s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.310s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.310s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.310s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.310s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.311s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.311s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 240.311s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 240.311s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.311s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.312s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.312s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 240.313s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 240.314s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.314s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.316s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.316s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.317s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 240.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.317s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.318s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.318s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.318s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.319s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.337s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.342s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.342s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.342s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.342s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.343s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.343s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.343s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.344s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.344s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.345s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.346s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.346s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.350s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.350s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.350s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.351s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.351s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.351s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.366s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.367s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.367s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.367s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.367s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.367s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.368s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.368s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 240.414s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 17 ready (sst=0.003s pipeline=0.002s render=0.022s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 243.934s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.934s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.934s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.934s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.934s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.935s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.935s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.935s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.935s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.936s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.936s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.936s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 243.936s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 243.936s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.936s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.937s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.937s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 243.938s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 243.939s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.939s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.941s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.941s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.942s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.942s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 243.942s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.942s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.943s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.943s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.943s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.943s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.944s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.961s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.963s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.964s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.964s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.965s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.965s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.965s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.967s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.968s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.968s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.968s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.968s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.968s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.993s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.993s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.993s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.993s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.994s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.994s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.994s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 243.994s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.061s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.061s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.062s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.062s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.062s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 244.062s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 18 ready (sst=0.003s pipeline=0.002s render=0.021s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 247.580s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.581s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 247.582s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 247.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.582s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.582s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 247.583s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 247.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.583s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.584s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.584s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.585s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.586s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.604s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.609s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.609s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.609s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.610s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.610s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.610s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.610s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.611s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.611s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.612s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.613s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.613s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.618s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.619s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.638s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.638s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.639s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.639s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.639s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.640s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.640s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.640s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.698s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.699s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.699s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.699s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.699s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 247.699s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 19 ready (sst=0.002s pipeline=0.001s render=0.019s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 251.724s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.724s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.724s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.725s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.725s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.726s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.726s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.726s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.726s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.727s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[libprotobuf ERROR /tmp/hxu40/spack-stage/spack-stage-protobuf-21.12-vmerf7nhm6zzzf45zhbnzivxzww77k3q/spack-src/src/google/protobuf/message_lite.cc:133] Can't parse message of type "paraview_protobuf.Message" because it is missing required fields: global_id, location
+[0m[31m( 251.727s) [paraview        ]         vtkSMProxy.cxx:2206   ERR| vtkSMSourceProxy (0x55a29f67a5c0): Try to load a state on a proxy which has a different ID(276 != 0)[0m
+[0m[31m( 251.728s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.728s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.728s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.728s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[33m( 251.730s) [paraview        ]vtkSMColorMapEditorHelp:706   WARN| Could not determine array range.[0m
+[0m[31m( 251.731s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.731s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.734s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.735s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.735s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.735s) [paraview        ] vtkSMSessionClient.cxx:867    ERR| vtkSMSessionClient (0x55a29e71d500): Server failed to gather information.[0m
+[0m[31m( 251.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.736s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.737s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.738s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.774s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.776s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.777s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.777s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.777s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.778s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.778s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.778s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.780s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.781s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.801s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.802s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.802s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.803s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.803s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.803s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.803s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.870s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.870s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.870s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.871s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.871s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[0m[31m( 251.871s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m
+[insitu_streaming] Step 20 ready (sst=0.005s pipeline=0.003s render=0.042s)
+[insitu_streaming] MAX_STEPS=20 reached — stopping gracefully.
+[insitu_streaming] Done.
+[0m[31m( 252.091s) [paraview        ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a29ffeb720): Socket error in call to send. Broken pipe.[0m

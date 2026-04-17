@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!--
+        ADIOS2 SST config: reader-attached DISCARD variant.
+
+        RendezvousReaderCount=1 → writer still waits for 1 reader before
+        starting (so the bridge captures the beginning of the run).
+        QueueFullPolicy=Discard → when the queue is full, the writer drops
+        data and keeps running at its native rate instead of blocking.
+        QueueLimit=5 keeps memory bounded.
+
+        Contrast with adios2-sst-blocking.xml (Block policy) and
+        adios2-sst-discard-noreader.xml (RendezvousReaderCount=0, used only
+        for pure-sim benchmarking with no reader attached).
+    -->
+
+    <io name="SimulationOutput">
+        <engine type="SST">
+            <parameter key="RendezvousReaderCount" value="1"/>
+            <parameter key="QueueLimit" value="5"/>
+            <parameter key="QueueFullPolicy" value="Discard"/>
+            <parameter key="DataTransport" value="WAN"/>
+            <parameter key="OpenTimeoutSecs" value="60.0"/>
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5"/>
+    </io>
+
+</adios-config>

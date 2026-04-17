@@ -1,0 +1,47 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Using Volume rendering of V
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=1.602s render=2.540s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  45.786s) [paraview        ]    vtkOutputWindow.cxx:67     ERR| ERROR: In vtkSocketCommunicator.cxx, line 839
+vtkSocketCommunicator (0x5631377c2df0): Tag mismatch: got 42000, expecting 1.
+
+[0m
+[ares-comp-13:1098227] *** Process received signal ***
+[ares-comp-13:1098227] Signal: Segmentation fault (11)
+[ares-comp-13:1098227] Signal code: Address not mapped (1)
+[ares-comp-13:1098227] Failing at address: 0x55c4e5ac3270
+[ares-comp-13:1098227] [ 0] /lib/x86_64-linux-gnu/libc.so.6(+0x42520)[0x7f4b13f31520]
+[ares-comp-13:1098227] [ 1] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN14vtkOpenGLState31GetDefaultTextureInternalFormatEiibbb+0x2a)[0x7f4b134bedfa]
+[ares-comp-13:1098227] [ 2] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN16vtkTextureObject24GetDefaultInternalFormatEiib+0x2a)[0x7f4b13542bba]
+[ares-comp-13:1098227] [ 3] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN16vtkTextureObject17GetInternalFormatEiib+0x8e)[0x7f4b13544d2e]
+[ares-comp-13:1098227] [ 4] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN16vtkTextureObject15Create2DFromRawEjjiiPv+0x50)[0x7f4b135479b0]
+[ares-comp-13:1098227] [ 5] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN21vtkOpenGLRenderWindow10DrawPixelsEiiiiiiiiiiiiPv+0x106)[0x7f4b1349b166]
+[ares-comp-13:1098227] [ 6] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkParallel-pv5.13.so.1(_ZN24vtkSynchronizedRenderers11vtkRawImage17PushToFrameBufferEP11vtkRendererb+0x267)[0x7f4b1e5ef417]
+[ares-comp-13:1098227] [ 7] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkParallel-pv5.13.so.1(_ZN24vtkSynchronizedRenderers11vtkRawImage14PushToViewportEP11vtkRendererb+0x10b)[0x7f4b1e5ef82b]
+[ares-comp-13:1098227] [ 8] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkParallel-pv5.13.so.1(_ZN24vtkSynchronizedRenderers17PushImageToScreenEv+0x2d)[0x7f4b1e5efbfd]
+[ares-comp-13:1098227] [ 9] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkParallel-pv5.13.so.1(_ZN24vtkSynchronizedRenderers15HandleEndRenderEv+0x346)[0x7f4b1e5ee756]
+[ares-comp-13:1098227] [10] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkCommon-pv5.13.so.1(+0x1e3690a)[0x7f4b162fd90a]
+[ares-comp-13:1098227] [11] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkRendering-pv5.13.so.1(_ZN11vtkRenderer6RenderEv+0x8c2)[0x7f4b128cb2c2]
+[ares-comp-13:1098227] [12] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkRendering-pv5.13.so.1(_ZN21vtkRendererCollection6RenderEv+0xa9)[0x7f4b128d1b99]
+[ares-comp-13:1098227] [13] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkRendering-pv5.13.so.1(_ZN15vtkRenderWindow14DoStereoRenderEv+0x1b8)[0x7f4b128bcd68]
+[ares-comp-13:1098227] [14] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkRendering-pv5.13.so.1(_ZN15vtkRenderWindow6RenderEv+0x1cf)[0x7f4b128bd34f]
+[ares-comp-13:1098227] [15] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkOpenGL-pv5.13.so.1(_ZN21vtkOpenGLRenderWindow6RenderEv+0xbd)[0x7f4b134a361d]
+[ares-comp-13:1098227] [16] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVServerManagerKit-pv5.13.so.1(_ZN15vtkPVRenderView6RenderEbb+0x9d7)[0x7f4b20519487]
+[ares-comp-13:1098227] [17] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVServerManagerKit-pv5.13.so.1(_ZN15vtkPVRenderView11StillRenderEv+0x79)[0x7f4b2050b079]
+[ares-comp-13:1098227] [18] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkRemotingApplication-pv5.13.so.1(+0x329bc0)[0x7f4b216adbc0]
+[ares-comp-13:1098227] [19] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVCoreKit-pv5.13.so.1(_ZN26vtkClientServerInterpreter20ProcessCommandInvokeERK21vtkClientServerStreami+0x4ee)[0x7f4b20eae6ee]
+[ares-comp-13:1098227] [20] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVCoreKit-pv5.13.so.1(_ZN26vtkClientServerInterpreter17ProcessOneMessageERK21vtkClientServerStreami+0xf2)[0x7f4b20eae862]
+[ares-comp-13:1098227] [21] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVCoreKit-pv5.13.so.1(_ZN26vtkClientServerInterpreter13ProcessStreamERK21vtkClientServerStream+0x25)[0x7f4b20eaed55]
+[ares-comp-13:1098227] [22] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVServerManagerKit-pv5.13.so.1(_ZN16vtkPVSessionCore21ExecuteStreamInternalERK21vtkClientServerStreamb+0xff)[0x7f4b2063dacf]
+[ares-comp-13:1098227] [23] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVServerManagerKit-pv5.13.so.1(_ZN16vtkPVSessionBase13ExecuteStreamEjRK21vtkClientServerStreamb+0x38)[0x7f4b2063b738]
+[ares-comp-13:1098227] [24] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/libvtkPVServerManagerKit-pv5.13.so.1(_ZN14vtkSMViewProxy11StillRenderEv+0x196)[0x7f4b205fbcb6]
+[ares-comp-13:1098227] [25] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/lib/python3.12/site-packages/paraview/modules/vtkRemotingViews.so(+0x2adb55)[0x7f4afa52db55]
+[ares-comp-13:1098227] [26] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/python-3.12.12-mmtjcqm5y4jajxdmcpgbzbnocjfk4afq/lib/libpython3.12.so.1.0(+0x1d5cb8)[0x7f4b16deccb8]
+[ares-comp-13:1098227] [27] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/python-3.12.12-mmtjcqm5y4jajxdmcpgbzbnocjfk4afq/lib/libpython3.12.so.1.0(_PyObject_Call+0x6c)[0x7f4b16d955cc]
+[ares-comp-13:1098227] [28] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/python-3.12.12-mmtjcqm5y4jajxdmcpgbzbnocjfk4afq/lib/libpython3.12.so.1.0(_PyEval_EvalFrameDefault+0xab8)[0x7f4b16d2a6c8]
+[ares-comp-13:1098227] [29] /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/python-3.12.12-mmtjcqm5y4jajxdmcpgbzbnocjfk4afq/lib/libpython3.12.so.1.0(PyEval_EvalCode+0x214)[0x7f4b16eac5a4]
+[ares-comp-13:1098227] *** End of error message ***

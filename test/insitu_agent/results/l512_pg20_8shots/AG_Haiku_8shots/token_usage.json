@@ -1,0 +1,18 @@
+{
+  "input_tokens": 675,
+  "output_tokens": 2986,
+  "cache_creation_input_tokens": 7512,
+  "cache_read_input_tokens": 29975,
+  "num_llm_calls": 40,
+  "num_tool_calls": 40,
+  "num_screenshots": 8,
+  "total_image_bytes": 52000,
+  "model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "wall_time_s": 395.584,
+  "estimated_cost_usd": 0.0156,
+  "pricing_per_million": {
+    "in": 1.0,
+    "out": 5.0
+  }
+}

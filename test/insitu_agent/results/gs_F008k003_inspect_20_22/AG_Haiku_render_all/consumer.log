@@ -1,0 +1,288 @@
+2026-04-07 18:34:59,441 - insitu_mcp - INFO - Starting In-Situ ParaView MCP Server
+2026-04-07 18:34:59,442 - insitu_mcp - INFO - ParaView server: ares-comp-21:11112 (lazy connect)
+2026-04-07 18:34:59,442 - insitu_mcp - INFO - Status file: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/streaming_status.json
+2026-04-07 18:34:59,483 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2026-04-07 18:35:06,833 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:14,717 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:14,718 - insitu_mcp - INFO - Lazy-connecting to pvserver at ares-comp-21:11112
+2026-04-07 18:35:14,718 - paraview_manager - INFO - Connecting to ParaView at ares-comp-21:11112
+2026-04-07 18:35:17,382 - paraview_manager - INFO - Successfully connected to ParaView
+2026-04-07 18:35:22,679 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:34,392 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:38,111 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:42,071 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:45,851 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:50,065 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:53,280 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:35:56,260 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:00,094 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:08,264 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:10,921 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:13,495 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:18,368 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:22,072 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:30,860 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:34,538 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:37,386 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:41,950 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:46,892 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:50,496 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:36:55,608 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:37:01,511 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:37:10,304 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:37:14,366 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:37:26,925 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-07 18:37:33,619 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+Launching MCP server: /mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/bin/pvpython /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/insitu_mcp_server.py --server ares-comp-21 --port 11112 --status-file /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/streaming_status.json --timing-file /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/gs_F008k003_inspect_20_22/AG_Haiku/mcp_tool_timing.jsonl --screenshot-file /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png
+Using LLM: anthropic/claude-haiku-4-5-20251001
+
+Discovered 24 MCP tools:
+  - get_streaming_status: 
+    Get the current status of the in-situ streaming pipelin...
+  - pause_streaming: 
+    Pause the streaming pipeline. Data stays at the current...
+  - resume_streaming: 
+    Resume the streaming pipeline. New timesteps will be re...
+  - advance_step: 
+    Advance the stream by exactly one timestep, then pause ...
+  - get_screenshot: 
+    Capture a screenshot of the current view and display it...
+  - create_isosurface: 
+    Create an isosurface visualization on the live simulati...
+  - create_slice: 
+    Create a slice through the live simulation volume.
+
+   ...
+  - toggle_volume_rendering: 
+    Toggle volume rendering for the simulation data.
+
+    A...
+  - toggle_visibility: 
+    Toggle visibility for the active source.
+
+    Args:
+   ...
+  - set_active_source: 
+    Set the active pipeline object by its name.
+
+    Args:
+...
+  - get_active_source_names_by_type: 
+    Get a list of source names filtered by type.
+
+    Args:...
+  - color_by: 
+    Color the active visualization by a specific field.
+
+  ...
+  - set_color_map: 
+    Set the color transfer function for a field.
+
+    Args:...
+  - edit_volume_opacity: 
+    Edit the opacity transfer function for a field.
+
+    Ar...
+  - set_representation_type: 
+    Set the representation type for the active source.
+
+   ...
+  - get_pipeline: 
+    Get the current pipeline structure showing all sources ...
+  - get_available_arrays: 
+    Get available data arrays (fields) in the active source...
+  - compute_surface_area: 
+    Compute the surface area of the active surface mesh.
+
+ ...
+  - save_contour_as_stl: 
+    Save the active contour/surface as an STL file.
+
+    Ar...
+  - rotate_camera: 
+    Rotate the camera by specified angles.
+
+    Args:
+     ...
+  - reset_camera: 
+    Reset the camera to show all data.
+
+    Returns:
+      ...
+  - plot_over_line: 
+    Sample data along a line between two points.
+
+    Args:...
+  - create_streamline: 
+    Create streamlines from the active vector volume.
+
+    ...
+  - list_commands: 
+    List all available commands in this in-situ ParaView MC...
+
+🤖 Agent: [{'type': 'text', 'text': "I'll execute this precisely. Starting with the setup step."}, {'type': 'tool_use', 'id': 'toolu_vrtx_0178k2PRsTz7WkJTFi3aAcuQ', 'name': 'get_streaming_status', 'input': {'reason': 'verify stream ready'}}]
+
+  🔧 Calling: get_streaming_status({"reason": "verify stream ready"})
+  ✅ Result: Streaming status:
+Current timestep: 0
+Paused: True
+Stream ended: False
+Pipeline ready: False
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01JGWfd39ot9BmvSavVRzGER', 'name': 'create_isosurface', 'input': {'field': 'V', 'value': 0.3}}]
+
+  🔧 Calling: create_isosurface({"field": "V", "value": 0.3})
+  ✅ Result: Created isosurface at value 0.3. Filter registered as 'Contour1'.
+
+🤖 Agent: [{'type': 'text', 'text': 'Setup complete. Beginning **Phase 1**: 19 advance_step calls.'}, {'type': 'tool_use', 'id': 'toolu_vrtx_01LyFpxK7XWUMv9y9ncDVhtC', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01EaRne7DXJAT77GBp4qvGcQ', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_015VY3cmZzHFFZvaUSJaNXLp', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01CztsUopSHFcCD98A3ccPPc', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01EdMfqj8JU1uWLojbYnCSxJ', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_014jGZRCQnuy8ZzhrSxYgsbn', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01SMKgUXzKFGrYGdNM28fDFU', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01MQmhQEMuSp6hVh3L9W4hW4', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01VHu1Q56Cnq8jEFf86h3ZCS', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01EgjtwnXDTdMUofXgVTv4kc', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01KwMVZmNYXdEzZoFJrcqcRY', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01MYPSPppK69Dxotb46cjU4V', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_019ZfGG7L6QgtZi3QXezAXo4', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01GTrDXVBFj8GnseeQvDtNDV', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_0195VNsoJx49Wrg6x1Cffgee', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01Cy9ZVUKdXbBuGrce7FuUvM', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01CdhdvX43YwtEAg3YfSvheM', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01B2JMNAS9CLH1TgTJbDU3my', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01BXXFZFsJPLxWpXhkTchK27', 'name': 'advance_step', 'input': {'reason': 'skip'}}]
+
+  🔧 Calling: advance_step({"reason": "skip"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'text', 'text': 'Phase 1 complete. Beginning **Phase 2**: outputs 20, 21, 22.\n\n**Output 20:**'}, {'type': 'tool_use', 'id': 'toolu_vrtx_016WS3U7AfAk7hjrSCZPsYv5', 'name': 'advance_step', 'input': {'reason': 'output20'}}]
+
+  🔧 Calling: advance_step({"reason": "output20"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01QV83AzqkJUk57m1Jw7KiFH', 'name': 'get_screenshot', 'input': {'reason': 'output20'}}]
+
+  🔧 Calling: get_screenshot({"reason": "output20"})
+  ✅ Result: [Image: 17480 bytes saved to agent_0001.png]
+
+🤖 Agent: [{'type': 'text', 'text': '![output 20](agent_0001.png)\n\nAt output 20, the V isosurface shows early-stage spot-like reaction-diffusion patterns distributed across the domain.\n\n---\n\n**Output 21:**'}, {'type': 'tool_use', 'id': 'toolu_vrtx_01XqVeFJ2YBvQnvHMbhJnUnZ', 'name': 'advance_step', 'input': {'reason': 'output21'}}]
+
+  🔧 Calling: advance_step({"reason": "output21"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01GeBsmsz6wkmWzWyLY4scGj', 'name': 'get_screenshot', 'input': {'reason': 'output21'}}]
+
+  🔧 Calling: get_screenshot({"reason": "output21"})
+  ✅ Result: [Image: 18777 bytes saved to agent_0002.png]
+
+🤖 Agent: [{'type': 'text', 'text': '![output 21](agent_0002.png)\n\nAt output 21, the V isosurface spots have grown slightly and begun to merge, showing early coarsening of the reaction-diffusion structures.\n\n---\n\n**Output 22:**'}, {'type': 'tool_use', 'id': 'toolu_vrtx_01FnaMKapEVuJsHdE5noDWmS', 'name': 'advance_step', 'input': {'reason': 'output22'}}]
+
+  🔧 Calling: advance_step({"reason": "output22"})
+  ✅ Result: Advance command sent. The stream will read one step and pause.
+
+🤖 Agent: [{'type': 'tool_use', 'id': 'toolu_vrtx_01JNErtWNrWXUtagrvnTUw7X', 'name': 'get_screenshot', 'input': {'reason': 'output22'}}]
+
+  🔧 Calling: get_screenshot({"reason": "output22"})
+  ✅ Result: [Image: 20167 bytes saved to agent_0003.png]
+
+🤖 Agent: [{'type': 'text', 'text': '![output 22](agent_0003.png)\n\nAt output 22, the V isosurface shows further pattern evolution with more complex, interconnected structures forming across the domain.\n\n---\n\n**Phase 3: Async Drain**'}, {'type': 'tool_use', 'id': 'toolu_vrtx_01249dJ5n1bmeTbj1jY6nVdN', 'name': 'resume_streaming', 'input': {'reason': 'drain outputs 23-100'}}]
+
+  🔧 Calling: resume_streaming({"reason": "drain outputs 23-100"})
+  ✅ Result: Resume command sent. The stream will continue advancing.
+
+🤖 Agent: Drain started; bridge will handle outputs 23-100.
+
+
+[insitu_agent] saved token usage → /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/gs_F008k003_inspect_20_22/AG_Haiku/token_usage.json
+{
+  "input_tokens": 513,
+  "output_tokens": 1756,
+  "cache_creation_input_tokens": 4669,
+  "cache_read_input_tokens": 18626,
+  "num_llm_calls": 29,
+  "num_tool_calls": 28,
+  "num_screenshots": 3,
+  "total_image_bytes": 56424,
+  "model": "claude-haiku-4-5-20251001",
+  "provider": "anthropic",
+  "wall_time_s": 174.314,
+  "estimated_cost_usd": 0.0093,
+  "pricing_per_million": {
+    "in": 1.0,
+    "out": 5.0
+  }
+}

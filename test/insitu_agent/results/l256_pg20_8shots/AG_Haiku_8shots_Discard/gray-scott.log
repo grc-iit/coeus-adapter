@@ -1,0 +1,43 @@
+Simulation writes data using engine type:              SST
+IO parameters:  
+    DataTransport = WAN
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Discard
+    QueueLimit = 5
+    RendezvousReaderCount = 1
+========================================
+grid:             256x256x256
+restart:          no
+steps:            400
+plotgap:          20
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-05
+output:           gs.bp
+adios_config:     adios2-sst-discard.xml
+process layout:   8x4x4
+local grid size:  32x64x64
+========================================
+Simulation at step 20 writing output step     1
+Simulation at step 40 writing output step     2
+Simulation at step 60 writing output step     3
+Simulation at step 80 writing output step     4
+Simulation at step 100 writing output step     5
+Simulation at step 120 writing output step     6
+Simulation at step 140 writing output step     7
+Simulation at step 160 writing output step     8
+Simulation at step 180 writing output step     9
+Simulation at step 200 writing output step     10
+Simulation at step 220 writing output step     11
+Simulation at step 240 writing output step     12
+Simulation at step 260 writing output step     13
+Simulation at step 280 writing output step     14
+Simulation at step 300 writing output step     15
+Simulation at step 320 writing output step     16
+Simulation at step 340 writing output step     17
+Simulation at step 360 writing output step     18
+Simulation at step 380 writing output step     19
+Simulation at step 400 writing output step     20

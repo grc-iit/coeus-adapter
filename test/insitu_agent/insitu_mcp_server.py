@@ -110,6 +110,7 @@ def _ensure_connected():
 
 STATUS_FILE_PATH = None
 TIMING_FILE = None
+SCREENSHOT_FILE = None
 
 
 def timed_tool(func):
@@ -264,6 +265,30 @@ def get_screenshot():
     Returns:
         Image data or error message
     """
+    # Prefer reading the bridge-saved screenshot file. The bridge's own
+    # process renders its view (with the slice visualization attached)
+    # after every SST step and atomically writes a PNG to SCREENSHOT_FILE.
+    # Reading that file gives us the true pixels the bridge produced,
+    # without relying on MCP's local ParaView client state — which does
+    # not know about the bridge's Show(slice, ...) call in another process.
+    if SCREENSHOT_FILE and os.path.exists(SCREENSHOT_FILE):
+        import time as _time
+        t0 = _time.monotonic()
+        try:
+            with open(SCREENSHOT_FILE, "rb") as f:
+                data = f.read()
+            get_screenshot._last_pv_ms = (_time.monotonic() - t0) * 1000
+            # Write to a unique temp file so FastMCP can re-read it
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                tmp.write(data)
+                tmp_path = tmp.name
+            return Image(path=tmp_path)
+        except Exception as e:
+            logger.warning(f"Failed to read bridge screenshot {SCREENSHOT_FILE}: {e}")
+
+    # Fallback: use pv_manager (historical path, often returns empty pixels
+    # because MCP's local view state doesn't match the bridge's).
     if not _ensure_connected():
         return "Not connected to pvserver"
     success, message, img_path = _timed_pv(get_screenshot, pv_manager.get_screenshot)
@@ -704,6 +729,12 @@ def main():
         "--timing-file", type=str, default=None,
         help="Path to write per-tool timing JSONL file",
     )
+    parser.add_argument(
+        "--screenshot-file", type=str, default=None,
+        help="Path to the bridge-saved screenshot PNG. When set, get_screenshot "
+             "reads this file instead of asking pvserver to re-render from the "
+             "MCP client's local state.",
+    )
 
     args = parser.parse_args()
 
@@ -713,10 +744,11 @@ def main():
     STATUS_FILE_PATH = os.path.abspath(args.status_file)
 
     # Store connection params for lazy connect (pvserver may not be up yet)
-    global _pv_server, _pv_port, TIMING_FILE
+    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE
     _pv_server = args.server
     _pv_port = args.port
     TIMING_FILE = args.timing_file
+    SCREENSHOT_FILE = os.path.abspath(args.screenshot_file) if args.screenshot_file else None
 
     try:
         logger.info("Starting In-Situ ParaView MCP Server")

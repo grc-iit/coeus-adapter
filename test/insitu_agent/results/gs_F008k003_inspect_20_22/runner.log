@@ -1,0 +1,20 @@
+=============================================
+  Gray-Scott L=256 F=0.08 k=0.03 dt=1.0
+  plotgap=50  steps=5000  noise=0.01
+  → 100 SST outputs total
+  Inspect outputs 20, 21, 22 (3 screenshots)
+  Sim: 128p / 8 nodes
+  pvserver: 32p / 2 nodes
+  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/gs_F008k003_inspect_20_22/AG_Haiku
+=============================================
+[Tue Apr  7 06:59:03 PM CDT 2026] Starting pvserver...
+[Tue Apr  7 06:59:28 PM CDT 2026] Starting Gray-Scott...
+[Tue Apr  7 06:59:28 PM CDT 2026] Waiting for SST contact file...
+[Tue Apr  7 06:59:44 PM CDT 2026] SST contact after 9s
+[Tue Apr  7 06:59:44 PM CDT 2026] Starting streaming bridge...
+[Tue Apr  7 06:59:56 PM CDT 2026] Bridge ready after 7s
+[Tue Apr  7 06:59:56 PM CDT 2026] Running Haiku agent...
+[Tue Apr  7 07:03:11 PM CDT 2026] Agent exit: 0
+=============================================
+  Done. Wall: 999.884777107s  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/gs_F008k003_inspect_20_22/AG_Haiku
+=============================================

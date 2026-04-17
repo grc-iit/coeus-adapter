@@ -1,0 +1,33 @@
+Simulation writes data using engine type:              SST
+IO parameters:  
+    DataTransport = WAN
+    OpenTimeoutSecs = 60.0
+    QueueFullPolicy = Block
+    QueueLimit = 5
+    RendezvousReaderCount = 1
+========================================
+grid:             256x256x256
+restart:          no
+steps:            400
+plotgap:          20
+F:                0.01
+k:                0.05
+dt:               2
+Du:               0.2
+Dv:               0.1
+noise:            1e-05
+output:           gs.bp
+adios_config:     adios2-sst-blocking.xml
+process layout:   8x4x4
+local grid size:  32x64x64
+========================================
+Simulation at step 20 writing output step     1
+Simulation at step 40 writing output step     2
+Simulation at step 60 writing output step     3
+Simulation at step 80 writing output step     4
+Simulation at step 100 writing output step     5
+Simulation at step 120 writing output step     6
+Simulation at step 140 writing output step     7
+Simulation at step 160 writing output step     8
+Abort is in progress...hit ctrl-c again to forcibly terminate
+

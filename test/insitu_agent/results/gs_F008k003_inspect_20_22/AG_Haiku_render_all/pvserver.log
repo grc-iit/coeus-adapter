@@ -1,0 +1,7 @@
+Waiting for client...
+Connection URL: cs://ares-comp-21:11112
+Accepting connection(s): ares-comp-21:11112
+Client connected.
+Accepting connection(s): ares-comp-21:11112
+( 228.732s) [pvserver.0      ]          vtkSocket.cxx:566    ERR| vtkClientSocket (0x55a3f65ffab0): Socket error in call to send. Connection reset by peer.
+( 228.733s) [pvserver.0      ]vtkSocketCommunicator.c:697    ERR| vtkSocketCommunicator (0x55a3f7d4d0c0): Could not send tag.

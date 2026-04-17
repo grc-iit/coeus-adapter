@@ -1,0 +1,163 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Render-only steps: [20, 21, 22]
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Using Volume rendering of V
+[insitu_streaming] Step 1 SKIP   (sst=0.109s pipeline=1.477s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 2 SKIP   (sst=0.011s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 3 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 4 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 5 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 6 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 7 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 8 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 9 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 10 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 11 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 12 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 13 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 14 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 15 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 16 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 17 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 18 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 19 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 20 RENDER (sst=0.004s pipeline=1.207s render=2.518s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 21 RENDER (sst=0.006s pipeline=1.194s render=0.400s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[insitu_streaming] Step 22 RENDER (sst=0.009s pipeline=1.191s render=0.442s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 23 SKIP   (sst=0.008s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 24 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 25 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 26 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Resumed by MCP command
+[insitu_streaming] Step 27 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 28 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 29 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 30 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 31 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 32 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 33 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 34 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 35 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 36 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 37 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 38 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 39 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 40 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 41 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 42 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 43 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 44 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 45 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 46 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 47 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 48 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 49 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 50 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 51 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 52 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 53 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 54 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 55 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 56 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 57 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 58 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 59 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 60 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 61 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 62 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 63 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 64 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 65 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 66 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 67 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 68 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 69 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 70 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 71 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 72 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 73 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 74 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 75 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 76 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 77 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 78 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 79 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 80 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 81 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 82 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 83 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 84 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 85 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 86 SKIP   (sst=0.002s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 87 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 88 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 89 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 90 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 91 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 92 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 93 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 94 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 95 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 96 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 97 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 98 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 99 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 100 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 101 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 102 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 103 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 104 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 105 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 106 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 107 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 108 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 109 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] Step 110 SKIP   (sst=0.003s pipeline=0.000s render=0.000s)
+[insitu_streaming] MAX_STEPS=110 reached — stopping gracefully.
+[insitu_streaming] Done.

@@ -1,0 +1,20 @@
+{
+    "variant": "AG_Haiku_inspect_20_22",
+    "L": 256,
+    "F": 0.08,
+    "k": 0.03,
+    "dt": 1.0,
+    "plotgap": 50,
+    "steps": 5000,
+    "noise": 0.01,
+    "output_steps": 100,
+    "target_screenshots": 3,
+    "inspect_outputs": [20, 21, 22],
+    "sst_policy": "Block",
+    "sim_hosts": "ares-comp-10:16,ares-comp-11:16,ares-comp-12:16,ares-comp-13:16,ares-comp-14:16,ares-comp-15:16,ares-comp-16:16,ares-comp-17:16",
+    "sim_nprocs": 128,
+    "pvserver_hosts": "ares-comp-21:16,ares-comp-22:16",
+    "pvserver_nprocs": 32,
+    "wall_time_s": 999.884777107,
+    "consumer_exit": 0
+}

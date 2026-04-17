@@ -312,9 +312,16 @@ async def _call_anthropic(messages, tools, model):
                 "input": block.input,
             })
 
-    assistant_msg = {"role": "assistant", "content": content_text}
+    # Anthropic's API rejects empty text blocks (the proxy used to filter them
+    # silently). Only emit a text block when the model actually produced text.
     if tool_use_blocks:
-        assistant_msg["content"] = [{"type": "text", "text": content_text}] + tool_use_blocks
+        content_blocks = []
+        if content_text:
+            content_blocks.append({"type": "text", "text": content_text})
+        content_blocks.extend(tool_use_blocks)
+        assistant_msg = {"role": "assistant", "content": content_blocks}
+    else:
+        assistant_msg = {"role": "assistant", "content": content_text or " "}
 
     return assistant_msg, tool_calls
 
@@ -388,6 +395,10 @@ async def main():
         help="Path to write per-tool timing JSONL (passed to MCP server)",
     )
     parser.add_argument(
+        "--screenshot-file", type=str, default=None,
+        help="Path to the bridge-saved screenshot PNG (passed to MCP server)",
+    )
+    parser.add_argument(
         "--results-dir", type=str, default=None,
         help="Directory to save per-run artifacts (screenshots, token_usage.json)",
     )
@@ -440,6 +451,8 @@ async def main():
         mcp_args.extend(["--paraview_package_path", args.paraview_package_path])
     if args.timing_file:
         mcp_args.extend(["--timing-file", args.timing_file])
+    if args.screenshot_file:
+        mcp_args.extend(["--screenshot-file", args.screenshot_file])
 
     mcp_command = args.pvpython or sys.executable
 

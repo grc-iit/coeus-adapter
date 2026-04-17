@@ -1,0 +1,18 @@
+=============================================
+  L=512 plotgap=20 Haiku 8-shot experiment
+  Sim: 128p / 8 nodes
+  pvserver: 64p / 4 nodes
+  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/l512_pg20_8shots/AG_Haiku_8shots
+=============================================
+[Tue Apr  7 03:48:04 PM CDT 2026] Starting pvserver (np=64)...
+[Tue Apr  7 03:48:29 PM CDT 2026] Starting Gray-Scott (L=512, 400 steps, plotgap=20)...
+[Tue Apr  7 03:48:29 PM CDT 2026] Waiting for SST contact file...
+[Tue Apr  7 03:48:37 PM CDT 2026] SST contact after 5s
+[Tue Apr  7 03:48:37 PM CDT 2026] Starting streaming bridge...
+[Tue Apr  7 03:48:55 PM CDT 2026] Bridge ready after 10s
+[Tue Apr  7 03:48:55 PM CDT 2026] Running Haiku agent with 8-shot prompt...
+[Tue Apr  7 03:54:57 PM CDT 2026] Agent exit: 0
+=============================================
+  Done. Wall time: 522.215716752s
+  Results: /mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/results/l512_pg20_8shots/AG_Haiku_8shots
+=============================================

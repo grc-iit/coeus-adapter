@@ -1,0 +1,104 @@
+[insitu_streaming] Connecting to pvserver at ares-comp-21:11112
+[insitu_streaming] Starting streaming loop (paused=True)
+[insitu_streaming] Status file: streaming_status.json
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  51.858s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 1 ready (sst=0.003s pipeline=6.093s render=3.978s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  79.543s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 2 ready (sst=0.016s pipeline=4.841s render=0.198s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  87.076s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 3 ready (sst=0.014s pipeline=4.947s render=0.049s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m(  92.478s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 4 ready (sst=0.012s pipeline=4.827s render=0.051s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 103.979s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 5 ready (sst=0.013s pipeline=4.868s render=0.075s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 109.364s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 6 ready (sst=0.021s pipeline=4.802s render=0.050s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 124.273s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 7 ready (sst=0.013s pipeline=4.775s render=0.063s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 129.673s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 8 ready (sst=0.016s pipeline=4.819s render=0.053s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 143.209s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 9 ready (sst=0.014s pipeline=4.905s render=0.070s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 156.719s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 10 ready (sst=0.013s pipeline=4.900s render=0.052s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 167.662s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 11 ready (sst=0.014s pipeline=4.845s render=0.048s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 185.116s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 12 ready (sst=0.015s pipeline=4.825s render=0.051s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 198.562s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 13 ready (sst=0.017s pipeline=4.788s render=0.058s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 227.503s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 14 ready (sst=0.017s pipeline=4.729s render=0.063s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 240.985s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 15 ready (sst=0.014s pipeline=4.838s render=0.075s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 253.913s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 16 ready (sst=0.013s pipeline=4.805s render=0.061s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 270.298s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 17 ready (sst=0.014s pipeline=4.735s render=0.062s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 284.711s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 18 ready (sst=0.014s pipeline=4.772s render=0.061s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 291.603s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 19 ready (sst=0.013s pipeline=4.775s render=0.075s)
+[insitu_streaming] Paused after single-step advance
+[insitu_streaming] Advancing one step by MCP command
+[0m[31m( 298.488s) [paraview        ]vtkSMSaveScreenshotProx:537    ERR| vtkSMSaveScreenshotProxy (0x565515298a00): Failed to determine format for '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp'[0m
+[insitu_streaming] WARN: failed to save screenshot: [Errno 2] No such file or directory: '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png.tmp' -> '/mnt/common/hxu40/coeus/iowarp/coeus-adapter/test/insitu_agent/bridge_latest.png'
+[insitu_streaming] Step 20 ready (sst=0.014s pipeline=4.748s render=0.093s)
+[insitu_streaming] MAX_STEPS=20 reached — stopping gracefully.
+[insitu_streaming] Done.

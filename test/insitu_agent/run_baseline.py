@@ -76,6 +76,8 @@ async def main():
                         help="Max seconds to wait for the bridge to advance one step")
     parser.add_argument("--isovalue", type=float, default=0.3)
     parser.add_argument("--field", type=str, default="V")
+    parser.add_argument("--screenshot-file", type=str, default=None,
+                        help="Bridge-saved PNG path (passed to MCP server)")
     args = parser.parse_args()
 
     results_dir = Path(args.results_dir)
@@ -91,15 +93,19 @@ async def main():
     status_file = str(script_dir / "streaming_status.json")
     timing_file = str(results_dir / "mcp_tool_timing.jsonl")
 
+    mcp_cli_args = [
+        mcp_server,
+        "--server", args.server_host,
+        "--port", str(args.server_port),
+        "--status-file", status_file,
+        "--timing-file", timing_file,
+    ]
+    if args.screenshot_file:
+        mcp_cli_args.extend(["--screenshot-file", args.screenshot_file])
+
     server_params = StdioServerParameters(
         command=args.pvpython,
-        args=[
-            mcp_server,
-            "--server", args.server_host,
-            "--port", str(args.server_port),
-            "--status-file", status_file,
-            "--timing-file", timing_file,
-        ],
+        args=mcp_cli_args,
         env={**os.environ},
     )
 
