@@ -21,7 +21,7 @@ COEUS-Adapter bridges ADIOS2 and IOWarp through the ADIOS plugin interface, prov
 
 ### Prerequisites
 
-- Spack v0.23.1 or earlier (v1.0.0+ not supported)
+- Spack
 - IOWarp (provides the `iowarp-core` package: Chimaera runtime + CTE)
 - ADIOS2
 
