@@ -1,62 +1,60 @@
+# --- Build directories ---
+build
+build/
+**/build/
+cmake-build-*
 cmake*
+/compiler_data
+
+# --- Editor / IDE / tooling ---
 .idea
-*.cmd
-*.symvers
+.cache
+.cursor/
+__pycache__/
+.gdb_history
+GPATH
+GRTAGS
+GTAGS
+
+# --- Object / module build outputs ---
+*.o
+*.o.cmd
+*.o.d
 *.cmd
 *.mod
 *.mod.c
 *.ko
 *.order
-*.o
-*.o.cmd
-*.o.d
-build
+*.symvers
 
-build/
-benchmarks/HermesVFD
-
-hermes_shm/.git*
-
-GPATH
-GRTAGS
-GTAGS
-
-/compiler_data
-
-.gdb_history
-
-cmake-build-*
-.idea
-.clang-format
-__pycache__/
-/hrun/src/hermes_adapters/posix/cmake-build-debug-system/CMakeFiles/clion-log.txt
-/hermes_adapters/test/posix/Testing/Temporary/LastTest.log
-.cache
-
+# --- Run artifacts / generated data (keep these out of the repo) ---
+# ADIOS2 / engine output datasets
+*.bp
+*.bp/
+*.bp.sst
+*.sst
+# SQLite metadata databases produced at runtime
+*.db
+*.db-journal
+# Logs and result dumps
 logs
+*.log
+# In-situ agent evaluation outputs (keep source, not result runs)
+test/insitu_agent/results/
+**/screenshots/
+*.webm
 
+# --- Misc ---
+Testing
 wrapper/java/out
 
-Testing
-
+# --- Java / Gradle wrapper ---
 .gradle
-**/build/
-!hrun/src/**/build/
-
-# Ignore Gradle GUI config
+.gradletasknamecache
 gradle-app.setting
-
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar
-
-# Avoid ignore Gradle wrappper properties
 !gradle-wrapper.properties
 
-# Cache of project
-.gradletasknamecache
-
-# Eclipse Gradle plugin generated files
-# Eclipse Core
+# --- Eclipse ---
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
