@@ -1,23 +1,108 @@
 # COEUS-Adapter Source Code Analysis
 
+> Focus: what COEUS-Adapter is, and **how it depends on clio-core** (the IOWarp
+> core: Chimaera runtime + Context-Transfer-Engine + transport primitives).
+
 ## 1. Project Overview
 
-**COEUS-Adapter** is an ADIOS2 plugin engine that bridges ADIOS2 (a high-performance I/O framework for scientific computing) with the IOWarp storage ecosystem. It provides multi-tiered I/O buffering, in-situ derived variable computation, metadata management, and optional in-situ visualization via Catalyst/Fides.
+**COEUS-Adapter** is an **ADIOS2 plugin engine** (`libhermes_engine.so`) that
+bridges ADIOS2 applications to the IOWarp / clio storage stack. Applications keep
+using the ordinary ADIOS2 API; COEUS intercepts I/O through
+`adios2::plugin::PluginEngineInterface` and redirects it into clio-core's
+**Context-Transfer-Engine (CTE)** for multi-tiered buffering. On top of that it
+adds in-situ derived-variable computation (curl, Q-criterion, hash), SQLite-backed
+metadata management, and optional in-situ visualization via Catalyst/Fides.
 
-- **Language**: C++17/C++20 (coroutines for Chimaera)
+- **Language**: C++17, with C++20 + `-fcoroutines` required for any target that
+  touches Chimaera task bodies (`hermes_engine` and both ChiMods)
 - **License**: BSD 3-Clause (Illinois Institute of Technology)
-- **Build System**: CMake 3.10+
-- **Current Branch**: `iowarp` (migrating from legacy Hermes to CTE/IOWarp)
+- **Build system**: CMake 3.10+
+- **State**: mid-migration — Hermes I/O has been fully replaced by CTE, but the
+  Hermes-era names (`HermesEngine`, `hermes_engine`, `IHermes`) are retained
+
+The single shippable artifact is `hermes_engine`, built from `hermes_engine.cc`
++ `CTEHermes.cc` + `CTETagClient.cc`, plus two local Chimaera modules
+(`coeus_mdm`, `rankConsensus`) that run inside the clio-core runtime.
 
 ---
 
-## 2. Architecture
+## 2. Dependency on clio-core (the core of this analysis)
+
+COEUS-Adapter does **not** vendor the IOWarp core. The entire dependency flows
+through **one CMake package** — `find_package(iowarp-core REQUIRED)` — which is
+built and installed from the separate **clio-core** repository. That package
+bundles three layers, all of which COEUS consumes:
+
+| clio-core layer | clio-core dir | What COEUS uses it for | CMake targets linked |
+|---|---|---|---|
+| **Chimaera** — task-execution runtime | `context-runtime/` | Task scheduling, pools, shared-memory IPC (`CHI_IPC`, `hipc::FullPtr`, allocators), the ChiMod programming model, C++20 coroutine tasks | `chimaera::cxx`, `chimaera::admin_client`, `chimaera::bdev_client` |
+| **CTE** — Context-Transfer-Engine, tiered blob store | `context-transfer-engine/core/` | The actual I/O: tags (≈ buckets), `PutBlob`/`GetBlob`/`GetBlobSize`, scoring-based reorganize (demote/prefetch) | `wrp_cte::core_client` |
+| **CTP / HermesShm** — transport primitives | `context-transport-primitives/` | Low-level shared-memory types (`hermes::Blob`, `hipc::ShmPtr`), pulled in transitively | (via the above) |
+
+> **Note:** the `context-transfer-engine/`, `context-runtime/`,
+> `context-transport-primitives/`, `context-assimilation-engine/`,
+> `context-exploration-engine/` directories live in **clio-core**, *not* inside
+> coeus-adapter. COEUS-Adapter's own `.gitmodules` declares only
+> `CI/jarvis-util` and `CI/jarvis-cd`.
+
+### 2.1 Build coupling
+
+- clio-core must be **built and installed first**, such that
+  `iowarp-core-config.cmake` is discoverable on `CMAKE_PREFIX_PATH`. (No installed
+  `iowarp-core-config.cmake` was found on this system, so the package is not yet
+  present — clio-core's `install.sh`/Spack flow needs to run before COEUS can
+  configure.)
+- Both projects force **C++20 + `-fcoroutines`** because Chimaera task bodies are
+  C++20 coroutines (`TaskResume`). See `set_target_properties(... CXX_STANDARD 20)`
+  in `src/CMakeLists.txt` and each `tasks/*/CMakeLists.txt`.
+- COEUS defines its **own ChiMods** (`tasks/coeus_mdm`, `tasks/rankConsensus`)
+  against the clio-core ChiMod API; they compile against clio-core headers and are
+  loaded by the Chimaera runtime at deploy time.
+
+### 2.2 Rebrand / naming compatibility (important)
+
+clio-core has been **rebranded** (`clio-core/rebranding.md`):
+`chimaera → clio_runtime`, `hermes_shm`/`HSHM`/`hshm:: → clio_ctp`/`CTP_`/`ctp::`,
+and the `wrp_*` packages now have `clio_*` equivalents (e.g.
+`clio_cte/core/core_client.h` sits alongside `wrp_cte/core/core_client.h`).
+
+**COEUS-Adapter still uses every legacy name** — `wrp_cte::core`, `chimaera::`,
+`CHI_IPC`, `hipc::`, `HSHM_MALLOC`, `find_package(iowarp-core)`. This compiles only
+because clio-core keeps a complete backward-compatibility surface (forwarder
+headers, `#define CLIO_X CHI_X`, `namespace hshm = ctp`). Consequence: COEUS is
+pinned to clio-core's *deprecated-name compat shims* rather than the canonical new
+API. A future cleanup is to migrate to the `clio_*`/`ctp::` identifiers.
+
+### 2.3 Concrete integration points
+
+- **`include/comms/CTEHermes.{h,cc}`** — `CTEHermes` multiply-inherits `IHermes`
+  + `wrp_cte::core::Client`, so it *is* a CTE client.
+  - `connect()` calls `wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())`
+    and attaches to a pre-deployed CTE core pool (`kCtePoolId = 512.0`, started by
+    Jarvis). The Chimaera runtime must already be running.
+  - `Put()` allocates shared memory via `CHI_IPC->AllocateBuffer`, `memcpy`s the
+    payload, and issues `AsyncPutBlob(...).Wait()` with a placement score of 0.7.
+  - `Demote()`/`Prefetch()` map to `AsyncReorganizeBlob` with scores 0.3 / 0.95.
+- **`include/comms/CTETagClient.{h,cc}`** — per-tag wrapper over the same CTE
+  client: `AsyncGetOrCreateTag`, `AsyncGetBlob`, `AsyncGetBlobSize`,
+  `AsyncGetContainedBlobs`.
+- **`tasks/coeus_mdm` & `tasks/rankConsensus`** — COEUS's own ChiMods, written
+  against the current clio-core API (`chi::Task`, `chi::ContainerClient`,
+  `chimaera::admin::GetOrCreatePoolTask<CreateParams>`, `Method::k...`).
+- **`include/coeus/HermesEngine.h`** includes `<chimaera/chimaera.h>`,
+  `<chimaera/admin/admin_client.h>`, `<wrp_cte/core/core_client.h>` and holds
+  `chi::PoolId`, `chimaera::coeus_mdm::Client`, `chimaera::rankConsensus::Client`
+  members.
+
+---
+
+## 3. Architecture
 
 ```
 +----------------------------+
 |   Scientific Application   |
-|   (WRF, LAMMPS, Gray-Scott,|
-|    Incompact3D, OpenFOAM)  |
+|  (WRF, LAMMPS, Gray-Scott, |
+|   Incompact3D, OpenFOAM)   |
 +-------------+--------------+
               |  ADIOS2 API (Put/Get/BeginStep/EndStep)
               v
@@ -30,311 +115,227 @@
 +----------------------------+       +---------------------+
 |    HermesEngine (coeus)    |<----->| Catalyst/Fides      |
 |    src/hermes_engine.cc    |       | (in-situ viz, opt.) |
-+---+--------+--------+-----+       +---------------------+
++---+--------+--------+-------+       +---------------------+
     |        |        |
     v        v        v
-+-------+ +------+ +----------+
-|CTEHermes| |SQLite| |ChiMods  |
-|(IHermes) | (meta)| |          |
-+---+---+ +------+ +----+-----+
-    |                    |
-    v                    v
++---------+ +------+ +----------+
+|CTEHermes| |SQLite| | ChiMods  |
+|(IHermes)| |(meta)| | (coeus_  |
++----+----+ +------+ |  mdm,    |
+     |               | rankCons)|
+     |               +----+-----+
+     |   ============= clio-core ============= |
+     v                    v
 +-------------------+ +-------------------+
-| CTE (Context      | | Chimaera Runtime  |
-|  Transfer Engine)  | | (Task Execution)  |
-| wrp_cte::core     | | Pools, IPC, Mods  |
-+-------------------+ +-------------------+
-    |
-    v
-+---------------------------------+
-| HermesShm (Context Transport    |
-|  Primitives) - shared memory,   |
-|  data structures, networking    |
-+---------------------------------+
+| CTE  (wrp_cte::    | | Chimaera Runtime  |
+|  core::Client)     | | (chimaera::cxx)   |
+| tags + blobs       | | pools, IPC, mods  |
++---------+----------+ +---------+---------+
+          \                     /
+           v                   v
+     +-------------------------------+
+     | CTP / HermesShm (hipc::, shm) |
+     +-------------------------------+
 ```
 
-### Core Data Flow
+### 3.1 Core data flow
 
-1. **Write Path**: Application calls `adios2::Put()` -> `HermesEngine::DoPutSync_/DoPutDeferred_` -> `CTEHermes::Put()` -> CTE blob storage. Metadata is generated and stored via SQLite and the `coeus_mdm` ChiMod.
-
-2. **Read Path**: Application calls `adios2::Get()` -> `HermesEngine::DoGetSync_/DoGetDeferred_` -> `CTETagClient::Get()` -> retrieves blob data from CTE.
-
-3. **Derived Variables**: At `EndStep()`, `ComputeDerivedVariables()` reads input blobs from CTE, applies ADIOS2 derived variable expressions (curl, Q-criterion, hash, etc.), and writes results back via `PutDerived()`.
+1. **Write**: `adios2::Put()` → `HermesEngine::DoPutSync_/DoPutDeferred_` →
+   `CTEHermes::Put()` → CTE blob (shared-memory buffer + `AsyncPutBlob`). Metadata
+   is generated and dispatched via the `coeus_mdm` ChiMod and/or SQLite.
+2. **Read**: `adios2::Get()` → `HermesEngine::DoGetSync_/DoGetDeferred_` →
+   `CTETagClient::Get()` → `AsyncGetBlob` → `memcpy` into the user buffer.
+3. **Derived variables**: at `EndStep()`, `ComputeDerivedVariables()` reads input
+   blobs from CTE, applies ADIOS2 `VariableDerived` expressions (curl,
+   Q-criterion, hash, …), and writes results back via `PutDerived()`.
 
 ---
 
-## 3. Directory Structure
+## 4. Directory Structure (coeus-adapter only)
 
 ```
 coeus-adapter/
-├── src/                          # Core engine implementation
-│   ├── hermes_engine.cc          # Main ADIOS2 plugin engine (1041 lines)
-│   └── CMakeLists.txt            # Build config for hermes_engine library
-├── include/                      # Header files
+├── src/
+│   ├── hermes_engine.cc          # Main ADIOS2 plugin engine (~1040 lines)
+│   └── CMakeLists.txt            # Builds hermes_engine; links iowarp-core targets
+├── include/
 │   ├── coeus/                    # Engine headers
 │   │   ├── HermesEngine.h        # Main engine class definition
-│   │   ├── Container.h           # Derived variable container
+│   │   ├── Container.h           # Derived-variable container
 │   │   ├── ContainerManager.h    # Container orchestration
-│   │   └── MetadataSerializer.h  # Metadata serialization
-│   ├── comms/                    # Communication layer
+│   │   └── MetadataSerializer.h
+│   ├── comms/                    # Storage backend integration (the clio-core seam)
 │   │   ├── interfaces/
 │   │   │   ├── IHermes.h         # Abstract I/O interface
-│   │   │   └── ITag.h            # Abstract tag/blob interface
-│   │   ├── CTEHermes.h/.cc       # CTE implementation of IHermes
-│   │   ├── CTETagClient.h/.cc    # CTE implementation of ITag
-│   │   └── MPI.h                 # MPI wrapper
+│   │   │   ├── ITag.h            # Abstract tag/blob interface
+│   │   │   └── IMPI.h
+│   │   ├── CTEHermes.h/.cc       # IHermes impl over wrp_cte::core::Client
+│   │   ├── CTETagClient.h/.cc    # ITag impl over the CTE client
+│   │   └── MPI.h
 │   └── common/                   # Shared utilities
-│       ├── SQlite.h              # SQLite metadata wrapper
-│       ├── DbOperation.h         # Database operation types
-│       ├── MetadataStructs.h     # Core metadata structures
-│       ├── VariableMetadata.h    # Variable metadata + serialization
-│       ├── YAMLParser.h          # YAML config parser
-│       ├── JSONParser.h          # JSON config parser
-│       ├── ErrorCodes.h          # Error code definitions
-│       ├── Tracer.h              # Debug tracing
-│       ├── ThreadPool.h          # Thread pool utility
+│       ├── SQlite.h, DbOperation.h, DbWorker.h
+│       ├── MetadataStructs.h, VariableMetadata.h
+│       ├── YAMLParser.h, JSONParser.h
+│       ├── ErrorCodes.h, ErrorDefinition.h, Tracer.h
+│       ├── ThreadPool.h, globalVariable.h
 │       ├── CatalystHelper.h      # Catalyst in-situ viz integration
-│       └── ClassLoader.h         # Dynamic library loader
-├── tasks/                        # Chimaera ChiMod modules
-│   ├── coeus_mdm/                # Metadata management ChiMod
-│   │   ├── include/chimaera/coeus_mdm/
-│   │   │   ├── coeus_mdm_client.h    # Client API (Create, Mdm_insert)
-│   │   │   ├── coeus_mdm_runtime.h   # Runtime task handler
-│   │   │   └── coeus_mdm_tasks.h     # Task definitions
-│   │   └── src/                       # Implementation
-│   └── rankConsensus/            # Rank assignment ChiMod
-│       ├── include/chimaera/rankConsensus/
-│       │   ├── rankConsensus_client.h # Client API (Create, GetRank)
-│       │   ├── rankConsensus_runtime.h
-│       │   └── rankConsensus_tasks.h
-│       └── src/
-├── test/                         # Tests and example applications
-│   ├── unit/                     # Unit tests (GTest, SQLite, parsers, MPI)
-│   ├── integration/              # Integration tests
-│   ├── real_apps/                # Full application benchmarks
-│   │   ├── gray-scott/           # Reaction-diffusion simulation
-│   │   ├── hash_operator/        # Hashing operator tests
-│   │   ├── io_comp/              # I/O comparison benchmarks
-│   │   ├── metadata_comp/        # Metadata system comparisons
-│   │   └── operator_comp/        # Operator comparison tests
-│   └── jarvis/                   # Jarvis deployment pipelines
-├── external_libraries/           # Vendored dependencies
-│   ├── spdlog/                   # Logging library
-│   ├── cereal/                   # Serialization library
-│   └── rapidjson/                # JSON parsing library
-├── CI/                           # CI/CD, Spack packages, Docker
-├── context-transfer-engine/      # Git submodule: CTE (Hermes I/O)
-├── context-runtime/              # Git submodule: Chimaera runtime
-├── context-exploration-engine/   # Git submodule: CEE (data exploration API)
-├── context-assimilation-engine/  # Git submodule: CAE (data ingestion)
-├── context-transport-primitives/ # Git submodule: HermesShm (shared memory)
-├── config/                       # Configuration files
-├── .devcontainer/                # Docker dev container setup
+│       └── ClassLoader.h
+├── tasks/                        # COEUS's own Chimaera ChiMods (run in clio-core runtime)
+│   ├── coeus_mdm/                # Metadata-management ChiMod
+│   │   ├── include/chimaera/coeus_mdm/   # current API (client/runtime/tasks)
+│   │   ├── include/coeus_mdm/            # STALE old hrun-era headers (see §9)
+│   │   └── src/
+│   └── rankConsensus/            # Distributed rank-assignment ChiMod
+├── test/                         # unit/, integration/, real_apps/, jarvis/
+├── external_libraries/           # Vendored: spdlog, cereal, rapidjson
+├── config/cte_config.yaml        # CTE storage-target / DPE configuration
+├── CI/                           # jarvis-util, jarvis-cd submodules; Spack; Docker
 └── .github/                      # GitHub Actions CI
 ```
 
 ---
 
-## 4. Core Components
+## 5. Core Components
 
-### 4.1 HermesEngine (`src/hermes_engine.cc`, `include/coeus/HermesEngine.h`)
+### 5.1 HermesEngine (`src/hermes_engine.cc`, `include/coeus/HermesEngine.h`)
 
-The central class, inheriting from `adios2::plugin::PluginEngineInterface`. This is what ADIOS2 dynamically loads as a plugin engine.
+The central class, inheriting `adios2::plugin::PluginEngineInterface` — what
+ADIOS2 dynamically loads as a plugin engine.
 
-**Key Responsibilities:**
-- **Initialization**: Connects to Chimaera runtime (client mode), initializes CTE, creates `rankConsensus` and `coeus_mdm` pools, parses YAML operator/variable configs
-- **Step Management**: `BeginStep()` creates a CTE tag per step/rank (`step_{N}_rank{R}`); `EndStep()` computes derived variables and cleans up tags
-- **Data Put**: `DoPutSync_`/`DoPutDeferred_` write blobs to CTE via `CTEHermes::Put()`, generate metadata, and optionally forward data to Catalyst SST/Inline engine
-- **Data Get**: `DoGetSync_`/`DoGetDeferred_` read blobs from CTE via `CTETagClient::Get()` with `memcpy` to user buffers
-- **Derived Variables**: `ComputeDerivedVariables()` uses ADIOS2's `VariableDerived` expressions to compute in-situ quantities
-- **Tier Management**: `Promote()`/`Demote()` prefetch/evict data across storage tiers
-- **Catalyst Integration**: Optional in-situ visualization via Catalyst/Fides (Inline for single-node, SST for multi-node)
+**Responsibilities:**
+- **Init**: connects to the Chimaera runtime (client mode), initializes CTE via
+  `CTEHermes::connect()`, creates the `rankConsensus` and `coeus_mdm` pools, parses
+  YAML operator/variable configs.
+- **Steps**: `BeginStep()` creates a CTE tag per step/rank (`step_{N}_rank{R}`);
+  `EndStep()` computes derived variables and cleans up.
+- **Put/Get**: `DoPutSync_`/`DoPutDeferred_` and `DoGetSync_`/`DoGetDeferred_`,
+  generated for every ADIOS2 standard type via `ADIOS2_FOREACH_STDTYPE_1ARG`.
+- **Derived variables**: `ComputeDerivedVariables()` / `PutDerived()`.
+- **Tiering**: `Promote()`/`Demote()` map to CTE reorganize-by-score.
+- **Catalyst**: optional in-situ viz (Inline single-node, SST multi-node).
 
-**Configuration Parameters** (set via ADIOS2 XML):
-| Parameter | Description |
-|-----------|-------------|
-| `OPFile` | YAML file defining derived operations |
-| `VarFile` | YAML file defining variable mappings |
-| `ppn` | Processes per node |
-| `limit` | Step limit |
-| `lookahead` | Prefetch lookahead (default: 2) |
-| `db_file` | SQLite database path for metadata |
-| `Script` | Catalyst Python script path |
-| `DataModel` | Catalyst/Fides JSON data model |
-| `CatalystStream` | SST stream name (multi-node) |
+**Configuration parameters** (via ADIOS2 XML): `OPFile`, `VarFile`, `ppn`,
+`limit`, `lookahead`, `db_file`, `Script`, `DataModel`, `CatalystStream`.
 
-### 4.2 Communication Layer (`include/comms/`)
+### 5.2 Communication layer (`include/comms/`)
 
-#### IHermes Interface
-Abstract interface for I/O operations:
-- `connect()` - Initialize storage backend
-- `GetTag(name)` - Create/get a named tag (container for blobs)
-- `Put(name, size, data)` - Write blob data
-- `Demote(tag, blob)` - Evict to lower tier
-- `Prefetch(tag, blob)` - Prefetch to higher tier
-- `tag` - Pointer to current `ITag` instance
+- **`IHermes`** — abstract I/O interface: `connect`, `GetTag`, `Put`, `Demote`,
+  `Prefetch`, and a `tag` pointer.
+- **`ITag`** — abstract per-tag blob interface: `Put`, `Get`,
+  `GetContainedBlobNames`, `GetBlobSize`.
+- **`CTEHermes`** / **`CTETagClient`** — the concrete CTE implementations
+  described in §2.3. This interface seam is the abstraction over clio-core; in
+  principle it allows swapping the backend, though CTE is the only impl today.
 
-#### ITag Interface
-Abstract interface for blob operations within a tag:
-- `Put(name, size, data)` - Write blob
-- `Get(name)` -> `vector<uint8_t>` - Read blob
-- `GetContainedBlobNames()` - List all blobs
-- `GetBlobSize(name)` - Query blob size
+### 5.3 Chimaera ChiMods (`tasks/`)
 
-#### CTEHermes (`CTEHermes.h/.cc`)
-Concrete `IHermes` implementation using CTE (Context Transfer Engine). Inherits from both `IHermes` and `wrp_cte::core::Client`. Manages CTE pools, tag creation, and blob I/O.
+- **`coeus_mdm`** (metadata manager): client API `AsyncCreate(query, name,
+  pool_id, db_path)` and `Mdm_insert(query, db_op)`; runtime handles `DbOperation`
+  objects backed by SQLite. `CreateTask` is a
+  `chimaera::admin::GetOrCreatePoolTask<CreateParams>`.
+- **`rankConsensus`** (rank assignment): coordinated unique-rank assignment across
+  MPI processes via the runtime.
 
-#### CTETagClient (`CTETagClient.h/.cc`)
-Concrete `ITag` implementation using CTE's client API directly. Handles per-tag blob Put/Get operations with a default blob score of 0.7 for data placement.
+### 5.4 Metadata management (`include/common/`)
 
-### 4.3 Chimaera ChiMods (`tasks/`)
+`SQLiteWrapper` (`SQlite.h`) with tables for apps, blob locations, variable
+metadata, and derived-target semantics; `DbOperation` encapsulates a metadata op
+(step, rank, variable metadata, blob info) and is serialized with cereal for
+transport into the `coeus_mdm` ChiMod.
 
-#### coeus_mdm (Metadata Manager)
-A Chimaera module that provides distributed metadata insertion via task-based execution:
-- **Client API**: `Create(query, name, pool_id, db_path)`, `Mdm_insert(query, db_op)`
-- **Runtime**: Handles `DbOperation` objects (InsertData, UpdateSteps, InsertDerivedData, CheckVariable)
-- **Pool ID**: 8000
+### 5.5 Catalyst/Fides in-situ visualization (optional)
 
-#### rankConsensus (Rank Assignment)
-A Chimaera module for coordinated rank assignment across MPI processes:
-- **Client API**: `Create(query, name, pool_id)`, `GetRank(query)` -> `u32`
-- **Purpose**: Assigns unique ranks across distributed processes via the Chimaera runtime
-- **Pool ID**: 8001
-
-### 4.4 Metadata Management (`include/common/`)
-
-#### SQLiteWrapper (`SQlite.h`)
-SQLite-based metadata storage with four tables:
-1. **Apps** - Tracks application names and total step counts
-2. **BlobLocations** - Maps (step, rank, name) to (tag_name, blob_name)
-3. **VariableMetadataTable** - Stores variable shape, start, count, type, derived flag
-4. **derived_targets** - Stores derived quantity semantics (min/max values)
-
-#### Key Data Structures
-- **VariableMetadata**: Name, shape, start, count, constantShape, derived flag, dataType
-- **BlobInfo**: tag_name + blob_name pair identifying CTE storage location
-- **DbOperation**: Encapsulates metadata operations with step, rank, variable metadata, and blob info
-- **derivedSemantics**: Min/max float values for derived quantities
-
-### 4.5 Catalyst/Fides In-Situ Visualization (`include/common/CatalystHelper.h`)
-
-Optional integration with ParaView Catalyst 2 for in-situ visualization:
-- **Inline mode** (single-node): Data is passed in-process to Catalyst via ADIOS2 Inline engine
-- **SST mode** (multi-node): Data is streamed via ADIOS2 SST engine to an external Catalyst reader
-- Functions: `CatalystConfig()`, `CatalystInit()`, `CatalystExecute()`
-
----
-
-## 5. IOWarp Submodules
-
-The project includes five IOWarp ecosystem submodules:
-
-| Submodule | Directory | Purpose |
-|-----------|-----------|---------|
-| **Context Transfer Engine (CTE)** | `context-transfer-engine/` | Multi-tiered I/O buffering system with adapters for POSIX, STDIO, MPI-IO, ADIOS2, HDF5 VFD, NVIDIA GDS |
-| **Chimaera Runtime** | `context-runtime/` | Coroutine-based distributed task execution runtime with ChiMod system, IPC manager, pool manager |
-| **HermesShm** | `context-transport-primitives/` | Shared memory data structures, allocators, networking (ZMQ), GPU support (CUDA/ROCm) |
-| **Content Assimilation Engine (CAE)** | `context-assimilation-engine/` | Data ingestion from external sources (binary, HDF5, Globus) into the IOWarp ecosystem |
-| **Context Exploration Engine (CEE)** | `context-exploration-engine/` | High-level API for querying, bundling, and managing IOWarp data contexts |
+Guarded by `COEUS_HAVE_CATALYST`. Inline mode (single-node, in-process) or SST
+mode (multi-node, external Catalyst reader). Functions `CatalystConfig()`,
+`CatalystInit()`, `CatalystExecute()`.
 
 ---
 
 ## 6. Build System and Dependencies
 
-### External Dependencies
+### External dependencies
 | Dependency | Purpose | Required |
-|------------|---------|----------|
-| `iowarp-core` | Unified IOWarp package (HermesShm, Chimaera, CTE) | Yes |
+|---|---|---|
+| `iowarp-core` | **clio-core** unified package (Chimaera + CTE + CTP/HermesShm) | Yes |
 | `ADIOS2` | I/O framework, plugin host | Yes |
 | `MPI` (C + CXX) | Distributed communication | Yes |
-| `yaml-cpp` | YAML configuration parsing | Yes |
+| `yaml-cpp` | YAML config parsing | Yes |
 | `OpenMP` (C + CXX) | Parallel computation | Yes |
 | `SQLite3` | Metadata storage | Yes |
 | `GTest` | Unit testing | Yes |
 | `Catalyst` | In-situ visualization | No |
 
-### Vendored Libraries
-- **spdlog** - Logging
-- **cereal** - Binary serialization (used for metadata)
-- **rapidjson** - JSON parsing
+### Vendored libraries (`external_libraries/`)
+`spdlog` (logging), `cereal` (binary serialization for metadata), `rapidjson`.
 
-### Build Options
+### Build options
 | Option | Default | Description |
-|--------|---------|-------------|
+|---|---|---|
 | `meta_enabled` | OFF | Enable metadata collection (defines `Meta_enabled`) |
 | `debug_mode` | OFF | Enable debug mode |
 | `COEUS_ENABLE_CATALYST` | OFF | Enable Catalyst in-situ integration |
+| `COEUS_ENABLE_JARVIS` | ON | Enable Jarvis deployment integration |
 | `COEUS_ENABLE_DOXYGEN` | OFF | Generate documentation |
 | `COEUS_ENABLE_COVERAGE` | OFF | Code coverage |
 
-### Build Output
-The primary build artifact is `libhermes_engine.so` (or `.dll`), which ADIOS2 dynamically loads as a plugin engine.
+### Build output
+Primary artifact: `libhermes_engine.so`, dynamically loaded by ADIOS2 as a plugin
+engine.
 
 ---
 
 ## 7. Test Suite
 
-### Unit Tests (`test/unit/`)
-- **JSONParser**: JSON configuration parsing
-- **YAMLParser**: YAML configuration parsing
-- **MPI**: MPI communication tests
-- **SQLite**: Database operations and metadata storage
-- **class_loader**: Dynamic library loading
-- **GTest**: Google Test framework integration
-
-### Integration Tests (`test/integration/`)
-- **basic**: Single-variable put/get
-- **basic_multi_variable**: Multi-variable operations
-- **currentStep**: Step tracking
-- **logging**: Metadata logging
-- **metadata**: Metadata management
-- **split_single_variable / split_multi_variable**: Data splitting
-
-### Real Application Tests (`test/real_apps/`)
-- **Gray-Scott**: Reaction-diffusion simulation with derived quantities (curl, add, hash)
-- **hash_operator**: Hashing and comparison operators
-- **io_comp**: I/O performance comparison (ADIOS vs NFS vs COEUS)
-- **metadata_comp**: Metadata system comparison (Empress vs Hermes)
-- **operator_comp**: Producer-consumer operator pipeline
-
-### Jarvis Deployment Pipelines (`test/jarvis/`)
-Pre-configured pipelines for full application deployments: WRF, LAMMPS, Gray-Scott, Incompact3D, OpenFOAM, ParaView.
+- **Unit (`test/unit/`)**: JSONParser, YAMLParser, MPI, SQLite, class_loader, GTest.
+- **Integration (`test/integration/`)**: basic / multi-variable put-get, step
+  tracking, logging, metadata, data splitting.
+- **Real apps (`test/real_apps/`)**: Gray-Scott (curl/add/hash), hash_operator,
+  io_comp, metadata_comp, operator_comp.
+- **Jarvis pipelines (`test/jarvis/`)**: WRF, LAMMPS, Gray-Scott, Incompact3D,
+  OpenFOAM, ParaView — these also stand up the clio-core runtime + CTE core pool
+  that the engine attaches to.
 
 ---
 
 ## 8. Key Design Patterns
 
-1. **Plugin Architecture**: COEUS is loaded dynamically by ADIOS2 via `EngineCreate()`/`EngineDestroy()` C functions, making it transparent to applications.
-
-2. **Interface Abstraction**: `IHermes`/`ITag` interfaces decouple the engine from the specific storage backend (CTE), enabling testability and future backend swaps.
-
-3. **Task-Based Metadata Management**: Metadata operations are dispatched as Chimaera tasks (`coeus_mdm::Mdm_insert`) for distributed, asynchronous execution.
-
-4. **Step-Based Tag Organization**: Each simulation step + rank combination maps to a unique CTE tag (`step_{N}_rank{R}`), providing natural data partitioning.
-
-5. **ADIOS2 Type Macros**: `ADIOS2_FOREACH_STDTYPE_1ARG` macros generate type-specific Put/Get overrides for all ADIOS2 standard types.
-
-6. **Rank 0 Coordination**: Pool creation and certain operations are guarded by `mpi_rank == 0` with MPI barriers to prevent duplicate pool creation and ensure synchronization.
-
----
-
-## 9. Source Code Statistics
-
-| Category | Files | Lines (approx.) |
-|----------|-------|-----------------|
-| Core engine (`src/`, `include/coeus/`) | 5 | ~1,500 |
-| Communication layer (`include/comms/`) | 6 | ~700 |
-| Common utilities (`include/common/`) | 12 | ~1,000 |
-| ChiMod tasks (`tasks/`) | ~16 | ~1,200 |
-| Test code (`test/`) | ~60 | ~8,000 |
-| Total project (excl. submodules/vendored) | ~107 | ~12,000 |
+1. **Plugin architecture** — loaded by ADIOS2 via `EngineCreate()`/`EngineDestroy()`,
+   transparent to applications.
+2. **Backend abstraction** — `IHermes`/`ITag` decouple the engine from clio-core's
+   CTE, the single integration seam.
+3. **Task-based metadata** — metadata ops dispatched as Chimaera tasks
+   (`coeus_mdm::Mdm_insert`) for asynchronous distributed execution.
+4. **Step-based tag organization** — each `(step, rank)` maps to a CTE tag
+   `step_{N}_rank{R}`.
+5. **Type-macro generation** — `ADIOS2_FOREACH_STDTYPE_1ARG` generates the
+   per-type Put/Get overrides.
+6. **Rank-0 coordination** — pool creation guarded by `rank == 0` + MPI barriers.
 
 ---
 
-## 10. Current State and Notes
+## 9. Current State and Migration Debt
 
-- The codebase is actively migrating from legacy Hermes to the IOWarp/CTE stack. Comments in `IHermes.h` note: "I/O is now handled by CTE (Context-Transfer-Engine), uses CTE Tags (replacing Hermes buckets)."
-- The `src/CMakeLists.txt` contains extensive debug diagnostics (symbol checks via `nm`, include directory validation) from an active debugging session for linker issues with Chimaera symbols.
-- Some metadata insertion calls in `DoPutSync_`/`DoPutDeferred_` are commented out (`//client.Mdm_insert(...)`) while derived variable metadata insertion remains active.
-- Debug logging instrumentation (`#region agent log`) exists in several locations for runtime diagnostics.
-- The `HermesEngine` name is retained for backward compatibility despite the underlying shift to CTE.
+1. **Hermes → CTE migration is naming-incomplete.** I/O is 100% CTE, but the class
+   is still `HermesEngine`, the library is `hermes_engine`, and the interface is
+   `IHermes`. `IHermes.h` notes: "I/O is now handled by CTE … CTE Tags (replacing
+   Hermes buckets)."
+2. **Two parallel ChiMod task definitions coexist** for `coeus_mdm`:
+   - `tasks/coeus_mdm/include/coeus_mdm/coeus_mdm_tasks.h` — **stale** old
+     `hrun::`-era API (`CreateTaskStateTask`, `HSHM_MAKE_AR`, `DomainId`).
+   - `tasks/coeus_mdm/include/chimaera/coeus_mdm/coeus_mdm_tasks.h` — **current**
+     API (`chi::Task`, `GetOrCreatePoolTask<CreateParams>`, `chi::PoolQuery`); this
+     is what `HermesEngine.h` actually includes. The old tree should be deleted.
+3. **Committed build-debug cruft** in `src/CMakeLists.txt`: a large
+   `#region agent log` block runs `nm`/`file(READ)` diagnostics on `chimaera::cxx`
+   at configure time (writing `.cursor/debug.log`), left over from chasing missing
+   `PoolQuery`/`AwakenWorker` symbols and conflicting `chimaera/types.h` —
+   classic ABI/allocator-mismatch symptoms from the rebrand. Should be removed.
+4. **Hardcoded paths / overridden flags**: `CTEHermes::connect()` sets
+   `const bool use_pre_deployed = true;`, ignoring the `CTE_PRE_DEPLOYED` env var it
+   reads; the create-path registers `/mnt/common/hxu40/cte_storage`;
+   `config/cte_config.yaml` points at `/tmp/cte_primary` and `/tmp/cte_cache`.
+5. **Legacy compat-name reliance** — COEUS uses clio-core's deprecated
+   `chimaera`/`wrp_cte`/`hshm` aliases rather than the new `clio_*`/`ctp::` API
+   (see §2.2).
+6. **README lag** — README still references `spack load hermes`, which conflicts
+   with the CTE-only reality.
