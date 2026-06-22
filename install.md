@@ -1,12 +1,12 @@
 ## Coeus-adapter installation guide
 
 # Dependencies
-* [Hermes](https://github.com/HDFGroup/hermes): a multi-tiered I/O buffering platform.
+* [IOWarp](https://github.com/iowarp): provides the `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine), the multi-tiered I/O platform COEUS builds against.
 * [ADIOS2](https://github.com/ornladios/ADIOS2): an I/O library
 
 ### 1.Install ADIOS2
 please follow these steps to install the adios2 with derived variables
-step 1: Install Spack. We recommend Spack v0.23.1 (or earlier) — Spack v1.0.0 does not support installing ADIOS2 or Hermes.
+step 1: Install Spack. We recommend Spack v0.23.1 (or earlier) — Spack v1.0.0 does not support installing ADIOS2 or IOWarp.
 ```
 cd ${HOME}
 git clone https://github.com/spack/spack.git
@@ -25,18 +25,18 @@ step 3: install the adios2
 spack install adios2-coeus@master
 ```
 
-### 2. Install the Hermes
+### 2. Install IOWarp
 ```
 cd ${HOME}
 git clone https://github.com/grc-iit/grc-repo
 spack repo add grc-repo
-spack install hermes
+spack install iowarp@master
 ```
 
 ### 3. Install Coeus-adapter
 1. load environment variables
 ```
-spack load hermes
+spack load iowarp@master
 spack load adios2-coeus
 spack load openmpi
 ```
