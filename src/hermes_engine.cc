@@ -14,9 +14,9 @@
 #include "coeus/HermesEngine.h"
 #include "common/CatalystHelper.h"
 #include "comms/CTEHermes.h"
-#include <chimaera/chimaera.h>
-#include <chimaera/module_manager.h>
-#include <chimaera/ipc_manager.h>
+#include <clio_runtime/clio_runtime.h>
+#include <clio_runtime/module_manager.h>
+#include <clio_runtime/ipc_manager.h>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -39,9 +39,9 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  // CTE requires Chimaera to be initialized first (WRP_CTE_CLIENT_INIT calls
+  // CTE requires Chimaera to be initialized first (CLIO_CTE_CLIENT_INIT calls
   // CHIMAERA_INIT internally; initializing here gives a clear error if runtime is down).
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
     std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
     std::cout << "This usually means:" << std::endl;
     std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
@@ -70,7 +70,7 @@ HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io, const std::string &name,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
     std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
     std::cout << "This usually means:" << std::endl;
     std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
@@ -165,7 +165,7 @@ void HermesEngine::Init_() {
               << "This will start runtime on every MPI rank." << std::endl;
     std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
   }
-  if (!chi::CHIMAERA_INIT(chi::ChimaeraMode::kClient, false)) {
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
     std::cout << "ERROR: Could not initialize Chimaera" << std::endl;
     std::cout << "This usually means:" << std::endl;
     std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
@@ -184,12 +184,12 @@ void HermesEngine::Init_() {
   int mpi_rank = m_Comm.Rank();
 
   // Verify required ChiMod modules are discoverable (diagnostic only)
-  if (CHI_MODULE_MANAGER) {
-    if (!CHI_MODULE_MANAGER->IsInitialized()) {
-      CHI_MODULE_MANAGER->ServerInit();
+  if (CLIO_MODULE_MANAGER) {
+    if (!CLIO_MODULE_MANAGER->IsInitialized()) {
+      CLIO_MODULE_MANAGER->ServerInit();
     }
-    auto* rankConsensus_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_rankConsensus");
-    auto* coeus_mdm_mod = CHI_MODULE_MANAGER->GetChiMod("chimaera_coeus_mdm");
+    auto* rankConsensus_mod = CLIO_MODULE_MANAGER->GetChiMod("coeus_rankConsensus");
+    auto* coeus_mdm_mod = CLIO_MODULE_MANAGER->GetChiMod("coeus_coeus_mdm");
     if (mpi_rank == 0) {
       if (rankConsensus_mod) {
         engine_logger->info("rankConsensus module loaded: {}", rankConsensus_mod->lib_path);
@@ -208,17 +208,17 @@ void HermesEngine::Init_() {
   // Do NOT create it from client mode -- it already exists.
 
   // Initialize rank consensus pool (only MPI rank 0 creates it)
-  rankConsensus_pool_id_ = chi::PoolId(8001, 0);
-  rank_consensus = chimaera::rankConsensus::Client(rankConsensus_pool_id_);
+  rankConsensus_pool_id_ = clio::run::PoolId(8001, 0);
+  rank_consensus = coeus::rankConsensus::Client(rankConsensus_pool_id_);
   if (mpi_rank == 0) {
-    rank_consensus.Create(chi::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
+    rank_consensus.Create(clio::run::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
     std::cout << "Rank 0: rankConsensus pool created" << std::endl;
   }
   m_Comm.Barrier("Init_:rankConsensus_pool_created");
   if (mpi_rank != 0) {
     rank_consensus.Init(rankConsensus_pool_id_);
   }
-  rank = rank_consensus.GetRank(chi::PoolQuery::Local());
+  rank = rank_consensus.GetRank(clio::run::PoolQuery::Local());
 
 
   std::cout << "MPI rank " << mpi_rank << " -> consensus rank: " << rank << std::endl;
@@ -279,10 +279,10 @@ void HermesEngine::Init_() {
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    coeus_mdm_pool_id_ = chi::PoolId(8000, 0);
-    client = chimaera::coeus_mdm::Client(coeus_mdm_pool_id_);
+    coeus_mdm_pool_id_ = clio::run::PoolId(8000, 0);
+    client = coeus::coeus_mdm::Client(coeus_mdm_pool_id_);
     if (mpi_rank == 0) {
-      client.Create(chi::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
+      client.Create(clio::run::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     }
     // #region agent log
     
@@ -463,8 +463,8 @@ HermesEngine::~HermesEngine() {
     delete hermes_;
     hermes_ = nullptr;
   }
-  if (CHI_IPC) {
-    CHI_IPC->ClientFinalize();
+  if (CLIO_IPC) {
+    CLIO_IPC->ClientFinalize();
   }
 }
 
@@ -925,7 +925,7 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
   //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  //client.Mdm_insert(chi::PoolQuery::Local(), db_op);
+  //client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
 }
 
@@ -968,7 +968,7 @@ void HermesEngine::DoPutDeferred_(
                       adios2::ToString(variable.m_Type));
   BlobInfo blobInfo(hermes_->tag->name, name);
   //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  //client.Mdm_insert(chi::PoolQuery::Local(), db_op);
+  //client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
 
 }
@@ -988,7 +988,7 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
       throw std::runtime_error("HermesEngine::PutDerived: Put failed for " + name);
     }
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
-    client.Mdm_insert(chi::PoolQuery::Local(), db_op);
+    client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
 }
 

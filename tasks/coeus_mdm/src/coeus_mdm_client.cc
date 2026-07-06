@@ -1,15 +1,14 @@
 /**
- * Client implementation for coeus_mdm
+ * Client implementation for coeus_mdm (clio-core port).
  *
- * Contains the client-side API for submitting tasks.
+ * The client API is header-only (inline methods in coeus_mdm_client.h). This
+ * translation unit exists so the client library has a compiled object.
  */
 
-#include "../include/chimaera/coeus_mdm/coeus_mdm_client.h"
+#include "coeus/coeus_mdm/coeus_mdm_client.h"
 
-namespace chimaera::coeus_mdm {
+namespace coeus::coeus_mdm {
 
-// Client implementation is mostly in the header file (templates/inline methods)
-// This file can be used for any non-inline client methods if needed
+// Non-inline client methods (if any) go here.
 
-}  // namespace chimaera::coeus_mdm
-
+}  // namespace coeus::coeus_mdm

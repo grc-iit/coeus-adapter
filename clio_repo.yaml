@@ -1,0 +1,8 @@
+name: coeus-adapter
+namespace: coeus
+version: 1.0.0
+description: COEUS adapter ChiMods (clio-core)
+
+modules:
+  - coeus_mdm
+  - rankConsensus

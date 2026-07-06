@@ -27,7 +27,7 @@
 
 namespace coeus {
 
-CTEHermes::CTEHermes() : is_connected_(false), current_tag_id_(wrp_cte::core::TagId::GetNull()) {
+CTEHermes::CTEHermes() : is_connected_(false), current_tag_id_(clio::cte::core::TagId::GetNull()) {
   // Initialize tag pointer to nullptr (inherited from IHermes)
   tag = nullptr;
 }
@@ -46,9 +46,9 @@ bool CTEHermes::connect() {
   }
 
   // Initialize CTE subsystem (Chimaera + global client if needed).
-  // WRP_CTE_CLIENT_INIT calls Chimaera init then creates/attaches to the CTE
+  // CLIO_CTE_CLIENT_INIT calls Chimaera init then creates/attaches to the CTE
   // pool; the Chimaera runtime must already be running (started separately).
-  if (!wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())) {
+  if (!clio::cte::core::CLIO_CTE_CLIENT_INIT("", clio::run::PoolQuery::Local())) {
     std::cerr << "ERROR: Failed to initialize CTE subsystem." << std::endl;
     std::cerr << "  CTE requires the Chimaera runtime to be running." << std::endl;
     std::cerr << "  - Start the runtime first (e.g. chimaera_start_runtime or your launcher)" << std::endl;
@@ -62,16 +62,16 @@ bool CTEHermes::connect() {
   const bool use_pre_deployed = true;
 
   if (use_pre_deployed) {
-    pool_id_ = wrp_cte::core::kCtePoolId;
-    Init(wrp_cte::core::kCtePoolId);
+    pool_id_ = clio::cte::core::kCtePoolId;
+    Init(clio::cte::core::kCtePoolId);
     std::cout << "CTEHermes::connect: Attached to existing CTE core pool" << std::endl;
   } else {
     // Create CTE container (or GetOrCreate if already exists)
-    wrp_cte::core::CreateParams params;
+    clio::cte::core::CreateParams params;
     auto create_task = AsyncCreate(
-        chi::PoolQuery::Dynamic(),
-        wrp_cte::core::kCtePoolName,
-        wrp_cte::core::kCtePoolId,
+        clio::run::PoolQuery::Dynamic(),
+        clio::cte::core::kCtePoolName,
+        clio::cte::core::kCtePoolId,
         params);
     create_task.Wait();
     if (create_task->GetReturnCode() != 0) {
@@ -83,12 +83,12 @@ bool CTEHermes::connect() {
     Init(create_task->new_pool_id_);
 
     // Register storage target (100MB file-based)
-    chi::PoolId bdev_id(514, 0);
+    clio::run::PoolId bdev_id(514, 0);
     auto reg_task = AsyncRegisterTarget(
         "/mnt/common/hxu40/cte_storage",
-        chimaera::bdev::BdevType::kFile,
+        clio::run::bdev::BdevType::kFile,
         100 * 1024 * 1024,
-        chi::PoolQuery::Local(),
+        clio::run::PoolQuery::Local(),
         bdev_id);
     reg_task.Wait();
     if (reg_task->GetReturnCode() != 0) {
@@ -123,8 +123,8 @@ bool CTEHermes::GetTag(const std::string &tag_name) {
                 << "' (return code: " << rc << ")" << std::endl;
       return false;
     }
-    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
-    if (tag_id == wrp_cte::core::TagId::GetNull()) {
+    clio::cte::core::TagId tag_id = tag_task->tag_id_;
+    if (tag_id == clio::cte::core::TagId::GetNull()) {
       std::cerr << "ERROR: GetOrCreateTag returned null tag_id for '" << tag_name
                 << "' (CTE pool " << pool_id_.IsNull()
                 << "). Is the CTE core pool deployed and running?" << std::endl;
@@ -145,13 +145,13 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
     std::cerr << "ERROR: CTE not connected. Call connect() first." << std::endl;
     return false;
   }
-  if (current_tag_id_ == wrp_cte::core::TagId::GetNull()) {
+  if (current_tag_id_ == clio::cte::core::TagId::GetNull()) {
     std::cerr << "ERROR: Put called without a tag. Call GetTag() first (e.g. in BeginStep)." << std::endl;
     return false;
   }
   const bool debug = (std::getenv("CTE_DEBUG") != nullptr);
-  auto *ipc_manager = CHI_IPC;
-  hipc::FullPtr<char> shm_fullptr;
+  auto *ipc_manager = CLIO_IPC;
+  ctp::ipc::FullPtr<char> shm_fullptr;
   try {
     if (debug) {
       std::cout << "CTEHermes::Put: before AllocateBuffer blob=" << blob_name
@@ -163,13 +163,13 @@ bool CTEHermes::Put(const std::string &blob_name, size_t blob_size, const void *
       return false;
     }
     std::memcpy(shm_fullptr.ptr_, values, blob_size);
-    hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
+    ctp::ipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
     float score = 0.7f;
     if (debug) {
       std::cout << "CTEHermes::Put: before AsyncPutBlob+Wait blob=" << blob_name << std::endl;
     }
     auto task = AsyncPutBlob(current_tag_id_, blob_name, 0, blob_size, shm_ptr, score,
-                             wrp_cte::core::Context(), 0);
+                             clio::cte::core::Context(), 0);
     task.Wait();
     if (debug) {
       std::cout << "CTEHermes::Put: after Wait blob=" << blob_name << std::endl;
@@ -202,7 +202,7 @@ bool CTEHermes::Demote(const std::string &tag_name, const std::string &blob_name
       std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for demote operation" << std::endl;
       return false;
     }
-    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    clio::cte::core::TagId tag_id = tag_task->tag_id_;
 
     // Demote: lower score (0.3 = cold tier) to move blob to slower storage
     float demote_score = 0.3f;
@@ -237,7 +237,7 @@ bool CTEHermes::Prefetch(const std::string &tag_name, const std::string &blob_na
       std::cerr << "ERROR: Failed to get tag '" << tag_name << "' for prefetch operation" << std::endl;
       return false;
     }
-    wrp_cte::core::TagId tag_id = tag_task->tag_id_;
+    clio::cte::core::TagId tag_id = tag_task->tag_id_;
 
     // Prefetch: higher score (0.95 = hot tier) to move blob to faster storage
     float prefetch_score = 0.95f;

@@ -12,10 +12,10 @@
 
 #ifndef COEUS_INCLUDE_COMMS_CTEHERMES_H_
 #define COEUS_INCLUDE_COMMS_CTEHERMES_H_
-#include <wrp_cte/core/core_client.h>
-#include <wrp_cte/core/core_tasks.h>
+#include <clio_cte/core/core_client.h>
+#include <clio_cte/core/core_tasks.h>
 #include "interfaces/IHermes.h"
-#include <chimaera/chimaera.h>
+#include <clio_runtime/clio_runtime.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -25,11 +25,11 @@ namespace coeus {
 /**
  * CTEHermes: CTE-based implementation of IHermes interface.
  *
- * Inherits wrp_cte::core::Client directly so it is a CTE client; also
+ * Inherits clio::cte::core::Client directly so it is a CTE client; also
  * implements IHermes (connect, GetTag, Demote, Prefetch, tag) for the
  * Hermes engine. All CTE operations use this Client base.
  */
-class CTEHermes : public IHermes, public wrp_cte::core::Client {
+class CTEHermes : public IHermes, public clio::cte::core::Client {
  public:
   /**
    * Constructor
@@ -82,7 +82,7 @@ class CTEHermes : public IHermes, public wrp_cte::core::Client {
 
  private:
   bool is_connected_ = false;  // Whether connect() has been called successfully
-  wrp_cte::core::TagId current_tag_id_;  // Current tag (set by GetTag); used by Put()
+  clio::cte::core::TagId current_tag_id_;  // Current tag (set by GetTag); used by Put()
 };
 
 } // namespace coeus

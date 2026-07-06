@@ -13,10 +13,6 @@ set(HERMES_ENGINE_SRCS
 #------------------------------------------------------------------------------
 add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
-add_dependencies(hermes_engine chimaera_coeus_mdm_client)
-add_dependencies(hermes_engine chimaera_coeus_mdm_runtime)
-add_dependencies(hermes_engine chimaera_rankConsensus_client)
-add_dependencies(hermes_engine chimaera_rankConsensus_runtime)
 target_include_directories(hermes_engine PUBLIC
         ../include
         ${ADIOS2_INCLUDE_DIR}
@@ -30,16 +26,16 @@ target_link_libraries(hermes_engine LINK_PUBLIC
         cereal
         rapidjson
         ${SQLite3_LIBRARIES}
-        # Unified iowarp-core targets (provided by iowarp-core package)
-        chimaera::cxx              # Core Chimaera library
-        chimaera::admin_client    # Admin ChiMod (always available)
-        chimaera::bdev_client     # Block device ChiMod (always available)
-        wrp_cte::core_client      # CTE client for I/O placement
-        # Local ChiMods
-        chimaera_coeus_mdm_client
-        chimaera_coeus_mdm_runtime
-        chimaera_rankConsensus_client
-        chimaera_rankConsensus_runtime)
+        # Unified iowarp-core (clio-core) targets
+        clio::run::cxx              # Core Clio runtime library
+        clio::run::admin_client    # Admin ChiMod (always available)
+        clio::run::bdev_client     # Block device ChiMod (always available)
+        clio::cte::core_client     # CTE client for I/O placement
+        # Local ChiMods (clio-core port)
+        coeus::coeus_mdm_client
+        coeus::coeus_mdm_runtime
+        coeus::rankConsensus_client
+        coeus::rankConsensus_runtime)
 
 
 # Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)

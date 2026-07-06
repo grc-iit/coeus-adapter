@@ -28,10 +28,10 @@
 #include <adios2/core/VariableDerived.h>
 #include "adios2/helper/adiosType.h"
 #include "ContainerManager.h"
-#include <chimaera/chimaera.h>
-#include <chimaera/admin/admin_client.h>
-#include "chimaera/coeus_mdm/coeus_mdm_client.h"
-#include "chimaera/rankConsensus/rankConsensus_client.h"
+#include <clio_runtime/clio_runtime.h>
+#include <clio_runtime/admin/admin_client.h>
+#include "coeus/coeus_mdm/coeus_mdm_client.h"
+#include "coeus/rankConsensus/rankConsensus_client.h"
 #include "coeus/MetadataSerializer.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -42,10 +42,10 @@
 #include "common/VariableMetadata.h"
 #include <comms/interfaces/IHermes.h>
 #include <comms/MPI.h>
-#include <wrp_cte/core/core_tasks.h>
+#include <clio_cte/core/core_tasks.h>
 #include "common/globalVariable.h"
 #include "common/Tracer.h"
-#include <wrp_cte/core/core_client.h>
+#include <clio_cte/core/core_client.h>
 #include <memory>
 
 
@@ -66,13 +66,13 @@ class HermesEngine : public adios2::plugin::PluginEngineInterface {
   std::string adiosOutput;
   int lookahead;
   int index = 0;
-  chimaera::coeus_mdm::Client client;
+  coeus::coeus_mdm::Client client;
   int num_layers = 4;
   int ppn;
   int limit = 0;
-  chimaera::rankConsensus::Client rank_consensus;
-  chi::PoolId coeus_mdm_pool_id_;
-  chi::PoolId rankConsensus_pool_id_;
+  coeus::rankConsensus::Client rank_consensus;
+  clio::run::PoolId coeus_mdm_pool_id_;
+  clio::run::PoolId rankConsensus_pool_id_;
 //  FileLock* lock;
 //  DbQueueWorker* db_worker;
   GlobalVariable globalData;
