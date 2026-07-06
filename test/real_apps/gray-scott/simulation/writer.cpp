@@ -108,6 +108,21 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
                                              "add(x)",
                                              adios2::DerivedVarType::StoreData);
 
+        // Per-writer-block variance of the U and V fields, used as the
+        // statistical trigger signal for the perturbation -> pattern
+        // transition (variance(V) jumps once reactive spots form). Each
+        // reduces the local block to a single double; a global variance is
+        // combined across writer blocks on the trigger/reader side.
+        auto VarU = io.DefineDerivedVariable("derive/VarU",
+                                             "x = U \n"
+                                             "variance(x)",
+                                             adios2::DerivedVarType::StoreData);
+
+        auto VarV = io.DefineDerivedVariable("derive/VarV",
+                                             "x = V \n"
+                                             "variance(x)",
+                                             adios2::DerivedVarType::StoreData);
+
     }
 
 

@@ -14,27 +14,27 @@
 #define COEUS_INCLUDE_COMMS_CTETAGCLIENT_H_
 
 #include "interfaces/ITag.h"
-#include <wrp_cte/core/core_client.h>
-#include <wrp_cte/core/core_tasks.h>
+#include <clio_cte/core/core_client.h>
+#include <clio_cte/core/core_tasks.h>
 #include <string>
 #include <vector>
 
 namespace coeus {
 
 /**
- * CTETagClient: ITag implementation using wrp_cte::core::Client directly
+ * CTETagClient: ITag implementation using clio::cte::core::Client directly
  * 
- * Unlike CTETag which wraps wrp_cte::core::Tag, this class uses
+ * Unlike CTETag which wraps clio::cte::core::Tag, this class uses
  * the CTE client API directly for tag/blob operations.
  */
 class CTETagClient : public ITag {
  public:
   /**
    * Constructor - get or create tag by name
-   * @param cte_client Pointer to CTE client (uses WRP_CTE_CLIENT if nullptr)
+   * @param cte_client Pointer to CTE client (uses CLIO_CTE_CLIENT if nullptr)
    * @param tag_name Name of the CTE tag
    */
-  CTETagClient(wrp_cte::core::Client* cte_client, const std::string& tag_name);
+  CTETagClient(clio::cte::core::Client* cte_client, const std::string& tag_name);
 
   /**
    * Constructor - use existing tag by ID (e.g. from GetOrCreateTag())
@@ -42,8 +42,8 @@ class CTETagClient : public ITag {
    * @param tag_id Existing tag ID
    * @param tag_name Name of the tag (for ITag::name)
    */
-  CTETagClient(wrp_cte::core::Client* cte_client,
-               const wrp_cte::core::TagId& tag_id,
+  CTETagClient(clio::cte::core::Client* cte_client,
+               const clio::cte::core::TagId& tag_id,
                const std::string& tag_name);
 
   /**
@@ -80,8 +80,8 @@ class CTETagClient : public ITag {
   size_t GetBlobSize(const std::string &blob_name) override;
 
  private:
-  wrp_cte::core::Client* cte_client_;  // CTE client (borrowed, not owned)
-  wrp_cte::core::TagId tag_id_;        // Tag ID
+  clio::cte::core::Client* cte_client_;  // CTE client (borrowed, not owned)
+  clio::cte::core::TagId tag_id_;        // Tag ID
   std::string tag_name_;               // Tag name
   
   /**

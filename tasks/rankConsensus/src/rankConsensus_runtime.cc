@@ -1,31 +1,34 @@
 /**
- * Runtime implementation for rankConsensus
+ * Runtime implementation for rankConsensus (clio-core port).
  *
- * Contains the server-side task processing logic.
+ * Contains the server-side task processing logic. The Container virtual
+ * dispatch API (Init, Run, SaveTask, LoadTask, NewTask, ...) is in
+ * autogen/rankConsensus_lib_exec.cc.
  */
 
-#include "../include/chimaera/rankConsensus/rankConsensus_runtime.h"
+#include "coeus/rankConsensus/rankConsensus_runtime.h"
 
-namespace chimaera::rankConsensus {
-
-// Virtual method implementations (Init, Run, DelTask, SaveTask, LoadTask, NewCopy, Aggregate) 
-// are in autogen/rankConsensus_lib_exec.cc
+namespace coeus::rankConsensus {
 
 //===========================================================================
 // Method implementations
 //===========================================================================
 
-void Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::Create(clio::run::shared_ptr<CreateTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "rankConsensus: Executing Create task for pool {}", task->pool_id_);
 
   // Initialize rank counter
   rank_count_ = 0;
 
-  HLOG(kDebug, "rankConsensus: Container created and initialized for pool: {} (ID: {})",
-        pool_name_, task->pool_id_);
+  task->return_code_ = 0;
+  HLOG(kDebug, "rankConsensus: Container created for pool: {}", pool_name_);
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-void Runtime::GetRank(hipc::FullPtr<GetRankTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::GetRank(clio::run::shared_ptr<GetRankTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "rankConsensus: Executing GetRank task");
 
   // Assign rank by incrementing atomic counter
@@ -33,29 +36,32 @@ void Runtime::GetRank(hipc::FullPtr<GetRankTask> task, chi::RunContext& rctx) {
 
   task->SetReturnCode(0);  // Success
   HLOG(kDebug, "rankConsensus: GetRank completed, assigned rank: {}", task->rank_);
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-void Runtime::Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::Destroy(clio::run::shared_ptr<DestroyTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "rankConsensus: Executing Destroy task - Pool ID: {}",
-        task->target_pool_id_);
+       task->target_pool_id_);
 
   // Reset rank counter
   rank_count_ = 0;
 
-  // Initialize output values
   task->return_code_ = 0;
-  task->error_message_ = "";
+  task->error_message_ = clio::run::priv::string(CLIO_PRIV_ALLOC, "");
 
   HLOG(kDebug, "rankConsensus: Container destroyed successfully");
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-chi::u64 Runtime::GetWorkRemaining() const {
-  // Return 0 as rank assignment is typically fast
+clio::run::u64 Runtime::GetWorkRemaining() const {
+  // Rank assignment is fast; no long-running work remaining.
   return 0;
 }
 
-}  // namespace chimaera::rankConsensus
+}  // namespace coeus::rankConsensus
 
-// Generate ChiMod entry points (get_chimod_name, alloc_chimod, etc.)
-CHI_TASK_CC(chimaera::rankConsensus::Runtime)
-
+// Generate ChiMod entry points (alloc_chimod, get_chimod_name, etc.)
+CLIO_CHIMOD_CC(coeus::rankConsensus::Runtime, "coeus_rankConsensus")

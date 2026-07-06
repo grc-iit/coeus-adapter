@@ -1,15 +1,14 @@
 /**
- * Client implementation for rankConsensus
+ * Client implementation for rankConsensus (clio-core port).
  *
- * Contains the client-side API for submitting tasks.
+ * The client API is header-only (inline methods in rankConsensus_client.h).
+ * This translation unit exists so the client library has a compiled object.
  */
 
-#include "../include/chimaera/rankConsensus/rankConsensus_client.h"
+#include "coeus/rankConsensus/rankConsensus_client.h"
 
-namespace chimaera::rankConsensus {
+namespace coeus::rankConsensus {
 
-// Client implementation is mostly in the header file (templates/inline methods)
-// This file can be used for any non-inline client methods if needed
+// Non-inline client methods (if any) go here.
 
-}  // namespace chimaera::rankConsensus
-
+}  // namespace coeus::rankConsensus

@@ -18,16 +18,16 @@
 
 namespace coeus {
 
-CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client, const std::string& tag_name)
+CTETagClient::CTETagClient(clio::cte::core::Client* cte_client, const std::string& tag_name)
     : tag_name_(tag_name) {
   if (cte_client) {
     cte_client_ = cte_client;
   } else {
-    cte_client_ = WRP_CTE_CLIENT;
+    cte_client_ = CLIO_CTE_CLIENT;
   }
 
   if (!cte_client_) {
-    throw std::runtime_error("CTE client not initialized. Call WRP_CTE_CLIENT_INIT() first.");
+    throw std::runtime_error("CTE client not initialized. Call CLIO_CTE_CLIENT_INIT() first.");
   }
 
   name = tag_name;
@@ -41,26 +41,26 @@ CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client, const std::string&
   tag_id_ = task->tag_id_;
 }
 
-CTETagClient::CTETagClient(wrp_cte::core::Client* cte_client,
-                           const wrp_cte::core::TagId& tag_id,
+CTETagClient::CTETagClient(clio::cte::core::Client* cte_client,
+                           const clio::cte::core::TagId& tag_id,
                            const std::string& tag_name)
     : tag_name_(tag_name), tag_id_(tag_id) {
   if (cte_client) {
     cte_client_ = cte_client;
   } else {
-    cte_client_ = WRP_CTE_CLIENT;
+    cte_client_ = CLIO_CTE_CLIENT;
   }
 
   if (!cte_client_) {
-    throw std::runtime_error("CTE client not initialized. Call WRP_CTE_CLIENT_INIT() first.");
+    throw std::runtime_error("CTE client not initialized. Call CLIO_CTE_CLIENT_INIT() first.");
   }
 
   name = tag_name;
 }
 
 void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const void* values) {
-  auto *ipc_manager = CHI_IPC;
-  hipc::FullPtr<char> shm_fullptr;
+  auto *ipc_manager = CLIO_IPC;
+  ctp::ipc::FullPtr<char> shm_fullptr;
   try {
     // Allocate shared memory for the data
     shm_fullptr = ipc_manager->AllocateBuffer(blob_size);
@@ -72,17 +72,17 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
     // Copy data to shared memory
     memcpy(shm_fullptr.ptr_, values, blob_size);
 
-    // Convert to hipc::ShmPtr<> for API call
-    hipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
+    // Convert to ctp::ipc::ShmPtr<> for API call
+    ctp::ipc::ShmPtr<> shm_ptr(shm_fullptr.shm_);
 
     // AsyncPutBlob + Wait (Client API; PutBlob may not be available in all builds)
     auto task = cte_client_->AsyncPutBlob(tag_id_, blob_name, 0, blob_size, shm_ptr,
-                                          GetDefaultBlobScore(), wrp_cte::core::Context(), 0);
+                                          GetDefaultBlobScore(), clio::cte::core::Context(), 0);
     task.Wait();
 
     // Free shared memory buffer
     ipc_manager->FreeBuffer(shm_fullptr);
-    shm_fullptr = hipc::FullPtr<char>();
+    shm_fullptr = ctp::ipc::FullPtr<char>();
 
     if (task->GetReturnCode() != 0) {
       throw std::runtime_error("PutBlob operation failed");
@@ -98,8 +98,8 @@ void CTETagClient::Put(const std::string &blob_name, size_t blob_size, const voi
 }
 
 std::vector<uint8_t> CTETagClient::Get(const std::string &blob_name) {
-  auto *ipc_manager = CHI_IPC;
-  hipc::FullPtr<char> shm_buffer;
+  auto *ipc_manager = CLIO_IPC;
+  ctp::ipc::FullPtr<char> shm_buffer;
   try {
     // Get blob size first
     auto size_task = cte_client_->AsyncGetBlobSize(tag_id_, blob_name);
@@ -110,7 +110,7 @@ std::vector<uint8_t> CTETagClient::Get(const std::string &blob_name) {
       return std::vector<uint8_t>();
     }
 
-    chi::u64 blob_size = size_task->size_;
+    clio::run::u64 blob_size = size_task->size_;
     if (blob_size == 0) {
       return std::vector<uint8_t>();
     }
@@ -122,8 +122,8 @@ std::vector<uint8_t> CTETagClient::Get(const std::string &blob_name) {
       throw std::runtime_error("Failed to allocate shared memory for GetBlob");
     }
 
-    // Convert to hipc::ShmPtr<> for API call
-    hipc::ShmPtr<> shm_ptr(shm_buffer.shm_);
+    // Convert to ctp::ipc::ShmPtr<> for API call
+    ctp::ipc::ShmPtr<> shm_ptr(shm_buffer.shm_);
 
     // Call async GetBlob and wait for completion
     auto task = cte_client_->AsyncGetBlob(tag_id_, blob_name, 0, blob_size, 0, shm_ptr);

@@ -1,0 +1,19 @@
+name: coeus_mdm
+module_name: coeus_mdm
+namespace: coeus
+description: Metadata management module for Coeus adapter
+version: 1.0.0
+
+tasks:
+  - name: Create
+    description: Create the coeus_mdm container (open SQLite DB)
+    task_type: LongRunningTask
+    params: []
+  - name: Mdm_insert
+    description: Insert a metadata DbOperation into SQLite
+    task_type: Task
+    params: []
+
+methods: []
+
+singleton: true

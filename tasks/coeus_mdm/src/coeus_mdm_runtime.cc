@@ -1,48 +1,48 @@
 /**
- * Runtime implementation for coeus_mdm
+ * Runtime implementation for coeus_mdm (clio-core port).
  *
- * Contains the server-side task processing logic.
+ * Contains the server-side task processing logic. The Container virtual
+ * dispatch API (Init, Run, SaveTask, LoadTask, NewTask, ...) is in
+ * autogen/coeus_mdm_lib_exec.cc.
  */
 
-#include "../include/chimaera/coeus_mdm/coeus_mdm_runtime.h"
+#include "coeus/coeus_mdm/coeus_mdm_runtime.h"
 
-namespace chimaera::coeus_mdm {
-
-// Virtual method implementations (Init, Run, DelTask, SaveTask, LoadTask, NewCopy, Aggregate) 
-// are in autogen/coeus_mdm_lib_exec.cc
+namespace coeus::coeus_mdm {
 
 //===========================================================================
 // Method implementations
 //===========================================================================
 
-void Runtime::Create(hipc::FullPtr<CreateTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::Create(clio::run::shared_ptr<CreateTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "coeus_mdm: Executing Create task for pool {}", task->pool_id_);
 
   // Get CreateParams from task
-  auto params = task->GetParams();
+  CreateParams params = task->GetParams();
   db_path_ = params.db_path_;
 
   // Initialize SQLite database
   db_ = std::make_unique<SQLiteWrapper>(db_path_);
-
-  // Create tables if needed (only on first rank per node)
-  // Note: This logic might need to be adjusted based on your specific requirements
-  // For now, we'll create tables on container creation
   if (db_) {
     db_->createTables();
   }
 
-  HLOG(kDebug, "coeus_mdm: Container created and initialized for pool: {} (ID: {}, db_path: {})",
-        pool_name_, task->pool_id_, db_path_);
+  task->return_code_ = 0;
+  HLOG(kDebug, "coeus_mdm: Container created for pool: {} (db_path: {})",
+       pool_name_, db_path_);
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-void Runtime::Mdm_insert(hipc::FullPtr<Mdm_insertTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::Mdm_insert(clio::run::shared_ptr<Mdm_insertTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "coeus_mdm: Executing Mdm_insert task");
 
   if (!db_) {
     HLOG(kError, "coeus_mdm: Database not initialized");
     task->SetReturnCode(1);
-    return;
+    CLIO_CO_RETURN;
   }
 
   DbOperation db_op = task->GetDbOp();
@@ -65,29 +65,32 @@ void Runtime::Mdm_insert(hipc::FullPtr<Mdm_insertTask> task, chi::RunContext& rc
 
   task->SetReturnCode(0);  // Success
   HLOG(kDebug, "coeus_mdm: Mdm_insert completed successfully");
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-void Runtime::Destroy(hipc::FullPtr<DestroyTask> task, chi::RunContext& rctx) {
+clio::run::TaskResume Runtime::Destroy(clio::run::shared_ptr<DestroyTask>& task) {
+  CLIO_TASK_BODY_BEGIN
   HLOG(kDebug, "coeus_mdm: Executing Destroy task - Pool ID: {}",
-        task->target_pool_id_);
+       task->target_pool_id_);
 
   // Clean up database connection
   db_.reset();
 
-  // Initialize output values
   task->return_code_ = 0;
-  task->error_message_ = "";
+  task->error_message_ = clio::run::priv::string(CLIO_PRIV_ALLOC, "");
 
   HLOG(kDebug, "coeus_mdm: Container destroyed successfully");
+  CLIO_CO_RETURN;
+  CLIO_TASK_BODY_END
 }
 
-chi::u64 Runtime::GetWorkRemaining() const {
-  // Return 0 as metadata operations are typically fast
+clio::run::u64 Runtime::GetWorkRemaining() const {
+  // Metadata operations are fast; no long-running work remaining.
   return 0;
 }
 
-}  // namespace chimaera::coeus_mdm
+}  // namespace coeus::coeus_mdm
 
-// Generate ChiMod entry points (get_chimod_name, alloc_chimod, etc.)
-CHI_TASK_CC(chimaera::coeus_mdm::Runtime)
-
+// Generate ChiMod entry points (alloc_chimod, get_chimod_name, etc.)
+CLIO_CHIMOD_CC(coeus::coeus_mdm::Runtime, "coeus_coeus_mdm")
