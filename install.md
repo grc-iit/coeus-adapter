@@ -1,95 +1,116 @@
-## Coeus-adapter installation guide
+# COEUS-Adapter Installation Guide
 
-# Dependencies
-* [IOWarp](https://github.com/iowarp): provides the `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine), the multi-tiered I/O platform COEUS builds against.
-* [ADIOS2](https://github.com/ornladios/ADIOS2): an I/O library
+## Dependencies
 
-### 1.Install ADIOS2
-please follow these steps to install the adios2 with derived variables
-step 1: Install Spack. We recommend Spack v0.23.1 (or earlier) — Spack v1.0.0 does not support installing ADIOS2 or IOWarp.
-```
+* [clio-core (IOWarp core)](https://github.com/iowarp/clio-core): provides the
+  `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine) — the
+  backbone I/O engine COEUS builds against.
+* [ADIOS2](https://github.com/ornladios/ADIOS2): I/O library, built with
+  derived-variable support (the `adios2-coeus` Spack package).
+* MPI (OpenMPI recommended).
+
+## 1. Install Spack
+
+```bash
 cd ${HOME}
 git clone https://github.com/spack/spack.git
 cd spack
-git checkout tags/v0.23.1
 echo ". ${PWD}/share/spack/setup-env.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
-step 2: Add Coeus repo packages for spack
-```
-git clone -b developed https://github.com/grc-iit/coeus-adapter.git
-spack repo add /coeus-adapter/CI/coeus
-```
-step 3: install the adios2
-```
+
+## 2. Install ADIOS2 (with derived variables)
+
+The `adios2-coeus` package lives in this repository's Spack repo:
+
+```bash
+git clone https://github.com/grc-iit/coeus-adapter.git ${HOME}/coeus-adapter
+spack repo add ${HOME}/coeus-adapter/CI/coeus
 spack install adios2-coeus@master
 ```
 
-### 2. Install IOWarp
-```
+## 3. Install IOWarp (clio-core)
+
+The `iowarp` package lives in clio-core's own Spack repo:
+
+```bash
 cd ${HOME}
-git clone https://github.com/grc-iit/grc-repo
-spack repo add grc-repo
-spack install iowarp@master
+git clone https://github.com/iowarp/clio-core.git
+spack repo add clio-core/installers/spack
+spack install iowarp@main
 ```
 
-### 3. Install Coeus-adapter
-1. load environment variables
-```
-spack load iowarp@master
+## 4. Build COEUS-Adapter
+
+1. Load the environment:
+
+```bash
+spack load iowarp@main
 spack load adios2-coeus
 spack load openmpi
 ```
-2. install the coeus-adapter
-```
-git clone -b developed https://github.com/grc-iit/coeus-adapter.git
-cd coeus-adapter
-mkdir build
-cd build
-cmake ../
+
+2. Configure and build:
+
+```bash
+cd ${HOME}/coeus-adapter
+mkdir build && cd build
+cmake .. -Dmeta_enabled=ON -Ddebug_mode=OFF
 make -j8
 ```
-Note:
-To enable the metadata and function trace features, please add the appropriate flags during the CMake configuration.
-```
-cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
-```
 
-### Jarvis installation(unified platform for deploying various applications)
-1. jarvis installation
-```
+The plugin is built at `build/bin/libhermes_engine.so` (the Hermes-era name is
+retained for compatibility; the I/O backbone is clio-core's CTE).
+
+Notes:
+- `-Dmeta_enabled=ON` enables metadata collection; `-Ddebug_mode=ON` enables
+  verbose engine logging.
+- If CMake fails with `CMAKE_C_COMPILER not set, after EnableLanguage`, pass
+  the compilers explicitly:
+  `cmake .. -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++) ...`
+- See [BUILD_GUIDE.md](BUILD_GUIDE.md) for all options and troubleshooting.
+
+## Jarvis installation (unified platform for deploying applications)
+
+1. Install Jarvis:
+
+```bash
 spack external find python
 spack install py-jarvis-cd
 spack load py-jarvis-cd
 ```
-2. jarvis initilization(Please follow this [link](https://grc.iit.edu/docs/jarvis/jarvis-cd/index/#initialize-jarvis-configuration)) for the following steps: 
 
-    Initialize jarvis configuration.
+2. Initialize Jarvis (follow this
+   [link](https://grc.iit.edu/docs/jarvis/jarvis-cd/index/#initialize-jarvis-configuration))
+   for the following steps:
+   - Initialize the Jarvis configuration
+   - Set or change the active hostfile
+   - Set up passwordless SSH
+   - Build a resource graph
 
-    Set or Change the active Hostfile
+## Incompact3d installation
 
-    Set Up Passwordless SSH. 
+The installation, which includes the 2DECOMP&FFT library, enables both slab and
+pencil decompositions along with FFT support.
 
-    Building a Resource Graph
+In this setup, we apply a patch to the 2DECOMP&FFT library to add the derived
+variable for the Q-criterion.
 
-### Incompact3D installation
-The installation, which includes the 2DECOMP&FFT library, enables both slab and pencil decompositions along with FFT support.
+The Incompact3d application will use ADIOS2 for I/O, with the BP5 engine enabled
+through an additional patch. Note: the default Incompact3d uses MPI-IO.
 
-In this setup, we apply a patch to the 2DECOMP&FFT library to add the derived variable for the Q-criterion.
-
-The incompact3D application will use ADIOS2 for I/O, with the BP5 engine enabled through an additional patch. Note: The default incompact3D will use MPI as I/O.
-```
+```bash
 spack load adios2-coeus@master
 spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@master
 ```
 
-### Pyincompact3D installation(the post-processing tool for raw output)
-The raw simulation output for adios2 bp5 file will be used this program to calculate the Q-criterion. 
-```
+## Py4Incompact3D installation (post-processing tool for raw output)
+
+The raw ADIOS2 BP5 simulation output is used by this program to calculate the
+Q-criterion.
+
+```bash
 git clone https://github.com/xcompact3d/Py4Incompact3D.git
 cd Py4Incompact3D
-pip install
+pip install .
 ```
-
-
-

@@ -32,13 +32,14 @@ For detailed installation instructions, see the [installation guide](install.md)
 **Quick Install:**
 
 ```bash
-
-# Install dependencies
-spack install iowarp@master
+# Add the IOWarp Spack repo (ships inside clio-core) and install dependencies
+git clone https://github.com/iowarp/clio-core.git
+spack repo add clio-core/installers/spack
+spack install iowarp@main
 spack install adios2
 
 # Load dependencies
-spack load iowarp@master
+spack load iowarp@main
 spack load adios2
 
 # Build COEUS-Adapter
@@ -51,7 +52,22 @@ make -j8
 
 ## Usage
 
-COEUS-Adapter works automatically as an ADIOS2 plugin. Applications using ADIOS2 can leverage COEUS by configuring it in their ADIOS2 XML.
+COEUS-Adapter works automatically as an ADIOS2 plugin. Applications using ADIOS2 can leverage COEUS by configuring it in their ADIOS2 XML:
+
+```xml
+<io name="SimulationOutput">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes" />
+        <parameter key="PluginLibrary" value="hermes_engine" />
+    </engine>
+</io>
+```
+
+> **A note on naming**: the backbone I/O engine is **clio-core** (IOWarp's
+> Chimaera runtime + Context-Transfer-Engine) — Hermes is no longer used.
+> The names `hermes_engine`, `PluginName=hermes`, and the `HermesEngine` class
+> are retained from the original Hermes-based implementation for compatibility
+> with existing application configs.
 
 
 ## Supported Applications
@@ -63,7 +79,7 @@ COEUS-Adapter has been tested with the following scientific computing applicatio
 | WRF (Weather Forecasting)      | [test/jarvis/jarvis_coeus/jarvis_coeus/wrf](./test/jarvis/jarvis_coeus/jarvis_coeus/wrf)                          | Hash               | -           |
 | LAMMPS (Molecular Dynamics)    | [test/jarvis/jarvis_coeus/jarvis_coeus/lammps](./test/jarvis/jarvis_coeus/jarvis_coeus/lammps)                    | Hash               | -           |
 | Gray-Scott (Reaction Diffusion)| [test/jarvis/jarvis_coeus/jarvis_coeus/adios2_gray_scott](./test/jarvis/jarvis_coeus/jarvis_coeus/adios2_gray_scott)| Curl, Add, Hash    | ✓ (Catalyst/Fides, AI agent) |
-| Incompact3D                    | [test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D](./test/jarvis/jarvis_coeus/jarvis_coeus/InCompact3D)           | Q-criterion        | ✓ (Catalyst/Fides) |
+| Incompact3d                    | [test/jarvis/jarvis_coeus/jarvis_coeus/Incompact3d](./test/jarvis/jarvis_coeus/jarvis_coeus/Incompact3d)           | Q-criterion        | ✓ (Catalyst/Fides) |
 | OpenFOAM                       | [test/jarvis/jarvis_coeus/jarvis_coeus/openfoam](./test/jarvis/jarvis_coeus/jarvis_coeus/openfoam)                 | -                  | -           |
 
 
@@ -79,8 +95,7 @@ no per-application adaptor code required.
 - **SST streaming mode (multi-node)**: data is streamed over ADIOS2 SST to an external
   ParaView/Catalyst reader, decoupling simulation and visualization processes.
 - **In-situ AI agent (experimental)**: an AI agent drives ParaView through MCP tools to
-  autonomously explore live simulation data — see [test/insitu_agent](./test/insitu_agent)
-  and [paraview_mcp](./paraview_mcp).
+  autonomously explore live simulation data — see [test/insitu_agent](./test/insitu_agent).
 
 Build with `-DCOEUS_ENABLE_CATALYST=ON` (or let CMake auto-detect a Catalyst install), then
 point your ADIOS2 XML at a Fides `DataModel` JSON and a Catalyst `Script`. See the
@@ -91,6 +106,8 @@ in-situ examples for full setup.
 ## Documentation
 
 - [Installation Guide](install.md) - Detailed installation and setup instructions
+- [Build Guide](BUILD_GUIDE.md) - Dependencies, CMake options, and troubleshooting
+- [Source Code Analysis](SOURCE_CODE_ANALYSIS.md) - Architecture and the clio-core dependency explained
 - [Test Applications](./test/) - Example applications and integration tests
 - [In-Situ Visualization (Gray-Scott)](./test/catalyst_gray_scott) - Catalyst/Fides setup and Python pipelines
 - [In-Situ Visualization (Incompact3D)](./test/catalyst_Incompact3D) - Fides data models and Catalyst pipelines

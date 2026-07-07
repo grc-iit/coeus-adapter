@@ -1,498 +1,248 @@
-# Coeus-Adapter Build Guide
+# COEUS-Adapter Build Guide
 
-Complete guide for building coeus-adapter with Chimaera Runtime and Context-Transfer-Engine (CTE) support.
+Complete guide for building COEUS-Adapter against **clio-core** (IOWarp's core:
+Chimaera runtime + Context-Transfer-Engine), which is the backbone I/O engine.
+
+> **A note on naming**: Hermes is **no longer used** — all I/O goes through
+> clio-core's CTE. The names `hermes_engine` (library), `HermesEngine` (class),
+> and `PluginName=hermes` (ADIOS2 XML) are retained from the original
+> Hermes-based implementation so existing application configs keep working.
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Installing Dependencies](#installing-dependencies)
-3. [Building Coeus-Adapter](#building-coeus-adapter)
-4. [Configuration](#configuration)
-5. [Testing](#testing)
-6. [Troubleshooting](#troubleshooting)
+3. [Building COEUS-Adapter](#building-coeus-adapter)
+4. [Using the Plugin](#using-the-plugin)
+5. [Configuration](#configuration)
+6. [Testing](#testing)
+7. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
 ### System Requirements
 
 - **OS**: Linux (Ubuntu 20.04+, CentOS 8+, or similar)
-- **Compiler**: C++17 compatible (GCC >= 9, Clang >= 10)
-- **CMake**: >= 3.20 (for CTE support)
+- **Compiler**: GCC >= 11 with C++20 coroutine support
+  (the plugin and ChiMods are built with `-std=c++20 -fcoroutines`
+  because Chimaera task bodies are C++20 coroutines)
+- **CMake**: >= 3.20
 - **MPI**: OpenMPI or MPICH
-- **Python**: 3.7+ (optional, for Python bindings)
 
 ### Required Dependencies
 
-1. **iowarp-core** - Unified package that includes:
-   - HermesShm (shared memory framework)
-   - Chimaera (Context-Runtime framework)
-   - Chimaera Admin (Admin ChiMod)
-   - Context-Transfer-Engine (CTE) - I/O placement engine
-   - All ChiMods (bdev, etc.)
-2. **Hermes** - Storage backend (legacy, still needed for backward compatibility)
-3. **ADIOS2** - I/O library
-4. **yaml-cpp** - YAML configuration parsing
-5. **SQLite3** - Database support
+All of these are found via `find_package` in `CMakeLists.txt`:
+
+| Dependency | Provides | Typical source |
+|---|---|---|
+| **iowarp-core** | Chimaera runtime, CTE (tiered blob store), transport primitives — the entire clio-core stack | `spack install iowarp@main` |
+| **ADIOS2** | Plugin engine interface, derived variables | Spack or source build (must be an *installed* tree, see [Troubleshooting](#troubleshooting)) |
+| **MPI** (C, CXX) | Communication | `spack install openmpi` |
+| **yaml-cpp** | Variable/operation config parsing | comes with the iowarp spack env |
+| **SQLite3** | Metadata database | system or spack |
+| **OpenMP** | Derived-variable computation | compiler |
+| **GTest** | Unit tests | system or spack |
+
+Bundled in `external_libraries/` (no install needed): spdlog, cereal, rapidjson.
+
+Optional:
+- **Catalyst 2** — in-situ visualization (`-DCOEUS_ENABLE_CATALYST=ON`, or auto-detected)
 
 ## Installing Dependencies
 
-### Option 1: Using Spack (Recommended)
+### Using Spack (recommended)
 
-If you're using Spack for dependency management:
+The `iowarp` Spack package lives in clio-core's own Spack repo:
 
 ```bash
-# Load Spack environment
+# Load Spack
 source /path/to/spack/share/spack/setup-env.sh
 
-# Install HermesShm (if not already installed)
-spack install hermes-shm
+# Add the IOWarp Spack repo (ships inside clio-core)
+git clone https://github.com/iowarp/clio-core.git
+spack repo add clio-core/installers/spack
 
-# Install Chimaera Core and Admin
-# Note: These may need to be built from source if not in Spack
-# See Option 2 below
-
-# Install CTE
-# Note: CTE may need to be built from source
-# See Option 2 below
-
-# Install other dependencies
-spack install adios2
-spack install yaml-cpp
-spack install sqlite
+# Install and load
+spack install iowarp@main
 spack install openmpi
-
-# Load dependencies
-spack load hermes-shm
-spack load adios2
-spack load yaml-cpp
-spack load sqlite
+spack load iowarp@main
 spack load openmpi
 ```
 
-### Option 2: Building from Source
+`spack load iowarp@main` puts `iowarp-coreConfig.cmake` (and yaml-cpp, sqlite,
+etc. from its dependency tree) on `CMAKE_PREFIX_PATH` automatically.
 
-#### 1. Install HermesShm
+> **Tip**: `spack load` can take several minutes on large installs. To cache the
+> environment for fast reuse:
+> ```bash
+> spack load --sh iowarp@main openmpi > ~/coeus_env.sh
+> # later, in any shell:
+> source ~/coeus_env.sh
+> ```
+
+### ADIOS2
+
+COEUS needs an ADIOS2 build with derived-variable support. Either:
 
 ```bash
-git clone https://github.com/HDFGroup/hermes-shm.git
-cd hermes-shm
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-make -j$(nproc)
-sudo make install
-```
-
-#### 2. Install iowarp-core (Unified Package)
-
-The `iowarp-core` package is a unified package that includes HermesShm, Chimaera, CTE, and all ChiMods. You need to build and install the entire iowarp ecosystem.
-
-**Option A: Build from iowarp repository (if available)**
-```bash
-# Clone iowarp repository (if separate repo exists)
-# git clone <iowarp-repository-url>
-# cd iowarp
-# mkdir build && cd build
-# cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-# make -j$(nproc)
-# sudo make install
-```
-
-**Option B: Build components separately and install to same prefix**
-
-Since iowarp-core is a unified package, you may need to build the components (context-runtime, context-transfer-engine, context-transport-primitives) and install them all to the same prefix so CMake can find them as `iowarp-core`.
-
-**Verify iowarp-core Installation:**
-```bash
-# Check if CMake config exists
-ls /usr/local/lib/cmake/iowarp-core/
-
-# Should see:
-# iowarp-coreConfig.cmake
-# iowarp-coreTargets.cmake
-
-# Check if libraries are installed
-ls /usr/local/lib/libchimaera*.so
-ls /usr/local/lib/libwrp_cte_core*.so
-
-# Check if headers are available
-ls /usr/local/include/chimaera/
-ls /usr/local/include/wrp_cte/core/
-```
-
-#### 4. Install Other Dependencies
-
-**ADIOS2:**
-```bash
-# Using Spack (recommended)
 spack install adios2
-
-# Or from source
-git clone https://github.com/ornladios/ADIOS2.git
-cd ADIOS2
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-make -j$(nproc)
-sudo make install
-```
-
-**yaml-cpp:**
-```bash
-# Using package manager
-sudo apt-get install libyaml-cpp-dev  # Ubuntu/Debian
-sudo yum install yaml-cpp-devel       # RHEL/CentOS
-
-# Or from source
-git clone https://github.com/jbeder/yaml-cpp.git
-cd yaml-cpp
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
-make -j$(nproc)
-sudo make install
-```
-
-**SQLite3:**
-```bash
-# Usually pre-installed, but if needed:
-sudo apt-get install libsqlite3-dev  # Ubuntu/Debian
-sudo yum install sqlite-devel        # RHEL/CentOS
-```
-
-## Building Coeus-Adapter
-
-### Step 1: Set Environment Variables
-
-Set `CMAKE_PREFIX_PATH` to include all dependency installation paths:
-
-```bash
-export CMAKE_PREFIX_PATH="/usr/local:/path/to/hermes-shm:/path/to/other/deps"
-```
-
-**Important for Hermes-Shm**: If you built hermes-shm from `context-transport-primitives`, make sure to:
-1. Install it first: `cd ~/core/context-transport-primitives/build && make install`
-2. Add its install location to CMAKE_PREFIX_PATH:
-   ```bash
-   # If installed to /usr/local (default)
-   export CMAKE_PREFIX_PATH="/usr/local:$CMAKE_PREFIX_PATH"
-   
-   # Or if installed to custom location
-   export CMAKE_PREFIX_PATH="/path/to/hermes-shm/install:$CMAKE_PREFIX_PATH"
-   ```
-3. Also set LD_LIBRARY_PATH for runtime:
-   ```bash
-   export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-   ```
-
-**Alternative**: Point directly to HermesShm CMake config:
-```bash
-cmake .. -DHermesShm_DIR=/path/to/install/lib/cmake/HermesShm
-```
-
-If using Spack:
-```bash
-# Spack automatically sets CMAKE_PREFIX_PATH when loading packages
-spack load hermes-shm
 spack load adios2
-spack load yaml-cpp
-spack load sqlite
-spack load openmpi
 ```
 
-### Step 2: Configure CMake
+or point CMake at your own **installed** ADIOS2 tree:
+
+```bash
+export CMAKE_PREFIX_PATH="/path/to/adios2/install:$CMAKE_PREFIX_PATH"
+```
+
+### Verify iowarp-core is discoverable
+
+```bash
+# Should print the package config location
+find $(spack location -i iowarp@main) -name "iowarp-coreConfig.cmake"
+```
+
+## Building COEUS-Adapter
 
 ```bash
 cd coeus-adapter
 mkdir build && cd build
 
-# Basic configuration
 cmake .. \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local
-
-# With optional features
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
     -Dmeta_enabled=ON \
-    -Ddebug_mode=ON
+    -Ddebug_mode=OFF
 
-# If dependencies are in non-standard locations
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr/local \
-    -DCMAKE_PREFIX_PATH="/usr/local:/custom/path/to/deps" \
-    -Diowarp-core_DIR=/path/to/iowarp-core/lib/cmake/iowarp-core
+cmake --build . --parallel $(nproc)
 ```
 
-**CMake Configuration Options:**
-- `-DCMAKE_BUILD_TYPE`: `Debug` or `Release` (default: `Release`)
-- `-Dmeta_enabled=ON`: Enable metadata features
-- `-Ddebug_mode=ON`: Enable debug logging
-- `-DCMAKE_INSTALL_PREFIX`: Installation directory (default: `/usr/local`)
+**CMake options:**
 
-### Step 3: Build
+| Option | Default | Effect |
+|---|---|---|
+| `-DCMAKE_BUILD_TYPE` | `Release` | `Debug` or `Release` |
+| `-Dmeta_enabled=ON` | `OFF` | Enable metadata collection (SQLite via the `coeus_mdm` ChiMod) |
+| `-Ddebug_mode=ON` | `OFF` | Verbose engine logging |
+| `-DCOEUS_ENABLE_CATALYST=ON` | `OFF` (auto-detects) | Catalyst 2 + Fides in-situ visualization |
+| `-DCMAKE_INSTALL_PREFIX` | `/usr/local` | Install destination |
+
+**Verify the build:**
 
 ```bash
-# Build with all available cores
-make -j$(nproc)
-
-# Or specify number of cores
-make -j8
+ls -lh bin/libhermes_engine.so   # the ADIOS2 plugin
+ldd bin/libhermes_engine.so      # check no missing libraries
 ```
 
-### Step 4: Verify Build
-
-Check that libraries are built:
-```bash
-ls -lh bin/libhermes_engine.so
-```
-
-Check for any missing dependencies:
-```bash
-ldd bin/libhermes_engine.so
-```
-
-### Step 5: Install (Optional)
+**Install (optional):**
 
 ```bash
-sudo make install
+cmake --install . --prefix /your/prefix
 ```
 
-This installs:
-- Libraries to `${CMAKE_INSTALL_PREFIX}/lib`
-- Headers to `${CMAKE_INSTALL_PREFIX}/include`
-- Binaries to `${CMAKE_INSTALL_PREFIX}/bin`
+Built artifacts:
+- `libhermes_engine.so` — the ADIOS2 plugin engine (main deliverable)
+- `libcoeus_coeus_mdm.so`, `libcoeus_rankConsensus.so` — ChiMods loaded by the
+  Chimaera runtime (see `tasks/`)
+
+## Using the Plugin
+
+Applications select COEUS in their ADIOS2 XML — no code changes required:
+
+```xml
+<io name="SimulationOutput">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes" />
+        <parameter key="PluginLibrary" value="hermes_engine" />
+    </engine>
+</io>
+```
+
+Make sure the plugin is findable at runtime:
+
+```bash
+export ADIOS2_PLUGIN_PATH=/path/to/coeus-adapter/build/bin
+export LD_LIBRARY_PATH=/path/to/coeus-adapter/build/bin:$LD_LIBRARY_PATH
+```
+
+See `test/jarvis/jarvis_coeus/jarvis_coeus/adios2_gray_scott/config/` for
+complete working examples.
 
 ## Configuration
 
-### 1. CTE Configuration
+### CTE configuration
 
-Create or update the CTE configuration file:
+The CTE (tiered storage) is configured through the Chimaera runtime that hosts
+it. A sample tier config is in `config/cte_config.yaml`. Deployment via
+Jarvis pipelines (`test/jarvis/jarvis_coeus/pipelines/`) handles this
+automatically.
 
-```bash
-# Copy default configuration
-cp config/cte_config.yaml /path/to/your/cte_config.yaml
+### Runtime configuration
 
-# Edit as needed
-nano /path/to/your/cte_config.yaml
-```
-
-Set the configuration path via environment variable:
-```bash
-export CTE_CONFIG=/path/to/your/cte_config.yaml
-```
-
-Or specify in your application code.
-
-**Example CTE Configuration** (`config/cte_config.yaml`):
-```yaml
-worker_count: 4
-
-storage:
-  - path: "/tmp/cte_primary"
-    bdev_type: "file"
-    capacity_limit: "10GB"
-    score: 0.9
-  
-  - path: "/tmp/cte_cache"
-    bdev_type: "ram"
-    capacity_limit: "2GB"
-    score: 1.0
-
-dpe:
-  dpe_type: "max_bw"
-```
-
-### 2. Chimaera Runtime Configuration
-
-If using external Chimaera runtime (not embedded), configure it:
+The Chimaera runtime must be running before applications open the engine.
+With Jarvis this is the `chimaera_run` pipeline stage; manual deployments set:
 
 ```bash
-# Set Chimaera configuration path
 export WRP_RUNTIME_CONF=/path/to/chimaera_config.yaml
-
-# Or use default location
-# Default: config/chimaera_default.yaml
-```
-
-### 3. Hermes Configuration (Legacy)
-
-If using Hermes storage backend (fallback mode):
-
-```bash
-export HERMES_CONF=/path/to/hermes_config.yaml
 ```
 
 ## Testing
 
-### 1. Unit Tests
-
 ```bash
 cd build
-ctest -V
+ctest -V                 # unit + integration tests
 ```
 
-### 2. Integration Tests
-
-```bash
-# Run ADIOS2 integration tests
-cd test/integration
-./run_tests.sh
-```
-
-### 3. Manual Verification
-
-Create a simple test program:
-
-```cpp
-#include <coeus/HermesEngine.h>
-#include <comms/Hermes.h>
-
-int main() {
-    auto hermes = std::make_shared<coeus::Hermes>();
-    if (hermes->connect()) {
-        std::cout << "CTE initialized successfully!" << std::endl;
-        return 0;
-    } else {
-        std::cerr << "Failed to initialize CTE" << std::endl;
-        return 1;
-    }
-}
-```
-
-Compile and run:
-```bash
-g++ -o test_cte test_cte.cc \
-    -I/usr/local/include \
-    -L/usr/local/lib \
-    -lhermes_engine \
-    -lwrp_cte_core_client \
-    -lchimaera_cxx \
-    -lchimaera_admin_client
-
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-./test_cte
-```
+Application-level tests are driven through Jarvis pipelines — see
+`test/jarvis/README.md` and `test/jarvis/jarvis_coeus/pipelines/`.
 
 ## Troubleshooting
 
-### CMake Cannot Find Packages
+### `CMAKE_C_COMPILER not set, after EnableLanguage`
 
-**Problem**: `find_package(iowarp-core REQUIRED)` fails
-
-**Solution**:
-```bash
-# Set CMAKE_PREFIX_PATH
-export CMAKE_PREFIX_PATH="/usr/local:$CMAKE_PREFIX_PATH"
-
-# Or specify directly in CMake
-cmake .. -Diowarp-core_DIR=/usr/local/lib/cmake/iowarp-core
-
-# Verify iowarp-core is installed
-ls /usr/local/lib/cmake/iowarp-core/
-```
-
-### Missing Libraries at Runtime
-
-**Problem**: `error while loading shared libraries: libwrp_cte_core_client.so`
-
-**Solution**:
-```bash
-# Add to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-
-# Or update system library path
-echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/coeus.conf
-sudo ldconfig
-```
-
-### CTE Initialization Fails
-
-**Problem**: CTE client initialization returns false
-
-**Solution**:
-1. Check CTE configuration file exists and is valid:
-   ```bash
-   cat $CTE_CONFIG
-   ```
-
-2. Verify Chimaera runtime is running (if using external runtime):
-   ```bash
-   # Start Chimaera runtime if needed
-   chimaera_start_runtime
-   ```
-
-3. Check storage paths exist and are writable:
-   ```bash
-   mkdir -p /tmp/cte_primary /tmp/cte_cache
-   chmod 777 /tmp/cte_primary /tmp/cte_cache
-   ```
-
-### Build Errors Related to hermes::BlobId
-
-**Problem**: Compilation errors about `hermes::BlobId` structure
-
-**Solution**: The `hermes::BlobId` structure may need adjustment in `src/CTEBucket.cc`. Check the actual structure definition in Hermes headers and update the `GenerateBlobId()` method accordingly.
-
-### Linker Errors
-
-**Problem**: Undefined references to CTE or Chimaera symbols
-
-**Solution**: Ensure all required libraries are linked:
-```cmake
-target_link_libraries(hermes_engine
-    wrp_cte::core_client
-    chimaera::cxx
-    chimaera::admin_client
-    # ... other libraries
-)
-```
-
-## Quick Reference
-
-### Build Commands Summary
+Seen when `find_package(iowarp-core)` transitively pulls HDF5/MPI config tests.
+Pass the compilers explicitly:
 
 ```bash
-# 1. Set environment
-export CMAKE_PREFIX_PATH="/usr/local"
-export CTE_CONFIG="config/cte_config.yaml"
-export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-
-# 2. Configure
-cd coeus-adapter
-mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-
-# 3. Build
-make -j$(nproc)
-
-# 4. Test
-ctest -V
-
-# 5. Install (optional)
-sudo make install
+cmake .. -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++) ...
 ```
 
-### Verification Checklist
+### `fatal error: ../cxx/Variable.h: No such file or directory`
 
-- [ ] iowarp-core installed and found by CMake
-- [ ] All iowarp-core components available (Chimaera, CTE, HermesShm)
-- [ ] All libraries build successfully
-- [ ] CTE configuration file exists and is valid
-- [ ] Runtime libraries are in LD_LIBRARY_PATH
-- [ ] Tests pass
+You pointed `CMAKE_PREFIX_PATH` at an ADIOS2 **build tree**. The build tree's
+headers use relative includes that only resolve after installation. Run
+`make install` in your ADIOS2 build and point at the **install** prefix instead.
+
+### CMake cannot find `iowarp-core`
+
+```bash
+# Confirm the package exists
+find $(spack location -i iowarp@main) -name "iowarp-coreConfig.cmake"
+
+# Point CMake at it directly if needed
+cmake .. -Diowarp-core_DIR=$(spack location -i iowarp@main)/lib/cmake/iowarp-core
+```
+
+### Missing libraries at runtime
+
+```
+error while loading shared libraries: libwrp_cte_core_client.so
+```
+
+```bash
+export LD_LIBRARY_PATH=$(spack location -i iowarp@main)/lib:$LD_LIBRARY_PATH
+```
+
+### Engine hangs at Open / CTE errors
+
+The Chimaera runtime is not up, or the ChiMods aren't found. Check that:
+1. The runtime daemon is running (Jarvis `chimaera_run` stage).
+2. `libcoeus_coeus_mdm.so` / `libcoeus_rankConsensus.so` are on the module
+   search path so the runtime can load them.
 
 ## Additional Resources
 
-- [Chimaera Runtime Documentation](../context-runtime/README.md)
-- [CTE Documentation](../context-transfer-engine/docs/cte.md)
-- [Migration Summary](MIGRATION_SUMMARY.md)
-- [IO Migration Status](IO_MIGRATION_STATUS.md)
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Review the migration documentation
-3. Check dependency installation paths
-4. Verify configuration files
-
+- [README](README.md) — project overview and supported applications
+- [Installation Guide](install.md) — end-to-end Spack-based install
+- [Source Code Analysis](SOURCE_CODE_ANALYSIS.md) — architecture, and exactly
+  how COEUS depends on clio-core
+- Historical planning docs are archived in [docs/archive/](docs/archive/)
