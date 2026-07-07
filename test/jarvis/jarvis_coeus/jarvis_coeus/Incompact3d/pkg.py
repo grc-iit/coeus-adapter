@@ -123,14 +123,16 @@ class Incompact3d(Application):
 
         :return: None
         """
-        # Set OpenMPI MCA parameters as environment variables
-        os.environ['OMPI_MCA_pml'] = 'ob1'
-        os.environ['OMPI_MCA_btl'] = 'tcp,self'
-        os.environ['OMPI_MCA_osc'] = '^ucx'
-        # Note: Network interface 'eno1' is hardcoded - may need to be configurable
-        # for different systems. Consider adding network_interface parameter to config.
-        os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
-        os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+        iface = self.config.get('net_iface', 'eno1')
+
+        mpi_env = {
+            'OMPI_MCA_pml': 'ob1',
+            'OMPI_MCA_btl': 'tcp,self',
+            'OMPI_MCA_osc': '^ucx',
+            'OMPI_MCA_btl_tcp_if_include': iface,
+        }
+        os.environ.update(mpi_env)
+        self.mod_env.update(mpi_env)
 
         Exec('xcompact3d',
              MpiExecInfo(nprocs=self.config['nprocs'],
