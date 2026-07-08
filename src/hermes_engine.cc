@@ -276,8 +276,73 @@ void HermesEngine::Init_() {
 
   }
 
-  // Statistical trigger configuration (Vigil trigger phase)
-  if (params.find("TriggerVariable") != params.end()) {
+  // Statistical trigger configuration (Vigil trigger phase).
+  // Knobs shared by all trigger types:
+  if (params.find("TriggerType") != params.end()) {
+    trigger_type_ = params["TriggerType"];
+  }
+  if (params.find("TriggerInspectSteps") != params.end()) {
+    trigger_inspect_steps_ = std::max(1, std::stoi(params["TriggerInspectSteps"]));
+  }
+  if (params.find("TriggerRefire") != params.end()) {
+    const std::string &v = params["TriggerRefire"];
+    trigger_refire_ = (v == "1" || v == "true" || v == "TRUE" || v == "True");
+  }
+  if (params.find("TriggerLogFile") != params.end()) {
+    trigger_log_file_ = params["TriggerLogFile"];
+  }
+  if (params.find("TriggerMetricsLogFile") != params.end()) {
+    trigger_metrics_log_file_ = params["TriggerMetricsLogFile"];
+  }
+
+  if (trigger_type_ == "dissipation") {
+    // Two-stage Yellow/Red numerical-dissipation trigger (Xcompact3d TGV).
+    if (params.find("TriggerKEVariable") != params.end()) {
+      trigger_ke_variable_ = params["TriggerKEVariable"];
+    }
+    if (params.find("TriggerEnstrophyVariable") != params.end()) {
+      trigger_enst_variable_ = params["TriggerEnstrophyVariable"];
+    }
+    if (params.find("TriggerNu") != params.end()) {
+      trigger_nu_ = std::stod(params["TriggerNu"]);
+    }
+    if (params.find("TriggerOutputDt") != params.end()) {
+      trigger_output_dt_ = std::stod(params["TriggerOutputDt"]);
+    }
+    if (params.find("TriggerYellowFraction") != params.end()) {
+      trigger_yellow_fraction_ = std::stod(params["TriggerYellowFraction"]);
+    }
+    if (params.find("TriggerRedFraction") != params.end()) {
+      trigger_red_fraction_ = std::stod(params["TriggerRedFraction"]);
+    }
+    if (params.find("TriggerYellowNuRatio") != params.end()) {
+      trigger_yellow_nu_ratio_ = std::stod(params["TriggerYellowNuRatio"]);
+    }
+    if (params.find("TriggerRedNuRatio") != params.end()) {
+      trigger_red_nu_ratio_ = std::stod(params["TriggerRedNuRatio"]);
+    }
+    trigger_enabled_ = (!trigger_ke_variable_.empty() &&
+                        !trigger_enst_variable_.empty() &&
+                        trigger_nu_ > 0.0 && trigger_output_dt_ > 0.0);
+    if (mpi_rank == 0) {
+      if (trigger_enabled_) {
+        std::cout << "Trigger: dissipation ke=" << trigger_ke_variable_
+                  << " enst=" << trigger_enst_variable_
+                  << " nu=" << trigger_nu_
+                  << " output_dt=" << trigger_output_dt_
+                  << " yellow(frac=" << trigger_yellow_fraction_
+                  << ",nu_ratio=" << trigger_yellow_nu_ratio_ << ")"
+                  << " red(frac=" << trigger_red_fraction_
+                  << ",nu_ratio=" << trigger_red_nu_ratio_ << ")"
+                  << " inspect_steps=" << trigger_inspect_steps_
+                  << " refire=" << (trigger_refire_ ? "true" : "false") << std::endl;
+      } else {
+        std::cout << "Trigger: TriggerType=dissipation needs TriggerKEVariable,"
+                     " TriggerEnstrophyVariable, TriggerNu and TriggerOutputDt"
+                     " - trigger disabled" << std::endl;
+      }
+    }
+  } else if (params.find("TriggerVariable") != params.end()) {
     trigger_variable_ = params["TriggerVariable"];
     if (params.find("TriggerSumVariable") != params.end()) {
       trigger_sum_variable_ = params["TriggerSumVariable"];
@@ -287,16 +352,6 @@ void HermesEngine::Init_() {
     }
     if (params.find("TriggerBaselineRatio") != params.end()) {
       trigger_baseline_ratio_ = std::stod(params["TriggerBaselineRatio"]);
-    }
-    if (params.find("TriggerInspectSteps") != params.end()) {
-      trigger_inspect_steps_ = std::max(1, std::stoi(params["TriggerInspectSteps"]));
-    }
-    if (params.find("TriggerRefire") != params.end()) {
-      const std::string &v = params["TriggerRefire"];
-      trigger_refire_ = (v == "1" || v == "true" || v == "TRUE" || v == "True");
-    }
-    if (params.find("TriggerLogFile") != params.end()) {
-      trigger_log_file_ = params["TriggerLogFile"];
     }
     trigger_enabled_ = (trigger_threshold_ > 0.0 || trigger_baseline_ratio_ > 0.0);
     if (mpi_rank == 0) {
@@ -976,6 +1031,9 @@ double HermesEngine::ComputeGlobalVarianceDerived_(
  * window closes. Returns true only on the step the trigger fires.
  * */
 bool HermesEngine::EvaluateTrigger_() {
+  if (trigger_type_ == "dissipation") {
+    return EvaluateDissipationTrigger_();
+  }
   // Prefer the ADIOS2 derived-quantity path: if TriggerVariable names a
   // derived variable (e.g. "derive/VarV" = variance(x)), pool the per-block
   // variances it computed this step; otherwise fall back to a direct pass
@@ -1035,6 +1093,181 @@ bool HermesEngine::EvaluateTrigger_() {
           << ",\"threshold\":" << trigger_threshold_
           << ",\"baseline\":" << trigger_baseline_
           << ",\"baseline_ratio\":" << trigger_baseline_ratio_
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  return true;
+}
+
+/**
+ * N_b-weighted global mean from an ADIOS2 derived per-block mean (collective).
+ *
+ * The custom "mean" operator (e.g. tke_mean, enst_mean in Xcompact3d) reduces
+ * each rank's block to one value mean_b. The exact global mean is the
+ * size-weighted combine  sum_b N_b*mean_b / sum_b N_b,  with N_b taken from
+ * the local Count of the first source field named in the derived expression
+ * (no field data is read). One 2-double Allreduce; NaN if unavailable.
+ * */
+double HermesEngine::ComputeGlobalBlockMean_(const std::string &name) {
+  double local[2] = {0.0, 0.0};  // N_b, N_b*mean_b
+  bool have_block = false;
+
+  do {
+    auto const &derivedMap = m_IO.GetDerivedVariables();
+    auto dit = derivedMap.find(name);
+    if (dit == derivedMap.end()) break;
+    auto *derivedVar =
+        dynamic_cast<adios2::core::VariableDerived *>(dit->second.get());
+    if (!derivedVar) break;
+
+    auto blob = hermes_->tag->Get(name);
+    if (blob.empty()) break;
+    double mean_b;
+    if (derivedVar->m_Type == adios2::DataType::Double &&
+        blob.size() >= sizeof(double)) {
+      mean_b = *reinterpret_cast<const double *>(blob.data());
+    } else if (derivedVar->m_Type == adios2::DataType::Float &&
+               blob.size() >= sizeof(float)) {
+      mean_b = static_cast<double>(
+          *reinterpret_cast<const float *>(blob.data()));
+    } else {
+      break;
+    }
+
+    std::vector<std::string> sources = derivedVar->VariableNameList();
+    if (sources.empty()) break;
+    auto const &varMap = m_IO.GetVariables();
+    auto sit = varMap.find(sources.front());
+    if (sit == varMap.end()) break;
+    double n_b = 1.0;
+    for (auto c : sit->second->m_Count) n_b *= static_cast<double>(c);
+    if (n_b <= 0.0) break;
+
+    local[0] = n_b;
+    local[1] = n_b * mean_b;
+    have_block = true;
+  } while (false);
+
+  if (!have_block && m_Comm.Rank() == 0) {
+    engine_logger->warn(
+        "Trigger: derived block mean '{}' unavailable this step (variable,"
+        " blob or source missing) - contributing empty block", name);
+  }
+
+  double global[2] = {0.0, 0.0};
+  m_Comm.Allreduce(local, global, 2, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return global[1] / global[0];
+}
+
+/**
+ * Two-stage Yellow/Red numerical-dissipation trigger (collective).
+ *
+ * Pools the derived block-mean TKE and enstrophy, time-differences the TKE
+ * against the previous output step to get the total dissipation
+ * eps_total = -dE_k/dt, and compares it with the physical dissipation
+ * eps_phys = 2*nu*<enstrophy> (exact for periodic flow). The excess is
+ * numerical: eps_frac = (eps_total - eps_phys)/eps_total and
+ * nu_ratio = eps_total/eps_phys (= nu_eff/nu).
+ *
+ * Yellow (either yellow threshold crossed) logs an escalation event on its
+ * rising edge but does not stream. Red (either red threshold crossed) fires
+ * like the variance trigger: rising edge, once by default, opens the SST
+ * inspect window. Returns true only on the Red fire step.
+ * */
+bool HermesEngine::EvaluateDissipationTrigger_() {
+  const double ke = ComputeGlobalBlockMean_(trigger_ke_variable_);
+  const double enst = ComputeGlobalBlockMean_(trigger_enst_variable_);
+  if (std::isnan(ke) || std::isnan(enst)) {
+    return false;
+  }
+
+  const double eps_phys = 2.0 * trigger_nu_ * enst;
+  const bool have_prev = trigger_prev_ke_ >= 0.0;
+  double eps_total = std::numeric_limits<double>::quiet_NaN();
+  double eps_frac = std::numeric_limits<double>::quiet_NaN();
+  double nu_ratio = std::numeric_limits<double>::quiet_NaN();
+  if (have_prev) {
+    eps_total = (trigger_prev_ke_ - ke) / trigger_output_dt_;
+    if (eps_total > 0.0) {
+      eps_frac = (eps_total - eps_phys) / eps_total;
+      if (eps_frac < 0.0) eps_frac = 0.0;
+      nu_ratio = eps_phys > 0.0 ? eps_total / eps_phys : 0.0;
+    } else {
+      // Energy not decaying (early TGV phase): no dissipation deficit yet.
+      eps_frac = 0.0;
+      nu_ratio = 0.0;
+    }
+  }
+  trigger_prev_ke_ = ke;
+  trigger_last_stat_ = std::isnan(eps_frac) ? 0.0 : eps_frac;
+
+  if (!trigger_metrics_log_file_.empty() && m_Comm.Rank() == 0) {
+    std::ofstream mlog(trigger_metrics_log_file_, std::ios::app);
+    if (mlog) {
+      mlog << "{\"step\":" << currentStep
+           << ",\"ke\":" << ke
+           << ",\"enstrophy\":" << enst
+           << ",\"eps_total\":" << eps_total
+           << ",\"eps_phys\":" << eps_phys
+           << ",\"eps_frac\":" << eps_frac
+           << ",\"nu_ratio\":" << nu_ratio << "}\n";
+    }
+  }
+
+  if (!have_prev) {
+    return false;  // first evaluated step: no dE_k/dt yet
+  }
+
+  // NaN comparisons are false, so undefined metrics never escalate.
+  const bool yellow = eps_frac >= trigger_yellow_fraction_ ||
+                      nu_ratio >= trigger_yellow_nu_ratio_;
+  const bool red = eps_frac >= trigger_red_fraction_ ||
+                   nu_ratio >= trigger_red_nu_ratio_;
+
+  // Yellow: log-only escalation ("watch carefully") on its rising edge.
+  if (yellow && !trigger_yellow_prev_ && m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger YELLOW at step {}: eps_frac={} nu_ratio={} (thresholds {}, {})",
+        currentStep, eps_frac, nu_ratio, trigger_yellow_fraction_,
+        trigger_yellow_nu_ratio_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_yellow\",\"step\":" << currentStep
+          << ",\"ke\":" << ke << ",\"enstrophy\":" << enst
+          << ",\"eps_total\":" << eps_total << ",\"eps_phys\":" << eps_phys
+          << ",\"eps_frac\":" << eps_frac << ",\"nu_ratio\":" << nu_ratio
+          << "}\n";
+    }
+  }
+  trigger_yellow_prev_ = yellow;
+
+  const bool rising = red && !trigger_prev_condition_;
+  trigger_prev_condition_ = red;
+  if (!rising || trigger_window_remaining_ > 0 ||
+      (trigger_has_fired_ && !trigger_refire_)) {
+    return false;
+  }
+
+  trigger_has_fired_ = true;
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger RED at step {}: eps_frac={} nu_ratio={} (thresholds {}, {}),"
+        " streaming {} step(s)",
+        currentStep, eps_frac, nu_ratio, trigger_red_fraction_,
+        trigger_red_nu_ratio_, trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_red\",\"step\":" << currentStep
+          << ",\"ke\":" << ke << ",\"enstrophy\":" << enst
+          << ",\"eps_total\":" << eps_total << ",\"eps_phys\":" << eps_phys
+          << ",\"eps_frac\":" << eps_frac << ",\"nu_ratio\":" << nu_ratio
           << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
     }
   }
