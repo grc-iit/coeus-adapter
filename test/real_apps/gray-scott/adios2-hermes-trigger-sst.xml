@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!-- Hermes engine with a statistical trigger gating the Catalyst SST
+         stream (Vigil trigger-render-reason pipeline, trigger phase).
+
+         The engine evaluates the exact pooled global variance of
+         TriggerVariable at every output step (one local pass over the CTE
+         blob + one 3-double Allreduce). On the first upward crossing of
+         TriggerThreshold the trigger fires: the firing step plus the next
+         TriggerInspectSteps-1 steps are shipped over SST, re-Put from CTE
+         blobs at EndStep; all other steps ship nothing, so the reader
+         (e.g. insitu_streaming.py) simply waits until a flagged step
+         arrives. Each shipped step carries vigil/trigger_fired,
+         vigil/trigger_stat, and vigil/trigger_fire_step scalars, and rank 0
+         appends fire events to TriggerLogFile (JSON lines).
+
+         Gray-Scott reference points (F=0.08 k=0.03 dt=1 plotgap=50):
+         variance(V) baseline ~0.003, threshold 0.05 fires at output ~12
+         (L=64). Alternatively set TriggerBaselineRatio (e.g. 10) to fire
+         relative to the first-step baseline instead of an absolute value. -->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <!-- Catalyst multi-node SST stream (reader connects to this name) -->
+            <parameter key="CatalystStream" value="gs.bp"/>
+            <parameter key="Script" value="catalyst/gs-pipeline.py"/>
+            <parameter key="DataModel" value="catalyst/gs-fides.json"/>
+            <!-- SST transport; QueueFullPolicy defaults to Block when the
+                 trigger is enabled so flagged steps are never dropped
+                 (override with SSTQueueFullPolicy if needed) -->
+            <parameter key="SSTDataTransport" value="WAN"/>
+
+            <!-- ADIOS2 derived quantities are the trigger inputs: the engine
+                 executes variance(x)/add(x) per block at EndStep and pools
+                 them into the exact global variance (VARIANCE_TRIGGER.md §6).
+                 Requires the gray-scott `derived` CLI flag = 1 and an ADIOS2
+                 build with the variance operator (hxu65/ADIOS2 branch vigil).
+                 Derived runs also need ppn + db_file (PutDerived uses the
+                 coeus_mdm metadata client). -->
+            <parameter key="ppn" value="4"/>
+            <parameter key="db_file" value="metadata.db"/>
+            <parameter key="TriggerVariable" value="derive/VarV"/>
+            <parameter key="TriggerSumVariable" value="derive/AddV"/>
+            <parameter key="TriggerThreshold" value="0.05"/>
+            <parameter key="TriggerInspectSteps" value="3"/>
+            <parameter key="TriggerLogFile" value="trigger_log.jsonl"/>
+            <!-- Raw-field fallback (no derived variables needed):
+                 <parameter key="TriggerVariable" value="V"/> -->
+            <!-- <parameter key="TriggerBaselineRatio" value="10"/> -->
+            <!-- <parameter key="TriggerRefire" value="true"/> -->
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5">
+        </engine>
+    </io>
+</adios-config>

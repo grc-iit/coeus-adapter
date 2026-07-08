@@ -18,10 +18,11 @@
 #include <clio_runtime/module_manager.h>
 #include <clio_runtime/ipc_manager.h>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <thread>
-#include <fstream>
 
 namespace coeus {
 /**
@@ -265,7 +266,7 @@ void HermesEngine::Init_() {
     std::string varFile = params["VarFile"];
     if (rank == 0)
       std::cout << "varFile: " << varFile << std::endl;
- 
+
     try {
       variableMap = YAMLParser(varFile).parse();
     } catch (std::exception &e) {
@@ -273,6 +274,46 @@ void HermesEngine::Init_() {
       throw e;
     }
 
+  }
+
+  // Statistical trigger configuration (Vigil trigger phase)
+  if (params.find("TriggerVariable") != params.end()) {
+    trigger_variable_ = params["TriggerVariable"];
+    if (params.find("TriggerSumVariable") != params.end()) {
+      trigger_sum_variable_ = params["TriggerSumVariable"];
+    }
+    if (params.find("TriggerThreshold") != params.end()) {
+      trigger_threshold_ = std::stod(params["TriggerThreshold"]);
+    }
+    if (params.find("TriggerBaselineRatio") != params.end()) {
+      trigger_baseline_ratio_ = std::stod(params["TriggerBaselineRatio"]);
+    }
+    if (params.find("TriggerInspectSteps") != params.end()) {
+      trigger_inspect_steps_ = std::max(1, std::stoi(params["TriggerInspectSteps"]));
+    }
+    if (params.find("TriggerRefire") != params.end()) {
+      const std::string &v = params["TriggerRefire"];
+      trigger_refire_ = (v == "1" || v == "true" || v == "TRUE" || v == "True");
+    }
+    if (params.find("TriggerLogFile") != params.end()) {
+      trigger_log_file_ = params["TriggerLogFile"];
+    }
+    trigger_enabled_ = (trigger_threshold_ > 0.0 || trigger_baseline_ratio_ > 0.0);
+    if (mpi_rank == 0) {
+      if (trigger_enabled_) {
+        std::cout << "Trigger: variance(" << trigger_variable_ << ")"
+                  << (trigger_sum_variable_.empty()
+                          ? ""
+                          : " sum_var=" + trigger_sum_variable_)
+                  << " threshold=" << trigger_threshold_
+                  << " baseline_ratio=" << trigger_baseline_ratio_
+                  << " inspect_steps=" << trigger_inspect_steps_
+                  << " refire=" << (trigger_refire_ ? "true" : "false") << std::endl;
+      } else {
+        std::cout << "Trigger: TriggerVariable set but no TriggerThreshold/"
+                     "TriggerBaselineRatio - trigger disabled" << std::endl;
+      }
+    }
   }
 
   // Chimaera setup for metadata management (coeus_mdm)
@@ -284,9 +325,6 @@ void HermesEngine::Init_() {
     if (mpi_rank == 0) {
       client.Create(clio::run::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     }
-    // #region agent log
-    
-    // #endregion
     m_Comm.Barrier("Init_:coeus_mdm_pool_created");
  
     if (mpi_rank != 0) {
@@ -330,7 +368,13 @@ void HermesEngine::Init_() {
       CatalystState->SSTIO->SetEngine("SST");
       CatalystState->SSTIO->SetParameter("RendezvousReaderCount", "1");
       CatalystState->SSTIO->SetParameter("QueueLimit", "1");
-      CatalystState->SSTIO->SetParameter("QueueFullPolicy", "Discard");
+      // Trigger-gated streams ship only flagged steps, which must not be
+      // dropped; ungated streams keep the historical Discard behavior.
+      std::string queue_policy = trigger_enabled_ ? "Block" : "Discard";
+      if (params.find("SSTQueueFullPolicy") != params.end()) {
+        queue_policy = params["SSTQueueFullPolicy"];
+      }
+      CatalystState->SSTIO->SetParameter("QueueFullPolicy", queue_policy);
       CatalystState->SSTIO->SetParameter("OpenTimeoutSecs", "60.0");
       if (params.find("SSTDataTransport") != params.end()) {
         CatalystState->SSTIO->SetParameter("DataTransport", params["SSTDataTransport"]);
@@ -351,12 +395,20 @@ void HermesEngine::Init_() {
    #undef declare_type_sst
       }
 
-  
+      if (trigger_enabled_) {
+        // Trigger state travels with every shipped step (rank 0 writes them).
+        CatalystState->SSTIO->DefineVariable<int32_t>("vigil/trigger_fired");
+        CatalystState->SSTIO->DefineVariable<double>("vigil/trigger_stat");
+        CatalystState->SSTIO->DefineVariable<int32_t>("vigil/trigger_fire_step");
+      }
+
       CatalystState->SSTWriter = &CatalystState->SSTIO->Open(
           CatalystState->CatalystStreamName, adios2::Mode::Write, m_Comm.Duplicate());
-  
+
       if (rank == 0) {
-        engine_logger->info("Catalyst SST stream: {} (multi-node)", CatalystState->CatalystStreamName);
+        engine_logger->info("Catalyst SST stream: {} (multi-node{})",
+                            CatalystState->CatalystStreamName,
+                            trigger_enabled_ ? ", trigger-gated" : "");
       }
     }
     else
@@ -524,7 +576,7 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     sst_put_time_us_ = 0;  // Reset per-step SST Put timing for in-transit metrics
   }
 
-  if (CatalystState && CatalystState->CatalystWriter())
+  if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
   {
     try
     {
@@ -551,9 +603,6 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
 
   std::string tag_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
-  // #region agent log
- 
-  // #endregion
   // if two same run happened in one pipeline
   //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
     // Get or create CTE tag using IHermes interface
@@ -592,6 +641,10 @@ void HermesEngine::ComputeDerivedVariables() {
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
+    // Blobs must outlive ApplyExpression below: MinBlockInfo stores raw
+    // pointers into these buffers (moving the outer vector is fine, the
+    // inner heap buffers stay put).
+    std::vector<std::vector<uint8_t>> blobStorage;
     for (auto varName : varList) {
 
       auto itVariable = m_Variables.find(varName);
@@ -599,7 +652,8 @@ void HermesEngine::ComputeDerivedVariables() {
             std::cout <<"throw error commented" <<std::endl;
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
-      auto blob = hermes_->tag->Get(varName);
+      blobStorage.push_back(hermes_->tag->Get(varName));
+      auto &blob = blobStorage.back();
 
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
@@ -710,12 +764,345 @@ void HermesEngine::EndStep()
    }
   #endif
 
+  // Statistical trigger: evaluate every step (collective); stream flagged
+  // steps over SST from the CTE blobs written earlier in this step.
+  if (trigger_enabled_ && m_OpenMode == adios2::Mode::Write &&
+      hermes_ && hermes_->tag) {
+    bool fired_now = EvaluateTrigger_();
+    #ifdef COEUS_HAVE_CATALYST
+    if (trigger_window_remaining_ > 0 && CatalystState &&
+        CatalystState->UseSST()) {
+      StreamFlaggedStepToSST_(fired_now);
+    }
+    #endif
+    if (trigger_window_remaining_ > 0) {
+      trigger_window_remaining_--;
+    }
+  }
+
   if (hermes_ && hermes_->tag)
   {
     delete hermes_->tag;
     hermes_->tag = nullptr;
   }
 }
+
+bool HermesEngine::SstGated_() const {
+  #ifdef COEUS_HAVE_CATALYST
+  return trigger_enabled_ && CatalystState && CatalystState->UseSST();
+  #else
+  return false;
+  #endif
+}
+
+/**
+ * Exact pooled global variance of `name` across all ranks (collective).
+ *
+ * Each rank accumulates (n, sum, sum of squares) over its local block from
+ * the CTE blob, a single Allreduce combines them, and the global variance
+ * follows as E[x^2] - E[x]^2. This is the pooled-variance formula: per-block
+ * variances are never averaged, so the between-block term is fully captured.
+ * */
+double HermesEngine::ComputeGlobalVariance_(const std::string &name) {
+  double local[3] = {0.0, 0.0, 0.0};  // n, sum, sumsq
+
+  auto blob = hermes_->tag->Get(name);
+  const adios2::DataType type = m_IO.InquireVariableType(name);
+  if (!blob.empty()) {
+    if (type == adios2::DataType::Double) {
+      const double *data = reinterpret_cast<const double *>(blob.data());
+      const size_t n = blob.size() / sizeof(double);
+      for (size_t i = 0; i < n; ++i) {
+        local[1] += data[i];
+        local[2] += data[i] * data[i];
+      }
+      local[0] = static_cast<double>(n);
+    } else if (type == adios2::DataType::Float) {
+      const float *data = reinterpret_cast<const float *>(blob.data());
+      const size_t n = blob.size() / sizeof(float);
+      for (size_t i = 0; i < n; ++i) {
+        const double v = static_cast<double>(data[i]);
+        local[1] += v;
+        local[2] += v * v;
+      }
+      local[0] = static_cast<double>(n);
+    } else if (m_Comm.Rank() == 0) {
+      engine_logger->warn("Trigger: variable '{}' has unsupported type '{}'",
+                          name, adios2::ToString(type));
+    }
+  }
+
+  double global[3] = {0.0, 0.0, 0.0};
+  m_Comm.Allreduce(local, global, 3, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  const double mean = global[1] / global[0];
+  const double var = global[2] / global[0] - mean * mean;
+  return var < 0.0 ? 0.0 : var;  // clamp tiny negative round-off
+}
+
+/**
+ * Sum all elements of `name`'s CTE blob (double or float). Works for raw
+ * fields and for derived partial sums (e.g. add(x)): summing the partial
+ * sums yields the block total either way. Returns false if the blob is
+ * missing or the type is unsupported.
+ * */
+bool HermesEngine::SumBlob_(const std::string &name, double &sum, double &n) {
+  sum = 0.0;
+  n = 0.0;
+
+  auto blob = hermes_->tag->Get(name);
+  if (blob.empty()) {
+    return false;
+  }
+
+  adios2::DataType type = adios2::DataType::None;
+  auto const &derivedMap = m_IO.GetDerivedVariables();
+  auto dit = derivedMap.find(name);
+  if (dit != derivedMap.end()) {
+    type = dit->second->m_Type;
+  } else {
+    type = m_IO.InquireVariableType(name);
+  }
+
+  if (type == adios2::DataType::Double) {
+    const double *data = reinterpret_cast<const double *>(blob.data());
+    const size_t count = blob.size() / sizeof(double);
+    for (size_t i = 0; i < count; ++i) sum += data[i];
+    n = static_cast<double>(count);
+    return true;
+  }
+  if (type == adios2::DataType::Float) {
+    const float *data = reinterpret_cast<const float *>(blob.data());
+    const size_t count = blob.size() / sizeof(float);
+    for (size_t i = 0; i < count; ++i) sum += static_cast<double>(data[i]);
+    n = static_cast<double>(count);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Pooled global variance from an ADIOS2 derived-quantity variance
+ * (collective).
+ *
+ * The derived operator (variance(x), computed by ComputeDerivedVariables
+ * earlier in this EndStep) reduces each rank's block to one local variance
+ * var_b. Per VARIANCE_TRIGGER.md §6, var_b alone is not poolable: the exact
+ * combine also needs the block mean mean_b and size N_b,
+ *
+ *   N = sum_b N_b,  mean = (1/N) sum_b N_b*mean_b,
+ *   var = (1/N) sum_b N_b*(var_b + mean_b^2) - mean^2.
+ *
+ * N_b comes from the source field's local Count (no data read); mean_b from
+ * the block sum, taken from TriggerSumVariable's derived blob (e.g. add(x))
+ * when configured, else from one pass over the raw source blob. A single
+ * 3-double Allreduce yields the exact global variance; per-block variances
+ * are never averaged.
+ * */
+double HermesEngine::ComputeGlobalVarianceDerived_(
+    adios2::core::VariableDerived *derivedVar) {
+  double local[3] = {0.0, 0.0, 0.0};  // N_b, sum_b, N_b*(var_b + mean_b^2)
+  bool have_block = false;
+
+  do {
+    if (!derivedVar) break;
+
+    // Per-block variance computed by the derived-quantity operator.
+    auto var_blob = hermes_->tag->Get(trigger_variable_);
+    if (var_blob.empty()) break;
+    double var_b;
+    if (derivedVar->m_Type == adios2::DataType::Double &&
+        var_blob.size() >= sizeof(double)) {
+      var_b = *reinterpret_cast<const double *>(var_blob.data());
+    } else if (derivedVar->m_Type == adios2::DataType::Float &&
+               var_blob.size() >= sizeof(float)) {
+      var_b = static_cast<double>(
+          *reinterpret_cast<const float *>(var_blob.data()));
+    } else {
+      break;
+    }
+
+    // Block size N_b from the source field named in the derived expression.
+    std::vector<std::string> sources = derivedVar->VariableNameList();
+    if (sources.empty()) break;
+    auto const &varMap = m_IO.GetVariables();
+    auto sit = varMap.find(sources.front());
+    if (sit == varMap.end()) break;
+    double n_b = 1.0;
+    for (auto c : sit->second->m_Count) n_b *= static_cast<double>(c);
+    if (n_b <= 0.0) break;
+
+    // Block sum for mean_b: derived partial sums if configured, else the
+    // raw source blob.
+    double sum_b = 0.0, unused = 0.0;
+    const std::string &sum_source = trigger_sum_variable_.empty()
+                                        ? sources.front()
+                                        : trigger_sum_variable_;
+    if (!SumBlob_(sum_source, sum_b, unused)) break;
+
+    const double mean_b = sum_b / n_b;
+    local[0] = n_b;
+    local[1] = sum_b;
+    local[2] = n_b * (var_b + mean_b * mean_b);
+    have_block = true;
+  } while (false);
+
+  if (!have_block && m_Comm.Rank() == 0) {
+    engine_logger->warn(
+        "Trigger: derived variance '{}' unavailable this step (blob or source"
+        " missing) - contributing empty block", trigger_variable_);
+  }
+
+  double global[3] = {0.0, 0.0, 0.0};
+  m_Comm.Allreduce(local, global, 3, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  const double mean = global[1] / global[0];
+  const double var = global[2] / global[0] - mean * mean;
+  return var < 0.0 ? 0.0 : var;  // clamp tiny negative round-off
+}
+
+/**
+ * Evaluate the trigger condition for the current step (collective).
+ *
+ * Rising-edge semantics: a fire opens an inspect window of
+ * trigger_inspect_steps_ steps (the firing step included). By default the
+ * trigger fires once per run; TriggerRefire=true re-arms it after the
+ * window closes. Returns true only on the step the trigger fires.
+ * */
+bool HermesEngine::EvaluateTrigger_() {
+  // Prefer the ADIOS2 derived-quantity path: if TriggerVariable names a
+  // derived variable (e.g. "derive/VarV" = variance(x)), pool the per-block
+  // variances it computed this step; otherwise fall back to a direct pass
+  // over the raw field. The branch is rank-uniform (same DefineDerived-
+  // Variable calls everywhere), so both paths stay collective.
+  double stat;
+  auto const &derivedMap = m_IO.GetDerivedVariables();
+  auto dit = derivedMap.find(trigger_variable_);
+  if (dit != derivedMap.end()) {
+    stat = ComputeGlobalVarianceDerived_(
+        dynamic_cast<adios2::core::VariableDerived *>(dit->second.get()));
+  } else {
+    stat = ComputeGlobalVariance_(trigger_variable_);
+  }
+  trigger_last_stat_ = stat;
+  if (std::isnan(stat)) {
+    return false;
+  }
+  if (trigger_baseline_ < 0.0) {
+    trigger_baseline_ = stat;
+  }
+
+  bool condition = false;
+  if (trigger_threshold_ > 0.0 && stat >= trigger_threshold_) {
+    condition = true;
+  }
+  if (!condition && trigger_baseline_ratio_ > 0.0 && trigger_baseline_ > 0.0 &&
+      stat >= trigger_baseline_ratio_ * trigger_baseline_) {
+    condition = true;
+  }
+
+  const bool rising = condition && !trigger_prev_condition_;
+  trigger_prev_condition_ = condition;
+
+  if (!rising || trigger_window_remaining_ > 0 ||
+      (trigger_has_fired_ && !trigger_refire_)) {
+    return false;
+  }
+
+  trigger_has_fired_ = true;
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  // Guard on the MPI rank: the consensus rank is not guaranteed to include 0
+  // when the runtime (and its rankConsensus pool) outlives a previous run.
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger FIRED at step {}: variance({}) = {} (threshold {}, baseline {},"
+        " ratio {}), streaming {} step(s)",
+        currentStep, trigger_variable_, stat, trigger_threshold_,
+        trigger_baseline_, trigger_baseline_ratio_, trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_fired\",\"step\":" << currentStep
+          << ",\"variable\":\"" << trigger_variable_ << "\""
+          << ",\"stat\":\"variance\",\"value\":" << stat
+          << ",\"threshold\":" << trigger_threshold_
+          << ",\"baseline\":" << trigger_baseline_
+          << ",\"baseline_ratio\":" << trigger_baseline_ratio_
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  return true;
+}
+
+#ifdef COEUS_HAVE_CATALYST
+/**
+ * Ship the current (flagged) step over SST: every mirrored variable is
+ * re-Put from its CTE blob, plus the trigger-state scalars from rank 0.
+ * Runs only inside an open inspect window; unflagged steps ship nothing,
+ * so the reader simply waits until the next flagged step arrives.
+ * */
+void HermesEngine::StreamFlaggedStepToSST_(bool fired_now) {
+  auto *writer = CatalystState->SSTWriter;
+  auto *io = CatalystState->SSTIO;
+
+  auto t0 = std::chrono::high_resolution_clock::now();
+  writer->BeginStep(adios2::StepMode::Append, -1.0);
+
+  for (const auto &it : io->GetVariables()) {
+    const std::string &name = it.first;
+    if (name.rfind("vigil/", 0) == 0) {
+      continue;  // trigger scalars are written below
+    }
+    auto blob = hermes_->tag->Get(name);
+    if (blob.empty()) {
+      continue;
+    }
+ #define put_type_sst(T) \
+    if (it.second->m_Type == adios2::helper::GetDataType<T>()) { \
+      adios2::core::Variable<T> *v = io->InquireVariable<T>(name); \
+      if (v) { \
+        writer->Put(*v, reinterpret_cast<const T *>(blob.data()), \
+                    adios2::Mode::Sync); \
+      } \
+      continue; \
+    }
+    ADIOS2_FOREACH_STDTYPE_1ARG(put_type_sst)
+ #undef put_type_sst
+  }
+
+  if (m_Comm.Rank() == 0) {
+    const int32_t fired = fired_now ? 1 : 0;
+    const int32_t fire_step = trigger_fire_step_;
+    const double stat = trigger_last_stat_;
+    if (auto *v = io->InquireVariable<int32_t>("vigil/trigger_fired")) {
+      writer->Put(*v, &fired, adios2::Mode::Sync);
+    }
+    if (auto *v = io->InquireVariable<double>("vigil/trigger_stat")) {
+      writer->Put(*v, &stat, adios2::Mode::Sync);
+    }
+    if (auto *v = io->InquireVariable<int32_t>("vigil/trigger_fire_step")) {
+      writer->Put(*v, &fire_step, adios2::Mode::Sync);
+    }
+  }
+
+  writer->EndStep();
+  auto t1 = std::chrono::high_resolution_clock::now();
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "SST flagged step {} shipped in {} us (fired_now={}, window_left={})",
+        currentStep,
+        std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(),
+        fired_now, trigger_window_remaining_);
+  }
+}
+#endif
 
 
 /**
@@ -893,7 +1280,8 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   #ifdef COEUS_HAVE_CATALYST
-   if (CatalystState && CatalystState->CatalystWriter())
+   // When trigger-gated, SST mirroring is deferred to EndStep (from CTE blobs).
+   if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
    {
      adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
      adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
@@ -913,9 +1301,6 @@ void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
   #endif
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
-  // #region agent log
-  { auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-6450bd.log", std::ios::app); _f << "{\"sessionId\":\"6450bd\",\"location\":\"hermes_engine.cc:DoPutSync_\",\"message\":\"put_blob_sync\",\"data\":{\"name\":\"" << name << "\",\"blob_size\":" << blob_size << ",\"currentStep\":" << currentStep << ",\"rank\":" << rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutSync_: Put failed for " + name);
   }
@@ -937,7 +1322,8 @@ void HermesEngine::DoPutDeferred_(
   std::string name = variable.m_Name;
   const size_t blob_size = variable.SelectionSize() * sizeof(T);
   #ifdef COEUS_HAVE_CATALYST
-   if (CatalystState && CatalystState->CatalystWriter())
+   // When trigger-gated, SST mirroring is deferred to EndStep (from CTE blobs).
+   if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
    {
      adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
      adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
@@ -956,9 +1342,6 @@ void HermesEngine::DoPutDeferred_(
    }
   #endif
 
-  // #region agent log
-  { const size_t sel = variable.SelectionSize(); auto _t = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(); std::ofstream _f("debug-6450bd.log", std::ios::app); _f << "{\"sessionId\":\"6450bd\",\"location\":\"hermes_engine.cc:DoPutDeferred_\",\"message\":\"put_blob\",\"data\":{\"name\":\"" << name << "\",\"blob_size\":" << blob_size << ",\"selection_size\":" << sel << ",\"currentStep\":" << currentStep << ",\"rank\":" << rank << "},\"hypothesisId\":\"B\",\"timestamp\":" << _t << "}\n"; _f.close(); }
-  // #endregion
   if (!hermes_->Put(name, blob_size, values)) {
     throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
   }
