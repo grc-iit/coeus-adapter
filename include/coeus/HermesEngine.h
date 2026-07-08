@@ -182,6 +182,34 @@ void CatalystExecute();
   bool trigger_enabled_ = false;
   std::string trigger_variable_;
   std::string trigger_sum_variable_;
+
+  // --- Dissipation trigger (Xcompact3d TGV: two-stage Yellow/Red escalation) ---
+  // Selected with TriggerType=dissipation. Inputs are two derived block-mean
+  // variables (custom ADIOS2 "mean" op) pooled N_b-weighted across ranks:
+  //   TriggerKEVariable         block-mean TKE, e.g. "tke_mean" = mean(0.5|u|^2)
+  //   TriggerEnstrophyVariable  block-mean enstrophy, e.g. "enst_mean"
+  //   TriggerNu                 physical kinematic viscosity (1/Re)
+  //   TriggerOutputDt           simulation time between output steps (dt*ioutput)
+  // Metrics per step:  eps_total = -dE_k/dt   (time-differenced global TKE)
+  //                    eps_phys  = 2*nu*<enstrophy>
+  //                    eps_frac  = (eps_total - eps_phys)/eps_total   [eps_num share]
+  //                    nu_ratio  = eps_total/eps_phys                 [nu_eff/nu]
+  // Yellow (log-only escalation) and Red (fire: opens the SST inspect window):
+  //   TriggerYellowFraction / TriggerRedFraction   eps_frac thresholds (0.05 / 0.15)
+  //   TriggerYellowNuRatio  / TriggerRedNuRatio    nu_ratio thresholds (1.05 / 1.2)
+  //   TriggerMetricsLogFile  optional JSONL of every step's metrics (rank 0)
+  std::string trigger_type_ = "variance";
+  std::string trigger_ke_variable_;
+  std::string trigger_enst_variable_;
+  double trigger_nu_ = 0.0;
+  double trigger_output_dt_ = 0.0;
+  double trigger_yellow_fraction_ = 0.05;
+  double trigger_red_fraction_ = 0.15;
+  double trigger_yellow_nu_ratio_ = 1.05;
+  double trigger_red_nu_ratio_ = 1.2;
+  std::string trigger_metrics_log_file_;
+  double trigger_prev_ke_ = -1.0;      // global TKE at previous step (< 0 = none yet)
+  bool trigger_yellow_prev_ = false;   // for Yellow rising-edge detection
   double trigger_threshold_ = 0.0;       // <= 0 disables the absolute test
   double trigger_baseline_ratio_ = 0.0;  // <= 0 disables the ratio test
   int trigger_inspect_steps_ = 3;
@@ -201,6 +229,10 @@ void CatalystExecute();
   double ComputeGlobalVariance_(const std::string &name);
   /** Pooled global variance from a derived per-block variance (collective; NaN if unavailable). */
   double ComputeGlobalVarianceDerived_(adios2::core::VariableDerived *derivedVar);
+  /** Two-stage Yellow/Red dissipation trigger (collective). Returns true on Red fire. */
+  bool EvaluateDissipationTrigger_();
+  /** N_b-weighted global mean from a derived per-block mean (collective; NaN if unavailable). */
+  double ComputeGlobalBlockMean_(const std::string &name);
   /** Sum of all elements in a CTE blob interpreted as double/float; count returned via n. */
   bool SumBlob_(const std::string &name, double &sum, double &n);
   /** True when SST field mirroring is deferred to EndStep and gated on the trigger. */

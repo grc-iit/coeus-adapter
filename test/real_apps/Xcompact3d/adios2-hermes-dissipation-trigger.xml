@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!-- Xcompact3d/TGV through the Coeus hermes engine with the two-stage
+         Yellow/Red numerical-dissipation trigger (Vigil trigger phase).
+
+         Inputs are the ADIOS2 derived block means registered by
+         Case-TGV.f90:visu_tgv_init via 2decomp-fft:
+           tke_mean  = mean(0.5*|u|^2)             [exact]
+           enst_mean = mean(0.5*|curl u|^2 / dx^2) [2nd-order curl, ~1% bias]
+         The engine pools them N_b-weighted across ranks each output step,
+         forms   eps_total = -dE_k/dt,   eps_phys = 2*nu*<enst>,
+                 eps_frac  = eps_num/eps_total,    nu_ratio = nu_eff/nu,
+         logs a Yellow event when either yellow threshold is crossed, and on
+         Red opens the SST inspect window (TriggerInspectSteps steps shipped
+         with vigil/* trigger scalars; unflagged steps ship nothing).
+
+         Set per run:
+           TriggerNu       = 1/Re            (e.g. Re=5000 -> 0.0002)
+           TriggerOutputDt = dt * ioutput    (simulation time between outputs,
+                                              from the input.i3d parameters)
+         The derived expressions assume an ISOTROPIC grid (dx=dy=dz); see
+         derived_comparison.md for the reversed-storage and per-block-seam
+         caveats of the ADIOS2 curl/gradient operators. -->
+
+    <io name="solution-io">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <parameter key="ppn" value="16"/>
+            <parameter key="db_file" value="metadata.db"/>
+
+            <!-- Multi-node SST to the visualization bridge (optional; without
+                 CatalystStream/Script/DataModel the trigger is log-only) -->
+            <parameter key="CatalystStream" value="tgv.bp"/>
+            <parameter key="Script" value="unused-for-sst.py"/>
+            <parameter key="DataModel" value="unused-for-sst.json"/>
+            <parameter key="SSTDataTransport" value="WAN"/>
+
+            <!-- Two-stage dissipation trigger -->
+            <parameter key="TriggerType" value="dissipation"/>
+            <parameter key="TriggerKEVariable" value="tke_mean"/>
+            <parameter key="TriggerEnstrophyVariable" value="enst_mean"/>
+            <parameter key="TriggerNu" value="0.0002"/>
+            <parameter key="TriggerOutputDt" value="0.05"/>
+            <parameter key="TriggerYellowFraction" value="0.05"/>
+            <parameter key="TriggerRedFraction" value="0.15"/>
+            <parameter key="TriggerYellowNuRatio" value="1.05"/>
+            <parameter key="TriggerRedNuRatio" value="1.2"/>
+            <parameter key="TriggerInspectSteps" value="3"/>
+            <parameter key="TriggerLogFile" value="trigger_log.jsonl"/>
+            <parameter key="TriggerMetricsLogFile" value="trigger_metrics.jsonl"/>
+        </engine>
+    </io>
+</adios-config>
