@@ -213,10 +213,54 @@ pooled formula stays correct.
 - [x] `variance`/`var` operator implemented, registered, parseable, built, installed
 - [x] gray-scott emits `derive/VarV`, `derive/VarU`, `derive/AddV`, `derive/AddU`
 - [x] `L=64` end-to-end run verified; trigger signal confirmed (peak ~30× baseline)
-- [ ] **Commit** the ADIOS2 variance changes (still uncommitted local edits)
-- [ ] Reader/trigger side: implement the **pooled** global-variance combine (§6), not a
-      per-block average
+- [x] **Trigger evaluator** implemented writer-side in `HermesEngine::EndStep`
+      (`src/hermes_engine.cc`): exact **pooled** global variance (§6) computed via one
+      local pass over the CTE blob + one 3-double `Allreduce` — per-block variances are
+      never averaged. Configured via ADIOS2 XML params (`TriggerVariable`,
+      `TriggerThreshold`, `TriggerBaselineRatio`, `TriggerInspectSteps`, `TriggerRefire`,
+      `TriggerLogFile`); rising-edge semantics, fires once by default, fire events
+      appended to a JSONL log by MPI rank 0.
+- [x] **Trigger-gated SST streaming**: when a trigger is configured, per-Put SST
+      mirroring is disabled and only flagged steps (fire + inspect window) are shipped
+      at `EndStep`, re-Put from CTE blobs; each shipped step carries
+      `vigil/trigger_fired`, `vigil/trigger_stat`, `vigil/trigger_fire_step` scalars.
+      `QueueFullPolicy` defaults to `Block` when gated so flagged steps are never
+      dropped. Example config: `adios2-hermes-trigger-sst.xml`.
+- [x] End-to-end verified 2026-07-07 (L=64, 4 ranks, local clio runtime): log-only run
+      fires at output 12 (pooled variance 0.0569 ≥ 0.05, baseline 0.00296 — matching §5);
+      gated SST run ships exactly outputs 12–14 of 100 to an SST reader with correct
+      fields and trigger scalars.
+- [x] **ADIOS2 variance changes committed and pushed**: `github.com:hxu65/ADIOS2`,
+      branch `vigil`, commits `253928b83` + `885f10fe8`. coeus-adapter's build is
+      configured against this tree's install
+      (`ADIOS2_DIR=.../Incompact3d_2/Incompact3d/ADIOS2/install/lib/cmake/adios2`);
+      the spack adios2 2.11.0 release does **not** have the variance operator.
+- [x] **Engine consumes the derived quantities**: with
+      `TriggerVariable=derive/VarV` (+ optional `TriggerSumVariable=derive/AddV`),
+      `EvaluateTrigger_` pools the per-block variances produced by the ADIOS2
+      operator via the §6 combine (N_b from the source field's Count, mean_b from
+      the block sums, one 3-double Allreduce). Raw-field fallback when
+      TriggerVariable is not a derived variable. Derived runs need `ppn` +
+      `db_file` params (PutDerived inserts metadata via coeus_mdm) and the
+      gray-scott `derived` CLI flag = 1. Configs:
+      `adios2-hermes-trigger-derived.xml` (+ `settings-l64-trigger-derived.json`),
+      `adios2-hermes-trigger-sst.xml`.
+      Also fixed in `ComputeDerivedVariables`: source blobs now outlive
+      `ApplyExpression` (previously each blob was a loop-local vector destroyed
+      before the expression read it — dangling `MinBlockInfo::BufferP`).
+- [ ] Verify the derived-path fire end-to-end (expect the same fire step/value
+      as the raw path: output ~12, pooled variance ≈ 0.0569 at threshold 0.05)
 - [ ] (optional) Fix `main.cpp` to validate `argc >= 3` before reading the `derived` flag
+- [ ] Bridge/agent side: have `insitu_streaming.py` / the agent consume
+      `vigil/trigger_*` and `trigger_log.jsonl` instead of hardcoded `--render-steps`
+
+### Caveat discovered during verification
+The engine's *consensus rank* (from the `rankConsensus` pool) is **not** guaranteed to
+include 0 when the clio runtime outlives a previous application run (ranks keep
+incrementing: second run gets 4..7). Per-run-unique actions in the trigger path
+(fire log, `vigil/*` scalar Puts) are therefore guarded on the **MPI rank**
+(`m_Comm.Rank() == 0`). Pre-existing `rank == 0`-guarded log lines elsewhere in the
+engine silently disappear in this scenario.
 
 ---
 

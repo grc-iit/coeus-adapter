@@ -159,7 +159,52 @@ void CatalystExecute();
   bool inline_writer_in_step_ = false;  // Track if InlineWriter BeginStep was called
   /** Accumulated time (microseconds) spent in SST Put calls during current step (in-transit). */
   int64_t sst_put_time_us_ = 0;
+  /** Ship the current step's fields (from CTE blobs) plus trigger state over SST. */
+  void StreamFlaggedStepToSST_(bool fired_now);
 #endif
+
+  // --- Statistical trigger (Vigil trigger-render-reason: trigger phase) ---
+  // Configured via ADIOS2 XML engine parameters:
+  //   TriggerVariable      variable whose global variance is monitored. Either a
+  //                        raw field (e.g. "V") or an ADIOS2 derived-quantity
+  //                        variance (e.g. "derive/VarV" from "variance(x)") —
+  //                        derived is detected automatically and pooled exactly
+  //                        across blocks (never averaged).
+  //   TriggerSumVariable   optional derived block-sum (e.g. "derive/AddV" from
+  //                        "add(x)") supplying per-block means for the pooled
+  //                        combine; without it the block sum is taken from the
+  //                        raw source field's CTE blob.
+  //   TriggerThreshold     fire when variance >= this absolute value
+  //   TriggerBaselineRatio fire when variance >= ratio * first-step variance
+  //   TriggerInspectSteps  steps streamed per fire, incl. the firing step (default 3)
+  //   TriggerRefire        "true" to allow firing on later rising edges (default once)
+  //   TriggerLogFile       JSONL fire log written by rank 0 (default trigger_log.jsonl)
+  bool trigger_enabled_ = false;
+  std::string trigger_variable_;
+  std::string trigger_sum_variable_;
+  double trigger_threshold_ = 0.0;       // <= 0 disables the absolute test
+  double trigger_baseline_ratio_ = 0.0;  // <= 0 disables the ratio test
+  int trigger_inspect_steps_ = 3;
+  bool trigger_refire_ = false;
+  std::string trigger_log_file_ = "trigger_log.jsonl";
+  // Runtime state
+  double trigger_baseline_ = -1.0;       // variance at first evaluated step
+  double trigger_last_stat_ = 0.0;       // most recent global variance
+  bool trigger_prev_condition_ = false;  // for rising-edge detection
+  bool trigger_has_fired_ = false;
+  int trigger_fire_step_ = -1;
+  int trigger_window_remaining_ = 0;     // > 0 while an inspect window is open
+
+  /** Evaluate the trigger for the current step (collective). Returns true on a new fire. */
+  bool EvaluateTrigger_();
+  /** Exact pooled global variance of `name` over all ranks (collective; NaN if unavailable). */
+  double ComputeGlobalVariance_(const std::string &name);
+  /** Pooled global variance from a derived per-block variance (collective; NaN if unavailable). */
+  double ComputeGlobalVarianceDerived_(adios2::core::VariableDerived *derivedVar);
+  /** Sum of all elements in a CTE blob interpreted as double/float; count returned via n. */
+  bool SumBlob_(const std::string &name, double &sum, double &n);
+  /** True when SST field mirroring is deferred to EndStep and gated on the trigger. */
+  bool SstGated_() const;
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
   int comm_size;
