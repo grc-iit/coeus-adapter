@@ -1,7 +1,8 @@
 # Building COEUS-Adapter and Running Gray-Scott (clio-core backbone)
 
 Verified end-to-end on Ares, 2026-07-09 (writer: `ares-comp-11`, reader:
-`ares-comp-14`).
+`ares-comp-14`). The trigger-gated SST mode (Section 3) was verified the same
+day at L=64 and L=512 (64 ranks across ares-comp-11/14/15/16).
 
 ## 1. Build COEUS-Adapter
 
@@ -168,6 +169,9 @@ pvbatch catalyst/gs-pipeline.py \
 - The reader saves one `output-NNNNN.png` per received step. With the
   default ungated stream (`QueueFullPolicy=Discard`, `QueueLimit=1`) a slow
   reader skips steps rather than stalling the simulation.
+- In **trigger-gated mode** (Section 3) set `--num-steps` to
+  `trigger_inspect_steps` (default 3): the reader receives nothing until the
+  trigger fires, then exactly that many steps, then exits on its own.
 
 ### Expected output
 
@@ -182,7 +186,112 @@ Simulation at step 10 writing output step 1
 through step 150 (output 15), a `ckpt.bp` checkpoint at step 70, then
 `DoClose` messages and a clean jarvis exit.
 
-## 3. Shutdown behavior and cleanup
+## 3. Trigger-gated SST (Vigil trigger phase)
+
+By default every output step streams over SST. With the **statistical
+variance trigger** enabled, the engine watches the simulation at every output
+step and ships **only flagged steps** — the "trigger" stage of the Vigil
+trigger-render-reason pipeline. Untriggered steps cost one cheap variance
+evaluation and ship nothing; the SST reader simply waits until a flagged step
+arrives.
+
+### Mechanism
+
+1. **Derived quantities as trigger inputs.** With `engine=hermes_derived`
+   the gray-scott writer declares ADIOS2 derived variables:
+   `derive/VarV = variance(V)` and `derive/AddV = add(V)` (and the `U`
+   counterparts). ADIOS2 evaluates them per **writer block** (one value per
+   rank) at every output step, in the same address space as the simulation —
+   no extra read of the field data.
+2. **Exact global pooling.** A per-block variance is not a global variance.
+   At `EndStep` the engine pools the blocks into the exact global variance:
+   each rank reads its block variance (`derive/VarV`) and block sum
+   (`derive/AddV`) from its CTE blob, then a single 3-double `Allreduce`
+   combines them (see `VARIANCE_TRIGGER.md` §6; per-block variances are never
+   averaged). If `TriggerVariable` names a raw field (e.g. `V`), the engine
+   falls back to one local pass over the raw blob instead — no derived
+   variables needed.
+3. **Fire condition (rising edge).** The trigger fires on the **first upward
+   crossing** of either condition (they are OR'd):
+   - `variance >= TriggerThreshold` (absolute), or
+   - `variance >= TriggerBaselineRatio ×` the first-output-step baseline.
+   One fire per run unless `TriggerRefire=true`.
+4. **On fire.** The firing step plus the next `TriggerInspectSteps - 1`
+   output steps are re-Put from the CTE blobs to the Catalyst SST stream at
+   `EndStep`. Each shipped step carries `vigil/trigger_fired`,
+   `vigil/trigger_stat`, and `vigil/trigger_fire_step` scalars for a
+   downstream agent, and rank 0 appends a JSON-lines fire event to
+   `TriggerLogFile`. While gated, `QueueFullPolicy` defaults to `Block` so
+   flagged steps are never dropped.
+
+Physically, variance(V) tracks pattern formation: it sits at a flat baseline
+during the perturbation phase and rises sharply (~10-30×) at the
+perturbation → reactive-pattern transition, which is exactly what the trigger
+keys on.
+
+### Setup through jarvis
+
+The `adios2_gray_scott` package materializes the gated XML
+(`config/hermes_trigger.xml`) when `trigger=true`:
+
+```bash
+# The pkg name contains dots, so use the full global ID
+jarvis pkg configure coeus-gray-scott.jarvis_coeus.adios2_gray_scott \
+    engine=hermes_derived trigger=true \
+    F=0.08 k=0.03 dt=1 plotgap=50 steps=1000 trigger_baseline_ratio=10
+jarvis ppl kill && jarvis ppl run          # Step A as usual
+```
+
+then Step B with `--num-steps 3`. Key knobs (full table in the package
+README, `test/jarvis/.../adios2_gray_scott/README.md`):
+
+| Config | Default | Meaning |
+|---|---|---|
+| `trigger` | `false` | Enable the variance trigger + gated SST |
+| `trigger_variable` | auto | `derive/VarV` on `hermes_derived`, raw `V` on `hermes` |
+| `trigger_threshold` | `0.05` | Absolute variance threshold (0 disables) |
+| `trigger_baseline_ratio` | `0` | Fire at ratio × first-step baseline (0 disables) |
+| `trigger_inspect_steps` | `3` | Output steps shipped per fire |
+| `trigger_log_file` | `shared_dir/trigger_log.jsonl` | Fire-event JSONL |
+
+**Choosing the fire condition — absolute thresholds are NOT L-portable.**
+The gray-scott seed is a fixed 12³ cube regardless of `L`, so variance scales
+with the seeded fraction of the domain (~1/L³): baseline ≈ 0.004 at L=64 but
+≈ 8.8e-06 at L=512. The absolute `trigger_threshold=0.05` is calibrated for
+L≈64-256 in the F=0.08/k=0.03 regime; at larger L (or in the slow
+F=0.01/k=0.05 regime) it never fires. `trigger_baseline_ratio` is
+L-independent (it measures pattern growth relative to the run's own
+baseline) — prefer it when changing scale or regime.
+
+### Expected output (verified 2026-07-09)
+
+Writer log, at engine init and then on the firing output step:
+
+```
+Trigger: variance(derive/VarV) sum_var=derive/AddV threshold=0.05 baseline_ratio=10 inspect_steps=3 refire=false
+...
+Trigger FIRED at step 8: variance(derive/VarV) = 9.4e-05 (threshold 0.05, baseline 8.77e-06, ratio 10), streaming 3 step(s)
+SST flagged step 8 shipped in 5429599 us (fired_now=true, window_left=3)
+SST flagged step 9 shipped in 5604718 us (fired_now=false, window_left=2)
+SST flagged step 10 shipped in 4941609 us (fired_now=false, window_left=1)
+```
+
+No `SST in-transit` lines appear for untriggered steps. Verified reference
+points, 64 ranks / 4 nodes, F=0.08 k=0.03 dt=1 plotgap=50:
+
+| L | Criterion | Fires at | Values |
+|---|---|---|---|
+| 64 | threshold 0.05 | output 9 of 20 | 0.0617 vs baseline 0.0044 |
+| 512 | baseline_ratio 10 | output 8 of 20 | 9.40e-05 = 10.7× baseline 8.77e-06 |
+
+At L=512 each ~2 GB flagged step ships in ~5 s and the single-process
+pvbatch consumer renders each 512³ frame in ~60-75 s. Logs of record:
+`logs/gs_L512_trigger_{writer,sst_consumer}.log`,
+`logs/gs_L512_trigger_log.jsonl`. If the derived blob were missing the
+engine would log `Trigger: derived block variance ... unavailable` and
+contribute an empty block — zero such warnings in a healthy run.
+
+## 4. Shutdown behavior and cleanup
 
 - **The reader hangs at end-of-run by design.** The writer skips SST
   `Close()` (it would block), waits 4 s, destroys the engine, and removes
@@ -194,7 +303,7 @@ through step 150 (output 15), a `ckpt.bp` checkpoint at step 70, then
   a leftover contact file from a dead writer will confuse the next reader.
 - `jarvis ppl kill` stops the runtime daemon and any leftover ranks.
 
-## 4. Troubleshooting a "hang"
+## 5. Troubleshooting a "hang"
 
 Where the writer log stops tells you the phase:
 
@@ -204,6 +313,7 @@ Where the writer log stops tells you the phase:
 | stuck before `consensus rank` lines | Chimaera runtime/client connect issue — is the runtime up? (`clio_run compose list` on the writer node answers instantly if healthy) |
 | stops right after `varFile: ...` | **Waiting for the SST reader** (the case above) — start Step B |
 | steps flow but no CTE data | check tags with `cte_search ".*" ".*"` on the writer node |
+| trigger mode: steps flow but the reader never receives anything | the trigger never fired — no `Trigger FIRED` line and an empty `trigger_log.jsonl`. Wrong regime (F=0.01/k=0.05 barely moves variance) or an absolute threshold at the wrong scale (see the L-portability note in Section 3); switch to `trigger_baseline_ratio` |
 
 Useful probes (writer node, `spack load iowarp@main`):
 
