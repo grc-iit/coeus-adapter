@@ -182,6 +182,82 @@ class Adios2GrayScott(Application):
                 'type': str,
                 'default': '1',
             },
+            {
+                'name': 'trigger',
+                'msg': 'Enable the statistical variance trigger gating the '
+                       'Catalyst SST stream (hermes engines only)',
+                'type': bool,
+                'default': False,
+            },
+            {
+                'name': 'trigger_variable',
+                'msg': 'Variable the trigger pools variance over. Empty = '
+                       'auto: derive/VarV for hermes_derived, raw V for hermes',
+                'type': str,
+                'default': '',
+            },
+            {
+                'name': 'trigger_sum_variable',
+                'msg': 'Derived block-sum variable for exact pooling. Empty = '
+                       'auto (derive/AddV when trigger_variable is derived); '
+                       '"none" = omit (one raw pass per step instead)',
+                'type': str,
+                'default': '',
+            },
+            {
+                'name': 'trigger_threshold',
+                'msg': 'Absolute variance threshold; fires on first upward '
+                       'crossing (0 disables)',
+                'type': float,
+                'default': 0.05,
+            },
+            {
+                'name': 'trigger_baseline_ratio',
+                'msg': 'Fire when variance exceeds ratio x first-step '
+                       'baseline (0 disables; alternative to the absolute '
+                       'threshold)',
+                'type': float,
+                'default': 0,
+            },
+            {
+                'name': 'trigger_inspect_steps',
+                'msg': 'Number of output steps shipped over SST per fire '
+                       '(firing step + N-1 following)',
+                'type': int,
+                'default': 3,
+            },
+            {
+                'name': 'trigger_refire',
+                'msg': 'Allow the trigger to fire more than once',
+                'type': bool,
+                'default': False,
+            },
+            {
+                'name': 'trigger_log_file',
+                'msg': 'JSON-lines file rank 0 appends fire events to '
+                       '(empty = shared_dir/trigger_log.jsonl)',
+                'type': str,
+                'default': '',
+            },
+            {
+                'name': 'catalyst_stream',
+                'msg': 'Name of the Catalyst SST stream the reader connects to',
+                'type': str,
+                'default': 'gs.bp',
+            },
+            {
+                'name': 'sst_data_transport',
+                'msg': 'SST DataTransport for the Catalyst stream',
+                'type': str,
+                'default': 'WAN',
+            },
+            {
+                'name': 'sst_queue_full_policy',
+                'msg': 'Override SST QueueFullPolicy (empty = engine default: '
+                       'Block when the trigger is enabled)',
+                'type': str,
+                'default': '',
+            },
 
         ]
 
@@ -273,17 +349,22 @@ class Adios2GrayScott(Application):
             self.copy_template_file(f'{self.pkg_dir}/config/adios2.xml',
                                 self.adios2_xml_path)
         elif self.config['engine'].lower() in ['hermes', 'hermes_derived']:
-            self.copy_template_file(f'{self.pkg_dir}/config/hermes.xml',
+            replacements = {
+                'PPN': self.config['ppn'],
+                'VARFILE': self.var_json_path,
+                'OPFILE': self.operator_json_path,
+                'DBFILE': self.config['db_path'],
+                'Order': self.config['Execution_order'],
+                'DATAMODEL': f'{self.shared_dir}/gs-fides.json',
+                'SCRIPT': f'{self.shared_dir}/gs-catalyst.py',
+            }
+            template = f'{self.pkg_dir}/config/hermes.xml'
+            if self.config['trigger']:
+                template = f'{self.pkg_dir}/config/hermes_trigger.xml'
+                replacements.update(self._trigger_replacements())
+            self.copy_template_file(template,
                                     self.adios2_xml_path,
-                                    replacements={
-                                        'PPN': self.config['ppn'],
-                                        'VARFILE': self.var_json_path,
-                                        'OPFILE': self.operator_json_path,
-                                        'DBFILE': self.config['db_path'],
-                                        'Order': self.config['Execution_order'],
-                                        'DATAMODEL': f'{self.shared_dir}/gs-fides.json',
-                                        'SCRIPT': f'{self.shared_dir}/gs-catalyst.py',
-                                    })
+                                    replacements=replacements)
             self.copy_template_file(f'{self.pkg_dir}/config/var.yaml',
                                     self.var_json_path)
             self.copy_template_file(f'{self.pkg_dir}/config/operator.yaml',
@@ -296,6 +377,63 @@ class Adios2GrayScott(Application):
                                 f'{self.shared_dir}/gs-catalyst.py')
         self.copy_template_file(f'{self.pkg_dir}/config/gs-fides.json',
                                 f'{self.shared_dir}/gs-fides.json')
+
+    def _trigger_replacements(self):
+        """
+        Resolve the variance-trigger config into template replacements for
+        config/hermes_trigger.xml (Vigil trigger-gated Catalyst SST stream).
+
+        :return: dict of template replacements
+        """
+        derived_engine = self.config['engine'].lower() == 'hermes_derived'
+        trigger_var = self.config['trigger_variable']
+        if not trigger_var:
+            trigger_var = 'derive/VarV' if derived_engine else 'V'
+        if trigger_var.startswith('derive/') and not derived_engine:
+            print(f'WARNING: trigger_variable={trigger_var} is a derived '
+                  f'variable but engine={self.config["engine"]} does not '
+                  f'declare derived variables; use engine=hermes_derived')
+
+        sum_var = self.config['trigger_sum_variable']
+        if not sum_var:
+            sum_var = ('derive/AddV'
+                       if trigger_var.startswith('derive/') else 'none')
+        sum_var_line = ''
+        if sum_var.lower() != 'none':
+            sum_var_line = (f'<parameter key="TriggerSumVariable" '
+                            f'value="{sum_var}"/>')
+
+        if (self.config['trigger_threshold'] <= 0 and
+                self.config['trigger_baseline_ratio'] <= 0):
+            print('WARNING: trigger enabled but trigger_threshold and '
+                  'trigger_baseline_ratio are both 0 - the engine will '
+                  'disable the trigger and ship no SST steps')
+
+        queue_policy_line = ''
+        if self.config['sst_queue_full_policy']:
+            queue_policy_line = (f'<parameter key="SSTQueueFullPolicy" '
+                                 f'value="{self.config["sst_queue_full_policy"]}"/>')
+
+        log_file = self.config['trigger_log_file']
+        if not log_file:
+            log_file = f'{self.shared_dir}/trigger_log.jsonl'
+
+        print(f'Trigger: variance({trigger_var}) threshold='
+              f'{self.config["trigger_threshold"]} baseline_ratio='
+              f'{self.config["trigger_baseline_ratio"]} inspect_steps='
+              f'{self.config["trigger_inspect_steps"]} log={log_file}')
+        return {
+            'CATALYSTSTREAM': self.config['catalyst_stream'],
+            'SSTTRANSPORT': self.config['sst_data_transport'],
+            'SSTQUEUEPOLICYLINE': queue_policy_line,
+            'TRIGGERVAR': trigger_var,
+            'TRIGGERSUMVARLINE': sum_var_line,
+            'TRIGGERTHRESHOLD': self.config['trigger_threshold'],
+            'TRIGGERBASELINERATIO': self.config['trigger_baseline_ratio'],
+            'TRIGGERINSPECTSTEPS': self.config['trigger_inspect_steps'],
+            'TRIGGERREFIRE': self.config['trigger_refire'],
+            'TRIGGERLOG': log_file,
+        }
 
     def start(self):
         """
