@@ -1,0 +1,83 @@
+{
+    "VTK-Cartesian-grid": {
+      "data_sources": [
+        {
+          "name": "source",
+          "filename_mode": "input"
+        }
+      ],
+      "coordinate_system": {
+        "array": {
+          "array_type": "uniform_point_coordinates",
+          "dimensions": {
+            "source": "variable_dimensions",
+            "data_source": "source",
+            "variable": "ux"
+          },
+          "origin": {
+            "source": "array",
+            "values": [0.0, 0.0, 0.0]
+          },
+          "spacing": {
+            "source": "array",
+            "values": [1.0, 1.0, 1.0]
+          }
+        }
+      },
+      "cell_set": {
+        "cell_set_type": "structured",
+        "dimensions": {
+          "source": "variable_dimensions",
+          "data_source": "source",
+          "variable": "ux"
+        }
+      },
+      "fields": [
+        {
+          "name": "ux",
+          "association": "points",
+          "array": {
+            "array_type": "basic",
+            "data_source": "source",
+            "variable": "ux"
+          }
+        },
+        {
+          "name": "uy",
+          "association": "points",
+          "array": {
+            "array_type": "basic",
+            "data_source": "source",
+            "variable": "uy"
+          }
+        },
+        {
+          "name": "uz",
+          "association": "points",
+          "array": {
+            "array_type": "basic",
+            "data_source": "source",
+            "variable": "uz"
+          }
+        },
+        {
+          "name": "vort",
+          "association": "points",
+          "array": {
+            "array_type": "basic",
+            "data_source": "source",
+            "variable": "vort"
+          }
+        },
+        {
+          "name": "critq",
+          "association": "points",
+          "array": {
+            "array_type": "basic",
+            "data_source": "source",
+            "variable": "critq"
+          }
+        }
+      ]
+    }
+}
