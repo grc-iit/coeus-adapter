@@ -279,7 +279,76 @@ including the coeus-adapter `build/bin` for `libhermes_engine.so`). With
 `CatalystStream` set, an SST reader must connect (rendezvous) and receives
 only the Red-window steps.
 
-### 5.3 Status
+### 5.3 Running through jarvis (pipeline `coeus-xcompact3d`)
+
+The `jarvis_coeus.Incompact3d` package materializes all of the above.
+Pipeline = `clio_runtime` → `clio_cte` → `Incompact3d`; knobs (see
+`test/jarvis/.../Incompact3d/pkg.py`): `catalyst_stream` (e.g. `tgv.bp`;
+empty = no SST), `sst_data_transport`, `sst_queue_full_policy`,
+`trigger=true` + `trigger_*` (thresholds, inspect steps, log files;
+`trigger_nu`/`trigger_output_dt` auto-derive from the `re`/`dt`/
+`io_frequency` knobs), and `nx/ny/nz/re/dt` for the tgv benchmark grid.
+
+```bash
+jarvis ppl kill; jarvis ppl run        # writer blocks in Open until a reader connects
+# on another node:
+spack load paraview
+pvbatch test/real_apps/Xcompact3d/catalyst/tgv-pipeline.py \
+    -j test/real_apps/Xcompact3d/catalyst/tgv-fides.json \
+    -b <output_location>/tgv.bp --staging --num-steps N
+# ungated: N = number of snapshots; gated: N = trigger_inspect_steps
+```
+
+The contact file `tgv.bp.sst` appears in `output_location` (NFS-shared);
+remove stale ones before a rerun. jarvis parser gotchas: `configure`
+silently ignores `x=false` and any value equal to the menu default — edit
+`jarvis-pipelines/pipelines/coeus-xcompact3d/pipeline.yaml`, then run
+`jarvis pkg configure coeus-xcompact3d.jarvis_coeus.Incompact3d` with no
+args to re-materialize. `jarvis ppl kill` does not kill mpirun app ranks
+(`pkill xcompact3d` on all nodes before a rerun).
+
+### 5.4 Verified experiments (2026-07-09/10, Ares, commits 41577ab/ded9a99)
+
+**Ungated SST, 385³ Re=1600, 64 ranks / 4 nodes:** rendezvous, snapshots
+every 20 steps ship over SST, pvbatch rendered frames with exact physics
+(vort max 1.9946 vs the analytic TGV initial max 2). Throughput caveat:
+one pvbatch reader pulls a 5-field 385³ step (~2.3 GB) in ~25 min, and with
+`QueueLimit=1` the writer stalls at EndStep while a step is being read —
+trim the fides JSON fields or investigate the SST dataplane before scaling
+ungated runs (gray-scott 512³ ×2 fields moved ~2 GB in ~5 s on the same
+fabric).
+
+**Dissipation trigger, 65³ Re=5000 dt=0.005 ioutput=20 (eval2
+under-resolved case), single rank:** transient Yellow at t=0.2 (log-only);
+guards hold `eps_frac=0` through the whole non-decaying phase (36 quiet
+outputs, no spurious fire); Yellow t=3.8 (eps_frac 0.124); **Red t=3.9:
+eps_frac=0.355, nu_ratio=1.55** (cascade onset; eval2's native timeline Red
+≈ t=4.9); exactly `trigger_inspect_steps=3` steps shipped; the reader —
+idle until the fire — rendered vort max 13.2→15.7→19.9 and exited; the
+run continued log-only to t=8 (eps_frac 0.73, nu_ratio 3.7 at the end).
+Logs of record: `logs/tgv_trigger_{writer,sst_consumer}.log`,
+`logs/tgv_trigger_{log,metrics}.jsonl`.
+
+### 5.5 Known issues
+
+- **Derived block means corrupt under MPI decomposition** (the trigger's
+  inputs): `tke_mean`/`enst_mean` are exact at 1 rank but garbage at 25/64
+  ranks (pooled E_k oscillates ±12%, enstrophy ~58× inflated → spurious
+  immediate Red). CTE blobs and the N_b-weighted pooling are proven good
+  (the SST re-Put of the same blobs renders perfectly; pooling over tiling
+  blocks is exact); the fault is in the vigil-ADIOS2 `ApplyExpression`
+  per-block evaluation when `Start≠0`/`Count<Shape` for chained/multi-input
+  expressions. Gray-scott's single-op `variance(V)` pools correctly at 64
+  ranks. **Run xcompact3d trigger cases single-rank until fixed.**
+- **`ek_spectrum` aborts the run on non-power-of-two dims** ("spectrum
+  requires power-of-two dimensions" at EndStep). Guarded in
+  `Case-TGV.f90:visu_tgv_init` (registers only for single-rank,
+  power-of-two grids) — the guard lives in the Incompact3d submodule tree.
+- **Restart checkpoints through hermes `restart-io` fail** ("Writing
+  restart - validation failed!" → MPI_ABORT). Worked around in the jarvis
+  tgv benchmark with `icheckpoint = 1000000`.
+
+### 5.6 Status
 
 - [x] Engine `TriggerType=dissipation` implemented and compiling
       (`EvaluateDissipationTrigger_`, `ComputeGlobalBlockMean_`), sharing the
@@ -288,9 +357,10 @@ only the Red-window steps.
       original working tree.
 - [x] 2decomp-fft + Xcompact3d rebuilt against spack `adios2-coeus@vigil`
       (2026-07-09, this guide's Section 1).
-- [ ] TGV end-to-end run through the hermes engine (fire expected once the
-      dissipation cascade onset crosses Yellow, ~step 4200-equivalents per
-      eval2).
+- [x] TGV end-to-end through the hermes engine: ungated SST at 385³/64
+      ranks and trigger-gated fire at 65³ single rank (Section 5.4).
+- [ ] Fix multi-rank derived block means (vigil-ADIOS2 `ApplyExpression`,
+      Section 5.5) — blocker for decomposed trigger runs.
 - [ ] Bridge: ParaView pipeline for Q-criterion rendering of flagged steps.
 
 ---
@@ -300,6 +370,9 @@ only the Red-window steps.
 | File | Role |
 |------|------|
 | `adios2-hermes-dissipation-trigger.xml` | example engine config (trigger parameters) |
+| `catalyst/tgv-pipeline.py` | pvbatch SST consumer (renders a vort slice per received step) |
+| `catalyst/tgv-fides.json` | Fides data model for the TGV stream (no `step_information` — the writer emits no step variable) |
+| `../../jarvis/jarvis_coeus/jarvis_coeus/Incompact3d/` | jarvis package: SST + trigger knobs, `config/hermes_{sst,trigger}.xml` |
 | `2decomp-fft/src/io.f90` | `decomp_2d_register_derived_*` helpers |
 | `Incompact3d/src/Case-TGV.f90` | `visu_tgv_init` registrations, native derived fields |
 | `Incompact3d/adios2_derived_metrics_guide.md` | full offload guide (ops, API, measurements) |
