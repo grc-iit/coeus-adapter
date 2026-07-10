@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!-- Hermes engine with the two-stage Yellow/Red numerical-dissipation
+     trigger (Vigil trigger phase) on solution-io. Materialized by jarvis
+     from the Incompact3d package when trigger=true.
+
+     Inputs are the derived block means registered by Case-TGV.f90
+     (visu_tgv_init): tke_mean and enst_mean. The engine pools them
+     N_b-weighted each output step, forms eps_frac and nu_ratio, logs a
+     Yellow event on the yellow thresholds, and on Red opens the SST
+     inspect window (TriggerInspectSteps steps ship with vigil/* scalars;
+     unflagged steps ship nothing). Without catalyst_stream the trigger
+     is log-only. Reference: test/real_apps/Xcompact3d/README.md. -->
+<adios-config>
+<io name="solution-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+        <parameter key="TimeDerivVar" value="pp"/>
+        <parameter key="TimeDerivOutputs" value="dpdt,d2pdt2"/>
+        <parameter key="TimeDerivDt" value="0.005"/>
+        <parameter key="TimeDerivCenterTag" value="1"/>
+        ##catalyst_block##
+        <parameter key="TriggerType" value="dissipation"/>
+        <parameter key="TriggerKEVariable" value="##trigger_ke_variable##"/>
+        <parameter key="TriggerEnstrophyVariable" value="##trigger_enstrophy_variable##"/>
+        <parameter key="TriggerNu" value="##trigger_nu##"/>
+        <parameter key="TriggerOutputDt" value="##trigger_output_dt##"/>
+        <parameter key="TriggerYellowFraction" value="##trigger_yellow_fraction##"/>
+        <parameter key="TriggerRedFraction" value="##trigger_red_fraction##"/>
+        <parameter key="TriggerYellowNuRatio" value="##trigger_yellow_nu_ratio##"/>
+        <parameter key="TriggerRedNuRatio" value="##trigger_red_nu_ratio##"/>
+        <parameter key="TriggerInspectSteps" value="##trigger_inspect_steps##"/>
+        <parameter key="TriggerRefire" value="##trigger_refire##"/>
+        <parameter key="TriggerLogFile" value="##trigger_log_file##"/>
+        ##trigger_metrics_line##
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+<io name="in-outflow-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+<io name="turb-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+<io name="restart-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+<io name="statistics-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+<io name="restart-forces-io">
+    <engine type="Plugin">
+        <parameter key="PluginName" value="hermes"/>
+        <parameter key="PluginLibrary" value="hermes_engine"/>
+        <parameter key="ppn" value="##ppn##"/>
+        <parameter key="db_file" value="##db_path##"/>
+    </engine>
+    <transport type="File">
+        <parameter key="Library" value="fstream"/>
+        <parameter key="ProfileUnits" value="Milliseconds"/>
+    </transport>
+</io>
+</adios-config>
