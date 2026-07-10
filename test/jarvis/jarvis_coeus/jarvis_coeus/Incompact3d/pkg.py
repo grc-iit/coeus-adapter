@@ -67,6 +67,36 @@ class Incompact3d(Application):
                 'default': 1000,
             },
             {
+                'name': 'nx',
+                'msg': 'X-direction nodes (tgv benchmark)',
+                'type': int,
+                'default': 385,
+            },
+            {
+                'name': 'ny',
+                'msg': 'Y-direction nodes (tgv benchmark)',
+                'type': int,
+                'default': 385,
+            },
+            {
+                'name': 'nz',
+                'msg': 'Z-direction nodes (tgv benchmark)',
+                'type': int,
+                'default': 385,
+            },
+            {
+                'name': 're',
+                'msg': 'Reynolds number (tgv benchmark; nu = 1/re)',
+                'type': float,
+                'default': 1600.0,
+            },
+            {
+                'name': 'dt',
+                'msg': 'Simulation time step (tgv benchmark)',
+                'type': float,
+                'default': 0.005,
+            },
+            {
                 'name': 'io_frequency',
                 'msg': 'Frequency of I/O operations',
                 'type': int,
@@ -231,7 +261,12 @@ class Incompact3d(Application):
         self.copy_template_file(f'{input_i3d}',
                                 f"{self.config['output_location']}/input.i3d", replacements={
                 'total_step': self.config['total_step'],
-                'io_frequency': self.config['io_frequency'],})
+                'io_frequency': self.config['io_frequency'],
+                'nx': self.config['nx'],
+                'ny': self.config['ny'],
+                'nz': self.config['nz'],
+                're': f"{self.config['re']:.10g}",
+                'dt': f"{self.config['dt']:.10g}",})
         pass
 
     def _catalyst_defaults(self):
@@ -269,29 +304,12 @@ class Incompact3d(Application):
         """Replacements for config/hermes_sst.xml (ungated SST stream)."""
         return self._sst_lines()
 
-    def _parse_i3d_param(self, name):
-        """
-        Read a scalar parameter (e.g. re, dt) from the benchmark's
-        input.i3d template. Fortran-style values (1600., 5.d-3) are
-        normalized before conversion.
-        """
-        import re as re_mod
-        path = f"{self.pkg_dir}/benchmarks/{self.config['benchmarks'].lower()}/input.i3d"
-        pattern = re_mod.compile(rf'^\s*{name}\s*=\s*([0-9.eEdD+\-]+)')
-        with open(path) as f:
-            for line in f:
-                match = pattern.match(line)
-                if match:
-                    value = match.group(1).replace('d', 'e').replace('D', 'e')
-                    return float(value)
-        raise ValueError(f'{name} not found in {path}; set the trigger_* '
-                         'configs explicitly')
-
     def _trigger_replacements(self):
         """
         Replacements for config/hermes_trigger.xml (Yellow/Red dissipation
         trigger). trigger_nu and trigger_output_dt default to values derived
-        from the benchmark input.i3d (nu = 1/re, output_dt = dt * ioutput).
+        from the re/dt/io_frequency configs (nu = 1/re, output_dt =
+        dt * ioutput).
         """
         if self.config['benchmarks'].lower() != 'tgv':
             print(f'WARNING: dissipation trigger inputs '
@@ -302,10 +320,10 @@ class Incompact3d(Application):
 
         nu = self.config['trigger_nu']
         if not nu:
-            nu = 1.0 / self._parse_i3d_param('re')
+            nu = 1.0 / self.config['re']
         output_dt = self.config['trigger_output_dt']
         if not output_dt:
-            output_dt = self._parse_i3d_param('dt') * self.config['io_frequency']
+            output_dt = self.config['dt'] * self.config['io_frequency']
 
         log_file = self.config['trigger_log_file'] or \
             f'{self.shared_dir}/trigger_log.jsonl'
