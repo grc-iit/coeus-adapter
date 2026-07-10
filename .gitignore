@@ -58,3 +58,8 @@ gradle-app.setting
 # --- Eclipse ---
 .project
 .classpath
+test/real_apps/Xcompact3d/2decomp-fft/build/
+test/real_apps/Xcompact3d/2decomp-fft/opt/
+test/real_apps/Xcompact3d/Incompact3d/build/
+test/real_apps/Xcompact3d/Incompact3d/build_single/
+test/real_apps/Xcompact3d/Incompact3d/runs/

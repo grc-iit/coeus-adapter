@@ -331,15 +331,31 @@ Logs of record: `logs/tgv_trigger_{writer,sst_consumer}.log`,
 
 ### 5.5 Known issues
 
-- **Derived block means corrupt under MPI decomposition** (the trigger's
-  inputs): `tke_mean`/`enst_mean` are exact at 1 rank but garbage at 25/64
-  ranks (pooled E_k oscillates ±12%, enstrophy ~58× inflated → spurious
-  immediate Red). CTE blobs and the N_b-weighted pooling are proven good
-  (the SST re-Put of the same blobs renders perfectly; pooling over tiling
-  blocks is exact); the fault is in the vigil-ADIOS2 `ApplyExpression`
-  per-block evaluation when `Start≠0`/`Count<Shape` for chained/multi-input
-  expressions. Gray-scott's single-op `variance(V)` pools correctly at 64
-  ranks. **Run xcompact3d trigger cases single-rank until fixed.**
+- **[FIXED 2026-07-10] Derived block means corrupt under MPI
+  decomposition** (the trigger's inputs): `tke_mean`/`enst_mean` were exact
+  at 1 rank but garbage at 25/64 ranks (pooled E_k oscillated ±12%,
+  enstrophy ~60× inflated → spurious immediate Red). Two stacked root
+  causes, found by dumping per-rank blobs from the engine
+  (`COEUS_DERIVED_DEBUG=1`):
+  1. *CTE tag collisions*: the `rankConsensus` pool keeps one atomic
+     counter per node, so `GetRank(PoolQuery::Local())` handed out
+     per-node ranks and the `step_N_rankR` tags collided across nodes —
+     ranks read/overwrote each other's blobs. Fix (`hermes_engine.cc`):
+     only MPI rank 0 draws a consensus value per run (the across-runs
+     uniquifier) and broadcasts it; every rank uses
+     `base*1000000 + mpi_rank`.
+  2. *Unreversed dims*: 2decomp registered ADIOS2 variables with
+     Fortran-order (x,y,z) dims, but the ADIOS2 Fortran bindings do not
+     reverse them — metadata claimed axis0=x while x is the fastest axis
+     in memory. Invisible on cubes (all prior validation), it transposes
+     the stride map on pencil blocks, so `curl`/`gradient` differentiate
+     across wrong strides. Fix (`2decomp-fft/src/io.f90`): register
+     shape/start/count reversed (z,y,x) = true C-order; the established
+     axis convention (stride-1 axis 2 = physical x) is unchanged.
+
+  Verified at 25 ranks / 4 nodes after the fix: E_k 0.12681→0.126723
+  (smooth), enstrophy 0.378→0.465 (physical, matches the single-rank
+  trajectory), no spurious fire.
 - **`ek_spectrum` aborts the run on non-power-of-two dims** ("spectrum
   requires power-of-two dimensions" at EndStep). Guarded in
   `Case-TGV.f90:visu_tgv_init` (registers only for single-rank,
