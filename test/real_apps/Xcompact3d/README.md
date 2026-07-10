@@ -329,6 +329,23 @@ run continued log-only to t=8 (eps_frac 0.73, nu_ratio 3.7 at the end).
 Logs of record: `logs/tgv_trigger_{writer,sst_consumer}.log`,
 `logs/tgv_trigger_{log,metrics}.jsonl`.
 
+**Dissipation trigger, multi-rank (same case, 25 ranks / 4 nodes,
+post-fix — see Section 5.5):** the pooled metrics are now
+decomposition-independent — fire step identical to single-rank and values
+match to ~1% (the 2nd-order block-seam curl bias): transient Yellow at
+t=0.2 with eps_frac 0.08266 / nu_ratio 1.0901 (single-rank: 0.08264 /
+1.09008); Yellow t=3.8 (eps_frac 0.1229 vs 0.1245); **Red t=3.9:
+eps_frac=0.3520, nu_ratio=1.5432** (vs 0.3551 / 1.5506); exactly 3 window
+steps shipped at 89–184 ms each (~2× faster than single-rank —
+parallel marshaling), reader rendered the identical cascade frames
+(vort max 13.2→15.7→19.9, deterministic physics) and exited; clean run to
+t=8. Only one "Catalyst SST stream" startup log line (previously four —
+the per-node rank-0 collisions of the fixed bug). Late-time caveat:
+fully-turbulent enstrophy at t=8 runs ~11% above single-rank (13.14 vs
+11.84) from small-block seam bias — irrelevant at the onset-time fire.
+Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
+`logs/tgv_trigger25_{log,metrics}.jsonl`.
+
 ### 5.5 Known issues
 
 - **[FIXED 2026-07-10] Derived block means corrupt under MPI
@@ -375,9 +392,13 @@ Logs of record: `logs/tgv_trigger_{writer,sst_consumer}.log`,
       (2026-07-09, this guide's Section 1).
 - [x] TGV end-to-end through the hermes engine: ungated SST at 385³/64
       ranks and trigger-gated fire at 65³ single rank (Section 5.4).
-- [ ] Fix multi-rank derived block means (vigil-ADIOS2 `ApplyExpression`,
-      Section 5.5) — blocker for decomposed trigger runs.
+- [x] Multi-rank derived block means fixed (tag collisions + unreversed
+      dims, Section 5.5) and the gated fire re-verified at 25 ranks /
+      4 nodes with the SST reader (Section 5.4).
 - [ ] Bridge: ParaView pipeline for Q-criterion rendering of flagged steps.
+- [ ] Fix restart checkpoints through the hermes `restart-io`
+      ("validation failed", Section 5.5) — checkpoints currently disabled
+      in the jarvis tgv benchmark.
 
 ---
 
