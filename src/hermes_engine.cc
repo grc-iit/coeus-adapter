@@ -219,7 +219,20 @@ void HermesEngine::Init_() {
   if (mpi_rank != 0) {
     rank_consensus.Init(rankConsensus_pool_id_);
   }
-  rank = rank_consensus.GetRank(clio::run::PoolQuery::Local());
+  // The consensus pool keeps one atomic counter per container (per node),
+  // so querying it from every process hands out per-node ranks: the
+  // step_N_rankR CTE tags then collide across nodes and ranks read and
+  // overwrite each other's blobs (corrupted derived block means / trigger
+  // statistics). Instead, only MPI rank 0 draws one value per run (the
+  // across-runs uniquifier on a persistent runtime) and broadcasts it as a
+  // run base; every process derives a globally unique rank from it and its
+  // MPI rank. On a fresh runtime the base is 0, so rank == MPI rank.
+  int run_base = 0;
+  if (mpi_rank == 0) {
+    run_base = rank_consensus.GetRank(clio::run::PoolQuery::Local());
+  }
+  run_base = m_Comm.BroadcastValue(run_base, 0);
+  rank = run_base * 1000000 + mpi_rank;
 
 
   std::cout << "MPI rank " << mpi_rank << " -> consensus rank: " << rank << std::endl;
@@ -710,6 +723,36 @@ void HermesEngine::ComputeDerivedVariables() {
       blobStorage.push_back(hermes_->tag->Get(varName));
       auto &blob = blobStorage.back();
 
+      if (std::getenv("COEUS_DERIVED_DEBUG")) {
+        size_t count_prod = 1;
+        for (auto c : varBase->m_Count) count_prod *= c;
+        size_t blob_elems = blob.size() / sizeof(double);
+        double direct_mean = 0.0, direct_min = 0.0, direct_max = 0.0;
+        if (blob_elems > 0) {
+          const double *d = reinterpret_cast<const double *>(blob.data());
+          direct_min = direct_max = d[0];
+          for (size_t i = 0; i < blob_elems; i++) {
+            direct_mean += d[i];
+            direct_min = std::min(direct_min, d[i]);
+            direct_max = std::max(direct_max, d[i]);
+          }
+          direct_mean /= static_cast<double>(blob_elems);
+        }
+        engine_logger->info(
+            "DERIVED_DEBUG mpi_rank={} derived={} src={} shape={} start={} count={} "
+            "count_prod={} blob_elems={} blob_mean={} blob_min={} blob_max={}",
+            m_Comm.Rank(), name, varName, adios2::ToString(varBase->m_Shape),
+            adios2::ToString(varBase->m_Start), adios2::ToString(varBase->m_Count),
+            count_prod, blob_elems, direct_mean, direct_min, direct_max);
+        if (m_Comm.Rank() == 0 && varName == "ux" && name == "tke_mean" &&
+            blob_elems >= 70) {
+          const double *d = reinterpret_cast<const double *>(blob.data());
+          std::string vals;
+          for (int i = 0; i < 70; i++) vals += fmt::format("{:.4f} ", d[i]);
+          engine_logger->info("DERIVED_DEBUG ux[0..69]: {}", vals);
+        }
+      }
+
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
                                 adios2::MinMaxStruct(), blob.empty() ? nullptr : blob.data()});
@@ -1146,6 +1189,11 @@ double HermesEngine::ComputeGlobalBlockMean_(const std::string &name) {
     local[0] = n_b;
     local[1] = n_b * mean_b;
     have_block = true;
+
+    if (std::getenv("COEUS_DERIVED_DEBUG")) {
+      engine_logger->info("DERIVED_DEBUG mpi_rank={} pooled_input name={} mean_b={} n_b={}",
+                          m_Comm.Rank(), name, mean_b, n_b);
+    }
   } while (false);
 
   if (!have_block && m_Comm.Rank() == 0) {

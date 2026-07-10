@@ -1,0 +1,53 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v4
+
+    # We don't want to build openmpi each time this workflow is
+    # run. Setup caching of OpenMPI after it is built and installed.
+    # See "Caching dependencies to speed up workflows" on the GH
+    # actions docs.
+    - name: Cache OpenMPI
+      id: cache-openmpi
+      uses: actions/cache@v4
+      with:
+        path: openmpi-4.1.4/installed
+        key: openmpi-4.1.4
+
+    - name: Build openmpi
+      if: steps.cache-openmpi.outputs.cache-hit != 'true'
+      run: |
+        wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.4.tar.gz
+        tar -xf openmpi-4.1.4.tar.gz
+        cd openmpi-4.1.4/ && mkdir installed
+        ./configure --prefix=$(pwd)/installed
+        make all install
+
+    - name: Build Xcompact3d
+      run: |
+        export PATH=$(pwd)/openmpi-4.1.4/installed/bin/:$PATH
+        pip install numpy
+        export FC=mpif90
+        cmake -S . -B build 
+        cmake --build build -j 2
+        cmake --install build
+        ctest --test-dir build
