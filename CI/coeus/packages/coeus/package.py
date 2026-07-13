@@ -29,9 +29,10 @@ class Coeus(CMakePackage):
 
     maintainers("JaimeCernuda")
 
+    version('iowarp', branch='iowarp', submodules=True, preferred=True)
     version('master', branch='master', submodules=True)
 
-    depends_on("hermes@master")
+    depends_on("iowarp@main")
     depends_on("adios2")
     depends_on("sqlite")
 
