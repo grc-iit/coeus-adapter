@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+          LAMMPS `dump custom/adios` through the COEUS hermes plugin engine
+          with a MEAN trigger on the kinetic temperature (Vigil LAMMPS case).
+          Materialized by the jarvis lammps package when trigger=true.
+
+          The dump declares derive/V2mean = mean(|v|^2) == 3*T*; the engine
+          pools the per-block mean N_b-weighted into the exact global mean
+          (ComputeGlobalBlockMean_) at every output step and fires on the first
+          upward crossing of TriggerThreshold (absolute, in 3*T* units) or
+          TriggerBaselineRatio x the first-step baseline.
+
+          IO group name MUST be "custom" (DumpCustomADIOSInternal::ioName).
+          This template is trigger-only: no Catalyst/SST (render) block, so the
+          engine evaluates + logs the trigger without opening an SST stream
+          (streaming atoms needs a Fides particle data model, not yet wired).
+        =====================================================================-->
+
+    <io name="custom">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+
+            <!-- Trigger on the kinetic temperature. Default: variance(vx) ~= T*
+                 pooled to the exact global variance (proven Gray-Scott path). -->
+            <parameter key="TriggerType" value="##TRIGGERTYPE##"/>
+            <parameter key="TriggerVariable" value="##TRIGGERVAR##"/>
+            ##TRIGGERSUMVARLINE##
+            <parameter key="TriggerThreshold" value="##TRIGGERTHRESHOLD##"/>
+            <parameter key="TriggerBaselineRatio" value="##TRIGGERBASELINERATIO##"/>
+            <parameter key="TriggerInspectSteps" value="##TRIGGERINSPECTSTEPS##"/>
+            <parameter key="TriggerRefire" value="##TRIGGERREFIRE##"/>
+            <parameter key="TriggerLogFile" value="##TRIGGERLOG##"/>
+        </engine>
+    </io>
+
+    <io name="atom">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+        </engine>
+    </io>
+
+    <io name="read_dump">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+        </engine>
+    </io>
+</adios-config>

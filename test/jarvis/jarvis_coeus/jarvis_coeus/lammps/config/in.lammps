@@ -1,0 +1,35 @@
+# LAMMPS velocity-Verlet integration-failure case (Vigil LAMMPS case),
+# materialized by the jarvis lammps package. Written through ADIOS2 (BP4 or the
+# COEUS hermes plugin engine per adios2_config.xml in this directory).
+#
+# The modified `dump custom/adios` (our +adios LAMMPS build) de-interleaves the
+# atom table into named per-column variables and declares
+#   derive/V2mean = mean(|v|^2) = <vx^2+vy^2+vz^2> == 3*T*
+# which the hermes engine's mean trigger monitors. Dilute LJ, dt* too large:
+# temperature runs away from the 0.75 set point (integration failure).
+
+units           lj
+atom_style      atomic
+boundary        p p p
+
+lattice         fcc ##RHO##
+region          box block 0 ##BOX## 0 ##BOX## 0 ##BOX##
+create_box      1 box
+create_atoms    1 box
+mass            1 1.0
+
+pair_style      lj/cut 2.5
+pair_coeff      1 1 1.0 1.0 2.5
+
+velocity        all create ##T0## 12345 dist gaussian
+timestep        ##DT##
+fix             1 all nve
+
+# ADIOS dump through IO group "custom" (bound in adios2_config.xml).
+# Columns: id + positions (render) + velocities (derive/V2mean = 3*T*).
+dump            d all custom/adios ##DUMP_EVERY## lammps.bp id x y z vx vy vz
+dump_modify     d sort id
+
+thermo_style    custom step temp ke etotal
+thermo          1
+run             ##STEPS##

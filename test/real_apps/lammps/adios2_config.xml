@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+          LAMMPS `dump custom/adios` routed through the COEUS hermes plugin
+          engine with a MEAN trigger on the kinetic temperature (Vigil
+          trigger-render-reason pipeline, LAMMPS velocity-Verlet case).
+
+          The modified dump (src/ADIOS/dump_custom_adios.cpp) emits named
+          per-column variables (vx, vy, vz, ...) and declares the derived
+          variable
+
+              derive/V2mean = mean(|v|^2) = <vx^2+vy^2+vz^2>   ( == 3*T* )
+
+          when the three velocity components are dumped. The engine pools the
+          per-block mean N_b-weighted into the exact global mean at every
+          output step (ComputeGlobalBlockMean_) and fires the trigger on the
+          first upward crossing of TriggerThreshold (absolute, in 3*T* units)
+          or TriggerBaselineRatio x the first-step baseline. On fire the
+          firing step plus TriggerInspectSteps-1 steps are shipped over SST
+          (when the Catalyst block below is enabled); untriggered steps ship
+          nothing.
+
+          IO group name MUST be "custom" (DumpCustomADIOSInternal::ioName) so
+          the dump binds to this engine. Requires the clio runtime + CTE pool
+          up (see docs/BUILD_AND_RUN_GRAY_SCOTT.md) and the engine rebuilt
+          with the TriggerType=mean support.
+        =====================================================================-->
+
+    <io name="custom">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+
+            <parameter key="ppn" value="1"/>
+            <parameter key="db_file" value="lammps_metadata.db"/>
+
+            <!-- MEAN trigger on the kinetic temperature.
+                 TriggerVariable is the derived per-block mean declared by the
+                 dump; TriggerThreshold/TriggerBaselineRatio are in the same
+                 units as derive/V2mean, i.e. 3*T* (LJ reduced units, m=1,
+                 k_B=1). threshold 4.5 => fires once T* >= 1.5 (well above the
+                 0.75 equilibrium set point); on the dilute dt*=0.05 explosion
+                 this fires at the first super-heated output step. Use
+                 TriggerBaselineRatio (L/regime independent) instead when the
+                 absolute scale is unknown. -->
+            <parameter key="TriggerType" value="mean"/>
+            <parameter key="TriggerVariable" value="derive/V2mean"/>
+            <parameter key="TriggerThreshold" value="4.5"/>
+            <parameter key="TriggerBaselineRatio" value="0"/>
+            <parameter key="TriggerInspectSteps" value="3"/>
+            <parameter key="TriggerRefire" value="false"/>
+            <parameter key="TriggerLogFile" value="lammps_trigger_log.jsonl"/>
+
+            <!-- ===== RENDER side (optional): Catalyst SST streaming of
+                 flagged steps. Enable by uncommenting and supplying a Fides
+                 PARTICLE data model (the gray-scott uniform-grid gs-fides.json
+                 does NOT apply to atoms) plus a ParaView pipeline script. The
+                 dump must also output x y z positions for rendering. Catalyst
+                 activates only when BOTH Script and DataModel are present. =====
+            <parameter key="DataModel" value="lammps-fides.json"/>
+            <parameter key="Script" value="catalyst/lammps-pipeline.py"/>
+            <parameter key="CatalystStream" value="lammps.bp"/>
+            <parameter key="SSTDataTransport" value="RDMA"/>
+            -->
+        </engine>
+    </io>
+
+    <!-- atom-style dump (dump atom/adios) if used instead of custom -->
+    <io name="atom">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="1"/>
+            <parameter key="db_file" value="lammps_metadata.db"/>
+        </engine>
+    </io>
+</adios-config>

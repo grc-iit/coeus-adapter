@@ -1,0 +1,48 @@
+name: coeus-gray-lammps
+env:
+  TMPDIR: "/home/hxu40/iowarp_prte_tmp"
+  # CLIO_MEMFD_DIR must resolve to the SAME node-local dir for both the
+  # clio_run daemon (launched per-node via pssh) AND the IOR ranks
+  # (spawned via `mpiexec -x CLIO_MEMFD_DIR=...`). The FUSE pipelines use
+  # ".../_${HOSTNAME}" which works only because the ssh hop expands
+  # ${HOSTNAME} per-node; mpiexec -x forwards ONE literal string to every
+  # rank on all 16 nodes, so a ${HOSTNAME} path would send every rank to
+  # the head node's dir and the adapter's CTE client gets
+  # "shm_open: No such file or directory", falling back to a kernel
+  # open of the literal clio:: path (ENOENT). /dev/shm is a per-node
+  # tmpfs (RAM-backed, 48G here, NOT the small / partition), so the same
+  # literal path is independently node-local everywhere — no per-node
+  # shell expansion needed. Username is constant so the literal is safe
+  # through both the ssh inline and mpiexec -x.
+  CLIO_MEMFD_DIR: "/dev/shm/clio_hxu40"
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    swim_enabled: false
+
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+
+    dpe_type: "max_bw"                   
+    neighborhood: 1                     
+    default_target_timeout_ms: 30000     
+    poll_period_ms: 5000  
+    pool_query: "local"
+
+
+  - pkg_type: jarvis_coeus.lammps
+    pkg_name: jarvis_coeus.lammps  
+    nprocs: 16                            # Number of MPI processes
+    ppn: 16                               # Processes per node
+    script_location: "${HOME}"
+    engine: "hermes"
