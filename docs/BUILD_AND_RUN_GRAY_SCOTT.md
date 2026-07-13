@@ -2,7 +2,9 @@
 
 Verified end-to-end on Ares, 2026-07-09 (writer: `ares-comp-11`, reader:
 `ares-comp-14`). The trigger-gated SST mode (Section 3) was verified the same
-day at L=64 and L=512 (64 ranks across ares-comp-11/14/15/16).
+day at L=64 and L=512 (64 ranks across ares-comp-11/14/15/16), and again
+2026-07-11 at L=256 with 32 ranks on ares-comp-18/20 and the reader on
+ares-comp-22 (see the worked example at the end of Section 3).
 
 ## 1. Build COEUS-Adapter
 
@@ -87,6 +89,13 @@ Your job has requested more processes than the ppr for this topology can support
 
 because the node pool comes from the global file only. The symptom is jarvis
 "finishing" in seconds with the app stage failing.
+
+**Node placement**: mpirun fills the global hostfile in order at `ppn`
+ranks per node, so with `nprocs=32 ppn=16` the producer lands on the first
+two listed nodes; the remaining nodes only run a clio daemon (cheap) and
+are free for the reader. Run the SST reader (Step B) on any node NOT
+hosting producer ranks. The runtime/CTE stages start one daemon on every
+pipeline-hostfile node regardless.
 
 #### OpenMPI remote launch: normal machines vs. Ares
 
@@ -242,6 +251,14 @@ jarvis pkg configure coeus-gray-scott.jarvis_coeus.adios2_gray_scott \
 jarvis ppl kill && jarvis ppl run          # Step A as usual
 ```
 
+**Always verify with `jarvis ppl print` before `jarvis ppl run`.** Older
+jarvis-cd silently dropped any configure arg whose value equals the menu
+default (e.g. `trigger=false`, `plotgap=10`) because it detected "explicit"
+args by comparing values against defaults; fixed 2026-07-10 in
+`jarvis-cd/jarvis_cd/core/pipeline.py` (explicit args are now taken from
+the raw command-line tokens). On an unfixed jarvis the symptom is a run
+that keeps stale values for exactly the knobs you "changed".
+
 then Step B with `--num-steps 3`. Key knobs (full table in the package
 README, `test/jarvis/.../adios2_gray_scott/README.md`):
 
@@ -282,6 +299,7 @@ points, 64 ranks / 4 nodes, F=0.08 k=0.03 dt=1 plotgap=50:
 | L | Criterion | Fires at | Values |
 |---|---|---|---|
 | 64 | threshold 0.05 | output 9 of 20 | 0.0617 vs baseline 0.0044 |
+| 256 | baseline_ratio 10 | output 8 of 20 | 5.01e-04 = 10.7× baseline 4.67e-05 (32 ranks / 2 nodes, 2026-07-11) |
 | 512 | baseline_ratio 10 | output 8 of 20 | 9.40e-05 = 10.7× baseline 8.77e-06 |
 
 At L=512 each ~2 GB flagged step ships in ~5 s and the single-process
@@ -291,19 +309,168 @@ pvbatch consumer renders each 512³ frame in ~60-75 s. Logs of record:
 engine would log `Trigger: derived block variance ... unavailable` and
 contribute an empty block — zero such warnings in a healthy run.
 
-## 4. Shutdown behavior and cleanup
+### Worked example: 32 ranks / 2 producer nodes + 1 reader node (2026-07-11)
+
+Complete recipe for the L=256 reference row above, run on the hostfile
+`ares-comp-18/20/22/23/25/26` (both hostfiles listing all six nodes; the
+producer takes the first two, the reader ran on ares-comp-22).
+
+```bash
+# 0. Both hostfiles list all nodes (see the two-hostfile table in Section 2):
+#    /mnt/common/hxu40/jarvis-pipelines/coeus-gray-scott/hostfile
+#    /home/hxu40/server_list/server.list
+
+# 1. Configure — 32 ranks @ 16/node -> first two hostfile nodes
+spack load iowarp@main adios2-coeus@vigil
+jarvis pkg configure coeus-gray-scott.jarvis_coeus.adios2_gray_scott \
+    nprocs=32 ppn=16 L=256 engine=hermes_derived trigger=true \
+    F=0.08 k=0.03 dt=1 plotgap=50 steps=1000 \
+    trigger_baseline_ratio=10 trigger_inspect_steps=3
+jarvis ppl print | grep -E "nprocs|trigger|engine"    # VERIFY before running
+
+# 2. Clean stale contact files, then launch (writer blocks at rendezvous)
+rm -f /mnt/common/hxu40/coeus/iowarp/coeus-adapter/gs.bp.sst ~/gs.bp.sst
+jarvis ppl kill && jarvis ppl run
+
+# 3. On a NON-producer node, once gs.bp.sst appears, start the reader
+#    (--num-steps must equal trigger_inspect_steps)
+spack load paraview
+cd coeus-adapter/test/real_apps/gray-scott
+pvbatch catalyst/gs-pipeline.py -j $PWD/catalyst/gs-fides.json \
+    -b /mnt/common/hxu40/coeus/iowarp/coeus-adapter/gs.bp \
+    --staging --num-steps 3
+```
+
+Observed result: outputs 1-7 ship nothing (reader blocks inside SST);
+`Trigger FIRED at step 8: variance(derive/VarV) = 5.01e-04` (10.7× baseline
+4.67e-05); flagged steps 8/9/10 ship in 0.4-1.2 s each (~130 MB/field at
+L=256); the reader renders `output-0000{0,1,2}.png` and exits by itself;
+the writer drains outputs 11-20 untriggered, logs `DoClose` for all ranks,
+and removes `gs.bp.sst` on exit. The fire event is appended to
+`trigger_log.jsonl` in the package shared dir.
+
+Note on the rendered isosurfaces: faint grid lines on the blob are the
+contour crossing writer-block boundaries (the Fides multiblock output has
+no ghost cells) — a cosmetic artifact, not data corruption. Add a
+ghost-cell generator or MergeBlocks before the Contour in `gs-pipeline.py`
+if clean surfaces are needed.
+
+## 4. AI-agent SST consumer: ParaView + MCP (trigger → render → reason)
+
+Instead of the fixed `pvbatch` reader (Step B), the SST consumer can be an
+**LLM agent** that steers ParaView through MCP tools: it pauses/advances the
+stream, creates isosurfaces/slices on the live data, takes screenshots, and
+describes what it sees. Everything lives in `test/insitu_agent/`. Verified
+2026-07-10 with `claude-haiku-4-5` (25 tool calls, 8 screenshots, ~$0.11,
+35 s) and combined with the trigger the same week.
+
+```
+gray-scott (jarvis, SST writer) ──gs.bp──► insitu_streaming.py (pvpython bridge)
+                                                │ renders each step + saves PNG
+                                            pvserver --multi-clients :11112
+                                                ▲
+                                     insitu_mcp_server.py (own render view)
+                                                ▲ stdio MCP
+                                        insitu_agent.py (LLM tool loop)
+```
+
+All consumer processes run on a **non-producer node** (they share the node
+fine). Order: pvserver → jarvis pipeline (Step A) → bridge → agent.
+
+```bash
+# 1. pvserver (same paraview spack install as pvbatch; 11111 is often busy)
+spack load paraview
+pvserver --multi-clients --server-port=11112 &
+
+# 2. Step A as usual (Section 2/3). Writer blocks at rendezvous until the
+#    bridge's Fides reader connects.
+
+# 3. Streaming bridge — replaces the pvbatch reader. MUST run under pvpython;
+#    -b MUST be the absolute path next to gs.bp.sst; --paused gives the agent
+#    step control; --max-steps caps runaway consumption.
+cd coeus-adapter/test/insitu_agent
+pvpython insitu_streaming.py -j $PWD/gs-fides.json \
+    -b /mnt/common/hxu40/coeus/iowarp/coeus-adapter/gs.bp \
+    --staging --server localhost --port 11112 --paused \
+    --screenshot-file /tmp/bridge_view.png --max-steps 60 &
+
+# 4. The agent. It spawns insitu_mcp_server.py itself (stdio MCP) using its
+#    own interpreter, so that python must import paraview: use the spack
+#    python 3.12 (system python3 has an OpenSSL mismatch) with the paraview
+#    site-packages + ~/software/paraview_mcp on PYTHONPATH.
+export ANTHROPIC_API_KEY=sk-ant-...
+PV=$(spack location -i paraview)
+SPY=$(spack location -i python)/bin/python3
+env PYTHONPATH="$PV/lib/python3.12/site-packages:$HOME/software/paraview_mcp" \
+    LD_LIBRARY_PATH="$PV/lib" \
+$SPY insitu_agent.py --provider anthropic --model claude-haiku-4-5 \
+    --server-host localhost --server-port 11112 \
+    --screenshot-file /tmp/bridge_view.png \
+    --results-dir ./agent_results \
+    --max-iterations 15 --max-wall-seconds 240 \
+    --prompt "Advance one step, take a screenshot and describe the pattern. \
+Then create an isosurface of V at a sensible value and describe the 3D structure."
+```
+
+Per run the agent saves `token_usage.json` (tokens, cost, tool/screenshot
+counts) and every screenshot under `--results-dir`.
+
+**With the trigger enabled** (Section 3) the semantics compose naturally:
+the bridge receives nothing until the trigger fires, so the agent's
+`advance_step` simply blocks until the first flagged step arrives, then the
+agent inspects the `trigger_inspect_steps` shipped steps one by one. While
+gated, `QueueFullPolicy=Block` holds flagged steps until the agent consumes
+them — nothing is dropped while the LLM "thinks". Give the agent a prompt
+budget that matches the window (e.g. 3 advance/screenshot rounds for
+`trigger_inspect_steps=3`).
+
+Gotchas (each cost a debugging session — details in
+`test/insitu_agent/README.md`):
+
+- The bridge must run under **pvpython**, the MCP server/agent under the
+  **spack python** — never swap them (pvpython's VTK stdout wrapper breaks
+  stdio MCP; plain python can't import paraview without the PYTHONPATH above).
+- **Do not share the bridge's render view.** The MCP server creates its own
+  view at connect (`_isolate_mcp_view`, added 2026-07-10). Before that fix,
+  any `create_isosurface` broke every subsequent bridge render — the
+  "empty screenshot" bug (6.5 KB PNGs of background + axes). If empty
+  screenshots return, suspect another ParaView client Show()ing filters into
+  the bridge's view; `INSITU_DEBUG_VIEW=1` on the bridge dumps per-render
+  state. `get_screenshot` serves the bridge PNG for the live volume and
+  renders the MCP view when the agent has created filters.
+- Model ids: use the official Anthropic API — set `ANTHROPIC_API_KEY` to
+  your `sk-ant-...` key and pass e.g. `claude-haiku-4-5` / `claude-sonnet-4-5`.
+
+**Alternative — Claude Code as the agent**: register the MCP server in
+`.mcp.json` and Claude Code drives the same tools interactively (no
+`insitu_agent.py` needed):
+
+```json
+{ "mcpServers": { "InSitu-ParaView": {
+    "command": "/path/to/spack/python3",
+    "args": ["/abs/path/test/insitu_agent/insitu_mcp_server.py",
+             "--server", "localhost", "--port", "11112",
+             "--status-file", "/abs/path/test/insitu_agent/streaming_status.json",
+             "--screenshot-file", "/tmp/bridge_view.png"],
+    "env": {"PYTHONPATH": "<paraview site-packages>:<paraview_mcp dir>",
+            "LD_LIBRARY_PATH": "<paraview lib>"} } } }
+```
+
+## 5. Shutdown behavior and cleanup
 
 - **The reader hangs at end-of-run by design.** The writer skips SST
   `Close()` (it would block), waits 4 s, destroys the engine, and removes
   `gs.bp.sst`. The reader never receives EndOfStream and sits at
   `Waiting for step N...` — kill it, or use the contact-file watchdog
   pattern from `test/real_apps/gray-scott/run-sst.sh` (kills the reader when
-  `gs.bp.sst` disappears).
+  `gs.bp.sst` disappears). The same applies to the agent-mode bridge
+  (Section 4): after the writer exits, `advance_step` can never complete —
+  kill the bridge (and pvserver if done); `--max-steps` bounds it too.
 - **Remove stale `gs.bp.sst` files before a rerun** (repo root and `$HOME`);
   a leftover contact file from a dead writer will confuse the next reader.
 - `jarvis ppl kill` stops the runtime daemon and any leftover ranks.
 
-## 5. Troubleshooting a "hang"
+## 6. Troubleshooting a "hang"
 
 Where the writer log stops tells you the phase:
 
