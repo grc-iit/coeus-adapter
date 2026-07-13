@@ -106,7 +106,31 @@ def _ensure_connected():
         _pv_connected = pv_manager.connect(_pv_server, _pv_port)
         if not _pv_connected:
             logger.warning("Failed to connect to pvserver — visualization tools will fail")
+        else:
+            _isolate_mcp_view()
     return _pv_connected
+
+
+def _isolate_mcp_view():
+    """
+    Give this MCP client its own render view so pv_manager's Show() calls
+    never land in the streaming bridge's shared view.
+
+    In --multi-clients collaboration mode GetActiveView() returns the
+    bridge's view. Showing a filter (e.g. create_isosurface) there breaks
+    every subsequent bridge render server-side — the bridge (a batch
+    pvpython client that never processes collaboration sync) renders its
+    view empty from then on: the "empty screenshot" bug. With a dedicated
+    view, MCP-created filters render here via get_screenshot instead.
+    """
+    try:
+        from paraview.simple import CreateView, SetActiveView, GetActiveView
+        view = CreateView("RenderView")
+        view.ViewSize = [1024, 768]
+        SetActiveView(view)
+        logger.info("Created dedicated MCP render view (bridge view isolated)")
+    except Exception as e:
+        logger.warning(f"Could not create dedicated MCP view: {e}")
 
 STATUS_FILE_PATH = None
 TIMING_FILE = None
@@ -265,12 +289,32 @@ def get_screenshot():
     Returns:
         Image data or error message
     """
-    # Prefer reading the bridge-saved screenshot file. The bridge's own
-    # process renders its view (with the slice visualization attached)
+    # If this MCP client has shown filters (isosurface, slice, ...) in its
+    # own dedicated view, render THAT view: it is the only way the agent
+    # can see the filters it created (they are deliberately kept out of
+    # the bridge's view — see _isolate_mcp_view).
+    if _pv_connected:
+        try:
+            from paraview.simple import GetActiveView, SaveScreenshot
+            view = GetActiveView()
+            if view is not None and any(
+                    getattr(rep, "Visibility", 0) for rep in view.Representations):
+                import tempfile
+                import time as _time
+                t0 = _time.monotonic()
+                view.ResetCamera()
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    tmp_path = tmp.name
+                SaveScreenshot(tmp_path, view)
+                get_screenshot._last_pv_ms = (_time.monotonic() - t0) * 1000
+                return Image(path=tmp_path)
+        except Exception as e:
+            logger.warning(f"MCP-view screenshot failed, falling back: {e}")
+
+    # Otherwise read the bridge-saved screenshot file. The bridge's own
+    # process renders its view (volume rendering of the live V field)
     # after every SST step and atomically writes a PNG to SCREENSHOT_FILE.
-    # Reading that file gives us the true pixels the bridge produced,
-    # without relying on MCP's local ParaView client state — which does
-    # not know about the bridge's Show(slice, ...) call in another process.
+    # Reading that file gives us the true pixels the bridge produced.
     if SCREENSHOT_FILE and os.path.exists(SCREENSHOT_FILE):
         import time as _time
         t0 = _time.monotonic()

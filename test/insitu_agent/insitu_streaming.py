@@ -180,6 +180,98 @@ def setup_initial_display(fides, view):
     return display
 
 
+def _debug_view_state(view, tag, fides=None):
+    """Dump per-representation state (gated by INSITU_DEBUG_VIEW=1)."""
+    if os.environ.get("INSITU_DEBUG_VIEW") != "1":
+        return
+    try:
+        if fides is not None:
+            print(f"[insitu_streaming] DEBUG {tag}: fides npts="
+                  f"{fides.GetDataInformation().GetNumberOfPoints()}")
+        lut = GetColorTransferFunction("V")
+        pts = list(lut.RGBPoints)
+        pwf = GetOpacityTransferFunction("V")
+        print(f"[insitu_streaming] DEBUG {tag}: campos="
+              f"{[round(x, 3) for x in view.CameraPosition]} focal="
+              f"{[round(x, 3) for x in view.CameraFocalPoint]} nreps="
+              f"{len(view.Representations)}")
+        print(f"[insitu_streaming] DEBUG {tag}: LUT range "
+              f"[{pts[0]:.4g},{pts[-4]:.4g}] PWF={list(pwf.Points)}")
+        for rep in view.Representations:
+            try:
+                inp = rep.Input
+                iname = inp.GetXMLLabel() if hasattr(inp, "GetXMLLabel") else "?"
+                print(f"[insitu_streaming] DEBUG {tag}: rep input={iname} "
+                      f"vis={rep.Visibility} "
+                      f"type={getattr(rep, 'Representation', '?')} "
+                      f"color={list(getattr(rep, 'ColorArrayName', []))}")
+            except Exception as e:
+                print(f"[insitu_streaming] DEBUG {tag}: rep ? ({e})")
+    except Exception as e:
+        print(f"[insitu_streaming] DEBUG {tag}: dump failed: {e}")
+
+
+def _reassert_view_state(fides, view, display):
+    """
+    Re-assert the bridge's visualization state before rendering
+    (defense-in-depth against other collaboration clients).
+
+    NOTE: the actual fix for the "empty screenshot" bug lives in
+    insitu_mcp_server.py (_isolate_mcp_view): when another client
+    Show()s a filter into THIS view, every subsequent bridge render
+    comes out empty server-side, and this batch client cannot repair it
+    — it never processes collaboration sync, so the foreign
+    representation isn't even visible in view.Representations here
+    (verified: camera restore, LUT restore, and rep-hiding all failed
+    to fix it). What this function CAN protect against: another client
+    pushing its default camera into the shared view (ResetCamera is an
+    RPC that always executes server-side and refits to the data), a
+    hidden volume display, and shared 'V' transfer functions rescaled
+    to a degenerate range.
+    """
+    try:
+        SetActiveView(view)
+        SetActiveSource(fides)
+        view.ResetCamera()
+        if display is None:
+            return
+        # Hide any representation another client showed into this view
+        # (e.g. the MCP server's create_isosurface). Rendering a foreign
+        # filter here re-executes it, which re-pulls the streaming Fides
+        # reader outside the bridge's PrepareNextStep cycle; with no SST
+        # step ready the reader delivers an empty grid and EVERY rep in
+        # the view (volume included) renders empty from then on.
+        try:
+            own_id = display.GetGlobalIDAsString()
+            for rep in view.Representations:
+                try:
+                    if (rep.GetGlobalIDAsString() != own_id
+                            and getattr(rep, "Visibility", 0)):
+                        rep.Visibility = 0
+                        print("[insitu_streaming] WARN: hid foreign "
+                              "representation in bridge view (filters from "
+                              "other clients render in their own session)")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        if not display.Visibility:
+            print("[insitu_streaming] WARN: volume display was hidden by "
+                  "another client; re-showing")
+            display.Visibility = 1
+        try:
+            rmin, rmax = fides.PointData["V"].GetRange(0)
+        except Exception:
+            return
+        if rmax > rmin:
+            lut = GetColorTransferFunction("V")
+            lut.RescaleTransferFunction(rmin, rmax)
+            pwf = GetOpacityTransferFunction("V")
+            pwf.RescaleTransferFunction(rmin, rmax)
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: view-state reassert failed: {e}")
+
+
 def _write_timing_record(timing_file, record):
     """Append a timing record as a JSON line."""
     if not timing_file:
@@ -287,6 +379,9 @@ def streaming_loop(args, state):
             # Force the Fides source to re-pull data for the newly-prepared
             # step so downstream filters re-execute on fresh V values.
             fides.UpdatePipeline()
+
+            _debug_view_state(view, f"pre-reassert step {state.step}", fides)
+            _reassert_view_state(fides, view, display)
 
             if display:
                 display.RescaleTransferFunctionToDataRange()
