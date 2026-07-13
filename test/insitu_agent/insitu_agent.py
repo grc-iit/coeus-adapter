@@ -414,6 +414,18 @@ async def main():
         "--max-wall-seconds", type=float, default=600.0,
         help="Max agent-loop wall time in seconds (safety cap)",
     )
+    parser.add_argument(
+        "--mcp-server-script", type=str, default=None,
+        help="Path to the MCP server script to spawn (default: "
+             "insitu_mcp_server.py next to this file). Lets other "
+             "simulations (e.g. Xcompact3d TGV) reuse this agent with "
+             "their own MCP server.",
+    )
+    parser.add_argument(
+        "--system-prompt-file", type=str, default=None,
+        help="Read the agent system prompt from a file (default: the "
+             "built-in Gray-Scott prompt)",
+    )
 
     args = parser.parse_args()
 
@@ -437,10 +449,15 @@ async def main():
         with open(args.prompt_file, "r") as f:
             args.prompt = f.read()
 
+    if args.system_prompt_file:
+        global SYSTEM_PROMPT
+        with open(args.system_prompt_file, "r") as f:
+            SYSTEM_PROMPT = f.read()
+
     script_dir = Path(__file__).resolve().parent
     status_file = args.status_file or str(script_dir / "streaming_status.json")
 
-    mcp_server_script = str(script_dir / "insitu_mcp_server.py")
+    mcp_server_script = args.mcp_server_script or str(script_dir / "insitu_mcp_server.py")
     mcp_args = [
         mcp_server_script,
         "--server", args.server_host,
