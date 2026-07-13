@@ -33,8 +33,7 @@ export OMPI_MCA_osc='^ucx'
 export OMPI_MCA_btl_tcp_if_include=eno1
 export OMPI_MCA_oob_tcp_if_include=eno1
 
-export ANTHROPIC_BASE_URL="https://yxai.anthropic.edu.pl"
-export ANTHROPIC_API_KEY="sk-4TbsHfCmmzbsvw4Ynzk2tiZDWMIv1jwtL1x94ELsgnxYUDHR"
+: "${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY to your sk-ant-... key}"
 
 echo "============================================="
 echo "  Gray-Scott L=256 F=0.08 k=0.03 dt=1.0"
