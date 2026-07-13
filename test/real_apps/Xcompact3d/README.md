@@ -300,12 +300,12 @@ pvbatch test/real_apps/Xcompact3d/catalyst/tgv-pipeline.py \
 ```
 
 The contact file `tgv.bp.sst` appears in `output_location` (NFS-shared);
-remove stale ones before a rerun. jarvis parser gotchas: `configure`
-silently ignores `x=false` and any value equal to the menu default — edit
-`jarvis-pipelines/pipelines/coeus-xcompact3d/pipeline.yaml`, then run
-`jarvis pkg configure coeus-xcompact3d.jarvis_coeus.Incompact3d` with no
-args to re-materialize. `jarvis ppl kill` does not kill mpirun app ranks
-(`pkill xcompact3d` on all nodes before a rerun).
+remove stale ones before a rerun. The jarvis parser bugs (`configure`
+silently ignoring `x=false` and values equal to the menu default) were
+fixed and re-verified 2026-07-11 — `jarvis pkg configure
+coeus-xcompact3d.jarvis_coeus.Incompact3d key=value` now takes effect
+directly (confirm with `jarvis ppl print`). `jarvis ppl kill` does not
+kill mpirun app ranks (`pkill xcompact3d` on all nodes before a rerun).
 
 ### 5.4 Verified experiments (2026-07-09/10, Ares, commits 41577ab/ded9a99)
 
@@ -409,6 +409,8 @@ Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
 | `adios2-hermes-dissipation-trigger.xml` | example engine config (trigger parameters) |
 | `catalyst/tgv-pipeline.py` | pvbatch SST consumer (renders a vort slice per received step) |
 | `catalyst/tgv-fides.json` | Fides data model for the TGV stream (no `step_information` — the writer emits no step variable) |
+| `catalyst/TGV_INSITU_AGENT.md` | interactive AI-agent consumer (pvserver + streaming bridge + MCP server; verified gated end-to-end 2026-07-11) |
+| `catalyst/tgv_insitu_streaming.py` / `tgv_insitu_mcp_server.py` / `run_tgv_consumer.sh` | the agent-stack pieces (see the doc above) |
 | `../../jarvis/jarvis_coeus/jarvis_coeus/Incompact3d/` | jarvis package: SST + trigger knobs, `config/hermes_{sst,trigger}.xml` |
 | `2decomp-fft/src/io.f90` | `decomp_2d_register_derived_*` helpers |
 | `Incompact3d/src/Case-TGV.f90` | `visu_tgv_init` registrations, native derived fields |
