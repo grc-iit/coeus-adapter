@@ -356,6 +356,12 @@ void HermesEngine::Init_() {
       }
     }
   } else if (params.find("TriggerVariable") != params.end()) {
+    // Scalar-statistic trigger over a single variable. TriggerType selects the
+    // statistic: "variance" (default) pools per-block variances (or a raw-field
+    // pass); "mean" pools an ADIOS2 derived per-block MEAN N_b-weighted into the
+    // exact global mean (e.g. derive/V2mean = mean(|v|^2) = 3*T* for the LAMMPS
+    // velocity-Verlet temperature trigger). Both share the threshold/baseline/
+    // rising-edge/inspect-window machinery below.
     trigger_variable_ = params["TriggerVariable"];
     if (params.find("TriggerSumVariable") != params.end()) {
       trigger_sum_variable_ = params["TriggerSumVariable"];
@@ -367,9 +373,10 @@ void HermesEngine::Init_() {
       trigger_baseline_ratio_ = std::stod(params["TriggerBaselineRatio"]);
     }
     trigger_enabled_ = (trigger_threshold_ > 0.0 || trigger_baseline_ratio_ > 0.0);
+    const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
     if (mpi_rank == 0) {
       if (trigger_enabled_) {
-        std::cout << "Trigger: variance(" << trigger_variable_ << ")"
+        std::cout << "Trigger: " << stat_name << "(" << trigger_variable_ << ")"
                   << (trigger_sum_variable_.empty()
                           ? ""
                           : " sum_var=" + trigger_sum_variable_)
@@ -1077,19 +1084,26 @@ bool HermesEngine::EvaluateTrigger_() {
   if (trigger_type_ == "dissipation") {
     return EvaluateDissipationTrigger_();
   }
-  // Prefer the ADIOS2 derived-quantity path: if TriggerVariable names a
-  // derived variable (e.g. "derive/VarV" = variance(x)), pool the per-block
-  // variances it computed this step; otherwise fall back to a direct pass
-  // over the raw field. The branch is rank-uniform (same DefineDerived-
-  // Variable calls everywhere), so both paths stay collective.
+  // Compute the scalar statistic for this step. TriggerType=mean pools an
+  // ADIOS2 derived per-block MEAN into the exact N_b-weighted global mean
+  // (e.g. derive/V2mean = mean(|v|^2) = 3*T* for the LAMMPS temperature
+  // trigger). Otherwise (variance): if TriggerVariable names a derived
+  // variance (e.g. "derive/VarV" = variance(x)) pool the per-block variances
+  // it computed this step, else fall back to a direct pass over the raw field.
+  // Every branch is rank-uniform (same DefineDerivedVariable calls everywhere),
+  // so all stay collective.
   double stat;
-  auto const &derivedMap = m_IO.GetDerivedVariables();
-  auto dit = derivedMap.find(trigger_variable_);
-  if (dit != derivedMap.end()) {
-    stat = ComputeGlobalVarianceDerived_(
-        dynamic_cast<adios2::core::VariableDerived *>(dit->second.get()));
+  if (trigger_type_ == "mean") {
+    stat = ComputeGlobalBlockMean_(trigger_variable_);
   } else {
-    stat = ComputeGlobalVariance_(trigger_variable_);
+    auto const &derivedMap = m_IO.GetDerivedVariables();
+    auto dit = derivedMap.find(trigger_variable_);
+    if (dit != derivedMap.end()) {
+      stat = ComputeGlobalVarianceDerived_(
+          dynamic_cast<adios2::core::VariableDerived *>(dit->second.get()));
+    } else {
+      stat = ComputeGlobalVariance_(trigger_variable_);
+    }
   }
   trigger_last_stat_ = stat;
   if (std::isnan(stat)) {
@@ -1122,17 +1136,18 @@ bool HermesEngine::EvaluateTrigger_() {
 
   // Guard on the MPI rank: the consensus rank is not guaranteed to include 0
   // when the runtime (and its rankConsensus pool) outlives a previous run.
+  const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
   if (m_Comm.Rank() == 0) {
     engine_logger->info(
-        "Trigger FIRED at step {}: variance({}) = {} (threshold {}, baseline {},"
+        "Trigger FIRED at step {}: {}({}) = {} (threshold {}, baseline {},"
         " ratio {}), streaming {} step(s)",
-        currentStep, trigger_variable_, stat, trigger_threshold_,
+        currentStep, stat_name, trigger_variable_, stat, trigger_threshold_,
         trigger_baseline_, trigger_baseline_ratio_, trigger_inspect_steps_);
     std::ofstream log(trigger_log_file_, std::ios::app);
     if (log) {
       log << "{\"event\":\"trigger_fired\",\"step\":" << currentStep
           << ",\"variable\":\"" << trigger_variable_ << "\""
-          << ",\"stat\":\"variance\",\"value\":" << stat
+          << ",\"stat\":\"" << stat_name << "\",\"value\":" << stat
           << ",\"threshold\":" << trigger_threshold_
           << ",\"baseline\":" << trigger_baseline_
           << ",\"baseline_ratio\":" << trigger_baseline_ratio_
