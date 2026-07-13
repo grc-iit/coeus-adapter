@@ -198,6 +198,12 @@ void CatalystExecute();
   //   TriggerYellowFraction / TriggerRedFraction   eps_frac thresholds (0.05 / 0.15)
   //   TriggerYellowNuRatio  / TriggerRedNuRatio    nu_ratio thresholds (1.05 / 1.2)
   //   TriggerMetricsLogFile  optional JSONL of every step's metrics (rank 0)
+  // TriggerType selects the statistic/scheme: "variance" (default) pools
+  // per-block variance of TriggerVariable; "mean" pools an ADIOS2 derived
+  // per-block MEAN N_b-weighted into the exact global mean (e.g.
+  // derive/V2mean = mean(|v|^2) = 3*T* for the LAMMPS temperature trigger),
+  // sharing the threshold/baseline/inspect-window path; "dissipation" is the
+  // two-stage Yellow/Red numerical-dissipation scheme below.
   std::string trigger_type_ = "variance";
   std::string trigger_ke_variable_;
   std::string trigger_enst_variable_;
