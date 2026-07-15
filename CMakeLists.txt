@@ -197,6 +197,17 @@ if(debug_mode)
     add_compile_definitions(debug_mode)
 endif ()
 add_subdirectory(src)
+
+#------------------------------------------------------------------------------
+# Optional add-on operators (currently: time-derivative). OFF by default; when
+# ON, builds standalone CTE-consumer tools that never touch the engine.
+# (hash() is an ADIOS2 derived variable and needs no target here — see
+# addons/HASH.md.)
+#------------------------------------------------------------------------------
+option(COEUS_ENABLE_OPERATORS "Build add-on consumer tools (time-derivative)" OFF)
+if(COEUS_ENABLE_OPERATORS)
+  add_subdirectory(addons)
+endif()
 #add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------
