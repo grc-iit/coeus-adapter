@@ -1,0 +1,65 @@
+# Gray-Scott collapse-warning trigger -> AI-agent verdict -> early stop.
+#
+# The saturating regime (F=0.08, k=0.03) forms a pattern then homogenises to the
+# uniform steady state V*=0.592 ("expands to blank"). The engine's variance
+# trigger runs in WARNING mode: it arms when variance rises past
+# trigger_baseline_ratio x baseline (~20x here) and warns when it collapses back
+# to <= trigger_collapse_baseline_ratio x baseline (~13x) -- at output ~23 for
+# L=64. The warning streams the flagged steps (23-26) over SST to the agent; the
+# agent inspects them and calls the MCP tool fire_stop_simulation, which writes
+# <out_file>.stop and halts the run early (~output 26 of 100). See
+# docs/BUILD_AND_RUN_GRAY_SCOTT.md Section 7. The pattern-forming regime
+# (F=0.03, k=0.062) never arms, so it never warns and never stops.
+#
+# Load:  jarvis ppl load yaml <this file>
+#        jarvis ppl print | grep -E "trigger|collapse|engine|F:|k:"
+#        jarvis ppl kill && jarvis ppl run
+name: coeus-gray-scott-warn
+env:
+  TMPDIR: "/home/hxu40/iowarp_prte_tmp"
+  # See gray-scott.yaml: a literal, per-node /dev/shm dir shared by the clio
+  # daemon (pssh) and the application ranks (mpiexec -x).
+  CLIO_MEMFD_DIR: "/dev/shm/clio_hxu40"
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    swim_enabled: false
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.adios2_gray_scott
+    pkg_name: jarvis_coeus.adios2_gray_scott
+    # --- domain / physics: the saturating regime ---
+    L: 64
+    nprocs: 4
+    ppn: 4
+    out_file: "${HOME}/iowarp/gs_warn.bp"
+    F: 0.08
+    k: 0.03
+    dt: 1.0
+    plotgap: 50
+    steps: 5000
+    noise: 0.01
+    checkpoint: false
+    # --- derived-variable engine (declares derive/VarV = variance(V)) ---
+    engine: "hermes_derived"
+    # --- collapse-WARNING trigger (engine warns; agent fires) ---
+    trigger: true
+    trigger_baseline_ratio: 20          # arm once variance >= 20x baseline (peaked)
+    trigger_warn_on_collapse: true      # warn on the collapse, not the rise
+    trigger_collapse_baseline_ratio: 13 # warn when variance falls to <= 13x baseline (~output 23)
+    trigger_inspect_steps: 4            # stream 4 steps (23-26) to the agent

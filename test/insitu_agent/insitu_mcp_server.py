@@ -18,6 +18,7 @@ import os
 import sys
 import io
 import json
+import time
 import logging
 import argparse
 from pathlib import Path
@@ -132,9 +133,62 @@ def _isolate_mcp_view():
     except Exception as e:
         logger.warning(f"Could not create dedicated MCP view: {e}")
 
+def _refresh_mcp_view(view):
+    """
+    Force this client's filters to re-execute on the CURRENT (bridge-advanced)
+    data before rendering, so get_screenshot never serves a stale frame.
+
+    Why (measured 2026-07-15): the bridge advances the shared Fides reader in
+    ITS OWN session (PrepareNextStep + UpdatePipeline); nothing marks THIS
+    client's proxies dirty, so the representation of a filter created here
+    (e.g. create_isosurface) kept re-delivering cached geometry — over a
+    4-step window the bridge rendered 4 distinct frames while this view
+    rendered only 2, even though V's server-side range changed every step.
+    A bare UpdatePipeline() does NOT fix it (verified: md5s unchanged): the
+    proxy-layer NeedsUpdate flag gates representation re-delivery and it is
+    never set from this client.
+
+    The refresh: for each visible representation whose input is NOT the
+    streaming reader itself, re-push all its properties (bumps the server-side
+    VTK MTime so the filter genuinely re-executes against the reader's current
+    cached output) and update its pipeline. The Fides reader is deliberately
+    left untouched — forcing IT to re-execute outside the bridge's
+    PrepareNextStep cycle delivers an empty grid (the empty-screenshot failure
+    mode). Reps showing the reader directly are only marked dirty so they
+    re-deliver its current output without re-executing it.
+
+    Set INSITU_MCP_NO_REFRESH=1 to disable (A/B harness for the stale-render
+    bug this fixes; see probe_mcp_view.py).
+    """
+    if os.environ.get("INSITU_MCP_NO_REFRESH") == "1":
+        return
+    for rep in view.Representations:
+        try:
+            if not getattr(rep, "Visibility", 0):
+                continue
+            src = getattr(rep, "Input", None)
+            if src is None:
+                continue
+            xml_name = ""
+            try:
+                xml_name = src.SMProxy.GetXMLName() or ""
+            except Exception:
+                pass
+            if "fides" in xml_name.lower():
+                rep.SMProxy.MarkDirty(rep.SMProxy)
+                continue
+            src.SMProxy.MarkAllPropertiesAsModified()
+            src.UpdateVTKObjects()
+            src.UpdatePipeline()
+            rep.SMProxy.MarkDirty(rep.SMProxy)
+        except Exception as e:
+            logger.warning(f"MCP view refresh: rep refresh failed: {e}")
+
+
 STATUS_FILE_PATH = None
 TIMING_FILE = None
 SCREENSHOT_FILE = None
+STOP_FLAG_PATH = None  # <output>.stop written by fire_stop_simulation (agent verdict)
 
 
 def timed_tool(func):
@@ -262,18 +316,89 @@ def resume_streaming() -> str:
 
 @mcp.tool()
 @timed_tool
-def advance_step() -> str:
+def advance_step(timeout_s: float = 300.0) -> str:
     """
     Advance the stream by exactly one timestep, then pause again.
-    Useful for stepping through the simulation frame by frame.
+
+    This BLOCKS until the bridge confirms the new step has actually been read and
+    rendered, so any screenshot taken afterwards is guaranteed to show the new
+    timestep. On a trigger-gated stream it will block until the engine ships the
+    next flagged step -- that wait is expected, not a hang.
+
+    Args:
+        timeout_s: Max seconds to wait for the step to land.
+
+    Returns:
+        Status message naming the new timestep, or an explicit STALE warning if
+        the step never landed.
+    """
+    before = _read_streaming_status()
+    if before is None:
+        return ("Streaming status unavailable -- cannot confirm a step landed. Is "
+                "insitu_streaming.py running with --status-file?")
+    before_step = before.get("step", 0)
+    if before.get("ended"):
+        return f"Stream already ended at timestep {before_step}; cannot advance."
+
+    if not _write_streaming_command({"action": "advance_one"}):
+        return "Failed to send advance command."
+
+    # Block until the bridge's step counter increments. The bridge writes the
+    # status file only AFTER it has re-pulled the step and saved the screenshot,
+    # so a bumped counter means the frame on disk is fresh.
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        time.sleep(0.1)
+        status = _read_streaming_status()
+        if status is None:
+            continue
+        step = status.get("step", before_step)
+        if step > before_step:
+            return (f"Advanced to timestep {step} (was {before_step}). "
+                    f"Data and screenshot are fresh.")
+        if status.get("ended"):
+            return (f"Stream ended while advancing; still at timestep {before_step}. "
+                    f"No new frame -- do not treat the current image as a new step.")
+    return (f"TIMEOUT after {timeout_s:.0f}s waiting for a step past {before_step}. "
+            f"The stream is gated (no flagged step shipped yet) or the writer stalled. "
+            f"The current frame is STALE -- do NOT interpret it as a new timestep.")
+
+
+@mcp.tool()
+@timed_tool
+def fire_stop_simulation(reason: str = "") -> str:
+    """
+    Issue the FIRE verdict: stop the running simulation.
+
+    The engine's variance trigger only WARNS (streams the collapse steps to you)
+    when the pattern is expanding to a uniform/blank field. After inspecting the
+    streamed steps, call this to confirm the pattern has homogenised and the run
+    has nothing new to produce. It writes the halt flag the simulation polls, so
+    the simulation breaks its loop early and exits (saving compute).
+
+    Only fire once you have visually confirmed the collapse (e.g. isosurfaces
+    vanishing / the field going uniform). This is irreversible for the run.
+
+    Args:
+        reason: Short justification recorded in the flag (e.g. "V isosurface
+                vanished; field uniform ~0.59 — saturated").
 
     Returns:
         Status message
     """
-    success = _write_streaming_command({"action": "advance_one"})
-    if success:
-        return "Advance command sent. The stream will read one step and pause."
-    return "Failed to send advance command."
+    if not STOP_FLAG_PATH:
+        return ("No stop-flag path configured (start the MCP server with "
+                "--stop-flag <output>.stop). Cannot fire the stop.")
+    try:
+        # encoding is explicit: under a C/POSIX locale Python's default is ascii,
+        # so a non-ascii reason (e.g. an em-dash) would raise UnicodeEncodeError.
+        with open(STOP_FLAG_PATH, "w", encoding="utf-8") as f:
+            f.write(f"fired_by_agent reason={reason}\n")
+        logger.info(f"FIRE verdict: wrote halt flag {STOP_FLAG_PATH} (reason={reason})")
+        return (f"FIRE issued. Wrote halt flag {STOP_FLAG_PATH}. The simulation "
+                f"will detect it after its next output step and stop.")
+    except (OSError, UnicodeEncodeError) as e:
+        return f"Failed to write halt flag {STOP_FLAG_PATH}: {e}"
 
 
 # ============================================================================
@@ -302,6 +427,9 @@ def get_screenshot():
                 import tempfile
                 import time as _time
                 t0 = _time.monotonic()
+                # Without this, the frame is a cached render even after the
+                # bridge advanced the stream (see _refresh_mcp_view docstring).
+                _refresh_mcp_view(view)
                 view.ResetCamera()
                 with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
                     tmp_path = tmp.name
@@ -718,6 +846,7 @@ def list_commands() -> str:
         "pause_streaming: Pause the stream to explore current data",
         "resume_streaming: Resume auto-advancing through timesteps",
         "advance_step: Advance exactly one timestep then pause",
+        "fire_stop_simulation: FIRE verdict - halt the run (pattern went blank)",
         "",
         "--- Visualization ---",
         "create_isosurface: Create an isosurface on live data",
@@ -779,6 +908,12 @@ def main():
              "reads this file instead of asking pvserver to re-render from the "
              "MCP client's local state.",
     )
+    parser.add_argument(
+        "--stop-flag", type=str, default=None,
+        help="Path to the simulation halt flag (<output>.stop). When set, the "
+             "fire_stop_simulation tool writes it so the agent's fire verdict "
+             "halts the run (paired with the engine's collapse WARNING).",
+    )
 
     args = parser.parse_args()
 
@@ -788,11 +923,12 @@ def main():
     STATUS_FILE_PATH = os.path.abspath(args.status_file)
 
     # Store connection params for lazy connect (pvserver may not be up yet)
-    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE
+    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE, STOP_FLAG_PATH
     _pv_server = args.server
     _pv_port = args.port
     TIMING_FILE = args.timing_file
     SCREENSHOT_FILE = os.path.abspath(args.screenshot_file) if args.screenshot_file else None
+    STOP_FLAG_PATH = os.path.abspath(args.stop_flag) if args.stop_flag else None
 
     try:
         logger.info("Starting In-Situ ParaView MCP Server")

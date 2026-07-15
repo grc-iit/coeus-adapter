@@ -45,6 +45,12 @@
             <parameter key="TriggerInspectSteps" value="##TRIGGERINSPECTSTEPS##"/>
             <parameter key="TriggerRefire" value="##TRIGGERREFIRE##"/>
             <parameter key="TriggerLogFile" value="##TRIGGERLOG##"/>
+
+            <!-- Collapse-WARNING mode ("expanding to blank"): the engine arms
+                 on the rise and WARNS (streams the inspect window to the AI
+                 agent) when the statistic collapses back down. The engine only
+                 warns; the agent issues the fire verdict. Empty when disabled. -->
+            ##TRIGGERWARNLINES##
         </engine>
     </io>
 

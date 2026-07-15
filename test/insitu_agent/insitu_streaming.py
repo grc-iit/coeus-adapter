@@ -104,6 +104,22 @@ class StreamingState:
 streaming_state = StreamingState()
 
 
+def array_range(source, name="V"):
+    """
+    Return (min, max) of a point array straight from the server's data
+    information. This is the scalar ground truth for "did the data actually
+    change this step?" -- pixels cannot distinguish a cached render from a
+    genuinely unchanged field, but these numbers can.
+    """
+    try:
+        info = source.GetPointDataInformation().GetArray(name)
+        if info is None:
+            return None
+        return info.GetComponentRange(0)
+    except Exception:
+        return None
+
+
 def setup_fides_reader(json_file, bp_file, use_sst):
     """Create a Fides reader configured for SST streaming or BP file reading."""
     if json_file is None:
@@ -315,6 +331,15 @@ def streaming_loop(args, state):
                     print(f"[insitu_streaming] WARN: ignoring invalid render step '{s}'")
         print(f"[insitu_streaming] Render-only steps: {sorted(render_steps)}")
 
+    # Publish the status file (pipeline_ready=false) BEFORE the Fides setup:
+    # on a trigger-gated stream setup_fides_reader blocks in
+    # UpdatePipelineInformation until the engine ships the first flagged step,
+    # which can be minutes away. Without a status file the MCP server's
+    # advance_step returns "status unavailable" immediately instead of
+    # blocking for the window, and the agent gives up before the WARN fires
+    # (hit 2026-07-15 on the 64-rank run).
+    state.write_status()
+
     fides = setup_fides_reader(args.json_filename, args.bp_filename, args.staging)
     view = setup_render_view()
 
@@ -422,7 +447,9 @@ def streaming_loop(args, state):
         })
 
         tag = "RENDER" if should_render else "SKIP  "
-        print(f"[insitu_streaming] Step {state.step} {tag} "
+        vr = array_range(fides, "V")
+        vr_txt = f" V=[{vr[0]:.6f},{vr[1]:.6f}]" if vr else " V=[n/a]"
+        print(f"[insitu_streaming] Step {state.step} {tag}{vr_txt} "
               f"(sst={t_sst_end - t_sst_start:.3f}s "
               f"pipeline={t_pipeline_end - t_pipeline_start:.3f}s "
               f"render={t_render_end - t_render_start:.3f}s)")
