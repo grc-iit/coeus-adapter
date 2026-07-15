@@ -8,6 +8,23 @@ u_t = Du * (u_xx + u_yy + u_zz) - u * v^2 + F * (1 - u)  + noise * randn(-1,1)
 v_t = Dv * (v_xx + v_yy + v_zz) + u * v^2 - (F + k) * v
 ```
 
+---
+
+> **Running Gray-Scott with COEUS (Trigger-Render-Reason).** This directory is the
+> **variance** example of the Vigil
+> [Trigger-Render-Reason pipeline](../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md):
+> the engine watches `variance(V)` each output step and streams only the flagged
+> window to a ParaView / AI-agent consumer, which can early-stop the run.
+>
+> - **[docs/BUILD_AND_RUN_GRAY_SCOTT.md](../../../docs/BUILD_AND_RUN_GRAY_SCOTT.md)** —
+>   full end-to-end walkthrough: build → run → trigger-gated SST → agent → early stop.
+> - **[VARIANCE_TRIGGER.md](VARIANCE_TRIGGER.md)** — trigger configuration reference.
+>
+> The rest of this file is the upstream ADIOS2-examples Gray-Scott documentation
+> (simulation parameters and plain SST / Catalyst usage).
+
+---
+
 ## How to run
 
 Make sure MPI and ADIOS2 are installed and that the `PYTHONPATH` includes the ADIOS2 package.

@@ -1,9 +1,10 @@
 # Xcompact3d TGV — ADIOS2 derived quantities + dissipation trigger
 
 Single reference for the Xcompact3d "dark waste" case of the Vigil
-`trigger-render-reason` pipeline: silent numerical dissipation on an
-under-resolved Taylor-Green Vortex (TGV), detected in situ by a two-stage
-Yellow/Red trigger inside the Coeus hermes engine.
+[Trigger-Render-Reason pipeline](../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md):
+silent numerical dissipation on an under-resolved Taylor-Green Vortex (TGV),
+detected in situ by a two-stage Yellow/Red **dissipation** trigger inside the
+Coeus hermes engine.
 
 This document consolidates and supersedes the former `DISSIPATION_TRIGGER.md`
 and organizes the submodule docs
