@@ -399,6 +399,12 @@ async def main():
         help="Path to the bridge-saved screenshot PNG (passed to MCP server)",
     )
     parser.add_argument(
+        "--stop-flag", type=str, default=None,
+        help="Path to the simulation halt flag (<output>.stop), forwarded to "
+             "the MCP server so fire_stop_simulation can halt the run (agent "
+             "fire verdict paired with the engine's collapse WARNING).",
+    )
+    parser.add_argument(
         "--results-dir", type=str, default=None,
         help="Directory to save per-run artifacts (screenshots, token_usage.json)",
     )
@@ -470,6 +476,8 @@ async def main():
         mcp_args.extend(["--timing-file", args.timing_file])
     if args.screenshot_file:
         mcp_args.extend(["--screenshot-file", args.screenshot_file])
+    if args.stop_flag:
+        mcp_args.extend(["--stop-flag", args.stop_flag])
 
     mcp_command = args.pvpython or sys.executable
 

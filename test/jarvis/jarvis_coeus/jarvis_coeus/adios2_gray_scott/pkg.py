@@ -240,6 +240,33 @@ class Adios2GrayScott(Application):
                 'default': '',
             },
             {
+                'name': 'trigger_warn_on_collapse',
+                'msg': 'Collapse-WARNING mode: the trigger arms on the rise and '
+                       'WARNS (streams the inspect window to the AI agent) when '
+                       'the statistic collapses back down (pattern expanding to '
+                       'blank). The engine only warns; the agent fires the '
+                       'verdict. Suppresses the normal rising-edge fire.',
+                'type': bool,
+                'default': False,
+            },
+            {
+                'name': 'trigger_collapse_baseline_ratio',
+                'msg': 'Collapse-warning level: after arming (>= '
+                       'trigger_baseline_ratio x baseline), warn on the first '
+                       'step where the statistic falls to <= ratio x baseline '
+                       '(0 = off). Gray-Scott F=0.08/k=0.03: arm 20, collapse '
+                       '13 -> warns at output ~23.',
+                'type': float,
+                'default': 0,
+            },
+            {
+                'name': 'trigger_collapse_threshold',
+                'msg': 'Collapse-warning absolute level: warn once the '
+                       'statistic <= this value (0 = off; alt to the ratio)',
+                'type': float,
+                'default': 0,
+            },
+            {
                 'name': 'catalyst_stream',
                 'msg': 'Name of the Catalyst SST stream the reader connects to',
                 'type': str,
@@ -418,6 +445,23 @@ class Adios2GrayScott(Application):
         if not log_file:
             log_file = f'{self.shared_dir}/trigger_log.jsonl'
 
+        # Collapse-WARNING mode ("expanding to blank"). Emitted only when
+        # enabled; the engine warns (streams the inspect window to the agent)
+        # on the collapse. The agent issues the fire verdict.
+        stop_lines = ''
+        if self.config['trigger_warn_on_collapse']:
+            stop_lines = (
+                '<parameter key="TriggerWarnOnCollapse" value="true"/>\n'
+                '            <parameter key="TriggerCollapseBaselineRatio" value="'
+                f'{self.config["trigger_collapse_baseline_ratio"]}"/>\n'
+                '            <parameter key="TriggerCollapseThreshold" value="'
+                f'{self.config["trigger_collapse_threshold"]}"/>')
+            print(f'Trigger WARN-on-collapse: arm='
+                  f'{self.config["trigger_baseline_ratio"]}x '
+                  f'collapse_baseline_ratio='
+                  f'{self.config["trigger_collapse_baseline_ratio"]} '
+                  f'collapse_threshold={self.config["trigger_collapse_threshold"]}')
+
         print(f'Trigger: variance({trigger_var}) threshold='
               f'{self.config["trigger_threshold"]} baseline_ratio='
               f'{self.config["trigger_baseline_ratio"]} inspect_steps='
@@ -433,6 +477,7 @@ class Adios2GrayScott(Application):
             'TRIGGERINSPECTSTEPS': self.config['trigger_inspect_steps'],
             'TRIGGERREFIRE': self.config['trigger_refire'],
             'TRIGGERLOG': log_file,
+            'TRIGGERWARNLINES': stop_lines,
         }
 
     def start(self):

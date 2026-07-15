@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -145,6 +146,17 @@ int main(int argc, char **argv)
     log << "step\ttotal_gs\tcompute_gs\twrite_gs" << std::endl;
 #endif
 
+    // Trigger->agent->fire halt gate: the HermesEngine variance trigger only
+    // WARNS (streams the "expanding to blank" collapse steps to the AI agent);
+    // the agent issues the fire verdict via MCP (fire_stop_simulation), which
+    // writes this flag. Clear any stale flag, then poll it after each output.
+    const std::string stopFlag = settings.output + ".stop";
+    if (rank == 0)
+    {
+        std::remove(stopFlag.c_str());
+    }
+    MPI_Barrier(comm);
+
     for (int it = restart_step; it < settings.steps;)
     {
 #ifdef ENABLE_TIMERS
@@ -172,6 +184,25 @@ int main(int argc, char **argv)
             }
 
             writer_main.write(it, sim, rank);
+
+            // Honour the trigger's collapse stop: break collectively so the run
+            // ends early once the monitored object has expanded to blank.
+            {
+                int stop_local = std::ifstream(stopFlag).good() ? 1 : 0;
+                int stop_global = 0;
+                MPI_Allreduce(&stop_local, &stop_global, 1, MPI_INT, MPI_LOR,
+                              comm);
+                if (stop_global)
+                {
+                    if (rank == 0)
+                    {
+                        std::cout << "Simulation halting early at step " << it
+                                  << ": trigger STOP flag detected (" << stopFlag
+                                  << ")" << std::endl;
+                    }
+                    break;
+                }
+            }
         }
 
         if (settings.checkpoint && (it % settings.checkpoint_freq) == 0)

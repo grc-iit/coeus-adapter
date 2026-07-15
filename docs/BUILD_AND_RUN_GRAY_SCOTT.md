@@ -438,6 +438,28 @@ Gotchas (each cost a debugging session — details in
   the bridge's view; `INSITU_DEBUG_VIEW=1` on the bridge dumps per-render
   state. `get_screenshot` serves the bridge PNG for the live volume and
   renders the MCP view when the agent has created filters.
+- **Stale MCP-view renders** (found + fixed 2026-07-15; the dual of the bug
+  above). Once the agent created a filter, `get_screenshot`'s MCP-view path
+  re-served a **cached** frame even as the bridge advanced the stream: over
+  one 4-step window the bridge rendered 4 distinct frames while the MCP view
+  rendered 1 (md5-verified), with the field provably changing every step
+  (the bridge logs `V=[min,max]` per step precisely so that "cached render"
+  can be distinguished from "genuinely unchanged field" — pixels cannot).
+  Cause: the bridge advances the shared Fides reader in *its* session;
+  nothing ever sets the MCP client's proxy-layer `NeedsUpdate` flags, and
+  that flag — not data freshness — gates representation re-delivery, so a
+  bare `UpdatePipeline()` measurably changes nothing. Fix
+  (`_refresh_mcp_view()` in `insitu_mcp_server.py`, called by
+  `get_screenshot`): re-push every visible filter's properties
+  (`MarkAllPropertiesAsModified` + `UpdateVTKObjects` + `UpdatePipeline`,
+  plus `MarkDirty` on the representation) so the filter genuinely re-executes
+  against the reader's current data — while **never** touching the reader
+  proxy itself (forcing it to re-execute outside the bridge's
+  `PrepareNextStep` cycle is exactly the empty-screenshot failure mode
+  above). Regression harness: `test/insitu_agent/probe_mcp_view.py`
+  (Section 7.6). Residual: the MCP client's cached *metadata* (e.g. field
+  ranges from `get_available_arrays`) can still read stale; the bridge log's
+  per-step `V=[min,max]` is the scalar ground truth.
 - Model ids: use the official Anthropic API — set `ANTHROPIC_API_KEY` to
   your `sk-ant-...` key and pass e.g. `claude-haiku-4-5` / `claude-sonnet-4-5`.
 
@@ -481,6 +503,8 @@ Where the writer log stops tells you the phase:
 | stops right after `varFile: ...` | **Waiting for the SST reader** (the case above) — start Step B |
 | steps flow but no CTE data | check tags with `cte_search ".*" ".*"` on the writer node |
 | trigger mode: steps flow but the reader never receives anything | the trigger never fired — no `Trigger FIRED` line and an empty `trigger_log.jsonl`. Wrong regime (F=0.01/k=0.05 barely moves variance) or an absolute threshold at the wrong scale (see the L-portability note in Section 3); switch to `trigger_baseline_ratio` |
+| collapse-warn mode: sim steps normally but no `Trigger WARNING` ever appears | the arm level was never reached, usually because **`plotgap` is wrong**: the baseline is the variance at *output* 1 = sim step `plotgap`. The tuned arm=20×/collapse=13× levels assume `plotgap=50` (baseline ≈ 2.96e-3, the forming pattern). At `plotgap=1` the baseline is the noise-dominated step-1 variance (≈ 6.6e-4) and 20× is never crossed — the no-arm path is **silent** (Section 7.6). Forensic: rerun with `trigger_baseline_ratio=5`; the warn line then logs the run's actual `baseline`/`value` so you can see why 20× did not arm |
+| `ClientInit CRITICAL ERROR: Cannot connect to local server` from a block of app ranks at startup | those ranks landed on a node with **no clio daemon** — usually the *launch* host: jarvis's app mpirun places ranks on the node `jarvis ppl run` runs on (global-hostfile quirk). Launch from a node listed in the *pipeline* hostfile (Section 7.6) |
 
 Useful probes (writer node, `spack load iowarp@main`):
 
@@ -489,7 +513,332 @@ clio_run compose list        # active pools: admin, clio_cte_core, ram tier, ran
 cte_search ".*" ".*"         # list CTE tags/blobs (step_{N}_rank{R} per step)
 ```
 
-Note: gdb attach is blocked on Ares (`yama/ptrace_scope=1`); inspect
-`/proc/<pid>/task/*/wchan`, `/proc/<pid>/fd`, and CPU state instead. All
-ranks spinning at ~100% CPU is what a blocked clio task `Wait()` or an SST
-rendezvous wait looks like.
+Note: gdb attach is blocked on Ares (`yama/ptrace_scope=1`) unless the target
+preloads the opt-in shim `gray_scott_cases/sst_diag/allow_ptrace.so`
+(one `prctl(PR_SET_PTRACER_ANY)` call; inject pipeline-wide via an
+`LD_PRELOAD:` line in the loaded pipeline's `environment.yaml`). With the
+shim loaded, `gdb -p <pid> -batch -ex 'thread apply all bt'` works on any
+rank. Without it, inspect `/proc/<pid>/task/*/wchan`, `/proc/<pid>/fd`, and
+CPU state instead. All ranks spinning at ~100% CPU is what a blocked clio
+task `Wait()` or an SST rendezvous wait looks like — and also what plain
+compute looks like; check `wchan` before concluding "deadlock".
+
+## 7. Case study: collapse-warning trigger → agent verdict → early stop
+
+This is the end-to-end **trigger → render → reason** case used for the paper.
+The engine trigger only **warns**; an LLM agent renders the flagged steps and
+issues the **fire** verdict, which halts the run early to save compute. It
+composes Section 3 (the statistical trigger) and Section 4 (the agent), and
+adds a collapse-warning mode plus an agent-driven stop. Baked-in pipeline:
+`test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml`.
+
+### 7.1 The phenomenon — pattern formation, then saturation to "blank"
+
+Two Gray-Scott regimes at `L=64` (`Du=0.2 Dv=0.1 dt=1 noise=0.01 plotgap=50
+steps=5000` → 100 output steps):
+
+| Regime | F | k | Behaviour |
+|---|---|---|---|
+| **Saturating** | 0.08 | 0.03 | Seed grows, floods the domain, then **homogenises to a spatially uniform steady state** `V*=0.592, U*=0.186` by output ~28 — the exact analytic fixed point of the kinetics ((F+k)V² − F·V + F(F+k) = 0). No structure remains; a V-isosurface at any single value vanishes. |
+| **Pattern-forming** | 0.03 | 0.062 | A persistent, slowly-expanding hollow 3-D cage (labyrinth); never homogenises. |
+
+The cheap signal that separates them is the exact global **variance(V)** the
+engine already pools at every output step (Section 3). Measured, `L=64`
+(baseline = variance at output 0: `2.97e-3` saturate, `3.63e-4` spots):
+
+| output | 0 | 8 | 12 | 17 | 21 | 23 | 25 | 26 | 28 | ≥30 |
+|---|--|--|--|--|--|--|--|--|--|--|
+| **saturate** var/baseline | 1.0 | 11.9 | 21.6 | **29.6** (peak) | 18.7 | **8.5** | 2.0 | 0.74 | 0.05 | 0.02 |
+| **spots** var/baseline | 1.0 | 1.03 | 1.04 | ~1.1 | 1.10 | 1.14 | 1.13 | 1.14 | 1.15 | ≤1.2 |
+
+The saturating run's variance rises ~30× then **collapses back below baseline**
+as the field goes blank; the pattern-forming run's variance never exceeds
+~1.2× baseline. This rise-then-collapse, and its absence, is what the gate keys
+on. Both quantities are L-independent (they are relative to the run's own
+baseline), so the gate is scale-portable.
+
+### 7.2 The trigger–render–reason split (engine warns, agent fires)
+
+- **Trigger (engine) = WARNING.** With `trigger_warn_on_collapse=true` the
+  engine **arms** when variance rises past `trigger_baseline_ratio × baseline`
+  (the structure has formed/peaked) and **warns** on the first step it collapses
+  back to `≤ trigger_collapse_baseline_ratio × baseline` — the field is
+  expanding to blank. The warning opens the SST inspect window (streams the
+  flagged step + `trigger_inspect_steps − 1` more to the agent) and appends a
+  `trigger_warning` event to `trigger_log.jsonl`. **The engine never stops the
+  run.** The normal rising-edge fire (Section 3) is suppressed in this mode.
+- **Render (bridge).** `insitu_streaming.py` renders each streamed step
+  (Section 4).
+- **Reason (agent) = FIRE.** The agent inspects the streamed collapse steps via
+  MCP; once it confirms the pattern has gone blank (the V-isosurface has
+  vanished / slices are uniform), it calls the MCP tool
+  `fire_stop_simulation`, which writes `<out_file>.stop`. The Gray-Scott loop
+  polls that flag after each output and **halts early** (a collective
+  `MPI_LOR` break so all ranks stop together).
+
+Tuned on the measured curve, **arm = 20×, collapse-warn = 13×** → the engine
+warns at **output 23** (variance 8.5× baseline, falling from the 29.6× peak at
+output 17) and streams outputs **23–26** to the agent, which fires its verdict
+on 24–26. The pattern-forming run never arms (peak 1.2×), so it **never warns**
+— no false stop.
+
+### 7.3 Configuration
+
+Load the self-contained pipeline (config baked in):
+
+```bash
+spack load iowarp@main adios2-coeus@vigil
+jarvis ppl load yaml coeus-adapter/test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml
+jarvis ppl print | grep -E "trigger|collapse|engine|L:|F:|k:"   # VERIFY
+```
+
+or configure the existing `coeus-gray-scott` pipeline in place:
+
+```bash
+jarvis pkg configure coeus-gray-scott.jarvis_coeus.adios2_gray_scott \
+    L=64 nprocs=4 ppn=4 engine=hermes_derived \
+    F=0.08 k=0.03 dt=1 plotgap=50 steps=5000 checkpoint=false \
+    trigger=true trigger_baseline_ratio=20 \
+    trigger_warn_on_collapse=true trigger_collapse_baseline_ratio=13 \
+    trigger_inspect_steps=4
+```
+
+New knobs (extending the Section 3 trigger table):
+
+| Config | Default | Meaning |
+|---|---|---|
+| `trigger_warn_on_collapse` | `false` | Warn on the variance **collapse** (arm on the rise) instead of firing on the rise |
+| `trigger_collapse_baseline_ratio` | `0` | Warn when variance falls to ≤ ratio × baseline (after arming) |
+| `trigger_collapse_threshold` | `0` | Absolute collapse level (alternative to the ratio) |
+
+Agent-side (Section 4): the MCP server gained `fire_stop_simulation` and a
+`--stop-flag <out_file>.stop` argument that the tool writes.
+
+### 7.4 Run
+
+```bash
+# 1. pvserver on a non-producer node
+spack load paraview
+pvserver --multi-clients --server-port=11112 &
+
+# 2. Writer (Section 3 Step A). Blocks at SST rendezvous until the bridge connects.
+jarvis ppl kill && jarvis ppl run
+
+# 3. Bridge (Section 4) — streams the warned window to the agent.
+cd coeus-adapter/test/insitu_agent
+pvpython insitu_streaming.py -j $PWD/gs-fides.json \
+    -b /mnt/common/hxu40/coeus/iowarp/coeus-adapter/gs.bp \
+    --staging --server localhost --port 11112 --paused \
+    --screenshot-file /tmp/bridge_view.png --max-steps 8 &
+
+# 4. Agent — inspects the streamed collapse steps and fires the verdict.
+#    --stop-flag = the jarvis out_file + ".stop" (NFS-shared so the producer sees it).
+export ANTHROPIC_API_KEY=sk-ant-...
+PV=$(spack location -i paraview); SPY=$(spack location -i python)/bin/python3
+env PYTHONPATH="$PV/lib/python3.12/site-packages:$HOME/software/paraview_mcp" \
+    LD_LIBRARY_PATH="$PV/lib" \
+$SPY insitu_agent.py --provider anthropic --model claude-haiku-4-5 \
+    --pvpython "$PV/bin/pvpython" --server-host localhost --server-port 11112 \
+    --screenshot-file /tmp/bridge_view.png \
+    --stop-flag <out_file>.stop \
+    --prompt "Advance through the streamed steps, screenshot each, and describe V. \
+When the isosurface has vanished and the field is uniform (the pattern expanded to blank), \
+call fire_stop_simulation with a one-line reason."
+```
+
+The whole sequence (clean → writer via ssh to a daemon node → bridge → agent →
+result summary → teardown incl. the remote mpirun tree) is automated in the
+script of record `gray_scott_cases/run_agent_test.sh`; the engine-only path
+(no agent, `pvbatch` pulls the warned window) is
+`gray_scott_cases/run_warn_verify.sh`. Multi-rank operational gotchas are
+collected in Section 7.6.4.
+
+### 7.5 What we observed (`L=64`, measured)
+
+- **Trigger warning** at output 23 (variance 8.5× baseline, falling from the
+  29.6× peak at output 17); outputs 23–26 stream to the agent, ~130 MB/field
+  ships per step at L=256 (sub-second at L=64).
+- **Agent verdict**: after the field homogenises (a V-isosurface at 0.2–0.4
+  disappears because `V ≈ 0.592 >` isovalue everywhere; orthogonal slices go
+  uniform), the agent fires at output ~24–26.
+- **Early stop**: the writer halts at ~output 26 (sim step ~1300) instead of
+  100 (step 5000) — **~70% of the run skipped with no loss of science**: the
+  field is stationary at the analytic steady state from output ~28 on, so every
+  later output is byte-for-byte redundant (step-to-step change plateaus at a
+  constant tiny fluctuation).
+- **No false stop** on the pattern-forming `F=0.03 k=0.062` run: variance never
+  arms, so the trigger never warns and the run proceeds normally.
+
+Per-regime artifacts (2-D mid/max slices, 3-D isosurface sequences, the
+variance/collapse tables, and the state-machine validation) and the analysis
+scripts (`variance_gate.py`, `validate_warn.py`) are collected under
+`gray_scott_cases/`.
+
+**Verification status (2026-07-14 at 1/4/16 ranks; 2026-07-15 at 64 ranks —
+see Section 7.6).** The full pipeline is verified **live, end-to-end** on Ares
+(jarvis pipeline `coeus-gray-scott-warn`, `L=64`, `F=0.08`, `k=0.03`,
+`engine=hermes_derived`) — the previously-remaining engine → SST → agent join
+now runs on a live clio runtime:
+
+- **Engine WARNS** at output step 24: `variance(derive/VarV)` collapsed to
+  `0.0252` (baseline `0.00296`, armed at 20×, below the 13× collapse ratio) and
+  the engine logs *"pattern expanding to blank — streaming 4 step(s) to the
+  agent for the fire verdict"*, shipping exactly the 4-step window over SST
+  (`trigger_log.jsonl` records the `trigger_warning` events).
+- **Agent inspects** the window with Haiku (`claude-haiku-4-5`):
+  `advance_step` + `get_screenshot` ×4, describing the collapse *"structured
+  ring → diffuse → nearly uniform → uniform block"* (V filling toward the
+  `V*≈0.59` steady state).
+- **Agent FIRES** `fire_stop_simulation` → writes `<out_file>.stop`, and the
+  **writer halts early**: `Simulation halting early at step 1500` (vs 5000
+  configured). Agent cost: 11 tool calls, 4 screenshots, 51.7 s, ~$0.057.
+- **No false stop** on the pattern-forming `F=0.03 k=0.062` run: variance never
+  arms.
+
+The analytic steady state `V*=0.592` is matched to 4 significant figures, and
+the engine + simulation build clean. The engine-only path (writer → trigger →
+SST → reader, no agent) is separately re-verified free via a `pvbatch` reader
+that pulls all 4 flagged steps (`gray_scott_cases/run_warn_verify.sh`); the full
+agent run is `gray_scott_cases/run_agent_test.sh`.
+
+> **Operational gotcha (measured):** start a **fresh `pvserver` per agent run**.
+> A stale `--multi-clients` pvserver left over from a prior run makes *both* the
+> bridge and the MCP server block forever inside `Connect()` — the bridge log
+> stalls at *"Connecting to pvserver"* (never *"Starting streaming loop"*) and
+> the MCP at *"Connecting to ParaView"* (never *"Successfully connected"*). The
+> paused bridge then never opens SST, so the writer's rendezvous times out and
+> it exits (ranks → 0), which looks like a writer fault but is not. Kill the old
+> pvserver and relaunch before each run; verify with `ss -ltnp | grep <port>`.
+
+### 7.6 Scale-up to 64 ranks: the stale-frame bug, its fix, and the verified re-run (2026-07-15)
+
+This section documents the one failure the case study hit when scaled up, its
+root cause and fix, and the measured re-run. It matters for evaluation because
+the failure mode — **the agent reasoning on frozen images** — silently inverts
+the verdict while every engine-side number stays correct.
+
+#### 7.6.1 Problem: at 64 ranks the agent declined to fire
+
+Scaling the writer to 64 ranks (16/node × ares-comp-18/20/22/23, 2026-07-14)
+left the *trigger* stage bit-exact — the engine WARNed at output 24 with
+variance `0.02518` vs `0.02516` (16 ranks) / `0.02509` (1 rank): the pooled
+statistic is **rank-invariant** because the engine combines the exact global
+variance regardless of decomposition. But the *reason* stage failed: the
+agent answered **"structure stable → NO FIRE"**, no stop flag was written,
+and the run wasted its full configured length. The 16-rank run, on the same
+day, fired correctly.
+
+**Diagnosis.** md5 hashes of the screenshots the two agents saw: 16-rank
+3-of-4 distinct, 64-rank **5-of-6 byte-identical**. Both agents were shown
+essentially frozen frames and their verdicts on "nothing is changing" were
+arbitrary — one guessed right, one guessed wrong. A no-LLM probe then
+separated data from rendering: driving the bridge's command/status protocol
+directly over a 4-step window, the **bridge** produced 4/4 distinct frames
+with `V`'s server-side range changing every step (the scalar ground truth),
+while the **MCP view** — what `get_screenshot` serves once the agent has
+created an isosurface — produced 2/4. The data was fresh; the render was not.
+
+**Root cause.** In `--multi-clients` collaboration the agent's filter
+(`create_isosurface`) binds the *shared* server-side Fides reader, but the
+bridge advances that reader in *its own* client session. Nothing ever sets
+the MCP client's proxy-layer `NeedsUpdate` flags, and in ParaView that flag —
+not the upstream data's freshness — gates representation re-delivery. Calling
+`UpdatePipeline()` on the visible pipeline changes nothing (verified: md5s
+unchanged); the client keeps re-delivering cached contour geometry forever.
+
+**Fix** (`_refresh_mcp_view()` in `insitu_mcp_server.py`, invoked by
+`get_screenshot` before every MCP-view render): for each visible
+representation whose input is **not** the streaming reader, re-push all of
+the filter's properties (`MarkAllPropertiesAsModified` → `UpdateVTKObjects` →
+`UpdatePipeline`) — this bumps the server-side VTK MTime, so the filter
+genuinely re-executes against the reader's current (bridge-advanced) output —
+and mark the representation dirty. The Fides reader proxy is deliberately
+left untouched: forcing *it* to re-execute outside the bridge's
+`PrepareNextStep` cycle delivers an empty grid (the empty-screenshot failure
+of Section 4).
+
+#### 7.6.2 Regression harness (no LLM, reproducible A/B)
+
+`test/insitu_agent/probe_mcp_view.py` drives the *real* MCP tool functions
+in-process (connect as second client → `create_isosurface` → `advance_step`
+×4 → save both the bridge PNG and the MCP-view PNG per confirmed step) and
+reports distinct-frame counts. Against a live 4-rank L=64 SST stream
+(plain ungated `settings-staging.json` writer; stack = fresh pvserver →
+writer → `--paused` bridge):
+
+```bash
+cd coeus-adapter/test/insitu_agent
+PV=$(spack location -i paraview); SPY=$(spack location -i python)/bin/python3
+env PYTHONPATH="$PV/lib/python3.12/site-packages:$HOME/software/paraview_mcp" \
+    LD_LIBRARY_PATH="$PV/lib" \
+$SPY probe_mcp_view.py --steps 4 --out /tmp/probe_out \
+    --status-file <abs>/streaming_status.json --screenshot-file <abs>/bridge_view.png
+# INSITU_MCP_NO_REFRESH=1 disables the fix (bug-repro mode)
+```
+
+| | bridge frames distinct | MCP-view frames distinct | verdict |
+|---|---|---|---|
+| fix disabled (`INSITU_MCP_NO_REFRESH=1`) | 4/4 | **1/4** (frozen at creation frame) | FAIL |
+| fix enabled | 4/4 | **4/4** (isosurface visibly evolves) | PASS |
+
+The probe exits non-zero on FAIL, so it doubles as a CI-style regression
+check for the whole live stack.
+
+#### 7.6.3 Verified re-run: 64 ranks, agent fires correctly
+
+Re-run 2026-07-15 (writer 64 ranks @ 16/node on ares-comp-20/22/23/25;
+consumer stack — pvserver, bridge, MCP server, agent — on ares-comp-26;
+config exactly `gray-scott-warn-collapse.yaml` + `nprocs=64 ppn=16`;
+orchestrated by `gray_scott_cases/run_agent_test.sh`):
+
+- **Engine**: `Trigger WARNING at step 24: variance(derive/VarV) collapsed to
+  0.02521 (baseline 0.00296, arm 20x, collapse 13x)` — the same signature as
+  the 1/16/64-rank runs of 7/14, re-confirming rank-invariance.
+- **Agent** (`claude-haiku-4-5`): `advance_step` + `get_screenshot` ×4 — all
+  4 screenshots **byte-distinct** this time — described the homogenisation
+  and fired: *"V field uniform ~0.57; structure vanished; domain homogenized —
+  collapse complete"*.
+- **Early stop**: `Simulation halting early at step 3300` (vs 5000
+  configured). The halt step trails the warn step (1200) by the agent's
+  decision latency; the 64-rank sim advances ~30 steps/s while the LLM
+  inspects, so faster verdicts directly increase the saving.
+- **Cost**: 10 tool calls, 4 screenshots, 67 s, ≈ $0.08.
+
+The verdict flip (7/14 NO-FIRE → 7/15 FIRE) with the *only* consumer-side
+change being the frame-freshness fix is the cleanest evidence that the 7/14
+failure was a rendering artifact, not a model or trigger deficiency.
+
+#### 7.6.4 Reproduction gotchas (all encoded in the scripts of record)
+
+Each of these cost one failed run before the successful re-run; they are
+fixed in `run_agent_test.sh` / `insitu_streaming.py` but documented here
+because evaluators changing the setup will re-hit them:
+
+1. **`plotgap` is part of the trigger calibration, not a free knob.** "Warn
+   at step 24" means *output* step 24; the baseline is the variance at
+   *output 1 = sim step `plotgap`*. The arm=20×/collapse=13× levels of
+   Section 7.2 assume `plotgap=50` (baseline ≈ 2.96e-3, measured on the
+   forming pattern at sim step 50). At `plotgap=1` the baseline is the
+   noise-dominated step-1 variance (≈ 6.6e-4, 4.5× smaller) and the 20× arm
+   level is **never reached — silently**: no warn, no log entry, the gated
+   stream ships nothing, and every consumer just waits. Forensic technique:
+   set `trigger_baseline_ratio=5`; the warn event then logs the run's actual
+   `baseline` and `value`, showing why 20× did not arm.
+2. **Launch `jarvis ppl run` from a node that runs a clio daemon** (i.e. a
+   pipeline-hostfile node). The app's mpirun places ranks on the launch host
+   (global-hostfile quirk, Section 2); from a consumer-only node those ranks
+   die at `ClientInit CRITICAL ERROR: Cannot connect to local server` and
+   mpirun aborts. The orchestrator runs the writer via
+   `ssh <daemon-node> "bash -lc 'spack load ...; jarvis ppl run'"`.
+3. **`jarvis ppl kill` does not reach the mpirun tree of an ssh-launched
+   run** — kill it explicitly on the launch host afterwards
+   (`pkill -f '[a]dios2-gray-scott'` etc.; bracket the first character so
+   pkill cannot match its own command line).
+4. **The bridge publishes its status file before opening Fides**
+   (`insitu_streaming.py`). On a gated stream the Fides setup blocks until
+   the first flagged step ships — potentially minutes. Before this fix the
+   status file appeared only after that block, so an agent starting in the
+   pre-warn window got "status unavailable" from `advance_step` immediately
+   (instead of blocking on its timeout) and gave up before the warn ever
+   fired; whether a run succeeded depended on a race between the warn step
+   and the agent's start time.

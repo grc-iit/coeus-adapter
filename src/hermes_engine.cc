@@ -372,6 +372,22 @@ void HermesEngine::Init_() {
     if (params.find("TriggerBaselineRatio") != params.end()) {
       trigger_baseline_ratio_ = std::stod(params["TriggerBaselineRatio"]);
     }
+    // Collapse WARNING mode ("expanding to blank"): with TriggerWarnOnCollapse
+    // the trigger arms on the rise and WARNS (streams the inspect window to the
+    // agent) when the statistic falls back below TriggerCollapseThreshold /
+    // TriggerCollapseBaselineRatio. The engine only warns; the agent fires.
+    if (params.find("TriggerWarnOnCollapse") != params.end()) {
+      const std::string &v = params["TriggerWarnOnCollapse"];
+      trigger_warn_on_collapse_ =
+          (v == "1" || v == "true" || v == "TRUE" || v == "True");
+    }
+    if (params.find("TriggerCollapseThreshold") != params.end()) {
+      trigger_collapse_threshold_ = std::stod(params["TriggerCollapseThreshold"]);
+    }
+    if (params.find("TriggerCollapseBaselineRatio") != params.end()) {
+      trigger_collapse_baseline_ratio_ =
+          std::stod(params["TriggerCollapseBaselineRatio"]);
+    }
     trigger_enabled_ = (trigger_threshold_ > 0.0 || trigger_baseline_ratio_ > 0.0);
     const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
     if (mpi_rank == 0) {
@@ -383,7 +399,14 @@ void HermesEngine::Init_() {
                   << " threshold=" << trigger_threshold_
                   << " baseline_ratio=" << trigger_baseline_ratio_
                   << " inspect_steps=" << trigger_inspect_steps_
-                  << " refire=" << (trigger_refire_ ? "true" : "false") << std::endl;
+                  << " refire=" << (trigger_refire_ ? "true" : "false");
+        if (trigger_warn_on_collapse_) {
+          std::cout << " | WARN-on-collapse: arm=" << trigger_baseline_ratio_
+                    << "x collapse_baseline_ratio="
+                    << trigger_collapse_baseline_ratio_
+                    << " collapse_threshold=" << trigger_collapse_threshold_;
+        }
+        std::cout << std::endl;
       } else {
         std::cout << "Trigger: TriggerVariable set but no TriggerThreshold/"
                      "TriggerBaselineRatio - trigger disabled" << std::endl;
@@ -1113,6 +1136,17 @@ bool HermesEngine::EvaluateTrigger_() {
     trigger_baseline_ = stat;
   }
 
+  const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
+
+  // Collapse-WARNING mode: the engine does NOT fire on the rise. It arms on the
+  // rise and WARNS (opens the SST inspect window, streaming the flagged steps to
+  // the agent) when the statistic collapses back down -> "expanding to blank".
+  // The engine never stops the run; the AI agent inspects the streamed steps and
+  // issues the fire verdict (e.g. writes the halt flag the simulation polls).
+  if (trigger_warn_on_collapse_) {
+    return EvaluateCollapseWarning_(stat, stat_name);
+  }
+
   bool condition = false;
   if (trigger_threshold_ > 0.0 && stat >= trigger_threshold_) {
     condition = true;
@@ -1136,7 +1170,6 @@ bool HermesEngine::EvaluateTrigger_() {
 
   // Guard on the MPI rank: the consensus rank is not guaranteed to include 0
   // when the runtime (and its rankConsensus pool) outlives a previous run.
-  const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
   if (m_Comm.Rank() == 0) {
     engine_logger->info(
         "Trigger FIRED at step {}: {}({}) = {} (threshold {}, baseline {},"
@@ -1155,6 +1188,79 @@ bool HermesEngine::EvaluateTrigger_() {
     }
   }
   return true;
+}
+
+/**
+ * Collapse WARNING (collective) — "expanding to blank" alert to the AI agent.
+ *
+ * Called every output step when TriggerWarnOnCollapse=true. The engine only
+ * WARNS; it never stops the run. Two phases:
+ *   arm   : the statistic rises above TriggerBaselineRatio*baseline (the
+ *           monitored structure formed / peaked).
+ *   warn  : the FIRST armed step where the statistic falls back to
+ *           <= TriggerCollapseThreshold or <= TriggerCollapseBaselineRatio*
+ *           baseline. The field is homogenising toward uniform/blank. This
+ *           opens the SST inspect window (streams the warn step + the next
+ *           TriggerInspectSteps-1 to the agent) and logs a WARNING. The agent
+ *           inspects those steps and issues the fire verdict (e.g. writes the
+ *           halt flag the simulation polls).
+ * Saturating Gray-Scott (F=0.08,k=0.03): variance peaks ~30x then collapses;
+ * arm=20x, collapse=13x warns at output ~23 (streams 23-26). The spots regime
+ * peaks ~1.2x so it never arms and never warns. Returns true only on the warn
+ * step (so the caller streams the flagged window).
+ * */
+bool HermesEngine::EvaluateCollapseWarning_(double stat, const char *stat_name) {
+  // Arm on the rise (structure formed / peaked).
+  if (trigger_baseline_ratio_ > 0.0 && trigger_baseline_ > 0.0 &&
+      stat >= trigger_baseline_ratio_ * trigger_baseline_) {
+    trigger_armed_ = true;
+  }
+  if (!trigger_armed_ || trigger_warned_) {
+    return false;  // not yet peaked, or the warning already fired
+  }
+  if (trigger_collapse_threshold_ <= 0.0 &&
+      trigger_collapse_baseline_ratio_ <= 0.0) {
+    return false;  // collapse level not configured
+  }
+  bool collapsed = false;
+  if (trigger_collapse_threshold_ > 0.0 && stat <= trigger_collapse_threshold_) {
+    collapsed = true;
+  }
+  if (!collapsed && trigger_collapse_baseline_ratio_ > 0.0 &&
+      trigger_baseline_ > 0.0 &&
+      stat <= trigger_collapse_baseline_ratio_ * trigger_baseline_) {
+    collapsed = true;
+  }
+  if (!collapsed) {
+    return false;
+  }
+
+  // WARN: open the SST inspect window so the flagged steps stream to the agent.
+  trigger_warned_ = true;
+  trigger_has_fired_ = true;  // marks that a flagged window is open
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger WARNING at step {}: {}({}) collapsed to {} (baseline {}, "
+        "arm {}x, collapse {}x); pattern expanding to blank - streaming {} "
+        "step(s) to the agent for the fire verdict",
+        currentStep, stat_name, trigger_variable_, stat, trigger_baseline_,
+        trigger_baseline_ratio_, trigger_collapse_baseline_ratio_,
+        trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_warning\",\"step\":" << currentStep
+          << ",\"variable\":\"" << trigger_variable_ << "\""
+          << ",\"stat\":\"" << stat_name << "\",\"value\":" << stat
+          << ",\"baseline\":" << trigger_baseline_
+          << ",\"arm_ratio\":" << trigger_baseline_ratio_
+          << ",\"collapse_ratio\":" << trigger_collapse_baseline_ratio_
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  return true;  // fired_now -> stream the flagged window to the agent
 }
 
 /**

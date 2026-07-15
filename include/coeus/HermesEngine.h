@@ -229,8 +229,29 @@ void CatalystExecute();
   int trigger_fire_step_ = -1;
   int trigger_window_remaining_ = 0;     // > 0 while an inspect window is open
 
-  /** Evaluate the trigger for the current step (collective). Returns true on a new fire. */
+  // --- Collapse WARNING mode ("expanding to blank"), variance/mean triggers ---
+  // With TriggerWarnOnCollapse=true the trigger no longer fires on the rise;
+  // instead it ARMS when the statistic rises above TriggerBaselineRatio*baseline
+  // (the structure formed / peaked) and then WARNS on the first step where the
+  // statistic falls back to <= TriggerCollapseThreshold or
+  // <= TriggerCollapseBaselineRatio*baseline — the field is homogenising toward
+  // a uniform/blank state. The warning opens the SST inspect window (streams the
+  // firing step + TriggerInspectSteps-1 more to the agent) and logs a WARNING;
+  // it does NOT stop the run. The AI agent inspects the streamed steps and
+  // issues the fire verdict (e.g. writes the halt flag the simulation polls).
+  // On the saturating Gray-Scott (F=0.08,k=0.03) variance peaks ~30x then
+  // collapses; arm=20x, collapse=13x warns at output ~23 (streams 23-26). The
+  // spots regime never arms (variance peaks ~1.2x), so it never warns.
+  bool trigger_warn_on_collapse_ = false;
+  double trigger_collapse_threshold_ = 0.0;       // <= 0 disables the absolute test
+  double trigger_collapse_baseline_ratio_ = 0.0;  // <= 0 disables the ratio test
+  bool trigger_armed_ = false;                    // statistic rose above the arm level
+  bool trigger_warned_ = false;                   // collapse warning already fired
+
+  /** Evaluate the trigger for the current step (collective). Returns true on a new fire/warning. */
   bool EvaluateTrigger_();
+  /** Collapse warning: arm on the rise, warn (stream to agent) on the collapse (collective). */
+  bool EvaluateCollapseWarning_(double stat, const char *stat_name);
   /** Exact pooled global variance of `name` over all ranks (collective; NaN if unavailable). */
   double ComputeGlobalVariance_(const std::string &name);
   /** Pooled global variance from a derived per-block variance (collective; NaN if unavailable). */
