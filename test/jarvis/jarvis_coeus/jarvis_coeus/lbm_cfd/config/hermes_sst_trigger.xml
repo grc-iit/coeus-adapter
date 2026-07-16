@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+          LBM-CFD 2D through the COEUS hermes plugin engine with a VARIANCE
+          trigger GATING a Catalyst SST stream (Vigil trigger-render-reason
+          pipeline, render phase). Materialized by the jarvis lbm_cfd package
+          when trigger=true AND catalyst_stream is set.
+
+          Same variance(derive/VarVort) trigger as hermes_trigger.xml, plus a
+          separate SST writer: on fire, the firing step + the next
+          TriggerInspectSteps-1 steps are shipped over SST (vorticity + step +
+          time + stable + vigil/trigger_* scalars, re-Put from CTE); all other
+          steps ship nothing. The reader (consumer/lbm_sst_reader.py or a
+          pvbatch Fides pipeline) connects to CatalystStream and receives only
+          the flagged window.
+
+          RendezvousReaderCount=1: the writer BLOCKS in Init_ until a reader
+          connects (start the reader after `jarvis ppl run`). Script + DataModel
+          are required to enable the Catalyst path; in SST mode the writer does
+          NOT execute the Script (the external reader renders) -- they name the
+          reader's pipeline + Fides data model.
+
+          IO group name MUST be "SimulationOutput" (DeclareIO in main.cpp).
+        =====================================================================-->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+
+            <!-- Catalyst SST stream the reader connects to -->
+            <parameter key="CatalystStream" value="##CATALYSTSTREAM##"/>
+            <parameter key="Script" value="##SCRIPT##"/>
+            <parameter key="DataModel" value="##DATAMODEL##"/>
+            <parameter key="SSTDataTransport" value="##SSTTRANSPORT##"/>
+            ##SSTQUEUEPOLICYLINE##
+
+            <!-- Variance trigger on the derived vorticity variance -->
+            <parameter key="TriggerType" value="##TRIGGERTYPE##"/>
+            <parameter key="TriggerVariable" value="##TRIGGERVAR##"/>
+            ##TRIGGERSUMVARLINE##
+            <parameter key="TriggerThreshold" value="##TRIGGERTHRESHOLD##"/>
+            <parameter key="TriggerBaselineRatio" value="##TRIGGERBASELINERATIO##"/>
+            <parameter key="TriggerInspectSteps" value="##TRIGGERINSPECTSTEPS##"/>
+            <parameter key="TriggerRefire" value="##TRIGGERREFIRE##"/>
+            <parameter key="TriggerLogFile" value="##TRIGGERLOG##"/>
+        </engine>
+    </io>
+
+</adios-config>

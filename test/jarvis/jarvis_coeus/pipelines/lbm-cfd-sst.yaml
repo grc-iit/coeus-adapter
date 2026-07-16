@@ -1,0 +1,61 @@
+# LBM-CFD 2D variance(vorticity) trigger GATING a Catalyst SST stream (Vigil
+# trigger-render-reason, render phase). Same variance(derive/VarVort) trigger as
+# lbm-cfd.yaml, plus catalyst_stream: on fire the flagged window (trigger_inspect_
+# steps) ships over SST to an external reader; all other steps ship nothing.
+#
+# The writer BLOCKS in Init_ until a reader connects (RendezvousReaderCount=1).
+# Run order:
+#   jarvis ppl load yaml <this file>
+#   jarvis ppl kill && jarvis ppl run          # writer waits for the reader
+#   # in another shell, once <script_location>/lbm_sst.bp.sst appears:
+#   python3 .../lbm-cfd/consumer/lbm_sst_reader.py \
+#       --stream /mnt/common/hxu40/lbm_cfd/output/lbm_sst.bp --engine SST \
+#       --max-steps 3            # == trigger_inspect_steps
+#   # or the ParaView path: pvbatch lbm-pipeline.py -j lbm-fides.json \
+#   #     -b .../lbm_sst.bp --staging --num-steps 3
+name: coeus-lbm-cfd-sst
+
+env:
+  TMPDIR: "/home/hxu40/iowarp_prte_tmp"
+  CLIO_MEMFD_DIR: "/dev/shm/clio_hxu40"
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    swim_enabled: false
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.lbm_cfd
+    pkg_name: jarvis_coeus.lbm_cfd
+    nprocs: 4
+    ppn: 4
+    engine: "hermes"
+    script_location: "/mnt/common/hxu40/lbm_cfd/output"
+    out_file: "lbmcfd.bp"
+    force_unstable: true
+    derived: true
+    # --- variance(derive/VarVort) trigger ---
+    trigger: true
+    trigger_type: "variance"
+    trigger_variable: "derive/VarVort"
+    trigger_sum_variable: "derive/AddVort"
+    trigger_threshold: 1.0
+    trigger_inspect_steps: 3
+    # --- SST-gated render ---
+    catalyst_stream: "lbm_sst.bp"
+    sst_data_transport: "WAN"

@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--===================================================================
+        LBM-CFD 2D ADIOS2 output.
+        SST  = live streaming to an external consumer (default).
+        BP5  = write to a file (swap the engine type below, or use
+               --adios-config adios2-bp5.xml).
+        ===================================================================-->
+
+    <io name="SimulationOutput">
+        <engine type="SST">
+            <!-- Writer Open() blocks until this many readers connect, so no
+                 output steps are lost before the consumer attaches. -->
+            <parameter key="RendezvousReaderCount" value="1"/>
+            <parameter key="QueueLimit" value="4"/>
+            <!-- Never drop a step while a reader is attached. -->
+            <parameter key="QueueFullPolicy" value="Block"/>
+            <!-- WAN = TCP/sockets: portable across nodes without RDMA. -->
+            <parameter key="DataTransport" value="WAN"/>
+            <parameter key="OpenTimeoutSecs" value="120.0"/>
+        </engine>
+    </io>
+
+</adios-config>

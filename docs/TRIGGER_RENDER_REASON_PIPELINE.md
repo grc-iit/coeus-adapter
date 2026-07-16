@@ -43,6 +43,15 @@ configuration for that app:
 | `variance` | Gray-Scott (pattern collapse) | [gray-scott](../test/real_apps/gray-scott/README.md) · [full walkthrough](BUILD_AND_RUN_GRAY_SCOTT.md) |
 | `dissipation` | Xcompact3d TGV (numerical dissipation) | [Xcompact3d](../test/real_apps/Xcompact3d/README.md) |
 | `mean` | LAMMPS (kinetic temperature) | [lammps](../test/real_apps/lammps/README.md) |
+| `variance` | LBM-CFD 2D (instability onset) | [lbm-cfd](../test/real_apps/ascent-trame/examples/lbm-cfd/README.md) |
+
+The **LBM-CFD 2D** case additionally demonstrates a distinct *reason* action:
+the engine's `variance(vorticity)` trigger streams the flagged chaos-onset window
+to the agent, and the agent — instead of only stopping the run — can call
+`fire_rescue_simulation`, which writes a `.rescue` flag the simulation polls to
+**revert to its last checkpoint and double the timesteps** (halving the lattice
+speed to restabilise the D2Q9 scheme). `fire_stop_simulation` remains available
+for the halt verdict.
 
 ## Configuration
 

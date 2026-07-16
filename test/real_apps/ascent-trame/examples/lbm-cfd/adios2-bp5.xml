@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!-- LBM-CFD 2D ADIOS2 file output (BP5). Use for a self-contained run:
+         `./bin/lbmcfd --adios2 --adios-config adios2-bp5.xml --output-bp lbmcfd.bp`
+         then inspect with `bpls -l lbmcfd.bp`. -->
+
+    <io name="SimulationOutput">
+        <engine type="BP5">
+            <parameter key="NumAggregators" value="1"/>
+            <parameter key="AsyncWrite" value="false"/>
+        </engine>
+    </io>
+
+</adios-config>

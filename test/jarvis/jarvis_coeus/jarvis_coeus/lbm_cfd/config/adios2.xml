@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!-- LBM-CFD 2D BP5 file output (engine=bp5). IO group name MUST be
+         "SimulationOutput". Derived variables are computed by ADIOS2 core. -->
+
+    <io name="SimulationOutput">
+        <engine type="BP5">
+            <parameter key="NumAggregators" value="1"/>
+            <parameter key="AsyncWrite" value="false"/>
+        </engine>
+    </io>
+
+</adios-config>

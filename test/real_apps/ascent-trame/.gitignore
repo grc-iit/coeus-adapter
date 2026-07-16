@@ -1,0 +1,18 @@
+# Python virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Simulation output / visualization data
+initial_result/
+second_result/
+paraview/
+paraview_unstable/
+*.vts
+*.pvd
+*.bp
+
+# Build artifacts
+obj/*.o
+bin/
