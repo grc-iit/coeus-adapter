@@ -116,6 +116,22 @@ class Lammps(Application):
                 'default': False,
             },
             {
+                'name': 'derived',
+                'msg': 'Declare ADIOS2 derived variables in the dump '
+                       '(derive/VarVx=variance(vx), derive/AddVx=add(vx)); '
+                       'sets COEUS_LAMMPS_DERIVED. Use with '
+                       'trigger_variable=derive/VarVx',
+                'type': bool,
+                'default': False,
+            },
+            {
+                'name': 'derived_debug',
+                'msg': 'Set COEUS_DERIVED_DEBUG to log per-block derived '
+                       'shape/count/blob diagnostics from the engine',
+                'type': bool,
+                'default': False,
+            },
+            {
                 'name': 'trigger_type',
                 'msg': 'Trigger statistic: "variance" (variance(vx) ~= T*, '
                        'proven path) or "mean" (derive/V2mean = 3*T*)',
@@ -271,6 +287,12 @@ class Lammps(Application):
         os.environ['OMPI_MCA_osc'] = '^ucx'
         os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
         os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+
+        # Opt into ADIOS2 derived variables declared by the dump.
+        if self.config.get('derived'):
+            self.mod_env['COEUS_LAMMPS_DERIVED'] = '1'
+            if self.config.get('derived_debug'):
+                self.mod_env['COEUS_DERIVED_DEBUG'] = '1'
 
         lmp = self.config['lmp_bin']
         Exec(f'{lmp} -in input.lammps',
