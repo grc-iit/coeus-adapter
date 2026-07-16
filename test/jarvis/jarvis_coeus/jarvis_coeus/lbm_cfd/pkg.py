@@ -94,6 +94,17 @@ class LbmCfd(Application):
                 'default': False,
             },
             {
+                'name': 'agent_rescue',
+                'msg': 'Vigil REASON step: disable the simulation\'s automatic '
+                       'self-heal and poll the AI agent\'s verdict flags each '
+                       'output instead (<out_file>.rescue reverts to the last '
+                       'checkpoint + doubles the timesteps; <out_file>.stop '
+                       'halts). The agent inspects the gated SST window and '
+                       'decides. Flags land in script_location.',
+                'type': bool,
+                'default': False,
+            },
+            {
                 'name': 'derived',
                 'msg': 'Declare the ADIOS2 derived variables '
                        '(derive/VarVort=variance(vorticity), '
@@ -357,6 +368,10 @@ class LbmCfd(Application):
             flags.append('--no-derived')
         if self.config['force_unstable']:
             flags.append('--force-unstable')
+        if self.config['agent_rescue']:
+            # Reason step: the sim polls <out_file>.rescue / .stop each output
+            # instead of self-healing, so the AI agent owns the verdict.
+            flags.append('--agent-rescue')
         cmd = f'{lbm} ' + ' '.join(flags)
         Exec(cmd,
              MpiExecInfo(nprocs=self.config['nprocs'],
