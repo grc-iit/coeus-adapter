@@ -36,39 +36,77 @@ export ADIOS2_PLUGIN_PATH=<coeus>/build/bin
 | `trigger_threshold` | absolute variance threshold (stable ~1e-5, unstable ~1e8) | 1.0 |
 | `catalyst_stream` | non-empty ⇒ trigger-gated SST render stream | `''` (log-only) |
 | `sst_data_transport` / `sst_queue_full_policy` | SST transport / queue policy | WAN / engine default |
+| `agent_rescue` | **reason step**: turn off the sim's automatic self-heal and poll the agent's `<out_file>.rescue` / `.stop` verdict flags instead | false |
 
 ## Ready-to-run pipelines
 
-- **`pipelines/lbm-cfd.yaml`** — log-only fire demo (`force_unstable`,
-  `variance(derive/VarVort)` threshold 1.0). Fire events →
-  `<script_location>/lbm_trigger_log.jsonl`.
-- **`pipelines/lbm-cfd-sst.yaml`** — trigger-gated SST render. The writer blocks
-  until a reader connects; start the reader after `jarvis ppl run`:
+| pipeline | stages | what it does |
+|---|---|---|
+| `pipelines/lbm-cfd.yaml` | trigger | log-only fire → `<script_location>/lbm_trigger_log.jsonl` |
+| `pipelines/lbm-cfd-sst.yaml` | trigger + render | gated SST stream; a reader consumes the flagged window |
+| `pipelines/lbm-cfd-agent.yaml` | trigger + render + **reason** | the full loop: agent views the flagged frames and rescues the run |
+
+## The full Trigger-Render-Reason loop
+
+`pipelines/lbm-cfd-agent.yaml` runs all three stages. Three shells — the writer
+blocks in `Init_` until the SST reader connects (`RendezvousReaderCount=1`).
 
 ```bash
-jarvis ppl load yaml pipelines/lbm-cfd-sst.yaml
-jarvis ppl kill && jarvis ppl run          # writer waits for the reader
-# once <script_location>/lbm_sst.bp.sst appears, in an ISOLATED adios2-only env
-# (iowarp pollutes numpy — see the memory note), run the reader:
-python3 <lbm-cfd>/consumer/lbm_sst_reader.py \
-    --stream <script_location>/lbm_sst.bp --engine SST --max-steps 3
+# --- shell 1: WRITER (needs iowarp + coeus build/bin, per Prerequisites) ---
+jarvis ppl load yaml pipelines/lbm-cfd-agent.yaml
+jarvis ppl kill && jarvis ppl run                  # waits for the reader
+
+# --- shell 2: READER, once <script_location>/lbm_sst.bp.sst appears ---
+#     ISOLATED adios2-only env (see Gotchas)
+env -i HOME=$HOME bash -lc '
+  source <spack>/share/spack/setup-env.sh; spack load adios2-coeus@vigil
+  python3 <lbm-cfd>/consumer/lbm_sst_reader.py \
+      --stream <script_location>/lbm_sst.bp --engine SST --max-steps 3 \
+      --status-file /tmp/lbm_status.json --png-dir /tmp/lbm_pngs'
+
+# --- shell 3: AGENT, once /tmp/lbm_status.json appears ---
+#     ISOLATED system-python env; key from the environment, never on the CLI
+env -i HOME=$HOME PATH=/usr/bin:/bin bash -c '
+  export ANTHROPIC_API_KEY=sk-ant-...
+  /usr/bin/python3 <lbm-cfd>/consumer/lbm_agent.py --model claude-haiku-4-5 \
+      --status-file /tmp/lbm_status.json \
+      --rescue-flag <script_location>/lbmcfd.bp.rescue \
+      --stop-flag   <script_location>/lbmcfd.bp.stop'
 ```
 
-The reader receives only the flagged window (vorticity + `vigil/trigger_*`).
+`--max-steps` should equal `trigger_inspect_steps` (the gated stream ships
+exactly that many). The reason step needs `agent_rescue: true`, and the flag
+paths are `<script_location>/<out_file>.rescue|.stop` — note the base is the
+**ADIOS output name** (`lbmcfd.bp`), so it is `lbmcfd.bp.rescue`, not
+`lbmcfd.rescue`.
 
-## Reason step (rescue / stop)
+### Verified end-to-end (2026-07-16, Ares, single node)
 
-Run `lbmcfd` with `--agent-rescue` to disable the automatic self-heal and let an
-agent decide. The `consumer/lbm_insitu_mcp_server.py` MCP server exposes
-`inspect_latest_frame` (reads the reader's `--status-file`),
-`fire_rescue_simulation` (writes `<out>.rescue` → the sim reverts to its last
-checkpoint and doubles the timesteps) and `fire_stop_simulation` (writes
-`<out>.stop` → halt). The sim polls both flags each output step.
+```
+engine  Trigger FIRED at step 2: variance(derive/VarVort) = 209.2 (threshold 1)
+engine  SST flagged step 2/3/4 shipped        (window_left 3→2→1; nothing before the fire)
+reader  recv #0 step=188 vort[±2.17e3] [GATED fired=1 trigger_stat=209.2  fire_step=2]
+        recv #1 step=375 vort[±5.78e5] [GATED fired=0 trigger_stat=7.84e6 fire_step=2]
+        recv #2 step=563 vort[±1.63e5] [GATED fired=0 trigger_stat=3.93e5 fire_step=2]
+agent   "dense red/blue salt-and-pepper speckle at grid scale ... no coherent
+         von Karman street"  ->  fire_rescue_simulation
+sim     Agent RESCUE verdict at step 1688 -> revert to checkpoint 0,
+        timesteps 6000→12000, speed 0.060
+        final density 0.9466 / 1.0136 / 0.9952 at 12000/12000, 0 UNSTABLE after
+```
 
 ## Gotchas
 
+- **Both python consumers need isolated envs, for different reasons.** The
+  reader needs adios2's python — don't load `iowarp@main` in its shell (it
+  shadows numpy with a build for another python). The agent needs the *system*
+  python (mcp + anthropic) — run it under `env -i`, because spack puts
+  python3.12 packages on `PYTHONPATH` and python3.10 then imports the wrong
+  `anyio`, which kills the MCP stdio transport.
+- **`force_unstable` is the wrong case for a rescue** — it halts at step 400,
+  leaving no room to recover. Use `force_unstable: false` with `steps: 6000`
+  (u=0.12 diverges; one rescue doubling lands at 12000 / u=0.06 which is stable).
 - Single-node run: the app's `mpirun` uses the **global** `server.list`; point it
   at the local node for a local run.
 - `jarvis pkg configure force_unstable=false` is dropped (`false` == the menu
   default) — flip it via a dedicated YAML instead.
-- The SST reader needs adios2's python; don't load `iowarp@main` in its shell.

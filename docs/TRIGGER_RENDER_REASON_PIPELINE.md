@@ -45,13 +45,30 @@ configuration for that app:
 | `mean` | LAMMPS (kinetic temperature) | [lammps](../test/real_apps/lammps/README.md) |
 | `variance` | LBM-CFD 2D (instability onset) | [lbm-cfd](../test/real_apps/ascent-trame/examples/lbm-cfd/README.md) |
 
-The **LBM-CFD 2D** case additionally demonstrates a distinct *reason* action:
-the engine's `variance(vorticity)` trigger streams the flagged chaos-onset window
-to the agent, and the agent — instead of only stopping the run — can call
-`fire_rescue_simulation`, which writes a `.rescue` flag the simulation polls to
-**revert to its last checkpoint and double the timesteps** (halving the lattice
-speed to restabilise the D2Q9 scheme). `fire_stop_simulation` remains available
-for the halt verdict.
+The **LBM-CFD 2D** case demonstrates a distinct *reason* action — the agent can
+**repair** the run instead of only stopping it. Its `variance(vorticity)` trigger
+streams the flagged chaos-onset window to the agent; the agent looks at the
+rendered frame and calls `fire_rescue_simulation`, which writes a `.rescue` flag
+the simulation polls to **revert to its last checkpoint and double the timesteps**
+(halving the lattice speed to restabilise the D2Q9 scheme). `fire_stop_simulation`
+remains available for the halt verdict.
+
+It is also the worked example of all three stages in **one continuous run**
+(`jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/lbm-cfd-agent.yaml`):
+
+```
+TRIGGER  engine: variance(derive/VarVort) = 209.2 >= 1.0  -> fires at output 2
+RENDER   engine ships exactly the 3 flagged steps over gated SST (nothing before
+         the fire), each carrying vigil/trigger_fired / _stat / _fire_step
+REASON   agent sees the frame ("grid-scale salt-and-pepper speckle ... no
+         coherent von Karman street") -> fire_rescue_simulation
+         -> sim reverts to checkpoint 0, 6000->12000 steps -> run recovers
+```
+
+The agent side (`consumer/lbm_agent.py` + `lbm_insitu_mcp_server.py`) is
+ParaView-free: the reader publishes a rendered PNG + stats, and the MCP server
+hands the image to the model via `get_frame_image`, so the verdict is made from
+the picture, not just the numbers.
 
 ## Configuration
 
