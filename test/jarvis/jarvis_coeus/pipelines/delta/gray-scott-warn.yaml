@@ -1,0 +1,56 @@
+name: coeus-gray-scott
+env:
+  CLIO_MEMFD_DIR: "/tmp/clio_memfd_${USER}_${HOSTNAME}"
+  # LIGHTBEAM_TCP_DEVICE: hsn0   # uncomment to pin daemon<->daemon ZMQ
+  #                              # to a specific Slingshot rail
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    sleep: 4
+
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+
+    dpe_type: "max_bw"                   
+    neighborhood: 1                     
+    default_target_timeout_ms: 30000     
+    poll_period_ms: 5000  
+    pool_query: "local"
+
+
+  - pkg_type: jarvis_coeus.adios2_gray_scott
+    pkg_name: jarvis_coeus.adios2_gray_scott
+    # --- domain / physics: the saturating regime ---
+    L: 64
+    nprocs: 4
+    ppn: 4
+    out_file: "${HOME}/iowarp/gs_warn.bp"
+    F: 0.08
+    k: 0.03
+    dt: 1.0
+    plotgap: 50
+    steps: 5000
+    noise: 0.01
+    checkpoint: false
+    # --- derived-variable engine (declares derive/VarV = variance(V)) ---
+    engine: "hermes_derived"
+    # --- collapse-WARNING trigger (engine warns; agent fires) ---
+    trigger: true
+    trigger_baseline_ratio: 20          # arm once variance >= 20x baseline (peaked)
+    trigger_warn_on_collapse: true      # warn on the collapse, not the rise
+    trigger_collapse_baseline_ratio: 13 # warn when variance falls to <= 13x baseline (~output 23)
+    trigger_inspect_steps: 4   
+
+# Environment configuration (optional)
+# env:
+#   WRP_CTE_LOG_LEVEL: "info"
+#   CTE_DEBUG: "0"
