@@ -1,4 +1,4 @@
-# LAMMPS through the hermes engine — kinetic-temperature trigger
+# LAMMPS through the hermes engine - kinetic-temperature trigger
 
 Single reference for the **LAMMPS** case of the Vigil
 [Trigger-Render-Reason pipeline](../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md):
@@ -28,7 +28,7 @@ This document consolidates and supersedes `RUNBOOK.md` and
 Dilute Lennard-Jones fluid with a timestep 10× too large (`dt*=0.05`): the
 kinetic temperature runs away from the `T*=0.75` set point and LAMMPS aborts
 with `ERROR: Lost atoms` around step 6. The trigger watches the **kinetic
-temperature**, built from the velocity field — the velocity-field analog of
+temperature**, built from the velocity field - the velocity-field analog of
 Gray-Scott's `variance(V)`.
 
 The temperature can be expressed three equivalent ways; all are supported, and
@@ -36,8 +36,8 @@ the two `variance` forms are the verified working paths:
 
 | Form | Expression | Value | Status |
 |---|---|---|---|
-| **raw-field variance** | `variance(vx)` — engine reads the `vx` CTE blob directly (`ComputeGlobalVariance_`) | ≈ `T*` | ✅ working (verified 2026-07-12) |
-| **derived variance** | `derive/VarVx = variance(vx)` + `derive/AddVx = add(vx)`, pooled by `ComputeGlobalVarianceDerived_` | ≈ `T*` | ✅ working — Gray-Scott path, **engine unchanged** |
+| **raw-field variance** | `variance(vx)` - engine reads the `vx` CTE blob directly (`ComputeGlobalVariance_`) | ≈ `T*` | ✅ working (verified 2026-07-12) |
+| **derived variance** | `derive/VarVx = variance(vx)` + `derive/AddVx = add(vx)`, pooled by `ComputeGlobalVarianceDerived_` | ≈ `T*` | ✅ working - Gray-Scott path, **engine unchanged** |
 | **mean of \|v\|²** | `derive/V2mean = mean(multiply(magnitude(vx,vy,vz),…))` = `3·T*` | `3·T*` | engine `TriggerType=mean` compiled in (see `DERIVED_QUANTITIES.md`) |
 
 `variance(vx)` per step (single rank, matches offline BP5 exactly):
@@ -78,7 +78,7 @@ variable `atoms {natoms, ncols}`, so ADIOS2 has no `vx` variable to trigger on.
 The modified `dump_custom_adios.cpp`:
 
 1. **De-interleaves named per-column variables**, each defined **the way
-   Gray-Scott defines a field** — global shape, local offset (`MPI_Scan`), local
+   Gray-Scott defines a field** - global shape, local offset (`MPI_Scan`), local
    count, all at *define* time:
    ```cpp
    const size_t nGlobal = atom->natoms;
@@ -148,7 +148,7 @@ trigger_sum_variable=derive/AddVx` (see `DERIVED_QUANTITIES.md`).
 | Config | Default | Meaning |
 |---|---|---|
 | `engine` | `hermes` | `bp4` (plain ADIOS) or `hermes` (plugin engine) |
-| `script_location` | — | NFS-shared run dir (materialized files + `lammps.bp`) |
+| `script_location` | - | NFS-shared run dir (materialized files + `lammps.bp`) |
 | `trigger` | `false` | enable the hermes-engine trigger |
 | `trigger_type` | `variance` | `variance` (raw `vx`) or `mean` (`derive/V2mean`) |
 | `trigger_variable` | `derive/VarVx` | set to `vx` for the raw-field path |
@@ -189,14 +189,14 @@ statistic is N_b-weighted per writer block).
   two-hostfile note.
 - **Temperature fires the explosion** (`dt*=0.05`). The subtle dense drift
   (`rho*=0.8442, dt*=0.02`) injects energy into *potential* energy while `T*`
-  stays ~0.76 — that sub-case needs a per-atom PE derived signal
+  stays ~0.76 - that sub-case needs a per-atom PE derived signal
   (`compute pe/atom`), not temperature.
 
 ## 7. File index
 
 | File | Role |
 |---|---|
-| `README.md` | this file — authoritative entry point |
+| `README.md` | this file - authoritative entry point |
 | `RUNBOOK.md` | dev log: build/run/internals, verified 2026-07-12 |
 | `DERIVED_QUANTITIES.md` | dev log: the derived `variance(vx)` path + the define-time-dims fix |
 | `adios2_config.xml` | standalone hermes-plugin config (IO group `custom`) |

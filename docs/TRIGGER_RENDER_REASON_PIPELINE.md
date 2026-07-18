@@ -3,15 +3,15 @@
 # Trigger-Render-Reason Pipeline
 
 *(Also called **Vigil**.)* A closed loop that turns a running simulation into a
-self-steering one — **detect an event, stream it out, and decide what to do**:
+self-steering one - **detect an event, stream it out, and decide what to do**:
 
-1. **Trigger** — every step, the engine evaluates a global statistic over a
+1. **Trigger** - every step, the engine evaluates a global statistic over a
    variable (collective across ranks). When it crosses a threshold (or a
    baseline ratio, or *collapses* back down), the step is flagged.
-2. **Render** — the flagged window (the firing step + a few more) is streamed
+2. **Render** - the flagged window (the firing step + a few more) is streamed
    over ADIOS2 **SST** to an external consumer: a ParaView/Catalyst viewer
    and/or an AI agent.
-3. **Reason** — the AI agent inspects the streamed steps and issues a verdict —
+3. **Reason** - the AI agent inspects the streamed steps and issues a verdict -
    e.g. calls the MCP tool `fire_stop_simulation`, which writes a `.stop` flag
    the simulation polls, halting the run early.
 
@@ -27,7 +27,7 @@ Selected with the `TriggerType` engine parameter:
 
 A **collapse-warning** mode (`TriggerWarnOnCollapse=true`) *arms* when the
 statistic rises past a baseline ratio (structure formed) and *warns* when it
-falls back down (the field is homogenising toward blank) — the agent then issues
+falls back down (the field is homogenising toward blank) - the agent then issues
 the fire verdict.
 
 The `variance` and `mean` statistics are read from ADIOS2
@@ -35,7 +35,7 @@ The `variance` and `mean` statistics are read from ADIOS2
 
 ## Example applications
 
-Each trigger type has a worked example under `test/real_apps/` — build, run, and
+Each trigger type has a worked example under `test/real_apps/` - build, run, and
 configuration for that app:
 
 | Trigger | Application | Guide |
@@ -45,7 +45,7 @@ configuration for that app:
 | `mean` | LAMMPS (kinetic temperature) | [lammps](../test/real_apps/lammps/README.md) |
 | `variance` | LBM-CFD 2D (instability onset) | [lbm-cfd](../test/real_apps/ascent-trame/examples/lbm-cfd/README.md) |
 
-The **LBM-CFD 2D** case demonstrates a distinct *reason* action — the agent can
+The **LBM-CFD 2D** case demonstrates a distinct *reason* action - the agent can
 **repair** the run instead of only stopping it. Its `variance(vorticity)` trigger
 streams the flagged chaos-onset window to the agent; the agent looks at the
 rendered frame and calls `fire_rescue_simulation`, which writes a `.rescue` flag
@@ -98,9 +98,9 @@ set (`TriggerKEVariable`, `TriggerEnstrophyVariable`, `TriggerNu`,
 
 ## Learn more / try it
 
-- **[BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md)** — full
+- **[BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md)** - full
   walkthrough, including the collapse-warning → agent → early-stop demo (§7).
-- **[test/real_apps/gray-scott/VARIANCE_TRIGGER.md](../test/real_apps/gray-scott/VARIANCE_TRIGGER.md)** — trigger config reference.
-- **[Ready-to-run pipeline](../test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml)** —
+- **[test/real_apps/gray-scott/VARIANCE_TRIGGER.md](../test/real_apps/gray-scott/VARIANCE_TRIGGER.md)** - trigger config reference.
+- **[Ready-to-run pipeline](../test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml)** -
   `jarvis ppl load yaml <file> && jarvis ppl run`.
-- **[test/insitu_agent](../test/insitu_agent)** — the AI agent (render + reason stages).
+- **[test/insitu_agent](../test/insitu_agent)** - the AI agent (render + reason stages).

@@ -1,8 +1,8 @@
 # Offloading Xcompact3d numerical-dissipation metrics to ADIOS2 derived variables
 
-This guide documents how the paper's Xcompact3d diagnostics — **E_k, enstrophy,
+This guide documents how the paper's Xcompact3d diagnostics - **E_k, enstrophy,
 eps, eps_num, nu_eff/nu, velocity-derivative skewness & flatness, and the energy
-spectrum E(k)** — are computed **in situ by the ADIOS2 derived-variable engine**
+spectrum E(k)** - are computed **in situ by the ADIOS2 derived-variable engine**
 instead of (or alongside) the native Fortran code, plus the MHD current density
 **J = ∇×B/Rem**. It covers the architecture, the custom ADIOS2 operators we
 added, the 2decomp-fft registration API, how to build and run, and the measured
@@ -20,7 +20,7 @@ agreement against the native 6th-order diagnostics.
 ## 1. How ADIOS2 derived variables work
 
 A *derived variable* is a named expression over primary variables that ADIOS2
-evaluates itself, on the writer, when a step ends — before data leaves the node.
+evaluates itself, on the writer, when a step ends - before data leaves the node.
 You declare it once at init:
 
 ```fortran
@@ -29,8 +29,8 @@ call adios2_define_derived_variable(handle, io, name, expression, type, ierr)
 
 - **Expression language** (`ADIOS2/source/adios2/toolkit/derived/parser/`):
   alias lines `name = varname`, then one expression. Operators are **function
-  calls** — `add/subtract/multiply/divide`, `pow`, `sqrt`, `sin/cos/…`,
-  `magnitude`, `cross`, `curl` (stock) — plus our additions `gradient`, `mean`,
+  calls** - `add/subtract/multiply/divide`, `pow`, `sqrt`, `sin/cos/…`,
+  `magnitude`, `cross`, `curl` (stock) - plus our additions `gradient`, `mean`,
   `spectrum`. **There are no infix operators** (`*`,`/` are rejected) and **no
   `E` exponent notation** in numeric literals (use fixed-point, e.g. `0.5`).
 - **Type:** `StoreData` (full field written) or `StatsOnly` (min/max metadata).
@@ -97,7 +97,7 @@ entry in the enum (`Expression.h`), three maps (`Expression.cpp`: `op_property`,
 `string_to_op`, `OpFunctions`), a compute function + a dims function
 (`Function.{h,cpp}`).
 
-### 4.1 `gradient` — partial derivatives
+### 4.1 `gradient` - partial derivatives
 `GradientFunc` / `ApplyGradient` (2nd-order central, index space, one-sided edges):
 - `gradient(f)` → vector field `(∂f/∂x0, ∂f/∂x1, ∂f/∂x2)` (shape `(d0,d1,d2,3)`).
 - `gradient(f, axis)` → scalar field `∂f/∂(axis)` (`axis` a `0/1/2` constant).
@@ -105,12 +105,12 @@ entry in the enum (`Expression.h`), three maps (`Expression.cpp`: `op_property`,
 Unlocks individual ∂u_i/∂x_j (the full velocity-gradient tensor); `curl` alone
 only gives antisymmetric combinations.
 
-### 4.2 `mean` — reduction to a per-block scalar
+### 4.2 `mean` - reduction to a per-block scalar
 `MeanFunc` / `MeanDimsFunc`: reduces a field to one value (`Count = {1}`) using a
 `double` accumulator. This is the "block statistic" that lets a scalar diagnostic
 be emitted **without the reader touching the full field**.
 
-### 4.3 `spectrum` (alias `fft`) — energy spectrum via 3-D FFT
+### 4.3 `spectrum` (alias `fft`) - energy spectrum via 3-D FFT
 `SpectrumFunc` / `ApplySpectrum` with a self-contained radix-2 `fft1d`/`fft3d`
 (no FFTW dependency):
 ```
@@ -121,9 +121,9 @@ Requires power-of-two dims; global per writer block.
 
 ### 4.4 Bug fix in `PowFunc`
 The exponent was parsed as `size_t` (`std::stoull`), so `pow(x,1.5)` silently
-truncated to `pow(x,1)` — which made **skewness** (needs `^1.5`) a constant
+truncated to `pow(x,1)` - which made **skewness** (needs `^1.5`) a constant
 `√⟨g²⟩ ≈ 15×` too small. Fixed to `double`/`std::stod`. (`flatness`, `^2`, was
-unaffected — that's how the bug was spotted.)
+unaffected - that's how the bug was spotted.)
 
 Files touched: `Expression.h`, `Expression.cpp`, `Function.h`, `Function.cpp`.
 
@@ -240,7 +240,7 @@ This writes `data.bp5/` (derived variables) and `time_evol.dat` (native scalars)
 
 ## 8. Results (32³ TGV, Re=400, 10 snapshots; MHD OTV 32³, Rem=50, 4 snapshots)
 
-### 8.1 Scalar metrics — ADIOS2-derived vs native `time_evol.dat`
+### 8.1 Scalar metrics - ADIOS2-derived vs native `time_evol.dat`
 
 | metric | how (ADIOS2) | rel. L2 vs native |
 |--------|--------------|:---:|
@@ -290,7 +290,7 @@ to `(nz,ny,nx,3)`).
 ## 9. Verification / post-processing
 
 The `data.bp5` folders are read with `bpls` or the Python `adios2` reader (any
-2.11 build reads standard BP5 — the modified libs are only needed to *write*).
+2.11 build reads standard BP5 - the modified libs are only needed to *write*).
 
 ```bash
 runs/tgv_scalars/compare_newops.py    # scalars vs time_evol.dat

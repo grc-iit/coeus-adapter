@@ -8,15 +8,15 @@ Code is parallelized using MPI
 
 ## ADIOS2 SST streaming (Trigger-Render-Reason)
 
-This 2D case can stream its **vorticity** field over ADIOS2 — **SST** for live
-streaming to an external consumer, or **BP5** to a file — as the first step
+This 2D case can stream its **vorticity** field over ADIOS2 - **SST** for live
+streaming to an external consumer, or **BP5** to a file - as the first step
 toward the COEUS
 [Trigger-Render-Reason pipeline](../../../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md).
 Only vorticity is written as a *raw* field; the instability trigger statistic is
 produced **in situ** by an ADIOS2 derived-variable operator
 (`derive/VarVort = variance(vorticity)`), the same pattern gray-scott uses
 (`derive/VarV`). As the D2Q9 scheme goes unstable, `variance(vorticity)` spikes
-by many orders of magnitude — a cheap, collective instability detector.
+by many orders of magnitude - a cheap, collective instability detector.
 
 ### Build with ADIOS2
 
@@ -30,9 +30,9 @@ export ADIOS2_DIR=$(spack location -i adios2-coeus@vigil)
 make            # -DADIOS2_ENABLED is added automatically when ADIOS2_DIR is set
 ```
 
-`ADIOS2_DIR` and `ASCENT_DIR` are independent — set either, both, or neither.
+`ADIOS2_DIR` and `ASCENT_DIR` are independent - set either, both, or neither.
 
-### Run — file (BP5), self-contained
+### Run - file (BP5), self-contained
 
 ```bash
 ./bin/lbmcfd --adios2 --adios-config adios2-bp5.xml --output-bp lbmcfd.bp
@@ -43,24 +43,24 @@ bpls -l lbmcfd.bp
 #   int32_t step / stable  N*scalar       time / stability flag
 ```
 
-### Run — live stream (SST) + standalone consumer
+### Run - live stream (SST) + standalone consumer
 
 The writer's `Open()` blocks until a reader connects (`RendezvousReaderCount=1`
 in `adios2.xml`), so no output steps are lost. In two terminals (same directory):
 
 ```bash
-# terminal 1 — consumer (zero COEUS dependency)
+# terminal 1 - consumer (zero COEUS dependency)
 python3 consumer/lbm_sst_reader.py --stream lbmcfd.bp --config adios2.xml
 #   --png-dir frames/       renders one vorticity image per step (stdlib only:
 #                           zlib PNG + numpy colormap, no matplotlib needed)
 #   --status-file f.json    publishes the latest frame's stats for the MCP server
 
-# terminal 2 — simulation (writer)
+# terminal 2 - simulation (writer)
 mpiexec -np 4 ./bin/lbmcfd --adios2 --adios-config adios2.xml --output-bp lbmcfd.bp
 ```
 
 Add `--force-unstable` to the writer for a fast, deterministic run whose
-vorticity blows up — the consumer reports the `stable` flag flipping `1 -> 0`
+vorticity blows up - the consumer reports the `stable` flag flipping `1 -> 0`
 and `variance(vorticity)` exploding, e.g.:
 
 ```
@@ -69,7 +69,7 @@ and `variance(vorticity)` exploding, e.g.:
 [consumer] recv #3 step=300 stable=0 shape=(240, 600) vort[min=-1.458e+06 max=1.458e+06]
 ```
 
-### Reason step — agent-driven rescue / stop
+### Reason step - agent-driven rescue / stop
 
 Run with `--agent-rescue` to disable the simulation's automatic self-heal and let
 an AI agent decide instead. The sim then polls two verdict flags in its run
@@ -93,10 +93,10 @@ server serves those to the agent:
 | `fire_stop_simulation(reason)` | writes `<out_file>.stop` |
 
 `--selftest` exercises the tools without an agent. The agent reads
-`ANTHROPIC_API_KEY` from the environment — never pass a key on the command line.
+`ANTHROPIC_API_KEY` from the environment - never pass a key on the command line.
 
 Note the rescue only helps if the doubled timestep count lands in the stable
-regime — for this 600x240 case, ~8000 steps is still unstable while ~12000 is
+regime - for this 600x240 case, ~8000 steps is still unstable while ~12000 is
 stable, so one rescue from 6000 recovers. The agent can rescue repeatedly
 (re-inspect, fire again) if one doubling isn't enough.
 
@@ -104,7 +104,7 @@ stable, so one rescue from 6000 recovers. The agent can rescue repeatedly
 
 The sections above use plain ADIOS2. To run all three stages **through the COEUS
 hermes engine** (in-engine trigger + gated SST + agent verdict), use the jarvis
-pipeline `coeus-lbm-cfd-agent` — recipe and knobs in
+pipeline `coeus-lbm-cfd-agent` - recipe and knobs in
 [`test/jarvis/.../lbm_cfd/README.md`](../../../../jarvis/jarvis_coeus/jarvis_coeus/lbm_cfd/README.md):
 
 ```bash
@@ -117,13 +117,13 @@ jarvis ppl kill && jarvis ppl run     # writer blocks until the SST reader conne
 Verified end-to-end (2026-07-16, Ares): the engine fires
 `variance(derive/VarVort)=209.2` at output 2 and ships exactly the 3 flagged
 steps (nothing before the fire) carrying `vigil/trigger_*`; a Haiku agent views
-the frame — *"dense red/blue salt-and-pepper speckle at grid scale … no coherent
-von Kármán street"* — calls `fire_rescue_simulation`; the sim reverts to its
+the frame - *"dense red/blue salt-and-pepper speckle at grid scale … no coherent
+von Kármán street"* - calls `fire_rescue_simulation`; the sim reverts to its
 clean step-0 checkpoint, doubles 6000→12000, and recovers (density
 0.9466/1.0136/0.9952, zero `UNSTABLE` after the rescue).
 
 > **Both python consumers need isolated environments.** The reader needs adios2's
-> python (don't load `iowarp@main` — it shadows numpy). The agent needs the
+> python (don't load `iowarp@main` - it shadows numpy). The agent needs the
 > *system* python and must run under `env -i`, because spack puts python3.12
 > packages on `PYTHONPATH` and python3.10 then imports the wrong `anyio`, which
 > kills the MCP stdio transport.
@@ -146,7 +146,7 @@ clean step-0 checkpoint, doubles 6000→12000, and recovers (density
 | `adios2.xml` / `adios2-bp5.xml` | engine config (SST stream / BP5 file) |
 | `consumer/lbm_sst_reader.py` | SST/BP5 consumer; stdlib PNG render, `--status-file`, reports `vigil/trigger_*` |
 | `consumer/lbm_insitu_mcp_server.py` | MCP server: frame image + stats + rescue/stop verdict tools |
-| `consumer/lbm_agent.py` | LLM driver — the agent that sees the frame and issues the verdict |
+| `consumer/lbm_agent.py` | LLM driver - the agent that sees the frame and issues the verdict |
 | `consumer/lbm-fides.json` | Fides data model (ParaView path) |
 | `consumer/lbm_vorticity_sst.png` | reference frame pulled off the live SST stream |
 | `../../../../jarvis/jarvis_coeus/jarvis_coeus/lbm_cfd/` | jarvis package: hermes engine + trigger/render/reason knobs |

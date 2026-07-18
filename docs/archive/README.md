@@ -1,7 +1,7 @@
 # Archived documents
 
 Historical planning documents kept for reference. **Nothing here describes the
-current system** — the backbone I/O engine is clio-core's CTE, not Hermes.
+current system** - the backbone I/O engine is clio-core's CTE, not Hermes.
 
 | File | What it was |
 |---|---|

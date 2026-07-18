@@ -1,4 +1,4 @@
-# Catalyst Integration — Gray-Scott Example
+# Catalyst Integration - Gray-Scott Example
 
 ## Overview
 
@@ -46,7 +46,7 @@ This example demonstrates **in-situ visualization** of the Gray-Scott reaction-d
 │  hermes_->Put(name,  │     │  InlineWriter->Put(*inlineVar, values) │
 │    blob_size, values) │     │  (stores raw pointer, zero-copy)      │
 │                      │     │                                        │
-│  Persistent data     │     │  In-memory only — no disk I/O          │
+│  Persistent data     │     │  In-memory only - no disk I/O          │
 │  staging / tiering   │     │                                        │
 └──────────────────────┘     └──────────────────┬─────────────────────┘
                                                 │
@@ -137,31 +137,31 @@ Simulation buffer (values pointer)
 ```
 
 **How it works:**
-- The simulation's `values` pointer is passed directly to `InlineWriter->Put()` — no data copy occurs
+- The simulation's `values` pointer is passed directly to `InlineWriter->Put()` - no data copy occurs
 - The inline engine records the pointer, not the data itself
 - `CatalystExecute()` serializes the memory address of `InlineIO` as a string in the Conduit node
 - Fides receives this address, casts it back to `adios2::core::IO*`, and opens an inline reader
 - The reader returns the same `values` pointer, giving Fides direct access to simulation memory
-- All data stays in-process — no serialization, no files, no network transfers
+- All data stays in-process - no serialization, no files, no network transfers
 
 ## Key Design Points
 
-1. **Compile-time optional** — All Catalyst code is behind `#ifdef COEUS_HAVE_CATALYST`. Without Catalyst installed, the engine works normally with CTE/Hermes only.
+1. **Compile-time optional** - All Catalyst code is behind `#ifdef COEUS_HAVE_CATALYST`. Without Catalyst installed, the engine works normally with CTE/Hermes only.
 
-2. **Zero-copy data path** — The ADIOS2 inline engine stores raw pointers, not copies. Fides reads the same memory the simulation wrote to. No serialization or disk I/O.
+2. **Zero-copy data path** - The ADIOS2 inline engine stores raw pointers, not copies. Fides reads the same memory the simulation wrote to. No serialization or disk I/O.
 
-3. **Dual-write architecture** — Every `Put()` writes to both CTE/Hermes (for persistence/staging) and the InlineWriter (for in-situ visualization). The two paths are independent.
+3. **Dual-write architecture** - Every `Put()` writes to both CTE/Hermes (for persistence/staging) and the InlineWriter (for in-situ visualization). The two paths are independent.
 
-4. **Fides data model** — `gs-fides.json` describes how to interpret the ADIOS2 variables (U, V) as a VTK Cartesian grid with uniform spacing. This eliminates the need for a custom Catalyst adaptor.
+4. **Fides data model** - `gs-fides.json` describes how to interpret the ADIOS2 variables (U, V) as a VTK Cartesian grid with uniform spacing. This eliminates the need for a custom Catalyst adaptor.
 
-5. **Activation via ADIOS2 XML** — Catalyst is only activated when both `Script` and `DataModel` parameters are present in the `adios2.xml` config. No code changes needed to enable/disable.
+5. **Activation via ADIOS2 XML** - Catalyst is only activated when both `Script` and `DataModel` parameters are present in the `adios2.xml` config. No code changes needed to enable/disable.
 
 ## Configuration Files
 
 | File | Purpose |
 |---|---|
 | `setting.json` | Gray-Scott simulation parameters (grid size, time steps, etc.) |
-| `adios2.xml` | ADIOS2 engine config — selects HermesEngine plugin, passes Catalyst params |
-| `gs-fides.json` | Fides data model — maps ADIOS2 variables to VTK Cartesian grid |
-| `catalyst.py` | ParaView Python script — defines visualization pipeline (contours of V) |
+| `adios2.xml` | ADIOS2 engine config - selects HermesEngine plugin, passes Catalyst params |
+| `gs-fides.json` | Fides data model - maps ADIOS2 variables to VTK Cartesian grid |
+| `catalyst.py` | ParaView Python script - defines visualization pipeline (contours of V) |
 

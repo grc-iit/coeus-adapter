@@ -3,7 +3,7 @@
 Complete guide for building COEUS-Adapter against **clio-core** (IOWarp's core:
 Chimaera runtime + Context-Transfer-Engine), which is the backbone I/O engine.
 
-> **A note on naming**: Hermes is **no longer used** — all I/O goes through
+> **A note on naming**: Hermes is **no longer used** - all I/O goes through
 > clio-core's CTE. The names `hermes_engine` (library), `HermesEngine` (class),
 > and `PluginName=hermes` (ADIOS2 XML) are retained from the original
 > Hermes-based implementation so existing application configs keep working.
@@ -35,7 +35,7 @@ All of these are found via `find_package` in `CMakeLists.txt`:
 
 | Dependency | Provides | Typical source |
 |---|---|---|
-| **iowarp-core** | Chimaera runtime, CTE (tiered blob store), transport primitives — the entire clio-core stack | `spack install iowarp@main` |
+| **iowarp-core** | Chimaera runtime, CTE (tiered blob store), transport primitives - the entire clio-core stack | `spack install iowarp@main` |
 | **ADIOS2** | Plugin engine interface, derived variables | Spack or source build (must be an *installed* tree, see [Troubleshooting](#troubleshooting)) |
 | **MPI** (C, CXX) | Communication | `spack install openmpi` |
 | **yaml-cpp** | Variable/operation config parsing | comes with the iowarp spack env |
@@ -46,7 +46,7 @@ All of these are found via `find_package` in `CMakeLists.txt`:
 Bundled in `external_libraries/` (no install needed): spdlog, cereal, rapidjson.
 
 Optional:
-- **Catalyst 2** — in-situ visualization (`-DCOEUS_ENABLE_CATALYST=ON`, or auto-detected)
+- **Catalyst 2** - in-situ visualization (`-DCOEUS_ENABLE_CATALYST=ON`, or auto-detected)
 
 ## Installing Dependencies
 
@@ -140,13 +140,13 @@ cmake --install . --prefix /your/prefix
 ```
 
 Built artifacts:
-- `libhermes_engine.so` — the ADIOS2 plugin engine (main deliverable)
-- `libcoeus_coeus_mdm.so`, `libcoeus_rankConsensus.so` — ChiMods loaded by the
+- `libhermes_engine.so` - the ADIOS2 plugin engine (main deliverable)
+- `libcoeus_coeus_mdm.so`, `libcoeus_rankConsensus.so` - ChiMods loaded by the
   Chimaera runtime (see `tasks/`)
 
 ## Using the Plugin
 
-Applications select COEUS in their ADIOS2 XML — no code changes required:
+Applications select COEUS in their ADIOS2 XML - no code changes required:
 
 ```xml
 <io name="SimulationOutput">
@@ -192,7 +192,7 @@ cd build
 ctest -V                 # unit + integration tests
 ```
 
-Application-level tests are driven through Jarvis pipelines — see
+Application-level tests are driven through Jarvis pipelines - see
 `test/jarvis/README.md` and `test/jarvis/jarvis_coeus/pipelines/`.
 
 ## Troubleshooting
@@ -241,8 +241,8 @@ The Chimaera runtime is not up, or the ChiMods aren't found. Check that:
 
 ## Additional Resources
 
-- [README](README.md) — project overview and supported applications
-- [Installation Guide](install.md) — end-to-end Spack-based install
-- [Source Code Analysis](SOURCE_CODE_ANALYSIS.md) — architecture, and exactly
+- [README](README.md) - project overview and supported applications
+- [Installation Guide](install.md) - end-to-end Spack-based install
+- [Source Code Analysis](SOURCE_CODE_ANALYSIS.md) - architecture, and exactly
   how COEUS depends on clio-core
 - Historical planning docs are archived in [docs/archive/](docs/archive/)

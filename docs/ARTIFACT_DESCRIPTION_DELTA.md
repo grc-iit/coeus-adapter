@@ -1,6 +1,6 @@
 [← COEUS-Adapter README](../README.md) · [Trigger-Render-Reason](TRIGGER_RENDER_REASON_PIPELINE.md) · [Build & Run (single node)](BUILD_AND_RUN_GRAY_SCOTT.md)
 
-# Artifact Description — Vigil Trigger-Render-Reason at Scale on NCSA Delta
+# Artifact Description - Vigil Trigger-Render-Reason at Scale on NCSA Delta
 
 This document is a self-contained **Artifact Description (AD)** for reproducing the
 Vigil *trigger–render–reason* in-situ pipeline on **NCSA Delta**, including the
@@ -13,7 +13,7 @@ be followed top-to-bottom by an evaluator with a Delta allocation.
 > event, and streams **only the flagged window** over ADIOS2 **SST** to a ParaView
 > **MCP** AI agent on a separate node. The agent renders the streamed steps
 > headlessly, *sees* that the field has homogenised, and calls the MCP tool
-> `fire_stop_simulation`, which halts the 256-rank run early — saving the remaining
+> `fire_stop_simulation`, which halts the 256-rank run early - saving the remaining
 > compute with no loss of science. The trigger statistic is **rank-invariant**:
 > it is bit-identical at 1, 4, and 256 ranks.
 
@@ -26,7 +26,7 @@ be followed top-to-bottom by an evaluator with a Delta allocation.
 | Program | COEUS-Adapter (`hermes_engine` ADIOS2 plugin) + `adios2-gray-scott` |
 | Compilation | CMake + GCC 13.3.1; Spack-provided deps |
 | Run-time env | IOWarp/clio-core runtime, ADIOS2 2.11 (SST + derived vars), ParaView 5.13.3 (OSMesa), Python `mcp`/`anthropic` |
-| Hardware | NCSA Delta CPU nodes — 2× AMD EPYC 7763 (128 cores/node), Slingshot-11 (`hsn0`) |
+| Hardware | NCSA Delta CPU nodes - 2× AMD EPYC 7763 (128 cores/node), Slingshot-11 (`hsn0`) |
 | Orchestration | Jarvis-CD pipeline + `srun`/PMIx (Delta denies inter-node ssh) |
 | Model | Anthropic `claude-haiku-4-5` (any Claude model works; needs an API key) |
 | Metrics | trigger fire step + value; agent verdict; early-halt step; wall-time; \$ cost |
@@ -48,7 +48,7 @@ salloc --account=<your-cpu-account> --partition=cpu \
        --nodes=3 --ntasks-per-node=128 --time=08:00:00 --exclusive
 ```
 
-After it starts, record the node names — everything below assumes them:
+After it starts, record the node names - everything below assumes them:
 
 ```bash
 squeue -u $USER                      # NODELIST e.g. cn[024,046,071]
@@ -94,7 +94,7 @@ spack install paraview@5.13.3 +adios2+fides+mpi+python~qt ^mesa~glx+osmesa
 python3 -m pip install --user "mcp[cli]" httpx anthropic openai
 ```
 
-Record the ParaView hash — the reader is loaded **by hash** because two
+Record the ParaView hash - the reader is loaded **by hash** because two
 `paraview@5.13.3` installs can coexist (only the `+osmesa`/`~x` one renders
 headlessly):
 
@@ -117,7 +117,7 @@ git clone https://github.com/grc-iit/coeus-adapter
 cd coeus-adapter && git checkout iowarp_2
 
 # Loads the Spack deps + puts build/bin on PATH/LD_LIBRARY_PATH and sets the
-# multi-node env (PMIX_MCA_gds=hash, TMPDIR) — see the file.
+# multi-node env (PMIX_MCA_gds=hash, TMPDIR) - see the file.
 source CI/Delta/env.sh
 
 mkdir -p build && cd build
@@ -171,7 +171,7 @@ jarvis ppl print | grep -E "nprocs|ppn|launcher|srun_nodelist|steps|Hosts"
 
 ## 6. Run
 
-### 6a. Single-node smoke test (no API key) — validate the toolchain
+### 6a. Single-node smoke test (no API key) - validate the toolchain
 
 Confirms trigger → gated SST → headless render on one node (writer + reader on
 the same node). Renders the 4 flagged frames, no LLM:
@@ -203,7 +203,7 @@ bash CI/Delta/run_gs_multinode.sh
 
 `run_gs_multinode.sh` does, in order:
 
-1. `jarvis ppl run` — starts the clio runtime + CTE **on both producer nodes**
+1. `jarvis ppl run` - starts the clio runtime + CTE **on both producer nodes**
    (the ssh shim launches the remote daemon via `srun`), then launches the
    **256 `adios2-gray-scott` ranks** across the producers with
    `srun --mpi=pmix`. The writer blocks at the SST rendezvous.
@@ -233,7 +233,7 @@ Three mechanisms make the run work **entirely through `srun`** (no ssh):
 2. **ssh shim for the clio daemons.** Jarvis starts one runtime/CTE daemon per
    producer node via `pssh`. `CI/Delta/jarvis-ssh-local-shim.sh` (wired as the
    pipeline's `ssh_cmd`/`pssh_cmd`) runs **local-host** launches directly and
-   routes **remote** hosts through `srun --overlap` — so the daemon starts on
+   routes **remote** hosts through `srun --overlap` - so the daemon starts on
    the second producer node without ssh.
 3. **Cross-node SST over NFS + TCP.** The gated SST stream is WAN/TCP; the
    consumer reads the writer's contact file `gs.bp.sst` from the shared
@@ -253,60 +253,60 @@ Two verified reference runs, 2026-07-17 on Delta (job across `cn[024,046,071]`),
 256 producer ranks, `F=0.08`, `k=0.03`, `plotgap=50`, `steps=20000`,
 `claude-haiku-4-5`:
 
-**Scale reference (L=256, 32-rank parallel consumer)** — the headline config:
+**Scale reference (L=256, 32-rank parallel consumer)** - the headline config:
 warn at output **125** (`variance 5.61e-4` = 12× collapse vs baseline
 `4.66e-5`; the 64×-smaller baseline vs L=64 confirms the 1/L³ scaling), agent
 started only after the warn and fired **43 s** later ("V field expanded to
-uniform bulk — collapsed to homogeneous state"), writer halted early at step
+uniform bulk - collapsed to homogeneous state"), writer halted early at step
 **6500** of 20000 (67% skipped). Agent: 10 tool calls, 4 screenshots, ~39 s,
 ≈ \$0.08.
 
-**Mechanics reference (L=64, single consumer)** — fast smoke config:
+**Mechanics reference (L=64, single consumer)** - fast smoke config:
 
-**Trigger** — `$HOME/iowarp/writer_mn.log` and the fire log
+**Trigger** - `$HOME/iowarp/writer_mn.log` and the fire log
 (`…/executions/<id>/shared/jarvis_coeus.adios2_gray_scott/trigger_log.jsonl`):
 
 ```
 Trigger WARNING at step 24: variance(derive/VarV) collapsed to 0.025142
-    (baseline 0.00296, arm 20x, collapse 13x); pattern expanding to blank —
+    (baseline 0.00296, arm 20x, collapse 13x); pattern expanding to blank -
     streaming 4 step(s) to the agent for the fire verdict
 {"event":"trigger_warning","step":24,"variable":"derive/VarV",
  "value":0.025142,"baseline":0.00295759,"arm_ratio":20,"collapse_ratio":13}
 ```
 
-The value `0.025142` is **bit-identical** to the 1- and 4-rank runs — evidence
+The value `0.025142` is **bit-identical** to the 1- and 4-rank runs - evidence
 that the pooled global variance is decomposition-invariant.
 
-**Reason** — the agent (`test/insitu_agent/agent_results/`):
+**Reason** - the agent (`test/insitu_agent/agent_results/`):
 
 ```
 FIRE verdict: wrote halt flag gs_warn.bp.stop
-    (reason="V isosurface vanished; field uniform ~0.59 — pattern saturated")
+    (reason="V isosurface vanished; field uniform ~0.59 - pattern saturated")
 token_usage.json: 11 LLM calls, 10 tool calls, 4 screenshots, ~220 s, ≈ $0.08
 ```
 
-`~0.59` matches the analytic Gray-Scott steady state `V* ≈ 0.592` — the model
+`~0.59` matches the analytic Gray-Scott steady state `V* ≈ 0.592` - the model
 read the physics off the rendered frames.
 
-**Early halt** — `writer_mn.log`:
+**Early halt** - `writer_mn.log`:
 
 ```
 Simulation halting early at step 1600: trigger STOP flag detected
 ```
 
-i.e. the 256-rank run stops at output ~32 instead of 400 (`steps=20000`) — the
+i.e. the 256-rank run stops at output ~32 instead of 400 (`steps=20000`) - the
 field is stationary at the analytic fixed point from output ~28 on, so every
 later output is redundant.
 
 Rendered frames: `$HOME/iowarp/output-0000{0..3}.png` (render mode) or the
-agent's `agent_results/screenshots/agent_000{1..4}.png` (agent mode) — a
+agent's `agent_results/screenshots/agent_000{1..4}.png` (agent mode) - a
 V-isosurface shrinking into a uniform field across the window.
 
 ---
 
 ## 9. Scaling knobs (for the paper's scaling study)
 
-All are pipeline parameters — set in `gray-scott-warn-mn.yaml` or via
+All are pipeline parameters - set in `gray-scott-warn-mn.yaml` or via
 `jarvis pkg configure coeus-gray-scott.jarvis_coeus.adios2_gray_scott <k=v> …`
 then `jarvis ppl env build`:
 
@@ -314,10 +314,10 @@ then `jarvis ppl env build`:
 |---|---|---|
 | `nprocs`, `ppn` | total ranks, ranks/node | e.g. 512 ranks = `ppn=128` on 4 producer nodes; grow the salloc + `producer_hostfile` + `srun_nodelist` accordingly |
 | `L` | grid size (L³) | weak-scale L with rank count; the trigger uses **ratios** so its arm/collapse levels are L-independent |
-| `steps`, `plotgap` | total steps, output cadence | `steps` must be large enough that the writer outlives the agent's decision latency (the early-halt is only visible if the sim is still running when the agent fires). `plotgap=50` is part of the trigger calibration — do not change without recalibrating `trigger_baseline_ratio`/`trigger_collapse_baseline_ratio` |
-| `trigger_baseline_ratio` / `trigger_collapse_baseline_ratio` | arm / warn levels | 20× / 13× for F=0.08,k=0.03,plotgap=50; the **ratios** are L-portable (verified: L=256's baseline is 64× smaller — the 1/L³ scaling — and the same 20×/13× ratios warned correctly) |
+| `steps`, `plotgap` | total steps, output cadence | `steps` must be large enough that the writer outlives the agent's decision latency (the early-halt is only visible if the sim is still running when the agent fires). `plotgap=50` is part of the trigger calibration - do not change without recalibrating `trigger_baseline_ratio`/`trigger_collapse_baseline_ratio` |
+| `trigger_baseline_ratio` / `trigger_collapse_baseline_ratio` | arm / warn levels | 20× / 13× for F=0.08,k=0.03,plotgap=50; the **ratios** are L-portable (verified: L=256's baseline is 64× smaller - the 1/L³ scaling - and the same 20×/13× ratios warned correctly) |
 | `trigger_inspect_steps` | flagged steps per fire | window the agent inspects (default 4) |
-| `CONS_NPROCS` | SST reader parallelism | Parallel pvserver ranks on the consumer node (default 32, verified at 256→32). **Must be launched with `mpirun` (local fork), never `srun --mpi=pmix`** — srun-launched reader cohorts hang the SST N-to-M rendezvous (the orchestrator does this correctly; it also scrubs `SLURM_*` env inside the step so mpirun's slurm RAS doesn't refuse `-np N`). Keep all reader ranks on **one node** — cross-node readers hang in IceT compositing |
+| `CONS_NPROCS` | SST reader parallelism | Parallel pvserver ranks on the consumer node (default 32, verified at 256→32). **Must be launched with `mpirun` (local fork), never `srun --mpi=pmix`** - srun-launched reader cohorts hang the SST N-to-M rendezvous (the orchestrator does this correctly; it also scrubs `SLURM_*` env inside the step so mpirun's slurm RAS doesn't refuse `-np N`). Keep all reader ranks on **one node** - cross-node readers hang in IceT compositing |
 | `PRODUCER_NODES`, `CONSUMER_NODE`, `srun_nodelist`, jarvis hostfile | node placement | **update all of these to your allocation's node names** |
 
 **Warn timing vs. L.** The pattern grows from a fixed 12³ seed, so the time to
@@ -325,13 +325,13 @@ fill (and then homogenise) the domain scales ~linearly with L: the collapse-warn
 fires at output ~24 at L=64 but output ~125 at L=256 (verified). Budget `steps`
 accordingly (≥ `plotgap × 1.5 × 24·(L/64)`), and note the RAM CTE tier must hold
 all outputs to the halt (no eviction tier configured): at L=256 that is
-0.25 GB/output/node — 125 outputs ≈ 31 GB, just inside the 32 GB tier.
+0.25 GB/output/node - 125 outputs ≈ 31 GB, just inside the 32 GB tier.
 
-**Known limitation — L=512 producer-side stall (open).** At L=512 the writer's
+**Known limitation - L=512 producer-side stall (open).** At L=512 the writer's
 4 MB-per-rank blob Puts stall inside the CTE (daemon intake plateaus, a subset
 of ranks spin in clio `Wait()`, the rest block in the next collective); L=256
-(0.5 MB blobs) runs cleanly with the same 256 ranks, so blob **size** — not
-rank count — is the trigger. `client_data_segment_size=8G`/`num_threads=8`
+(0.5 MB blobs) runs cleanly with the same 256 ranks, so blob **size** - not
+rank count - is the trigger. `client_data_segment_size=8G`/`num_threads=8`
 delays but does not fix it. Until fixed in the CTE, the verified maximum for
 the full loop on Delta is **L=256 with 256 ranks**; the same L=512 config on
 Ares (different backbone) is documented working in
@@ -346,11 +346,11 @@ are tabulated in [BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md) §3.
 
 | Symptom | Cause / fix |
 |---|---|
-| `Permission denied (hostbased)` during jarvis | ssh shim not wired — check `ssh_cmd`/`pssh_cmd` in the loaded `pipeline.yaml` point to `CI/Delta/jarvis-ssh-local-shim.sh` |
-| `prterun was unable to find … adios2-gray-scott` | `build/bin` not on the **captured** PATH — `source CI/Delta/env.sh` then re-run `jarvis ppl env build` |
-| `PMIX_ERR_FILE_OPEN_FAILURE … gds_shmem2` / ranks become singletons | need `PMIX_MCA_gds=hash` and `--mpi=pmix` — set by `env.sh` + the pkg's srun path; ensure binaries are on NFS |
-| Reader/pvbatch aborts with `bad X server connection` | wrong ParaView — use the **`+osmesa`/`~x`** build (load by hash), not the `+x` one |
-| Writer runs to completion (no early halt) | `steps` too small vs. agent latency (§9), or the agent kept calling `advance_step` past the window and blocked — the provided prompt fires after `trigger_inspect_steps` frames |
+| `Permission denied (hostbased)` during jarvis | ssh shim not wired - check `ssh_cmd`/`pssh_cmd` in the loaded `pipeline.yaml` point to `CI/Delta/jarvis-ssh-local-shim.sh` |
+| `prterun was unable to find … adios2-gray-scott` | `build/bin` not on the **captured** PATH - `source CI/Delta/env.sh` then re-run `jarvis ppl env build` |
+| `PMIX_ERR_FILE_OPEN_FAILURE … gds_shmem2` / ranks become singletons | need `PMIX_MCA_gds=hash` and `--mpi=pmix` - set by `env.sh` + the pkg's srun path; ensure binaries are on NFS |
+| Reader/pvbatch aborts with `bad X server connection` | wrong ParaView - use the **`+osmesa`/`~x`** build (load by hash), not the `+x` one |
+| Writer runs to completion (no early halt) | `steps` too small vs. agent latency (§9), or the agent kept calling `advance_step` past the window and blocked - the provided prompt fires after `trigger_inspect_steps` frames |
 | Rendezvous never reached | start a **fresh** run (stale `gs.bp.sst`), and confirm the clio daemons came up on both producers (`writer_mn.log` shows `IOWarp runtime started` + `CTE started`) |
 
 For the single-node walkthrough, deeper trigger semantics, and the Ares

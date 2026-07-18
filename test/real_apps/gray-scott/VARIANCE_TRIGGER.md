@@ -1,7 +1,7 @@
-# Gray-Scott `variance` Derived-Variable Trigger — Implementation & Empirical Findings
+# Gray-Scott `variance` Derived-Variable Trigger - Implementation & Empirical Findings
 
 **Date:** 2026-07-07
-**Context:** Vigil `trigger-render-reason` pipeline — Gray-Scott regime-identification case
+**Context:** Vigil `trigger-render-reason` pipeline - Gray-Scott regime-identification case
 **Components:** ADIOS2 derived-variable engine (`../ADIOS2/`) + gray-scott writer (`simulation/writer.cpp`)
 
 ---
@@ -42,7 +42,7 @@ name generically. `variance(x)` flows through `convert_op` → uppercased → ma
 the `"VARIANCE"`/`"VAR"` entries in `string_to_op`. No lexer/grammar edits, no pregen-source
 regeneration required.
 
-### `VarianceFunc` — what it computes
+### `VarianceFunc` - what it computes
 Population variance reduced to a **single scalar per writer block**, numerically-stable
 two-pass algorithm in double precision:
 
@@ -51,8 +51,8 @@ Var = (1/N) * sum_i (x_i - mean)^2
 ```
 
 - Output type is floating point (`double`, or `long double` for `long double` input),
-  regardless of input type — wired via `FloatTypeFunc`.
-- `VarianceDimsFunc` returns `Start{0}, Count{1}, Shape{1}` — i.e. every block reduces its
+  regardless of input type - wired via `FloatTypeFunc`.
+- `VarianceDimsFunc` returns `Start{0}, Count{1}, Shape{1}` - i.e. every block reduces its
   local field to one value at global index 0.
 - Guards: exactly one operand; `dataSize > 0` guarded to avoid divide-by-zero.
 
@@ -65,7 +65,7 @@ last install, leaving the installed library stale relative to source. Resolved b
 - Same dynamic symbol count (10 656)
 - `nm -DC install/lib/libadios2_core.so.2.11 | grep VarianceFunc` → symbol present
 
-(The md5 differed only because CMake rewrites RPATH on install — functionally irrelevant.)
+(The md5 differed only because CMake rewrites RPATH on install - functionally irrelevant.)
 
 coeus-adapter links this install via
 `ADIOS2_DIR=.../ADIOS2/install/lib/cmake/adios2`.
@@ -89,7 +89,7 @@ needed to pool a correct global variance (see §6).
 
 ### CLI note / robustness bug
 `main.cpp` reads `bool derived = atoi(argv[2]);` but only guards `argc < 2`. The `derived`
-flag is therefore **mandatory** — running with just the settings file dereferences a missing
+flag is therefore **mandatory** - running with just the settings file dereferences a missing
 `argv[2]` and crashes. Invoke as:
 
 ```
@@ -98,7 +98,7 @@ mpirun -n <N> adios2-gray-scott <settings>.json 1
 
 ---
 
-## 4. Reproduction — the `L=64` run
+## 4. Reproduction - the `L=64` run
 
 **Build:**
 ```
@@ -125,7 +125,7 @@ mpirun --oversubscribe -n 4 adios2-gray-scott settings-l64.json 1
 - Process layout `2x2x1`, local grid `32x32x64`, 100 outputs, ~16 s wall.
 - `use derived variables` printed on every rank → derived path active.
 
-**Inspect** — `bpls -l gs.bp`:
+**Inspect** - `bpls -l gs.bp`:
 ```
 double   U            100*{64, 64, 64} = 0.139807 / 1.03621
 double   V            100*{64, 64, 64} = 0 / 0.803659
@@ -138,7 +138,7 @@ int32_t  step         100*scalar       = 50 / 5000
 
 ---
 
-## 5. Empirical finding — the trigger signal
+## 5. Empirical finding - the trigger signal
 
 `derive/VarV` traced across all 100 outputs shows a clean **rise → peak → collapse**,
 capturing the perturbation → pattern → steady-state transition:
@@ -158,16 +158,16 @@ capturing the perturbation → pattern → steady-state transition:
 **Interpretation:** `variance(V)` climbs ~30× from baseline as reactive spots nucleate and
 sharpen (high spatial heterogeneity), peaks when the pattern is most heterogeneous, then
 falls ~3 orders of magnitude as the field relaxes toward a near-uniform steady state. The
-magnitude and timing of the spike are a robust, cheap detector of the regime transition —
+magnitude and timing of the spike are a robust, cheap detector of the regime transition -
 which is precisely what Vigil's statistical trigger exploits.
 
 **Resolution dependence:** in this `L=64` run the peak is at **output ~17**; the paper's
 `256³` run fires at **output 20**. Same qualitative signature, timing shifts with resolution
-— expected.
+- expected.
 
 ---
 
-## 6. Important caveat — `variance` is per-writer-block, not global
+## 6. Important caveat - `variance` is per-writer-block, not global
 
 `bpls -D gs.bp derive/VarV` reveals **4 blocks per step** (one per MPI rank), each declared
 at global shape `{1}` / start `0`:
@@ -178,7 +178,7 @@ step 0:  block 0 = 0.00297248   block 1 = 0.00295732
 ```
 
 Because all four blocks map to the same global index 0, reading `VarV` as a *global* array
-surfaces only **one** block's value — it is **not** the global variance of `V`.
+surfaces only **one** block's value - it is **not** the global variance of `V`.
 
 ### Correct global variance (pooled / parallel variance)
 To combine per-block statistics into the exact global variance you need, per block `b`, the
@@ -196,13 +196,13 @@ The pieces are all available from the emitted derived variables:
 - `N_b`    = product of the block's `Count` dims (known from the layout)
 
 So `derive/VarV` + `derive/AddV` together are sufficient to reconstruct the **exact** global
-variance on the reader/trigger side. **Averaging the per-block variances is incorrect** — it
+variance on the reader/trigger side. **Averaging the per-block variances is incorrect** - it
 drops the between-block term `(mean_b - mean)^2` and under-reports the true variance.
 
 ### Why the single-block proxy looked fine here
 For this symmetric, centered-seed initial condition on a `2x2x1` decomposition, the four
 per-block variances are nearly identical (0.00297 vs 0.00295), so any single block is a good
-proxy. This is a property of the symmetric IC/decomposition, **not** a general guarantee —
+proxy. This is a property of the symmetric IC/decomposition, **not** a general guarantee -
 asymmetric decompositions or localized features will make the blocks diverge, and only the
 pooled formula stays correct.
 
@@ -215,7 +215,7 @@ pooled formula stays correct.
 - [x] `L=64` end-to-end run verified; trigger signal confirmed (peak ~30× baseline)
 - [x] **Trigger evaluator** implemented writer-side in `HermesEngine::EndStep`
       (`src/hermes_engine.cc`): exact **pooled** global variance (§6) computed via one
-      local pass over the CTE blob + one 3-double `Allreduce` — per-block variances are
+      local pass over the CTE blob + one 3-double `Allreduce` - per-block variances are
       never averaged. Configured via ADIOS2 XML params (`TriggerVariable`,
       `TriggerThreshold`, `TriggerBaselineRatio`, `TriggerInspectSteps`, `TriggerRefire`,
       `TriggerLogFile`); rising-edge semantics, fires once by default, fire events
@@ -227,7 +227,7 @@ pooled formula stays correct.
       `QueueFullPolicy` defaults to `Block` when gated so flagged steps are never
       dropped. Example config: `adios2-hermes-trigger-sst.xml`.
 - [x] End-to-end verified 2026-07-07 (L=64, 4 ranks, local clio runtime): log-only run
-      fires at output 12 (pooled variance 0.0569 ≥ 0.05, baseline 0.00296 — matching §5);
+      fires at output 12 (pooled variance 0.0569 ≥ 0.05, baseline 0.00296 - matching §5);
       gated SST run ships exactly outputs 12–14 of 100 to an SST reader with correct
       fields and trigger scalars.
 - [x] **ADIOS2 variance changes committed and pushed**: `github.com:hxu65/ADIOS2`,
@@ -247,7 +247,7 @@ pooled formula stays correct.
       `adios2-hermes-trigger-sst.xml`.
       Also fixed in `ComputeDerivedVariables`: source blobs now outlive
       `ApplyExpression` (previously each blob was a loop-local vector destroyed
-      before the expression read it — dangling `MinBlockInfo::BufferP`).
+      before the expression read it - dangling `MinBlockInfo::BufferP`).
 - [ ] Verify the derived-path fire end-to-end (expect the same fire step/value
       as the raw path: output ~12, pooled variance ≈ 0.0569 at threshold 0.05)
 - [ ] (optional) Fix `main.cpp` to validate `argc >= 3` before reading the `derived` flag
@@ -264,7 +264,7 @@ engine silently disappear in this scenario.
 
 ---
 
-## 8. Reference — key file locations
+## 8. Reference - key file locations
 
 | What | Path |
 | ---- | ---- |

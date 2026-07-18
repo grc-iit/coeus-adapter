@@ -48,7 +48,7 @@ export ADIOS2_PLUGIN_PATH=<coeus>/build/bin
 
 ## The full Trigger-Render-Reason loop
 
-`pipelines/lbm-cfd-agent.yaml` runs all three stages. Three shells — the writer
+`pipelines/lbm-cfd-agent.yaml` runs all three stages. Three shells - the writer
 blocks in `Init_` until the SST reader connects (`RendezvousReaderCount=1`).
 
 ```bash
@@ -76,7 +76,7 @@ env -i HOME=$HOME PATH=/usr/bin:/bin bash -c '
 
 `--max-steps` should equal `trigger_inspect_steps` (the gated stream ships
 exactly that many). The reason step needs `agent_rescue: true`, and the flag
-paths are `<script_location>/<out_file>.rescue|.stop` — note the base is the
+paths are `<script_location>/<out_file>.rescue|.stop` - note the base is the
 **ADIOS output name** (`lbmcfd.bp`), so it is `lbmcfd.bp.rescue`, not
 `lbmcfd.rescue`.
 
@@ -98,15 +98,15 @@ sim     Agent RESCUE verdict at step 1688 -> revert to checkpoint 0,
 ## Gotchas
 
 - **Both python consumers need isolated envs, for different reasons.** The
-  reader needs adios2's python — don't load `iowarp@main` in its shell (it
+  reader needs adios2's python - don't load `iowarp@main` in its shell (it
   shadows numpy with a build for another python). The agent needs the *system*
-  python (mcp + anthropic) — run it under `env -i`, because spack puts
+  python (mcp + anthropic) - run it under `env -i`, because spack puts
   python3.12 packages on `PYTHONPATH` and python3.10 then imports the wrong
   `anyio`, which kills the MCP stdio transport.
-- **`force_unstable` is the wrong case for a rescue** — it halts at step 400,
+- **`force_unstable` is the wrong case for a rescue** - it halts at step 400,
   leaving no room to recover. Use `force_unstable: false` with `steps: 6000`
   (u=0.12 diverges; one rescue doubling lands at 12000 / u=0.06 which is stable).
 - Single-node run: the app's `mpirun` uses the **global** `server.list`; point it
   at the local node for a local run.
 - `jarvis pkg configure force_unstable=false` is dropped (`false` == the menu
-  default) — flip it via a dedicated YAML instead.
+  default) - flip it via a dedicated YAML instead.

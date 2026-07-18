@@ -82,8 +82,8 @@ This gives Claude Code direct access to all 24 MCP tools: streaming control (pau
 | B2 | 1             | 16             | Yes         | Intra-node parallel pvserver|
 | B3 | 2             | 32             | Try*        | 2-node parallel pvserver    |
 
-> **Start with B1/B2** (1 node — safe), then attempt B3 (2 nodes). Multi-node pvserver
-> requires **IceT parallel image compositing** for screenshots — see note below.
+> **Start with B1/B2** (1 node - safe), then attempt B3 (2 nodes). Multi-node pvserver
+> requires **IceT parallel image compositing** for screenshots - see note below.
 >
 > *B3 screenshots: attempt with `--force-offscreen-rendering`. If IceT hangs, fall back
 > to `scripted_headless` (no screenshots). We can also try tuning `ICET_STRATEGY` or
@@ -99,7 +99,7 @@ runs N ranks across multiple nodes:
 2. IceT uses MPI collectives (binary-tree allreduce) to exchange and blend image tiles
 3. Rank 0 produces the final composited image (used by `SaveScreenshot`)
 
-On **1 node**, IceT compositing uses shared-memory MPI — fast and reliable.
+On **1 node**, IceT compositing uses shared-memory MPI - fast and reliable.
 On **2+ nodes**, IceT needs cross-node MPI collectives over TCP (`eno1`).
 This is where hangs occur on Ares: the OpenMPI/TCP transport can deadlock
 during IceT's image exchange, especially with large framebuffers.
@@ -134,7 +134,7 @@ during IceT's image exchange, especially with large framebuffers.
 
 ### Claude Code as Image Analyzer
 
-Claude Code has native multimodal vision — it can read and analyze screenshots
+Claude Code has native multimodal vision - it can read and analyze screenshots
 directly using the `Read` tool on image files. This eliminates the need for an
 external API or SDK for image analysis:
 
@@ -220,7 +220,7 @@ Claude Code calls MCP tools directly and describes what it sees in each screensh
    - Claude Code calls MCP tools directly: get_streaming_status, advance_step,
      create_isosurface, get_screenshot, etc.
    - Claude Code **analyzes screenshots via built-in vision** (Read tool on PNG files)
-     — no external API or `insitu_agent.py` needed
+     - no external API or `insitu_agent.py` needed
    - For automated benchmarks, use `eval_harness.py`:
      ```bash
      python eval_harness.py --scenario scripted_basic \
@@ -748,8 +748,8 @@ Simulation fixed at 8 nodes, 128 procs, L=256.
 3. **Per-step render gets SLOWER with 2-16 local procs** (1325ms → 2256-2535ms) due to
    IceT compositing overhead and CPU contention on a single node.
 4. **Cross-node pvserver scales well**:
-   - 32 procs (2 nodes): 1154ms/step — faster than single-proc (1325ms)
-   - **64 procs (4 nodes): 613ms/step — 2.2x faster than single-proc**
+   - 32 procs (2 nodes): 1154ms/step - faster than single-proc (1325ms)
+   - **64 procs (4 nodes): 613ms/step - 2.2x faster than single-proc**
    - Distributing MPI ranks across nodes eliminates single-node contention.
 5. **64-proc render is extremely stable**: steps 2-20 all within 610-634ms (σ < 7ms).
 6. **SST transfer is unaffected** by pvserver parallelism (~9ms in all configs).
@@ -790,7 +790,7 @@ After the fix, 32-proc pvserver across 2 nodes (ares-comp-21 + ares-comp-22) wor
 
 **IceT compositing over TCP works on Ares** when the MPI environment is properly
 configured (OMPI_MCA pml=ob1, btl=tcp,self, btl_tcp_if_include=eno1). The earlier
-assumption that cross-node pvserver would fail due to IceT hangs was incorrect —
+assumption that cross-node pvserver would fail due to IceT hangs was incorrect -
 the issue was purely a PATH/environment problem in the SSH wrapper.
 
 ---
@@ -805,7 +805,7 @@ the issue was purely a PATH/environment problem in the SSH wrapper.
 | Pipeline update | <1 ms | <1 ms | 1.0x |
 | ParaView render | 1,325 ms | 613 ms | **2.2x** |
 | **Step total** | **1,415 ms** | **671 ms** | **2.1x** |
-| MCP overhead | <2 ms | <2 ms | — |
+| MCP overhead | <2 ms | <2 ms | - |
 | Isosurface (tool call) | 916 ms | 548 ms | **1.7x** |
 | Screenshot (tool call) | 344 ms | 345 ms | 1.0x |
 
@@ -831,12 +831,12 @@ Step total avg (ms) vs pvserver procs:
 ```
 
 Single-node (2-16p): render is SLOWER due to IceT compositing + CPU contention.
-Multi-node (32-64p): render scales well — distributing across nodes eliminates contention.
+Multi-node (32-64p): render scales well - distributing across nodes eliminates contention.
 
 ### Key Takeaways
 
 1. **Rendering is the bottleneck** (90-95% of per-step time), not data transfer or MCP.
-2. **MCP adds <2ms overhead** — the protocol is essentially free.
+2. **MCP adds <2ms overhead** - the protocol is essentially free.
 3. **Simulation scaling (Dim A)** has minimal impact on reader/visualization time.
 4. **pvserver parallelism (Dim B)** shows a clear single-node vs multi-node pattern:
    - **Single-node (2-16 procs)**: SLOWER than 1 proc due to IceT compositing overhead

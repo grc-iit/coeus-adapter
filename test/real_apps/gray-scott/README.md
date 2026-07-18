@@ -16,9 +16,9 @@ v_t = Dv * (v_xx + v_yy + v_zz) + u * v^2 - (F + k) * v
 > the engine watches `variance(V)` each output step and streams only the flagged
 > window to a ParaView / AI-agent consumer, which can early-stop the run.
 >
-> - **[docs/BUILD_AND_RUN_GRAY_SCOTT.md](../../../docs/BUILD_AND_RUN_GRAY_SCOTT.md)** —
+> - **[docs/BUILD_AND_RUN_GRAY_SCOTT.md](../../../docs/BUILD_AND_RUN_GRAY_SCOTT.md)** -
 >   full end-to-end walkthrough: build → run → trigger-gated SST → agent → early stop.
-> - **[VARIANCE_TRIGGER.md](VARIANCE_TRIGGER.md)** — trigger configuration reference.
+> - **[VARIANCE_TRIGGER.md](VARIANCE_TRIGGER.md)** - trigger configuration reference.
 >
 > The rest of this file is the upstream ADIOS2-examples Gray-Scott documentation
 > (simulation parameters and plain SST / Catalyst usage).

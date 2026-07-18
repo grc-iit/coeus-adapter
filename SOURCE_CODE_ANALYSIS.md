@@ -17,7 +17,7 @@ metadata management, and optional in-situ visualization via Catalyst/Fides.
   touches Chimaera task bodies (`hermes_engine` and both ChiMods)
 - **License**: BSD 3-Clause (Illinois Institute of Technology)
 - **Build system**: CMake 3.10+
-- **State**: mid-migration — Hermes I/O has been fully replaced by CTE, but the
+- **State**: mid-migration - Hermes I/O has been fully replaced by CTE, but the
   Hermes-era names (`HermesEngine`, `hermes_engine`, `IHermes`) are retained
 
 The single shippable artifact is `hermes_engine`, built from `hermes_engine.cc`
@@ -29,15 +29,15 @@ The single shippable artifact is `hermes_engine`, built from `hermes_engine.cc`
 ## 2. Dependency on clio-core (the core of this analysis)
 
 COEUS-Adapter does **not** vendor the IOWarp core. The entire dependency flows
-through **one CMake package** — `find_package(iowarp-core REQUIRED)` — which is
+through **one CMake package** - `find_package(iowarp-core REQUIRED)` - which is
 built and installed from the separate **clio-core** repository. That package
 bundles three layers, all of which COEUS consumes:
 
 | clio-core layer | clio-core dir | What COEUS uses it for | CMake targets linked |
 |---|---|---|---|
-| **Chimaera** — task-execution runtime | `context-runtime/` | Task scheduling, pools, shared-memory IPC (`CHI_IPC`, `hipc::FullPtr`, allocators), the ChiMod programming model, C++20 coroutine tasks | `chimaera::cxx`, `chimaera::admin_client`, `chimaera::bdev_client` |
-| **CTE** — Context-Transfer-Engine, tiered blob store | `context-transfer-engine/core/` | The actual I/O: tags (≈ buckets), `PutBlob`/`GetBlob`/`GetBlobSize`, scoring-based reorganize (demote/prefetch) | `wrp_cte::core_client` |
-| **CTP / HermesShm** — transport primitives | `context-transport-primitives/` | Low-level shared-memory types (`hermes::Blob`, `hipc::ShmPtr`), pulled in transitively | (via the above) |
+| **Chimaera** - task-execution runtime | `context-runtime/` | Task scheduling, pools, shared-memory IPC (`CHI_IPC`, `hipc::FullPtr`, allocators), the ChiMod programming model, C++20 coroutine tasks | `chimaera::cxx`, `chimaera::admin_client`, `chimaera::bdev_client` |
+| **CTE** - Context-Transfer-Engine, tiered blob store | `context-transfer-engine/core/` | The actual I/O: tags (≈ buckets), `PutBlob`/`GetBlob`/`GetBlobSize`, scoring-based reorganize (demote/prefetch) | `wrp_cte::core_client` |
+| **CTP / HermesShm** - transport primitives | `context-transport-primitives/` | Low-level shared-memory types (`hermes::Blob`, `hipc::ShmPtr`), pulled in transitively | (via the above) |
 
 > **Note:** the `context-transfer-engine/`, `context-runtime/`,
 > `context-transport-primitives/`, `context-assimilation-engine/`,
@@ -50,7 +50,7 @@ bundles three layers, all of which COEUS consumes:
 - clio-core must be **built and installed first**, such that
   `iowarp-core-config.cmake` is discoverable on `CMAKE_PREFIX_PATH`. (No installed
   `iowarp-core-config.cmake` was found on this system, so the package is not yet
-  present — clio-core's `install.sh`/Spack flow needs to run before COEUS can
+  present - clio-core's `install.sh`/Spack flow needs to run before COEUS can
   configure.)
 - Both projects force **C++20 + `-fcoroutines`** because Chimaera task bodies are
   C++20 coroutines (`TaskResume`). See `set_target_properties(... CXX_STANDARD 20)`
@@ -66,7 +66,7 @@ clio-core has been **rebranded** (`clio-core/rebranding.md`):
 and the `wrp_*` packages now have `clio_*` equivalents (e.g.
 `clio_cte/core/core_client.h` sits alongside `wrp_cte/core/core_client.h`).
 
-**COEUS-Adapter still uses every legacy name** — `wrp_cte::core`, `chimaera::`,
+**COEUS-Adapter still uses every legacy name** - `wrp_cte::core`, `chimaera::`,
 `CHI_IPC`, `hipc::`, `HSHM_MALLOC`, `find_package(iowarp-core)`. This compiles only
 because clio-core keeps a complete backward-compatibility surface (forwarder
 headers, `#define CLIO_X CHI_X`, `namespace hshm = ctp`). Consequence: COEUS is
@@ -75,7 +75,7 @@ API. A future cleanup is to migrate to the `clio_*`/`ctp::` identifiers.
 
 ### 2.3 Concrete integration points
 
-- **`include/comms/CTEHermes.{h,cc}`** — `CTEHermes` multiply-inherits `IHermes`
+- **`include/comms/CTEHermes.{h,cc}`** - `CTEHermes` multiply-inherits `IHermes`
   + `wrp_cte::core::Client`, so it *is* a CTE client.
   - `connect()` calls `wrp_cte::core::WRP_CTE_CLIENT_INIT("", chi::PoolQuery::Local())`
     and attaches to a pre-deployed CTE core pool (`kCtePoolId = 512.0`, started by
@@ -83,10 +83,10 @@ API. A future cleanup is to migrate to the `clio_*`/`ctp::` identifiers.
   - `Put()` allocates shared memory via `CHI_IPC->AllocateBuffer`, `memcpy`s the
     payload, and issues `AsyncPutBlob(...).Wait()` with a placement score of 0.7.
   - `Demote()`/`Prefetch()` map to `AsyncReorganizeBlob` with scores 0.3 / 0.95.
-- **`include/comms/CTETagClient.{h,cc}`** — per-tag wrapper over the same CTE
+- **`include/comms/CTETagClient.{h,cc}`** - per-tag wrapper over the same CTE
   client: `AsyncGetOrCreateTag`, `AsyncGetBlob`, `AsyncGetBlobSize`,
   `AsyncGetContainedBlobs`.
-- **`tasks/coeus_mdm` & `tasks/rankConsensus`** — COEUS's own ChiMods, written
+- **`tasks/coeus_mdm` & `tasks/rankConsensus`** - COEUS's own ChiMods, written
   against the current clio-core API (`chi::Task`, `chi::ContainerClient`,
   `chimaera::admin::GetOrCreatePoolTask<CreateParams>`, `Method::k...`).
 - **`include/coeus/HermesEngine.h`** includes `<chimaera/chimaera.h>`,
@@ -199,7 +199,7 @@ coeus-adapter/
 
 ### 5.1 HermesEngine (`src/hermes_engine.cc`, `include/coeus/HermesEngine.h`)
 
-The central class, inheriting `adios2::plugin::PluginEngineInterface` — what
+The central class, inheriting `adios2::plugin::PluginEngineInterface` - what
 ADIOS2 dynamically loads as a plugin engine.
 
 **Responsibilities:**
@@ -219,11 +219,11 @@ ADIOS2 dynamically loads as a plugin engine.
 
 ### 5.2 Communication layer (`include/comms/`)
 
-- **`IHermes`** — abstract I/O interface: `connect`, `GetTag`, `Put`, `Demote`,
+- **`IHermes`** - abstract I/O interface: `connect`, `GetTag`, `Put`, `Demote`,
   `Prefetch`, and a `tag` pointer.
-- **`ITag`** — abstract per-tag blob interface: `Put`, `Get`,
+- **`ITag`** - abstract per-tag blob interface: `Put`, `Get`,
   `GetContainedBlobNames`, `GetBlobSize`.
-- **`CTEHermes`** / **`CTETagClient`** — the concrete CTE implementations
+- **`CTEHermes`** / **`CTETagClient`** - the concrete CTE implementations
   described in §2.3. This interface seam is the abstraction over clio-core; in
   principle it allows swapping the backend, though CTE is the only impl today.
 
@@ -292,24 +292,24 @@ engine.
 - **Real apps (`test/real_apps/`)**: Gray-Scott (curl/add/hash), hash_operator,
   io_comp, metadata_comp, operator_comp.
 - **Jarvis pipelines (`test/jarvis/`)**: WRF, LAMMPS, Gray-Scott, Incompact3D,
-  OpenFOAM, ParaView — these also stand up the clio-core runtime + CTE core pool
+  OpenFOAM, ParaView - these also stand up the clio-core runtime + CTE core pool
   that the engine attaches to.
 
 ---
 
 ## 8. Key Design Patterns
 
-1. **Plugin architecture** — loaded by ADIOS2 via `EngineCreate()`/`EngineDestroy()`,
+1. **Plugin architecture** - loaded by ADIOS2 via `EngineCreate()`/`EngineDestroy()`,
    transparent to applications.
-2. **Backend abstraction** — `IHermes`/`ITag` decouple the engine from clio-core's
+2. **Backend abstraction** - `IHermes`/`ITag` decouple the engine from clio-core's
    CTE, the single integration seam.
-3. **Task-based metadata** — metadata ops dispatched as Chimaera tasks
+3. **Task-based metadata** - metadata ops dispatched as Chimaera tasks
    (`coeus_mdm::Mdm_insert`) for asynchronous distributed execution.
-4. **Step-based tag organization** — each `(step, rank)` maps to a CTE tag
+4. **Step-based tag organization** - each `(step, rank)` maps to a CTE tag
    `step_{N}_rank{R}`.
-5. **Type-macro generation** — `ADIOS2_FOREACH_STDTYPE_1ARG` generates the
+5. **Type-macro generation** - `ADIOS2_FOREACH_STDTYPE_1ARG` generates the
    per-type Put/Get overrides.
-6. **Rank-0 coordination** — pool creation guarded by `rank == 0` + MPI barriers.
+6. **Rank-0 coordination** - pool creation guarded by `rank == 0` + MPI barriers.
 
 ---
 
@@ -320,22 +320,22 @@ engine.
    `IHermes`. `IHermes.h` notes: "I/O is now handled by CTE … CTE Tags (replacing
    Hermes buckets)."
 2. **Two parallel ChiMod task definitions coexist** for `coeus_mdm`:
-   - `tasks/coeus_mdm/include/coeus_mdm/coeus_mdm_tasks.h` — **stale** old
+   - `tasks/coeus_mdm/include/coeus_mdm/coeus_mdm_tasks.h` - **stale** old
      `hrun::`-era API (`CreateTaskStateTask`, `HSHM_MAKE_AR`, `DomainId`).
-   - `tasks/coeus_mdm/include/chimaera/coeus_mdm/coeus_mdm_tasks.h` — **current**
+   - `tasks/coeus_mdm/include/chimaera/coeus_mdm/coeus_mdm_tasks.h` - **current**
      API (`chi::Task`, `GetOrCreatePoolTask<CreateParams>`, `chi::PoolQuery`); this
      is what `HermesEngine.h` actually includes. The old tree should be deleted.
 3. **Committed build-debug cruft** in `src/CMakeLists.txt`: a large
    `#region agent log` block runs `nm`/`file(READ)` diagnostics on `chimaera::cxx`
    at configure time (writing `.cursor/debug.log`), left over from chasing missing
-   `PoolQuery`/`AwakenWorker` symbols and conflicting `chimaera/types.h` —
+   `PoolQuery`/`AwakenWorker` symbols and conflicting `chimaera/types.h` -
    classic ABI/allocator-mismatch symptoms from the rebrand. Should be removed.
 4. **Hardcoded paths / overridden flags**: `CTEHermes::connect()` sets
    `const bool use_pre_deployed = true;`, ignoring the `CTE_PRE_DEPLOYED` env var it
    reads; the create-path registers `/mnt/common/hxu40/cte_storage`;
    `config/cte_config.yaml` points at `/tmp/cte_primary` and `/tmp/cte_cache`.
-5. **Legacy compat-name reliance** — COEUS uses clio-core's deprecated
+5. **Legacy compat-name reliance** - COEUS uses clio-core's deprecated
    `chimaera`/`wrp_cte`/`hshm` aliases rather than the new `clio_*`/`ctp::` API
    (see §2.2).
-6. **README lag** — README still references `spack load hermes`, which conflicts
+6. **README lag** - README still references `spack load hermes`, which conflicts
    with the CTE-only reality.

@@ -1,4 +1,4 @@
-# Native (`Case-TGV.f90`) vs ADIOS2 derived quantities — are they the same?
+# Native (`Case-TGV.f90`) vs ADIOS2 derived quantities - are they the same?
 
 Scope: the three **field** derived quantities written by `visu_tgv`
 (`src/Case-TGV.f90`): `vort`, `critq`, and MHD `J`. Compared against what
@@ -10,16 +10,16 @@ can compute.
 | Quantity | Same *definition*? | Same *numbers*? | ADIOS2 expression |
 |----------|:---:|:---:|-------------------|
 | `vort` = \|∇×u\|      | ✅ yes | ❌ **no** | `magnitude(curl(ux,uy,uz))` |
-| `critq` = Q-criterion | — | ❌ **not expressible** | needs gradient tensor / custom `QCRIT` op (fork only) |
+| `critq` = Q-criterion | - | ❌ **not expressible** | needs gradient tensor / custom `QCRIT` op (fork only) |
 | `J` = ∇×B / Rem       | ✅ yes | ❌ **no** | `curl(Bx,By,Bz)` then `/Rem` |
 
-Definitions match for `vort` and `J` (identical curl sign convention — verified
+Definitions match for `vort` and `J` (identical curl sign convention - verified
 below). **The numbers do not match**, for three concrete reasons that all trace
 back to how ADIOS2 differentiates. `critq` cannot be built from stock ops at all.
 
 ---
 
-## 1. `vort` — magnitude of vorticity
+## 1. `vort` - magnitude of vorticity
 
 **Native** (`Case-TGV.f90:619-624`), with the temp-array map at lines 616-618:
 ```
@@ -31,7 +31,7 @@ vort = sqrt(ω_x² + ω_y² + ω_z²)
 Derivatives are Incompact3d's **6th-order compact** `derx/dery/derz`
 (physical `∂/∂x`, periodic BCs, y-stretch via `ppy`).
 
-**ADIOS2** `magnitude(curl(ux,uy,uz))` — `ApplyCurl`
+**ADIOS2** `magnitude(curl(ux,uy,uz))` - `ApplyCurl`
 (`ADIOS2/source/adios2/toolkit/derived/Function.cpp:101-141`):
 ```
 curl[0] = (v3[j+1]−v3[j−1])/(Δj) + (v2[k−1]−v2[k+1])/(Δk)   // = dw/dy − dv/dz
@@ -52,7 +52,7 @@ Same component definition and **same sign convention** ✅. But the numerics dif
    ```
    i.e. every ADIOS2 curl value is scaled by the grid spacing versus the native
    value. On a TGV box `[0,2π]³` with `nx=64`, `Δ = 2π/64 ≈ 0.098`, so
-   `vort_adios ≈ 0.098 · vort_native` — off by an order of magnitude, not a
+   `vort_adios ≈ 0.098 · vort_native` - off by an order of magnitude, not a
    rounding difference. (Anisotropic grids don't even give a clean scalar
    factor, because each curl component mixes two directions.)
 
@@ -64,22 +64,22 @@ Same component definition and **same sign convention** ✅. But the numerics dif
 **Verdict for `vort`/`J`:** same mathematical object, but ADIOS2's field is a
 grid-spacing-scaled, 2nd-order, non-periodic approximation. Not directly
 comparable without (a) multiplying back by the spacing and (b) discarding
-boundary planes — and even then it stays 2nd-order.
+boundary planes - and even then it stays 2nd-order.
 
-## 3. `critq` — Q-criterion
+## 3. `critq` - Q-criterion
 
 **Native** (`Case-TGV.f90:626-632`) needs the **full 9-component velocity
 gradient tensor**:
 ```
 Q = −½(∂u/∂x² + ∂v/∂y² + ∂w/∂z²) − ∂u/∂y·∂v/∂x − ∂u/∂z·∂w/∂x − ∂v/∂z·∂w/∂y
 ```
-Stock ADIOS2 2.11.0 has **no gradient operator and no `QCRIT` op** — only
+Stock ADIOS2 2.11.0 has **no gradient operator and no `QCRIT` op** - only
 `curl`, `magnitude`, `cross`, and elementwise math. The gradient tensor cannot
 be assembled, so **Q cannot be expressed in stock ADIOS2**. Only the
 coeus / `ADIOS2_qcrit` fork provides a custom `QCRIT(x,y,z)` op, and it too
 would use 2nd-order index-space derivatives (same three caveats as above).
 
-## 4. `J` — MHD current density
+## 4. `J` - MHD current density
 
 **Native** (`Case-TGV.f90:639`): `Je = del_cross_prod(Bm)/Rem`.
 `del_cross_prod` (`src/mhd.f90:232-254`) = `(∂Bz/∂y−∂By/∂z, ∂Bx/∂z−∂Bz/∂x,
@@ -87,10 +87,10 @@ would use 2nd-order index-space derivatives (same three caveats as above).
 
 **ADIOS2:** `curl(Bx,By,Bz)` → divide by `Rem`. Definition and sign match ✅.
 Differences: same three numeric caveats as §2, **plus** ADIOS2 curl emits one
-4-D field of shape `(d1,d2,d3,3)` — not three separate `J_x/J_y/J_z` variables,
+4-D field of shape `(d1,d2,d3,3)` - not three separate `J_x/J_y/J_z` variables,
 so the output layout differs from the native writer.
 
-### 4a. Empirical check — run `runs/otv3d_cmp`
+### 4a. Empirical check - run `runs/otv3d_cmp`
 
 Ran a 3-D Orszag-Tang MHD case (32³, `Rem=50`, BP5), 4 snapshots. Native
 `J_x/J_y/J_z` (6th-order compact) vs the **real ADIOS2 derived `curl`** engine
@@ -108,26 +108,26 @@ Two corrections are mandatory, or the numbers are meaningless:
    components** (that's why `J_z` half-correlated but `J_x/J_y` didn't). Fix:
    feed B in x,y,z order (transpose, or arrange the derived expression inputs).
 2. **Grid spacing.** ADIOS2 differentiates in index space, so the result must be
-   multiplied by `1/dx` (isotropic here, `dx=0.196`) — the raw ratio ≈ `dx`.
+   multiplied by `1/dx` (isotropic here, `dx=0.196`) - the raw ratio ≈ `dx`.
    Then `/Rem`.
 
 After both fixes: **trend is identical (corr = 1.0000)** and **magnitude agrees
 to ~1–2 %**. That residual is exactly the 2nd-order-vs-6th-order truncation:
 central differencing attenuates a mode by `sin(kΔ)/(kΔ)`, ≈0.6 % for the k=1
-part (`J_x/J_y`) and ≈2 % for the k=2-heavy `J_z` — which is precisely the split
+part (`J_x/J_y`) and ≈2 % for the k=2-heavy `J_z` - which is precisely the split
 observed (0.6 % vs 2.2 % interior L2). Edges would differ more (ADIOS2 clamps,
 TGV is periodic), but interior J matches.
 
 **Bottom line for offloading J:** yes, native and ADIOS2-derived J are the same
-quantity and match in number and trend — *provided* you correct the axis order
+quantity and match in number and trend - *provided* you correct the axis order
 and multiply by `1/(dx·Rem)`. Used naively, the derived curl is wrong.
 
-### 4b. Wired in-situ via 2decomp-fft (BP5) — final result
+### 4b. Wired in-situ via 2decomp-fft (BP5) - final result
 
 Implemented the offload for real:
 
 * **2decomp-fft** (`2decomp-fft/src/io.f90`): new
-  `decomp_2d_register_derived_current(io_name, name, bx, by, bz, scale)` — builds
+  `decomp_2d_register_derived_current(io_name, name, bx, by, bz, scale)` - builds
   the ADIOS2 derived expression `multiply(curl(vz,vy,vx), scale)`, encapsulating
   the reversed-storage axis swap and the isotropic `scale = -1/(dx·Rem)`. (Also
   fixed a latent uninitialised `ext` in `gen_iodir_name` for non-BP5 engines.)
@@ -147,7 +147,7 @@ Implemented the offload for real:
   order truncation (`sin(kΔ)/(kΔ)`), as in §4a. **Number and trend match.**
 
 **Reader gotchas for `J_derived`** (both mandatory, verified):
-1. **Component order is (Jz, Jy, Jx)** — reversed (the storage-axis swap).
+1. **Component order is (Jz, Jy, Jx)** - reversed (the storage-axis swap).
 2. **Memory is component-LAST**: reshape the flat buffer to `(nz,ny,nx,3)`, even
    though ADIOS2's Shape metadata advertises `(3,nz,ny,nx)`. Reading it in the
    advertised shape scrambles the field (magnitude is preserved but every voxel
@@ -178,12 +178,12 @@ same BP file:
    ```
    (`critq` has no stock-ADIOS2 form.)
 3. Run with the BP5 engine, then diff `vort` vs `vort_adios` in Python. Expect
-   the ≈`Δ` scaling factor and boundary-plane mismatch above — that is the
+   the ≈`Δ` scaling factor and boundary-plane mismatch above - that is the
    "are they the same" answer, quantified.
 
 ---
 
-## 5. Numerical-dissipation scalars (paper metrics) via ADIOS2 derived — `runs/tgv_scalars`
+## 5. Numerical-dissipation scalars (paper metrics) via ADIOS2 derived - `runs/tgv_scalars`
 
 The paper's Xcompact3d metrics are **global spatial-average scalars**, but ADIOS2
 derived variables are **element-wise field ops** (no reductions, no gradient
@@ -197,8 +197,8 @@ tensor, no FFT). So only some map onto stock ADIOS2:
 | **eps_num** = −dE_k/dt − eps       | ✅ | post: time-diff of E_k(t) + eps |
 | **nu_eff/nu** = (−dE_k/dt)/(2ν·enst)| ✅ | post: from E_k(t), enstrophy(t) |
 | **skewness** ⟨(∂u/∂x)³⟩/⟨(∂u/∂x)²⟩^{3/2} | ❌ | no way to isolate ∂u/∂x (only `curl`, which mixes axes) |
-| **flatness** ⟨(∂u/∂x)⁴⟩/⟨(∂u/∂x)²⟩² | ❌ | same — needs a partial-derivative op |
-| **E(k)** energy spectrum           | ❌ | needs FFT — no op |
+| **flatness** ⟨(∂u/∂x)⁴⟩/⟨(∂u/∂x)²⟩² | ❌ | same - needs a partial-derivative op |
+| **E(k)** energy spectrum           | ❌ | needs FFT - no op |
 
 ### Implemented (in 2decomp-fft) + measured
 
@@ -211,7 +211,7 @@ tensor, no FFT). So only some map onto stock ADIOS2:
 
   | scalar | ADIOS2-derived vs native (rel. L2) |
   |--------|:---:|
-  | **E_k**       | **0.0000 %** (exact — non-differential field) |
+  | **E_k**       | **0.0000 %** (exact - non-differential field) |
   | **enstrophy** | **0.97 %** (2nd- vs 6th-order curl) |
   | **eps = 2ν·enstrophy** | **0.97 %** |
   | **nu_eff/nu** | ~1 % (raw ≈1.0000, ADIOS ≈1.010) |
@@ -225,16 +225,16 @@ tensor, no FFT). So only some map onto stock ADIOS2:
 
 `skewness`, `flatness`, `E(k)`, and the strain-based `eps` all need capabilities
 absent from stock ADIOS2 derived variables: a **partial-derivative / gradient**
-operator (∂u_i/∂x_j individually — `curl` only gives antisymmetric combinations),
-a **global reduction** (mean/sum — BP5 stores only min/max), and an **FFT**. This
+operator (∂u_i/∂x_j individually - `curl` only gives antisymmetric combinations),
+a **global reduction** (mean/sum - BP5 stores only min/max), and an **FFT**. This
 is exactly why the paper's Vigil uses its *own* operator graph rather than ADIOS2
 derived variables. Adding these as custom ADIOS2 ops (à la the coeus `Qcrit`/`hash`
-fork) is the path to covering the remaining metrics — at the cost of rebuilding
+fork) is the path to covering the remaining metrics - at the cost of rebuilding
 ADIOS2.
 
 ---
 
-## 6. Custom ADIOS2 ops (gradient + mean) — `ADIOS2/`, rebuilt with Derived+SST
+## 6. Custom ADIOS2 ops (gradient + mean) - `ADIOS2/`, rebuilt with Derived+SST
 
 Added two operators to the ADIOS2 derived engine so the remaining paper metrics
 become offloadable, and fixed one latent bug found along the way.
@@ -245,7 +245,7 @@ become offloadable, and fixed one latent bug found along the way.
   scalar partial ∂f/∂(axis). Unlocks individual ∂u_i/∂x_j (curl only gives
   antisymmetric mixes).
 * **`mean`** (`MeanFunc`/`MeanDimsFunc`): reduces a field to one value per writer
-  block — true in-situ block statistics, no full-field read on the reader.
+  block - true in-situ block statistics, no full-field read on the reader.
 * **Bug fix in `PowFunc`**: the exponent was parsed as `size_t` (`std::stoull`),
   so `pow(x,1.5)` truncated to `pow(x,1)`. Changed to `double`/`std::stod`.
   Without this, derivative **skewness** (needs `^1.5`) was a constant `sqrt(<g²>)`
@@ -265,7 +265,7 @@ generated `adios2-config-common.cmake` that broke 2decomp's double
 helpers (wrap the field in `mean(...)`). Wired into `Case-TGV.f90:visu_tgv_init`
 (`skewness_dudx`, `flatness_dudx`, `tke_mean`, `enst_mean`; physical x = axis 2).
 
-### Result — in-situ scalars vs native `time_evol.dat` (32³ TGV, Re=400, 1 rank)
+### Result - in-situ scalars vs native `time_evol.dat` (32³ TGV, Re=400, 1 rank)
 
 | metric (single value / snapshot) | ADIOS2-derived vs native |
 |---|:---:|
@@ -278,14 +278,14 @@ skewness/flatness (previously **not expressible** in stock ADIOS2) now match the
 native 6th-order diagnostics; the ~3 % skewness residual is the genuine
 2nd-vs-6th-order derivative difference (a numpy 2nd-order reference on the same
 field reproduces the ADIOS2 value to machine precision, confirming the op is
-correct). All four are single per-block values — no field read.
+correct). All four are single per-block values - no field read.
 
 **Still not offloadable:** `E(k)` energy spectrum (needs an FFT op). Everything
 else in the paper's Xcompact3d metric set is now computed in situ by ADIOS2.
 
 ---
 
-## 7. FFT energy spectrum E(k) — custom ADIOS2 `spectrum` op
+## 7. FFT energy spectrum E(k) - custom ADIOS2 `spectrum` op
 
 Added a third custom op so the last paper metric, the kinetic-energy spectrum,
 is offloadable.
@@ -307,7 +307,7 @@ is offloadable.
 | Parseval: `Σ_k E(k)` vs native `E_k` | **0.000 %** every snapshot |
 | spectrum shape | peak at k=2 (TGV `sin·cos·cos` modes, \|k\|=√3→2) ✓ |
 
-## 8. Final status — paper's Xcompact3d metrics via ADIOS2 derived variables
+## 8. Final status - paper's Xcompact3d metrics via ADIOS2 derived variables
 
 | metric | offloaded? | agreement vs native |
 |--------|:---:|:---:|

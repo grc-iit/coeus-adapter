@@ -10,8 +10,8 @@ The previous scalability eval (`SCALABILITY_EVAL_PLAN.md`) measured *infrastruct
 | **Agent-based** | LLM picks which steps to visualize and what to look at | Claude (Haiku/Sonnet/Opus) |
 
 The **baseline uses local rendering** for this initial evaluation:
-- **Local rendering** (Phase 1) — `pvpython` does both data ingestion *and* rendering in the same process. No client-server split, no IceT compositing, no network-shipped framebuffers.
-- **Remote rendering** (Phase 2, deferred) — `pvserver` runs as a separate MPI job; the bridge connects via TCP. To be added in a follow-up evaluation.
+- **Local rendering** (Phase 1) - `pvpython` does both data ingestion *and* rendering in the same process. No client-server split, no IceT compositing, no network-shipped framebuffers.
+- **Remote rendering** (Phase 2, deferred) - `pvserver` runs as a separate MPI job; the bridge connects via TCP. To be added in a follow-up evaluation.
 
 The question: **does an LLM agent visualize the *right* moments more efficiently than a fixed ParaView baseline, and at what token cost?**
 
@@ -62,15 +62,15 @@ To balance sim and viz so neither blocks the other:
 
 With **plotgap=20, the simulation is the bottleneck** (2.65 s/output > 1.33 s viz).
 This means:
-1. **Viz pipeline does NOT slow the simulation** — viz can always keep up
+1. **Viz pipeline does NOT slow the simulation** - viz can always keep up
 2. **All trigger strategies (K=1, K=2, K=5, agent) have similar wall time** (~5 min total),
    dominated by sim
 3. **The comparison becomes purely about *what* is visualized**, not how fast it renders
-4. This is a **fair eval setup** — we isolate trigger strategy from runtime confounds
+4. This is a **fair eval setup** - we isolate trigger strategy from runtime confounds
 
-**Trade-off**: at plotgap=20 with K=1, we generate 100 visualizations — a lot for an
+**Trade-off**: at plotgap=20 with K=1, we generate 100 visualizations - a lot for an
 agent to reason over (token cost ~$0.75/Sonnet run, $0.20/Haiku run).
-At plotgap=10 with K=1, we'd have 200 visualizations — even more, plus sim and viz
+At plotgap=10 with K=1, we'd have 200 visualizations - even more, plus sim and viz
 become balanced (slight viz blocking).
 
 ---
@@ -88,7 +88,7 @@ become balanced (slight viz blocking).
 
 **K from infrastructure ratio** (no-block constraint):
 - We deliberately chose plotgap=20 so the **simulation is the bottleneck** (2.65s sim/output
-  vs ~1.3s render). This means **viz does NOT block the sim** — every K is feasible without
+  vs ~1.3s render). This means **viz does NOT block the sim** - every K is feasible without
   slowing the run.
 - Wall time is ~constant across K values (~5 minutes, dominated by sim).
 
@@ -110,7 +110,7 @@ single-proc vs multi-proc pvserver vs local rendering at the same K.
 | BL-Local-K5 | Local (in-process) | 5 | 20 |
 | BL-Local-K10 | Local (in-process) | 10 | 10 |
 
-**Visualization content**: fixed pipeline — `isosurface(V, 0.3)` + `screenshot`. No coloring/camera changes.
+**Visualization content**: fixed pipeline - `isosurface(V, 0.3)` + `screenshot`. No coloring/camera changes.
 
 **Pros**: simple, predictable, zero LLM cost.
 **Cons**: blind to interesting events; either over-samples or misses transitions.
@@ -134,7 +134,7 @@ single-proc vs multi-proc pvserver vs local rendering at the same K.
 > "Find the timestep where the spot patterns first emerge. Take screenshots only when
 > you see significant changes. Justify each screenshot."
 
-**Test variants** (Haiku and Sonnet only — both fast models, dropping Opus for cost/speed):
+**Test variants** (Haiku and Sonnet only - both fast models, dropping Opus for cost/speed):
 | ID | Model | Mode | Notes |
 |----|-------|------|-------|
 | AG-Haiku-Open | claude-haiku-4-5 | A | Cheapest, exploratory |
@@ -176,8 +176,8 @@ For each run, capture:
 | `key_events_captured` | qualitative | Did it catch interesting transitions? |
 
 Plus from the existing instrumentation:
-- `streaming_timing.jsonl` — per-step SST/pipeline/render times
-- `mcp_tool_timing.jsonl` — per-tool MCP/PV timings (agent only)
+- `streaming_timing.jsonl` - per-step SST/pipeline/render times
+- `mcp_tool_timing.jsonl` - per-tool MCP/PV timings (agent only)
 
 ---
 
@@ -222,7 +222,7 @@ Per-model estimates for 100-step runs:
 ## Test Matrix (Phase 1: local rendering only)
 
 **Sim config**: 4 nodes (64 procs), L=256, **2000 sim steps, plotgap=20 → 100 SST output steps**.
-All runs use **local pvpython rendering** — no separate pvserver, no IceT, no client-server split.
+All runs use **local pvpython rendering** - no separate pvserver, no IceT, no client-server split.
 
 **Why 2000 steps / plotgap=20?**
 - 2000 steps × dt=2.0 = 4000 time units → enough for full Gray-Scott pattern formation
@@ -263,7 +263,7 @@ This is the foundation for the baseline runs *and* the agent runs in Phase 1.
 
 ### Step 2: Baseline runner (no LLM)
 
-Create `run_baseline.py` — a non-LLM Python script that:
+Create `run_baseline.py` - a non-LLM Python script that:
 1. Either uses MCP `advance_step` + `create_isosurface` + `get_screenshot`, OR drives
    the local-render bridge directly via `paraview.simple`
 2. Loop: advance → if `step % K == 0` → render + screenshot

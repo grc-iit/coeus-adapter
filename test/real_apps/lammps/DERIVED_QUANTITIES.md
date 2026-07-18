@@ -1,10 +1,10 @@
-# ADIOS2 derived quantities for LAMMPS — the Gray-Scott way (LAMMPS-side only)
+# ADIOS2 derived quantities for LAMMPS - the Gray-Scott way (LAMMPS-side only)
 
 Goal (paper design): the LAMMPS trigger uses **ADIOS2 derived variables** pooled
-by the engine, exactly like Gray-Scott — `derive/VarVx = variance(vx)` +
+by the engine, exactly like Gray-Scott - `derive/VarVx = variance(vx)` +
 `derive/AddVx = add(vx)`, combined by the existing
 `HermesEngine::ComputeGlobalVarianceDerived_`. **No changes to the shared engine
-code (`hermes_engine.cc`)** — the fix is entirely in the LAMMPS
+code (`hermes_engine.cc`)** - the fix is entirely in the LAMMPS
 `dump_custom_adios.cpp`.
 
 Status (2026-07-12): **WORKING.** `Trigger FIRED ... variance(derive/VarVx) =
@@ -23,7 +23,7 @@ its true shape and count up front.
 ## 2. The fix (LAMMPS `dump_custom_adios.cpp`)
 
 Define each velocity column **the way Gray-Scott defines a field**: global
-shape, local offset, local count — all at define time, using the real
+shape, local offset, local count - all at define time, using the real
 `atom->natoms` / `atom->nlocal` (+ an `MPI_Scan` for the offset):
 
 ```cpp
@@ -37,7 +37,7 @@ The derived declaration is gray-scott-shaped: `derive/VarVx = variance(vx)`,
 `derive/AddVx = add(vx)` (opt-in via env `COEUS_LAMMPS_DERIVED`, jarvis knob
 `derived=true`). With correct define-time dims the engine's existing
 `ComputeDerivedVariables` computes the per-block variance and
-`ComputeGlobalVarianceDerived_` produces the trigger statistic — no engine
+`ComputeGlobalVarianceDerived_` produces the trigger statistic - no engine
 change.
 
 ## 3. Run the derived demo

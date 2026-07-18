@@ -12,13 +12,13 @@ In `src/tools.f90`, the subroutine `test_speed_min_max` checks velocity extrema 
 Velocity diverged! SIMULATION IS STOPPED!
 ```
 
-and calls `MPI_ABORT`. The companion routines `compute_cfl` and `compute_cfldiff` report advective and diffusive CFL numbers but do **not** automatically adapt the time step — it must be set manually via the `dt` parameter in the `.i3d` file.
+and calls `MPI_ABORT`. The companion routines `compute_cfl` and `compute_cfldiff` report advective and diffusive CFL numbers but do **not** automatically adapt the time step - it must be set manually via the `dt` parameter in the `.i3d` file.
 
 ---
 
 ## 2. Common Instability Scenarios with Specific Configurations
 
-### 2.1 Taylor-Green Vortex — Under-resolved DNS at High Re
+### 2.1 Taylor-Green Vortex - Under-resolved DNS at High Re
 
 **What it is:** The TGV is the primary benchmark case, transitioning from laminar to fully turbulent flow. The provided examples include `input_DNS_Re1600.i3d` (stable DNS) and `input_ILES_Re5000.i3d` (implicit LES).
 
@@ -27,7 +27,7 @@ and calls `MPI_ABORT`. The companion routines `compute_cfl` and `compute_cfldiff
 Take the Re=1600 DNS input and increase the Reynolds number without adjusting the grid or using implicit LES dissipation:
 
 ```fortran
-! In input.i3d — WILL DIVERGE
+! In input.i3d - WILL DIVERGE
 &BasicParam
   itype = 2            ! TGV case
   nx = 65
@@ -59,7 +59,7 @@ Take the Re=1600 DNS input and increase the Reynolds number without adjusting th
 
 ### 2.2 Excessive Time Step (CFL Violation)
 
-**What it is:** Xcompact3d uses explicit time-stepping (Adams-Bashforth or Runge-Kutta). The time step `dt` must be set manually — there is no auto-adaptation.
+**What it is:** Xcompact3d uses explicit time-stepping (Adams-Bashforth or Runge-Kutta). The time step `dt` must be set manually - there is no auto-adaptation.
 
 **How to trigger divergence (any case):**
 
@@ -113,7 +113,7 @@ Take the Re=1600 DNS input and increase the Reynolds number without adjusting th
 
 ---
 
-### 2.4 Cylinder Flow with IBM — Spatial Resolution Mismatch
+### 2.4 Cylinder Flow with IBM - Spatial Resolution Mismatch
 
 **What it is:** The Immersed Boundary Method case uses Lagrange interpolation or spline reconstruction to enforce no-slip at the solid/fluid interface. This can be sensitive to resolution and IBM parameter choices.
 
@@ -156,7 +156,7 @@ make    # No -DDOUBLE_PREC flag
 
 Then run any moderately challenging case (e.g., TGV Re=1600 on 129³ for long integration times).
 
-**Why it diverges:** The Poisson solver operates in spectral space using FFTs. In single precision, round-off errors in the spectral Poisson solve accumulate over time, degrading the divergence-free condition. The modified wavenumber approach ensures machine-accuracy divergence-free solutions — but machine accuracy in single precision (~10⁻⁷) is much worse than double precision (~10⁻¹⁶). Over thousands of time steps, this can accumulate into significant mass conservation errors.
+**Why it diverges:** The Poisson solver operates in spectral space using FFTs. In single precision, round-off errors in the spectral Poisson solve accumulate over time, degrading the divergence-free condition. The modified wavenumber approach ensures machine-accuracy divergence-free solutions - but machine accuracy in single precision (~10⁻⁷) is much worse than double precision (~10⁻¹⁶). Over thousands of time steps, this can accumulate into significant mass conservation errors.
 
 **Fix:** Always compile with `-DDOUBLE_PREC` for production simulations.
 
@@ -201,7 +201,7 @@ Then run any moderately challenging case (e.g., TGV Re=1600 on 129³ for long in
   itype = 13           ! Turbulent Boundary Layer
   nclx1 = 2            ! Inflow
   nclxn = 2            ! Outflow (convective)
-  inflow_noise = 0.5   ! 50% noise at inflow — far too high
+  inflow_noise = 0.5   ! 50% noise at inflow - far too high
 /End
 ```
 
@@ -267,9 +267,9 @@ When a simulation diverges, check these in order:
 | Cylinder (DNS) | 5 | 300 | moderate | 0.005 | IBM + high Re |
 | Lock-Exchange | 1 | 2,236 | 129×65×33 | 0.001 | High Ri buoyancy |
 | TBL | 13 | low | elongated | 0.001 | Inflow noise, outflow reflections |
-| Cavity | — | 14,084 | 2D adequate | small | High Re in confined geometry |
-| 2D Hill | — | 1,000 | 3D adequate | small | Separation/reattachment |
-| Wind Turbines | — | dimensional | large domain | small | Requires ILES approach |
+| Cavity | - | 14,084 | 2D adequate | small | High Re in confined geometry |
+| 2D Hill | - | 1,000 | 3D adequate | small | Separation/reattachment |
+| Wind Turbines | - | dimensional | large domain | small | Requires ILES approach |
 
 ---
 

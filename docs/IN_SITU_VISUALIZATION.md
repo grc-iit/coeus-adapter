@@ -5,16 +5,16 @@
 COEUS-Adapter can drive live, zero-copy visualization while a simulation runs,
 using [ParaView Catalyst 2](https://catalyst-in-situ.readthedocs.io/) with
 [Fides](https://fides.readthedocs.io/) to read ADIOS2 data into ParaView
-pipelines — no per-application adaptor code.
+pipelines - no per-application adaptor code.
 
-- **Inline mode (single-node)** — data pointers are passed in-process to
+- **Inline mode (single-node)** - data pointers are passed in-process to
   ParaView's Fides reader via the ADIOS2 Inline engine; Catalyst executes a
   user-provided Python pipeline.
-- **SST streaming mode (multi-node)** — data is streamed over ADIOS2 SST to an
+- **SST streaming mode (multi-node)** - data is streamed over ADIOS2 SST to an
   external ParaView/Catalyst reader, decoupling simulation and visualization
   processes.
-- **In-situ AI agent (experimental)** — an AI agent drives ParaView through MCP
-  tools to autonomously explore live simulation data — see
+- **In-situ AI agent (experimental)** - an AI agent drives ParaView through MCP
+  tools to autonomously explore live simulation data - see
   [test/insitu_agent](../test/insitu_agent). This is the same *render + reason*
   path used by the [Trigger-Render-Reason pipeline](TRIGGER_RENDER_REASON_PIPELINE.md).
 

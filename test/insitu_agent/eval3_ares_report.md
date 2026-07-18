@@ -1,4 +1,4 @@
-# Eval 3 — Ares: Gray-Scott `steps=5000 / plotgap=50` with 3-output LLM intercept
+# Eval 3 - Ares: Gray-Scott `steps=5000 / plotgap=50` with 3-output LLM intercept
 
 **Date:** 2026-04-07
 **Cluster:** Ares (Skylake-AVX512, Ubuntu 22.04, OpenMPI 5.0.9 over TCP/eno1)
@@ -14,7 +14,7 @@ patterns and demonstrate a **three-phase agent workflow**:
 
 1. **Skip** outputs 1-19 with no visualization work,
 2. **Inspect** outputs 20, 21, 22 with the LLM agent (advance + screenshot
-   + describe — three "continuous LLM inferences"),
+   + describe - three "continuous LLM inferences"),
 3. **Async drain** outputs 23-100 with no LLM and no rendering.
 
 The goal is to measure (a) whether the in-situ pipeline can keep the bridge's
@@ -52,7 +52,7 @@ Settings file: `settings-gs-F008k003-blocking.json`
 ```
 
 `Block` policy was chosen so that during the **inspection** phase, the
-SST writer waits for the bridge to drain — i.e., the *sst_wait* time the
+SST writer waits for the bridge to drain - i.e., the *sst_wait* time the
 bridge records becomes a faithful upper bound on the LLM inference latency
 that backs up into the writer.
 
@@ -62,7 +62,7 @@ that backs up into the writer.
 |---|---:|---:|---:|---|
 | Sim (`adios2-gray-scott`) | **128** | 8 | 16 | ares-comp-10..17 |
 | pvserver (in-situ rendering) | **32** | 2 | 16 | ares-comp-21, 22 |
-| Bridge + MCP server + agent | 1 | 1 | — | ares-comp-13 (login) |
+| Bridge + MCP server + agent | 1 | 1 | - | ares-comp-13 (login) |
 
 The bridge connects to pvserver via `cs://ares-comp-21:11112`.
 
@@ -103,11 +103,11 @@ which injects the spack environment into ssh-spawned shells, so `prted` and
 `prompts/agent_inspect_20_22.txt` instructs Haiku to:
 
 ```
-PHASE 1 (SKIP) — outputs 1..19
+PHASE 1 (SKIP) - outputs 1..19
   19 × advance_step, no screenshots, one-word reasons.
-PHASE 2 (INSPECT) — outputs 20, 21, 22
+PHASE 2 (INSPECT) - outputs 20, 21, 22
   For each: advance_step → get_screenshot → 1-sentence description.
-PHASE 3 (ASYNC DRAIN) — outputs 23..100
+PHASE 3 (ASYNC DRAIN) - outputs 23..100
   Single resume_streaming call, then a closing sentence, then STOP.
 Setup before Phase 1: get_streaming_status + create_isosurface(V, 0.3)
 ```
@@ -127,7 +127,7 @@ its step counter, writes a timing record, **and skips**
 `fides.UpdatePipeline` + `Render(view)` + `SaveScreenshot`.
 
 This is the key optimisation that decouples the bridge from the bulk of
-the simulation — Phase 1 and Phase 3 incur ~18 ms of bridge work per
+the simulation - Phase 1 and Phase 3 incur ~18 ms of bridge work per
 step instead of ~1.6 s.
 
 ## 3. How to reproduce
@@ -245,9 +245,9 @@ T=12.66 s ─── Intercept 21 complete
 |---|---:|---:|
 | A. LLM "think + plan" round-trip | 4.53 s | 36 % |
 | B. advance_step → bridge done | 2.66 s | 21 % |
-| &nbsp;&nbsp;&nbsp;&nbsp;sst_wait | 6 ms | — |
-| &nbsp;&nbsp;&nbsp;&nbsp;Fides UpdatePipeline | 1 194 ms | — |
-| &nbsp;&nbsp;&nbsp;&nbsp;Render + SaveScreenshot | ~400 ms | — |
+| &nbsp;&nbsp;&nbsp;&nbsp;sst_wait | 6 ms | - |
+| &nbsp;&nbsp;&nbsp;&nbsp;Fides UpdatePipeline | 1 194 ms | - |
+| &nbsp;&nbsp;&nbsp;&nbsp;Render + SaveScreenshot | ~400 ms | - |
 | C. bridge done → screenshot in agent | 5.47 s | 43 % |
 
 Output 22 has nearly the same shape (12.17 s; A=6.73, B=2.89, C=2.55 s).
@@ -262,7 +262,7 @@ because of first-frame VTK volume mapper shader compilation).
 | Cache creation | 4 669 | \$1.25 | \$0.00584 |
 | Cache read | 18 626 | \$0.10 | \$0.00186 |
 | Output | 1 756 | \$5.00 | \$0.00878 |
-| **TOTAL** | — | — | **\$0.01696** |
+| **TOTAL** | - | - | **\$0.01696** |
 
 - 29 LLM calls, 28 MCP tool calls
 - Output dominates cost (~52 %), then cache_creation (~34 %)
@@ -283,7 +283,7 @@ worse compression as time progresses):
 ```
 
 Each PNG is a 1024×768 volume rendering of `V` colored by the auto-rescaled
-transfer function. The data shows a centered, growing reactive blob — the
+transfer function. The data shows a centered, growing reactive blob - the
 expected early-time Gray-Scott pattern that hasn't yet spread to fill the
 domain.
 
@@ -305,7 +305,7 @@ domain.
 1. **The render-steps optimisation completely removes the bridge from the
    critical path on uninspected outputs.** Per-step bridge bookkeeping on
    SKIP steps is ~18 ms, vs ~2 300 ms when rendering. Across 107 SKIP
-   steps that's a savings of ~245 s — without it the bridge would back-pressure
+   steps that's a savings of ~245 s - without it the bridge would back-pressure
    the sim's SST queue, slowing the sim's effective rate.
 
 2. **The wall time is sim-compute-bound, not bridge or LLM bound.**
@@ -338,7 +338,7 @@ domain.
 
 7. **Bridge over-shoots after sim ends** (10 stale steps past output
    100 until `--max-steps 110` fired). This is the same Fides quirk we
-   saw in earlier runs — `PrepareNextStep` returns READY for stale data
+   saw in earlier runs - `PrepareNextStep` returns READY for stale data
    when the writer has finished but hasn't cleanly signalled
    END_OF_STREAM. The hard `--max-steps` cap is the right defence.
 
@@ -357,25 +357,25 @@ domain.
 
 In chronological order:
 
-1. **Empty text block in `_call_anthropic`** —
+1. **Empty text block in `_call_anthropic`** -
    `anthropic.BadRequestError: messages: text content blocks must be non-empty`
    when Haiku produced a tool-use turn with no preceding text. The proxy
    used to filter empty blocks silently; the direct API enforces the spec.
    Fix: only emit a text block in the assistant message when non-empty;
    pad to a single space when there are no tool uses either.
 
-2. **Bridge stale-data heuristic false-positives** — an early heuristic
+2. **Bridge stale-data heuristic false-positives** - an early heuristic
    that killed the bridge when render times stayed below 200 ms for 4
    consecutive steps. Triggered every time the bridge view didn't have a
    heavy filter visible. Removed; replaced with the simpler `--max-steps`
    hard cap.
 
-3. **Bridge `SaveScreenshot` extension bug** — `vtkSMSaveScreenshotProxy`
+3. **Bridge `SaveScreenshot` extension bug** - `vtkSMSaveScreenshotProxy`
    infers format from extension and rejected `bridge_latest.png.tmp`.
    Fix: write to `bridge_latest.tmp.png` (extension at the end), then
    atomic `os.replace`.
 
-4. **MCP `get_screenshot` reading from a separate ParaView client state** —
+4. **MCP `get_screenshot` reading from a separate ParaView client state** -
    the bridge process and the MCP server are *separate* `pvpython`
    processes, each with its own `paraview.simple` local view state. Even
    though both connect to the same pvserver, MCP's `Render` + `SaveScreenshot`
@@ -384,14 +384,14 @@ In chronological order:
    to `bridge_latest.png`, and `insitu_mcp_server.py:get_screenshot` now
    reads that file first (with a fallback to `pv_manager.get_screenshot`).
 
-5. **Bridge view showed only the grid wireframe instead of the V field** —
+5. **Bridge view showed only the grid wireframe instead of the V field** -
    `setup_initial_display` originally used `Show(fides, view, "UniformGridRepresentation")`
    which defaulted to Outline. Replaced with `Volume` representation
    colored by V (with Outline fallback if Volume isn't supported on this
    data). Combined with `fides.UpdatePipeline()` per step to force fresh
    reads, this is what makes the agent's screenshots actually show data.
 
-6. **Per-step bridge work was being done even on uninspected outputs** —
+6. **Per-step bridge work was being done even on uninspected outputs** -
    added `--render-steps` filter so the bridge skips
    `UpdatePipeline + Render + SaveScreenshot` on steps the agent will
    never look at. **This is the change that this report is about.**
@@ -400,7 +400,7 @@ In chronological order:
 
 - For a simulation that produces 100 outputs over ~16 minutes of compute,
   a Haiku agent can intercept 3 specific outputs, generate per-output
-  descriptions, and resume async drain — at a total cost of **\$0.017
+  descriptions, and resume async drain - at a total cost of **\$0.017
   and ~36 seconds of agent wall time** (out of 1000 s total run wall).
 
 - The **`--render-steps` filter is the right architectural primitive**:
@@ -419,7 +419,7 @@ In chronological order:
 - **`Fides UpdatePipeline` is the bridge's hot path on render steps**
   (~1.2 s out of ~1.6 s of bridge work). If we needed to render
   *every* output, optimising the SST → VTK deserialisation path would
-  be the next thing to look at — but for the inspect-only workflow we
+  be the next thing to look at - but for the inspect-only workflow we
   use here, it doesn't matter because we only call it 3 times.
 
 - **All four real bugs surfaced by this experiment series have been

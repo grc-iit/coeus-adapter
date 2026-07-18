@@ -4,7 +4,7 @@ This directory contains the Fides data model and Catalyst pipeline for Incompact
 
 ## Application data (from Incompact3d `visu.f90`)
 
-- **Core fields**: `ux`, `uy`, `uz` (velocity), `pp` (pressure) — written by all runs.
+- **Core fields**: `ux`, `uy`, `uz` (velocity), `pp` (pressure) - written by all runs.
 - **Optional**: `rho` (ilmn), `phi01`, `phi02`… (scalars), `warp` (istret); case-specific: `vort`, `critq` (e.g. TGV).
 
 Grid: uniform Cartesian (ImageData); dimensions and spacing come from the run (Fides uses `variable_dimensions` from `ux`).
@@ -14,7 +14,7 @@ Grid: uniform Cartesian (ImageData); dimensions and spacing come from the run (F
 | File | Purpose |
 |------|--------|
 | **fide.json** | Fides schema for runs that write `vort` and `critq` (e.g. TGV). |
-| **fide-minimal.json** | Fides schema with only `ux`, `uy`, `uz`, `pp` — use for Cavity, Channel, etc. |
+| **fide-minimal.json** | Fides schema with only `ux`, `uy`, `uz`, `pp` - use for Cavity, Channel, etc. |
 | **pipeline.py** | Catalyst script: velocity magnitude, contours on `vort` / `pp` / `critq`; supports in situ and post hoc. |
 | **catalyst.py** | Alternate pipeline (velocity magnitude / vorticity). |
 | **incompact3D.json** | Legacy Fides schema (use fide.json or fide-minimal.json). |

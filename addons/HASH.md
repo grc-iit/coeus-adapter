@@ -1,10 +1,10 @@
-# hash() — an ADIOS2 derived variable, not a coeus-adapter module
+# hash() - an ADIOS2 derived variable, not a coeus-adapter module
 
 **coeus-adapter needs no code and no libraries for hashing.** `hash()` is a
 derived-variable *operation* provided by the state-diff-enabled ADIOS2 fork
 (`lizdulac/ADIOS2` branch `coeus-hash`, built with `ADIOS2_USE_Kokkos=ON`,
 `StateDiff_ROOT=...`, `ADIOS2_USE_Derived_Variable=ON`). Kokkos and state-diff
-are **ADIOS2 build-time dependencies only** — they never appear in
+are **ADIOS2 build-time dependencies only** - they never appear in
 coeus-adapter's link line.
 
 ## Why nothing is built into the engine
@@ -25,7 +25,7 @@ operation it was.
 
 ## How to enable it (producer side)
 
-Define the derived variable where the other derived vars are declared — e.g.
+Define the derived variable where the other derived vars are declared - e.g.
 `test/real_apps/gray-scott/simulation/writer.cpp` (next to `derive/VarV`), or the
 standalone analysis tool `test/real_apps/gray-scott/analysis/hashing.cpp` that
 already does exactly this:
@@ -42,14 +42,14 @@ change, no `hermes_engine.cc` edit, no new link dependency.
 
 The hash() *mechanism* rides the engine's existing derived-variable path, so
 nothing new is built into coeus-adapter. The trunk carries the pieces that use
-it — but note the binary comes from the ADIOS2 fork, not this build:
+it - but note the binary comes from the ADIOS2 fork, not this build:
 
-* `test/real_apps/gray-scott/analysis/hashing.cpp` (and `wrf_hashing.cpp`) —
+* `test/real_apps/gray-scott/analysis/hashing.cpp` (and `wrf_hashing.cpp`) -
   example reader/writer that defines `derive/hashU` / `derive/hashV` and writes
   them out. **These sources are not compiled by the trunk's CMake**
   (`test/real_apps/gray-scott/CMakeLists.txt` builds only `adios2-gray-scott`
   and `inCompact3D_analysis`); they document the pattern.
-* `test/jarvis/jarvis_coeus/jarvis_coeus/adios_hashing/` — Jarvis package whose
+* `test/jarvis/jarvis_coeus/jarvis_coeus/adios_hashing/` - Jarvis package whose
   `pkg.py` execs the `adios2-hashing` binary and can select `engine=hermes`
   (coeus-adapter) or `bp5`, with `config/{adios2.xml, hermes.xml, operator.yaml,
   var.yaml}`. The `adios2-hashing` binary itself is provided by the
@@ -58,7 +58,7 @@ it — but note the binary comes from the ADIOS2 fork, not this build:
 
 To hash a gray-scott run through coeus-adapter, run that package with
 `engine=hermes` (the `adios2-hashing` binary must be on `PATH` from the ADIOS2
-fork) — no coeus-adapter code, no new link dependency, `hermes_engine.cc`
+fork) - no coeus-adapter code, no new link dependency, `hermes_engine.cc`
 untouched.
 
 ## Relationship to RECUP

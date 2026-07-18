@@ -34,14 +34,14 @@ Use the proven best config from prior eval:
 - **64 procs across 4 nodes** (16 ppn): ares-comp-21, 22, 18, 19
 - pvserver rank 0 on ares-comp-21 (local) so the bridge connects via `ares-comp-21:11112`
 
-(Local-rendering Phase 1 alternative is deferred — using remote pvserver for now since
+(Local-rendering Phase 1 alternative is deferred - using remote pvserver for now since
 it's working and the comparison is about trigger strategy, not rendering mode.)
 
 ## Test Matrix
 
 8 runs total. All use the same sim + pvserver + bridge setup. Only the consumer changes.
 
-### Baseline (BL) — fixed-period visualization, no LLM
+### Baseline (BL) - fixed-period visualization, no LLM
 
 | ID | K (every N SST steps) | Max Vis Count |
 |----|----------------------|---------------|
@@ -55,7 +55,7 @@ Each baseline run uses a Python script that calls MCP tools via stdio:
 - Records timing + image bytes to `baseline_metrics.jsonl`
 - Exits when `get_streaming_status` reports `ended: true`
 
-### Agent (AG) — LLM-driven visualization
+### Agent (AG) - LLM-driven visualization
 
 | ID | Model | Mode | Description |
 |----|-------|------|-------------|
@@ -158,8 +158,8 @@ Also save screenshots: hook into `get_screenshot` results and copy to `results_d
 ### Step 3: Add prompt files
 
 Create:
-- `prompts/agent_open.txt` — open-ended exploration
-- `prompts/agent_goal.txt` — goal-directed (find pattern emergence)
+- `prompts/agent_open.txt` - open-ended exploration
+- `prompts/agent_goal.txt` - goal-directed (find pattern emergence)
 
 ### Step 4: Build orchestration script
 
@@ -218,26 +218,26 @@ Estimated total token cost: **~$2**.
 
 ## Open Questions Before Starting
 
-1. **Sim wall time** — at L=256, 128 procs, 2000 steps. We measured 264s for 64 procs;
+1. **Sim wall time** - at L=256, 128 procs, 2000 steps. We measured 264s for 64 procs;
    128 procs should be roughly 150-200s but may have communication overhead.
    First BL_K1 run will tell us.
-2. **Agent rate limiting** — if proxy rate limit hits, we'll need to add explicit
+2. **Agent rate limiting** - if proxy rate limit hits, we'll need to add explicit
    `await asyncio.sleep(1.5)` between calls in `run_agent_loop`.
-3. **Goal-directed prompt content** — should we tell the agent the F/k parameters
+3. **Goal-directed prompt content** - should we tell the agent the F/k parameters
    (which determine pattern type) or let it discover?
 
 ## Files to Create / Modify
 
 | File | Action |
 |------|--------|
-| `run_baseline.py` | **NEW** — fixed-K MCP runner, no LLM |
-| `insitu_agent.py` | **MODIFY** — add token usage capture + screenshot saving |
-| `prompts/agent_open.txt` | **NEW** — open-ended exploration prompt |
-| `prompts/agent_goal.txt` | **NEW** — goal-directed prompt |
-| `run_bl_vs_ag.sh` | **NEW** — orchestration |
-| `analyze_bl_vs_ag.py` | **NEW** — metric collection + report generation |
-| `results/bl_vs_ag/` | **NEW** — output directory |
-| `results/bl_vs_ag/COMPARISON.md` | **NEW** — final report |
+| `run_baseline.py` | **NEW** - fixed-K MCP runner, no LLM |
+| `insitu_agent.py` | **MODIFY** - add token usage capture + screenshot saving |
+| `prompts/agent_open.txt` | **NEW** - open-ended exploration prompt |
+| `prompts/agent_goal.txt` | **NEW** - goal-directed prompt |
+| `run_bl_vs_ag.sh` | **NEW** - orchestration |
+| `analyze_bl_vs_ag.py` | **NEW** - metric collection + report generation |
+| `results/bl_vs_ag/` | **NEW** - output directory |
+| `results/bl_vs_ag/COMPARISON.md` | **NEW** - final report |
 
 ---
 

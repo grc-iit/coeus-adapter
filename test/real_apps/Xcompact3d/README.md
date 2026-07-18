@@ -1,4 +1,4 @@
-# Xcompact3d TGV — ADIOS2 derived quantities + dissipation trigger
+# Xcompact3d TGV - ADIOS2 derived quantities + dissipation trigger
 
 Single reference for the Xcompact3d "dark waste" case of the Vigil
 [Trigger-Render-Reason pipeline](../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md):
@@ -9,7 +9,7 @@ Coeus hermes engine.
 This document consolidates and supersedes the former `DISSIPATION_TRIGGER.md`
 and organizes the submodule docs
 (`Incompact3d/derived_quantities.md`, `Incompact3d/derived_comparison.md`,
-`Incompact3d/adios2_derived_metrics_guide.md` — kept as detailed dev logs).
+`Incompact3d/adios2_derived_metrics_guide.md` - kept as detailed dev logs).
 
 **Components** (all in this directory):
 
@@ -73,7 +73,7 @@ cmake -S Incompact3d -B Incompact3d/build -DCMAKE_BUILD_TYPE=Release \
 cmake --build Incompact3d/build -j8
 ```
 
-Sanity check — the binary must resolve the vigil ADIOS2:
+Sanity check - the binary must resolve the vigil ADIOS2:
 
 ```bash
 ldd Incompact3d/build/bin/xcompact3d | grep adios2
@@ -82,7 +82,7 @@ ldd Incompact3d/build/bin/xcompact3d | grep adios2
 
 Notes:
 - `Incompact3d/build_single/` is a stale MPI-backend (`f95`) build tree from
-  the original working copy — ignore it; the adios2 build lives in
+  the original working copy - ignore it; the adios2 build lives in
   `Incompact3d/build/`.
 - Any ADIOS2 2.11 can *read* the output BP5; the vigil build is only needed
   to *write* (it evaluates the derived expressions).
@@ -117,11 +117,11 @@ per writer block, before data leaves the node.
 
 1. **Reversed storage (z,y,x).** 2decomp writes physical x as the fastest
    (last) array axis; ADIOS2 `curl`/`gradient` hard-assume axis0=x. So `curl`
-   is fed swapped — `curl(vz,vy,vx)` — and ∂/∂x is `gradient(u, 2)`.
+   is fed swapped - `curl(vz,vy,vx)` - and ∂/∂x is `gradient(u, 2)`.
    `magnitude`/`mean`/`spectrum` are axis-symmetric (no swap).
 2. **Index-space differentiation.** ADIOS2 stencils divide by the index gap,
    not physical Δx: multiply curl results by `1/Δ`, enstrophy density by
-   `0.5/Δ²`. Skewness/flatness are ratios — Δ cancels. **Isotropic grids
+   `0.5/Δ²`. Skewness/flatness are ratios - Δ cancels. **Isotropic grids
    only** (Δ=dx=dy=dz); stretched grids are not expressible.
 
 The `decomp_2d_register_derived_*` helpers in `2decomp-fft/src/io.f90` bake
@@ -129,13 +129,13 @@ both in.
 
 ### 3.2 Custom ops in adios2-coeus@vigil
 
-- **`gradient(f[,axis])`** — 2nd-order central partials (full ∂u_i/∂x_j;
+- **`gradient(f[,axis])`** - 2nd-order central partials (full ∂u_i/∂x_j;
   stock `curl` only gives antisymmetric mixes).
-- **`mean(f)`** — reduces a field to one value per writer block (the block
+- **`mean(f)`** - reduces a field to one value per writer block (the block
   statistic the trigger pools).
-- **`spectrum(ux,uy,uz)`** (alias `fft`) — shell-binned energy spectrum E(k),
+- **`spectrum(ux,uy,uz)`** (alias `fft`) - shell-binned energy spectrum E(k),
   self-contained radix-2 FFT, power-of-two dims, Parseval-exact.
-- **`pow` fix** — non-integer exponents (`pow(x,1.5)`) previously truncated
+- **`pow` fix** - non-integer exponents (`pow(x,1.5)`) previously truncated
   to integer; required for skewness.
 
 Expression language: function calls only (no infix `*`, `/`), no `E`-notation
@@ -162,7 +162,7 @@ J_derived     = multiply(curl(Bz,By,Bx), -1/(dx*Rem))
 
 | metric | rel. error vs native 6th-order |
 |--------|:---:|
-| E_k (TKE) | 0.000 % (exact — no derivative) |
+| E_k (TKE) | 0.000 % (exact - no derivative) |
 | enstrophy / eps = 2ν·enstrophy | 0.97 % |
 | eps_num, nu_eff/nu (post) | ~1 % |
 | skewness du/dx | 2.9 % |
@@ -172,7 +172,7 @@ J_derived     = multiply(curl(Bz,By,Bx), -1/(dx*Rem))
 
 The residuals are pure 2nd-vs-6th-order truncation (`sin(kΔ)/(kΔ)`).
 Reader gotchas for `J_derived`: component order is **(Jz,Jy,Jx)** and memory
-is **component-last** — reshape the flat buffer to `(nz,ny,nx,3)` regardless
+is **component-last** - reshape the flat buffer to `(nz,ny,nx,3)` regardless
 of the advertised Shape. Details: `Incompact3d/derived_comparison.md`.
 
 ---
@@ -198,14 +198,14 @@ of the advertised Shape. Details: `Incompact3d/derived_comparison.md`.
    ```
 
 4. **Yellow** (`eps_frac ≥ TriggerYellowFraction` or
-   `nu_ratio ≥ TriggerYellowNuRatio`): log-only — `trigger_yellow` JSONL
+   `nu_ratio ≥ TriggerYellowNuRatio`): log-only - `trigger_yellow` JSONL
    event on the rising edge (hook for the asynchronous LLM text monitor).
-5. **Red** (either red threshold): opens the SST inspect window —
+5. **Red** (either red threshold): opens the SST inspect window -
    `TriggerInspectSteps` steps re-Put from CTE with the `vigil/trigger_*`
    scalars (`vigil/trigger_stat` carries `eps_frac`); unflagged steps ship
    nothing. Fire-once unless `TriggerRefire=true`.
 6. Optional `TriggerMetricsLogFile`: rank 0 appends every step's
-   `{step, ke, enstrophy, eps_total, eps_phys, eps_frac, nu_ratio}` —
+   `{step, ke, enstrophy, eps_total, eps_phys, eps_frac, nu_ratio}` -
    the eval2-style timeline data.
 
 ### 4.2 Engine parameters (ADIOS2 XML)
@@ -228,12 +228,12 @@ SST gating).
 
 ### 4.3 Semantics & guards
 
-- First evaluated step has no `dE_k/dt` — no escalation before the second
+- First evaluated step has no `dE_k/dt` - no escalation before the second
   output.
 - If TKE is not decaying (`eps_total ≤ 0`, early TGV phase), `eps_frac` and
-  `nu_ratio` are forced to 0 — no spurious fires while energy is flat.
+  `nu_ratio` are forced to 0 - no spurious fires while energy is flat.
 - `eps_frac` clamps at 0 from below (over-resolved flow can give
-  `eps_total < eps_phys` by the ~1% curl bias — that is not numerical
+  `eps_total < eps_phys` by the ~1% curl bias - that is not numerical
   dissipation).
 - Per-run-unique actions (logs, scalar Puts) are guarded on the MPI rank,
   not the consensus rank (consensus ranks keep incrementing across app runs
@@ -245,10 +245,10 @@ SST gating).
   block-seam bias under MPI decomposition; the ~1% enstrophy bias is from
   single-rank validation. The 5%/15% thresholds have ample margin.
 - The `0.5/Δ²` enstrophy scale assumes an **isotropic** grid.
-- `ek_spectrum` is per-block: a global spectrum only with a single writer —
+- `ek_spectrum` is per-block: a global spectrum only with a single writer -
   do not trigger on it in decomposed runs.
 - `skewness_dudx`/`flatness_dudx` are per-block ratio statistics, not
-  exactly poolable — diagnostics only, not trigger inputs.
+  exactly poolable - diagnostics only, not trigger inputs.
 
 ---
 
@@ -303,7 +303,7 @@ pvbatch test/real_apps/Xcompact3d/catalyst/tgv-pipeline.py \
 The contact file `tgv.bp.sst` appears in `output_location` (NFS-shared);
 remove stale ones before a rerun. The jarvis parser bugs (`configure`
 silently ignoring `x=false` and values equal to the menu default) were
-fixed and re-verified 2026-07-11 — `jarvis pkg configure
+fixed and re-verified 2026-07-11 - `jarvis pkg configure
 coeus-xcompact3d.jarvis_coeus.Incompact3d key=value` now takes effect
 directly (confirm with `jarvis ppl print`). `jarvis ppl kill` does not
 kill mpirun app ranks (`pkill xcompact3d` on all nodes before a rerun).
@@ -314,7 +314,7 @@ kill mpirun app ranks (`pkill xcompact3d` on all nodes before a rerun).
 every 20 steps ship over SST, pvbatch rendered frames with exact physics
 (vort max 1.9946 vs the analytic TGV initial max 2). Throughput caveat:
 one pvbatch reader pulls a 5-field 385³ step (~2.3 GB) in ~25 min, and with
-`QueueLimit=1` the writer stalls at EndStep while a step is being read —
+`QueueLimit=1` the writer stalls at EndStep while a step is being read -
 trim the fides JSON fields or investigate the SST dataplane before scaling
 ungated runs (gray-scott 512³ ×2 fields moved ~2 GB in ~5 s on the same
 fabric).
@@ -324,26 +324,26 @@ under-resolved case), single rank:** transient Yellow at t=0.2 (log-only);
 guards hold `eps_frac=0` through the whole non-decaying phase (36 quiet
 outputs, no spurious fire); Yellow t=3.8 (eps_frac 0.124); **Red t=3.9:
 eps_frac=0.355, nu_ratio=1.55** (cascade onset; eval2's native timeline Red
-≈ t=4.9); exactly `trigger_inspect_steps=3` steps shipped; the reader —
-idle until the fire — rendered vort max 13.2→15.7→19.9 and exited; the
+≈ t=4.9); exactly `trigger_inspect_steps=3` steps shipped; the reader -
+idle until the fire - rendered vort max 13.2→15.7→19.9 and exited; the
 run continued log-only to t=8 (eps_frac 0.73, nu_ratio 3.7 at the end).
 Logs of record: `logs/tgv_trigger_{writer,sst_consumer}.log`,
 `logs/tgv_trigger_{log,metrics}.jsonl`.
 
 **Dissipation trigger, multi-rank (same case, 25 ranks / 4 nodes,
-post-fix — see Section 5.5):** the pooled metrics are now
-decomposition-independent — fire step identical to single-rank and values
+post-fix - see Section 5.5):** the pooled metrics are now
+decomposition-independent - fire step identical to single-rank and values
 match to ~1% (the 2nd-order block-seam curl bias): transient Yellow at
 t=0.2 with eps_frac 0.08266 / nu_ratio 1.0901 (single-rank: 0.08264 /
 1.09008); Yellow t=3.8 (eps_frac 0.1229 vs 0.1245); **Red t=3.9:
 eps_frac=0.3520, nu_ratio=1.5432** (vs 0.3551 / 1.5506); exactly 3 window
-steps shipped at 89–184 ms each (~2× faster than single-rank —
+steps shipped at 89–184 ms each (~2× faster than single-rank -
 parallel marshaling), reader rendered the identical cascade frames
 (vort max 13.2→15.7→19.9, deterministic physics) and exited; clean run to
-t=8. Only one "Catalyst SST stream" startup log line (previously four —
+t=8. Only one "Catalyst SST stream" startup log line (previously four -
 the per-node rank-0 collisions of the fixed bug). Late-time caveat:
 fully-turbulent enstrophy at t=8 runs ~11% above single-rank (13.14 vs
-11.84) from small-block seam bias — irrelevant at the onset-time fire.
+11.84) from small-block seam bias - irrelevant at the onset-time fire.
 Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
 `logs/tgv_trigger25_{log,metrics}.jsonl`.
 
@@ -357,14 +357,14 @@ Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
   (`COEUS_DERIVED_DEBUG=1`):
   1. *CTE tag collisions*: the `rankConsensus` pool keeps one atomic
      counter per node, so `GetRank(PoolQuery::Local())` handed out
-     per-node ranks and the `step_N_rankR` tags collided across nodes —
+     per-node ranks and the `step_N_rankR` tags collided across nodes -
      ranks read/overwrote each other's blobs. Fix (`hermes_engine.cc`):
      only MPI rank 0 draws a consensus value per run (the across-runs
      uniquifier) and broadcasts it; every rank uses
      `base*1000000 + mpi_rank`.
   2. *Unreversed dims*: 2decomp registered ADIOS2 variables with
      Fortran-order (x,y,z) dims, but the ADIOS2 Fortran bindings do not
-     reverse them — metadata claimed axis0=x while x is the fastest axis
+     reverse them - metadata claimed axis0=x while x is the fastest axis
      in memory. Invisible on cubes (all prior validation), it transposes
      the stride map on pencil blocks, so `curl`/`gradient` differentiate
      across wrong strides. Fix (`2decomp-fft/src/io.f90`): register
@@ -377,7 +377,7 @@ Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
 - **`ek_spectrum` aborts the run on non-power-of-two dims** ("spectrum
   requires power-of-two dimensions" at EndStep). Guarded in
   `Case-TGV.f90:visu_tgv_init` (registers only for single-rank,
-  power-of-two grids) — the guard lives in the Incompact3d submodule tree.
+  power-of-two grids) - the guard lives in the Incompact3d submodule tree.
 - **Restart checkpoints through hermes `restart-io` fail** ("Writing
   restart - validation failed!" → MPI_ABORT). Worked around in the jarvis
   tgv benchmark with `icheckpoint = 1000000`.
@@ -398,7 +398,7 @@ Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
       4 nodes with the SST reader (Section 5.4).
 - [ ] Bridge: ParaView pipeline for Q-criterion rendering of flagged steps.
 - [ ] Fix restart checkpoints through the hermes `restart-io`
-      ("validation failed", Section 5.5) — checkpoints currently disabled
+      ("validation failed", Section 5.5) - checkpoints currently disabled
       in the jarvis tgv benchmark.
 
 ---
@@ -409,7 +409,7 @@ Logs of record: `logs/tgv_trigger25_{writer,sst_consumer}.log`,
 |------|------|
 | `adios2-hermes-dissipation-trigger.xml` | example engine config (trigger parameters) |
 | `catalyst/tgv-pipeline.py` | pvbatch SST consumer (renders a vort slice per received step) |
-| `catalyst/tgv-fides.json` | Fides data model for the TGV stream (no `step_information` — the writer emits no step variable) |
+| `catalyst/tgv-fides.json` | Fides data model for the TGV stream (no `step_information` - the writer emits no step variable) |
 | `catalyst/TGV_INSITU_AGENT.md` | interactive AI-agent consumer (pvserver + streaming bridge + MCP server; verified gated end-to-end 2026-07-11) |
 | `catalyst/tgv_insitu_streaming.py` / `tgv_insitu_mcp_server.py` / `run_tgv_consumer.sh` | the agent-stack pieces (see the doc above) |
 | `../../jarvis/jarvis_coeus/jarvis_coeus/Incompact3d/` | jarvis package: SST + trigger knobs, `config/hermes_{sst,trigger}.xml` |

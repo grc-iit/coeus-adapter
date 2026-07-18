@@ -84,7 +84,7 @@ advance timesteps. Remove it for auto-advance mode (2s delay between steps).
 
 ### Step 6: Run the AI agent
 
-The agent launches the MCP server internally — you don't need to start it separately.
+The agent launches the MCP server internally - you don't need to start it separately.
 
 ```bash
 # With OpenAI
@@ -173,7 +173,7 @@ Discovered 24 MCP tools:
   ...
 
 ============================================================
-  In-Situ AI Agent — Interactive Mode
+  In-Situ AI Agent - Interactive Mode
   Type your prompts. Type 'quit' or 'exit' to stop.
 ============================================================
 
@@ -206,7 +206,7 @@ Discovered 24 MCP tools:
   🔧 Calling: get_screenshot({})
   ... (repeats 5 times)
 
-🤖 Agent: The pattern is clearly evolving — the V=0.3 isosurface shows
+🤖 Agent: The pattern is clearly evolving - the V=0.3 isosurface shows
    expanding spots that are beginning to merge. Want me to add a slice
    to see the interior structure?
 
@@ -218,9 +218,9 @@ Exiting.
 
 | File | Purpose |
 |------|---------|
-| `insitu_agent.py` | **AI agent** — LLM loop that calls MCP tools interactively |
-| `insitu_mcp_server.py` | **MCP server** — streaming control + ParaView tools via MCP |
-| `insitu_streaming.py` | **Streaming bridge** — reads SST data into pvserver via Fides |
+| `insitu_agent.py` | **AI agent** - LLM loop that calls MCP tools interactively |
+| `insitu_mcp_server.py` | **MCP server** - streaming control + ParaView tools via MCP |
+| `insitu_streaming.py` | **Streaming bridge** - reads SST data into pvserver via Fides |
 | `adios2-sst.xml` | ADIOS2 config: SST engine with QueueLimit=3, Discard policy |
 | `gs-fides.json` | Fides data model: maps U, V arrays to VTK Cartesian grid |
 | `settings-staging.json` | Gray-Scott simulation settings pointing to SST config |

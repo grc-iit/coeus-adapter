@@ -4,7 +4,7 @@
 
 COEUS computes **ADIOS2 derived variables in-situ**, once per step, as data
 flows through the engine. The producer declares them with the standard ADIOS2
-API — COEUS reads the source fields from CTE, applies the expression, and stores
+API - COEUS reads the source fields from CTE, applies the expression, and stores
 the result alongside the raw data:
 
 ```cpp
@@ -26,7 +26,7 @@ The derived `variance` / `mean` variables above are exactly what the
 
 `hash()` is a derived-variable operation for content hashing / deduplication of
 floating-point snapshots. Importantly, **it is implemented inside ADIOS2**
-(the state-diff-enabled ADIOS2 fork, using Kokkos + DataStates state-diff) — so
+(the state-diff-enabled ADIOS2 fork, using Kokkos + DataStates state-diff) - so
 COEUS reaches it through the same derived-variable path as everything else and
 links **no** extra libraries. To enable it you only define the derived variable
 above and build against the state-diff ADIOS2 fork.

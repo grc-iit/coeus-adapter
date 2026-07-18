@@ -3,7 +3,7 @@
 ## Dependencies
 
 * [clio-core (IOWarp core)](https://github.com/iowarp/clio-core): provides the
-  `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine) — the
+  `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine) - the
   backbone I/O engine COEUS builds against.
 * [ADIOS2](https://github.com/ornladios/ADIOS2): I/O library, built with
   derived-variable support (the `adios2-coeus` Spack package).

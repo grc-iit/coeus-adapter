@@ -1,7 +1,7 @@
 # In-situ AI agent for the Xcompact3d TGV stream
 
 The gray-scott interactive agent stack (`test/insitu_agent/`) ported to the
-Xcompact3d TGV Catalyst SST stream — verified end-to-end (including the live
+Xcompact3d TGV Catalyst SST stream - verified end-to-end (including the live
 LLM agent, 2026-07-12) on Ares against the trigger-gated 25-rank 65³ Re=5000
 run (writer ares-comp-18/20/22/23, consumer ares-comp-26).
 
@@ -42,7 +42,7 @@ rm -f /mnt/common/hxu40/incompact3d/output/tgv.bp.sst
 jarvis ppl kill; jarvis ppl run          # contact file appears ~30 s in
 ```
 
-Consumer (ares-comp-26) — after (or before) the contact file appears:
+Consumer (ares-comp-26) - after (or before) the contact file appears:
 
 ```bash
 ssh ares-comp-26 bash <this-dir>/run_tgv_consumer.sh
@@ -53,7 +53,7 @@ The bridge starts `--paused` at step 0. In gated mode nothing arrives until
 the Red fire (~output 39, t=3.9, ≈7 min for the 65³ Re=5000 case); then each
 `advance_step` pulls one inspect-window step (arrives in 1–3 s).
 
-Agent (run on the consumer node — see NFS note below):
+Agent (run on the consumer node - see NFS note below):
 
 ```bash
 PV=/mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus
@@ -87,7 +87,7 @@ increases* is what makes gated stepping robust: `advance_step` only returns
 agent must confirm arrival before it screenshots (otherwise it captures the
 previous frame). The 2026-07-12 run below used exactly this prompt.
 
-## What we observed — live LLM agent run (2026-07-12)
+## What we observed - live LLM agent run (2026-07-12)
 
 Full workflow end to end: `jarvis ppl run` (gated writer, 25 ranks / 4 nodes,
 65³ Re=5000 dt=0.005 io=20) → `run_tgv_consumer.sh` on ares-comp-26 →
@@ -102,18 +102,18 @@ engine trigger log is `.../output/logs/engine_test_<rand>.txt`.
 
 The engine pools the derived block means every output step and evaluates the
 two-stage Yellow/Red dissipation trigger. It reproduced the canonical
-timeline exactly (identical to the 07-09/07-10 runs — the pooled metrics are
+timeline exactly (identical to the 07-09/07-10 runs - the pooled metrics are
 decomposition-deterministic):
 
 | output | sim time | eps_frac | nu_ratio | trigger |
 |-------:|---------:|---------:|---------:|---------|
 | 2  | t=0.2 | 0.0827 | 1.090 | Yellow (transient; log-only) |
-| …  | …     | 0 (guarded) | — | quiet — guards hold eps_frac=0 while TKE is not decaying |
+| …  | …     | 0 (guarded) | - | quiet - guards hold eps_frac=0 while TKE is not decaying |
 | 38 | t=3.8 | 0.1229 | 1.140 | Yellow |
 | **39** | **t=3.9** | **0.3520** | **1.543** | **RED → opens 3-step SST window** |
 
 Red at output 39 means the numerical (non-physical) share of the dissipation
-jumped to 35 % and the effective viscosity to 1.54× molecular — the
+jumped to 35 % and the effective viscosity to 1.54× molecular - the
 under-resolved cascade onset. Only from here does the writer ship anything.
 
 ### 2. The gate is agent-paced, not wall-clock (writer side)
@@ -126,12 +126,12 @@ LLM turns, the middle step sat in the engine until the model asked for it:
 | flagged step | ship time | what gated it |
 |-------------:|----------:|---------------|
 | 39 | 0.24 s | reader already waiting at the fire |
-| **40** | **33.7 s** | writer blocked in `EndStep` — the LLM was reasoning/screenshotting step 39 |
+| **40** | **33.7 s** | writer blocked in `EndStep` - the LLM was reasoning/screenshotting step 39 |
 | 41 | 0.33 s | agent had advanced again |
 
 The 33.7 s hold is the load-bearing observation: the simulation's output
 cadence was literally paced by the agent's decisions, which is the whole
-point of trigger-gated in-situ steering — the writer only spends bandwidth on
+point of trigger-gated in-situ steering - the writer only spends bandwidth on
 steps the consumer actually asks to see, and waits (rather than dropping or
 racing ahead) while the consumer thinks.
 
@@ -145,10 +145,10 @@ racing ahead) while the consumer thinks.
    that the gated step isn't instantaneous), then `get_screenshot` and a
    written description of the vortex field.
 3. After step 3, chose to build a `create_isosurface(field=vort, value=2.5)`
-   — a value it picked from the volume renders it had seen — and screenshotted
+   - a value it picked from the volume renders it had seen - and screenshotted
    it.
 4. Produced a physically correct cascade narrative, e.g. at step 3:
-   *"The primary filament structure has fragmented further — there are now
+   *"The primary filament structure has fragmented further - there are now
    distributed patches of orange/red high-vorticity regions scattered
    throughout the volume rather than concentrated tubes… the small-scale
    cascade is evident in the grainy texture,"* and closed with a
@@ -157,10 +157,10 @@ racing ahead) while the consumer thinks.
 
 ### 4. The rendered frames (`screenshots/`)
 
-- `agent_0001..0003.png` — the bridge's seamless 65³-resampled volume
+- `agent_0001..0003.png` - the bridge's seamless 65³-resampled volume
   rendering of `vort` at window steps 1–3 (the raw stream is 25 pencil
   blocks; the bridge's `ResampleToImage` removes the block-seam slabs).
-- `agent_0004.png` — the agent's own `vort=2.5` isosurface, rendered in the
+- `agent_0004.png` - the agent's own `vort=2.5` isosurface, rendered in the
   isolated MCP view. It is non-empty and shows the fragmented sheet/filament
   network, confirming the empty-screenshot fix holds when the agent adds its
   own filter into a shared collaboration session.
@@ -202,7 +202,7 @@ Consistent with the gray-scott Haiku agent runs (~$0.11, 25 tool calls).
 - Early-TGV vort max ≈ 2 (isosurface 2.0 is empty); window steps at the fire
   have vort max 13–20 (isosurface 8 is good).
 - pv_manager's `set_representation_type`/`color_by` act on ITS active source,
-  which may be the Fides reader rather than the last contour — the agent
+  which may be the Fides reader rather than the last contour - the agent
   sees the reader's block surfaces and should `toggle_visibility` it off
   (interactive agents recover from the screenshot feedback; same behavior
   as gray-scott).

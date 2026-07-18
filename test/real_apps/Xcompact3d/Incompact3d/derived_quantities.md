@@ -5,7 +5,7 @@ computed, with source references. All line numbers refer to `src/Case-TGV.f90`
 and `src/mhd.f90`.
 
 The primary (solved) fields `ux`, `uy`, `uz` (velocity) and `pp` (pressure) are
-written directly by the core solver. The quantities below are **derived** —
+written directly by the core solver. The quantities below are **derived** -
 computed from velocity (or magnetic) gradients at output time.
 
 ---
@@ -25,7 +25,7 @@ dw/dx = tc1   dw/dy = tf1   dw/dz = ti1
 
 ---
 
-## 1. `vort` — Vorticity magnitude
+## 1. `vort` - Vorticity magnitude
 
 The magnitude of the vorticity vector **ω = ∇ × u**.
 
@@ -49,7 +49,7 @@ call write_field(di1, ".", "vort", num, flush=.true.)
 
 ---
 
-## 2. `critq` — Q-criterion
+## 2. `critq` - Q-criterion
 
 The second invariant of the velocity gradient tensor, used for vortex
 identification (`Q > 0` marks rotation-dominated regions).
@@ -82,14 +82,14 @@ Registered in `visu_tgv_init` (`Case-TGV.f90:547-553`) but written only if MHD i
 enabled (`Case-TGV.f90:634-644`). In the standard TGV runs MHD is off, so no
 `B_*`/`J_*` binaries are produced. Formulas live in `src/mhd.f90`.
 
-### 3. `B_x` / `B_y` / `B_z` — Magnetic field
+### 3. `B_x` / `B_y` / `B_z` - Magnetic field
 
 `B` (`Bm`) is a **state variable**, not recomputed at output time. It is
 allocated in `mhd_init` (`mhd.f90:73`) with initial condition `Bm = (0,1,0)`
 plus a mean field `Bmean` (`mhd.f90:84-95`). Its evolution depends on
 `mhd_equation`:
 
-- **`induction`** — transported by the induction equation
+- **`induction`** - transported by the induction equation
 
 $$
 \frac{\partial \mathbf{B}}{\partial t}
@@ -101,18 +101,18 @@ $$
   term scaled by `1/Rem` (`mhd.f90:499`); time-marched by `int_time_magnet`
   (`mhd.f90:123`) using the same AB/RK scheme as the flow.
 
-- **`potential`** — quasi-static (low-`Rem`) limit: `B` is the imposed field and
+- **`potential`** - quasi-static (low-`Rem`) limit: `B` is the imposed field and
   is not transported.
 
 At output, the writer simply dumps the current `Bm` components.
 
-### 4. `J_x` / `J_y` / `J_z` — Current density
+### 4. `J_x` / `J_y` / `J_z` - Current density
 
 `J` (`Je`) **is** derived, recomputed from `B` and `u`
 (`momentum_forcing_mhd`, `mhd.f90:197-203`; output recompute at
 `Case-TGV.f90:639`):
 
-- **`induction`** — Ampère's law
+- **`induction`** - Ampère's law
 
 $$
 \mathbf{J} = \frac{1}{Re_m}\,\nabla\times\mathbf{B}
@@ -128,7 +128,7 @@ $$
 (\nabla\times\mathbf B)_z=\partial_x B_y-\partial_y B_x
 $$
 
-- **`potential`** — from an electric-potential Poisson solve
+- **`potential`** - from an electric-potential Poisson solve
   (`solve_mhd_potential_poisson`, `mhd.f90:311`):
 
 $$
