@@ -1,0 +1,69 @@
+name: coeus-gray-scott
+
+# MULTI-NODE Delta variant of gray-scott-warn.yaml.
+#   Producers: 256 gray-scott ranks across 2 nodes (128/node) via srun+PMIx
+#              (Delta denies node ssh and mpirun can't span the allocation).
+#   Consumer:  a separate node runs the SST reader + AI agent (not in this
+#              pipeline; launched by CI/Delta/run_gs_multinode.sh).
+#
+# Prereqs (see CI/Delta/env.sh + the shim):
+#   - jarvis hostfile = the 2 producer nodes (jarvis hostfile set <file>)
+#   - srun_nodelist must match those 2 nodes so ranks stay off the consumer node
+#   - env.sh exports PMIX_MCA_gds=hash + TMPDIR (srun+PMIx needs both)
+#
+# The ssh shim runs local-host launches directly and routes REMOTE hosts through
+# `srun --overlap` (starts the clio daemon on the 2nd producer node w/o ssh).
+ssh_cmd:  "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+pssh_cmd: "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+
+env:
+  CLIO_MEMFD_DIR: "/tmp/clio_memfd_${USER}_${HOSTNAME}"
+  LIGHTBEAM_TCP_DEVICE: hsn0    # pin daemon<->daemon ZMQ to the Slingshot rail
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    sleep: 4
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.adios2_gray_scott
+    pkg_name: jarvis_coeus.adios2_gray_scott
+    # --- domain / physics: the saturating regime ---
+    L: 256
+    # --- multi-node: 512 ranks, 128/node, srun+PMIx across the 4 producer nodes ---
+    nprocs: 512
+    ppn: 128
+    launcher: "srun"
+    srun_nodelist: "PRODUCER_NODELIST_PLACEHOLDER"   # the 4 producer nodes (consumer in a separate job)
+    srun_mpi: "pmix"
+    net_if: "hsn0"
+    out_file: "${HOME}/iowarp/gs_warn.bp"
+    F: 0.08
+    k: 0.03
+    dt: 1.0
+    plotgap: 50
+    steps: 20000                   # large so the writer outlives the agent's verdict
+    noise: 0.01
+    checkpoint: false
+    engine: "hermes_derived"
+    # --- collapse-WARNING trigger (engine warns; agent fires) ---
+    trigger: true
+    trigger_baseline_ratio: 20
+    trigger_warn_on_collapse: true
+    trigger_collapse_baseline_ratio: 13
+    trigger_inspect_steps: 4

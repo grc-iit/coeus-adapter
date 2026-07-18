@@ -1,4 +1,13 @@
 name: coeus-gray-scott
+
+# Delta compute-node sshd denies key auth even to localhost/self, so jarvis's
+# PsshExec (ssh to every host, incl. localhost) fails to start the clio
+# daemons + mkdir the output dirs. This shim runs local-host launches directly
+# and falls through to real ssh for remote hosts (needed once we scale to
+# cn024+cn045). See CI/Delta/jarvis-ssh-local-shim.sh.
+ssh_cmd:  "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+pssh_cmd: "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+
 env:
   CLIO_MEMFD_DIR: "/tmp/clio_memfd_${USER}_${HOSTNAME}"
   # LIGHTBEAM_TCP_DEVICE: hsn0   # uncomment to pin daemon<->daemon ZMQ
@@ -33,6 +42,9 @@ pkgs:
     L: 64
     nprocs: 4
     ppn: 4
+    # Delta NIC: OpenMPI pins TCP btl/oob here. Ares used eno1 (absent on Delta,
+    # which would make even a single-node localhost run fail to find a NIC).
+    net_if: "hsn0"
     out_file: "${HOME}/iowarp/gs_warn.bp"
     F: 0.08
     k: 0.03

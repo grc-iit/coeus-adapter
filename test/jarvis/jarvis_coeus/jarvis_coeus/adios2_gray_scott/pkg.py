@@ -5,6 +5,7 @@ substances.
 """
 from jarvis_cd.core.pkg import Application
 from jarvis_cd.shell import Exec, MpiExecInfo, PsshExecInfo, Mkdir, Rm, PscpExec, PscpExecInfo
+from jarvis_cd.shell import LocalExecInfo
 import json
 import os
 import shutil
@@ -181,6 +182,38 @@ class Adios2GrayScott(Application):
                 'msg': 'Path where the bp5 will be stored',
                 'type': str,
                 'default': '1',
+            },
+            {
+                'name': 'net_if',
+                'msg': 'Network interface OpenMPI pins TCP btl/oob traffic to '
+                       '(OMPI_MCA_*_tcp_if_include). Ares=eno1; Delta=hsn0 '
+                       '(Slingshot) or eth1',
+                'type': str,
+                'default': 'eno1',
+            },
+            {
+                'name': 'launcher',
+                'msg': 'MPI launcher. "mpirun" (default) or "srun" — on Delta '
+                       'ssh between nodes is denied and mpirun cannot span the '
+                       'allocation, so multi-node must use srun+PMIx.',
+                'choices': ['mpirun', 'srun'],
+                'type': str,
+                'default': 'mpirun',
+            },
+            {
+                'name': 'srun_nodelist',
+                'msg': 'srun --nodelist (comma-sep) restricting the producer '
+                       'ranks to specific nodes (e.g. cn024,cn046 so consumer '
+                       'nodes stay free). Empty = whole allocation.',
+                'type': str,
+                'default': '',
+            },
+            {
+                'name': 'srun_mpi',
+                'msg': 'srun --mpi type (pmix required for this OpenMPI; pmi2 '
+                       'yields singletons)',
+                'type': str,
+                'default': 'pmix',
             },
             {
                 'name': 'trigger',
@@ -490,10 +523,20 @@ class Adios2GrayScott(Application):
         os.environ['OMPI_MCA_pml'] = 'ob1'
         os.environ['OMPI_MCA_btl'] = 'tcp,self'
         os.environ['OMPI_MCA_osc'] = '^ucx'
-        # Note: Network interface 'eno1' is hardcoded - may need to be configurable
-        # for different systems. Consider adding network_interface parameter to config.
-        os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
-        os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+        # Network interface is configurable via net_if (Ares=eno1, Delta=hsn0/eth1).
+        # A wrong/absent interface makes OpenMPI's tcp btl fail to find a NIC even
+        # for a single-node localhost run, so keep this matched to the machine.
+        net_if = self.config.get('net_if', 'eno1')
+        os.environ['OMPI_MCA_btl_tcp_if_include'] = net_if
+        os.environ['OMPI_MCA_oob_tcp_if_include'] = net_if
+        # Multi-node srun+PMIx (Delta): the Slurm PMIx v5 GDS shmem segment
+        # fails to open across the step (PMIX_ERR_FILE_OPEN_FAILURE) unless we
+        # force the hash GDS; PMIx also needs a valid TMPDIR. env build does not
+        # capture these, so set them here (harmless for the mpirun path).
+        if self.config.get('launcher', 'mpirun') == 'srun':
+            os.environ['PMIX_MCA_gds'] = 'hash'
+            os.environ.setdefault('TMPDIR', os.path.expanduser('~/prte_tmp'))
+            os.makedirs(os.environ['TMPDIR'], exist_ok=True)
         # Ensure paths are initialized
         if self.settings_json_path is None:
             self._ensure_directories()
@@ -515,9 +558,35 @@ class Adios2GrayScott(Application):
             )
         
         # print(self.env['HERMES_CLIENT_CONF'])
-        if self.config['engine'].lower() in ['bp5_derived', 'hermes_derived']:
-            derived = 1
-            Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
+        derived = 1 if self.config['engine'].lower() in [
+            'bp5_derived', 'hermes_derived'] else 0
+        app_cmd = f'adios2-gray-scott {self.settings_json_path} {derived}'
+
+        if self.config.get('launcher', 'mpirun') == 'srun':
+            # Multi-node on Delta: mpirun cannot span the allocation and ssh is
+            # denied, so launch the ranks with srun+PMIx. env.sh sets
+            # PMIX_MCA_gds=hash (the Slurm PMIx v5 shmem GDS fails to open) and
+            # TMPDIR; those flow through self.mod_env. Runs locally on this node;
+            # srun distributes the ranks across --nodelist.
+            nprocs = int(self.config['nprocs'])
+            ppn = int(self.config['ppn'])
+            nnodes = max(1, -(-nprocs // ppn))  # ceil
+            jobid = os.environ.get('SLURM_JOB_ID', '')
+            parts = ['srun']
+            if jobid:
+                parts.append(f'--jobid={jobid}')
+            parts += [f'--mpi={self.config.get("srun_mpi", "pmix")}',
+                      f'-N{nnodes}', f'--ntasks-per-node={ppn}', f'-n{nprocs}',
+                      '--overlap']
+            if self.config.get('srun_nodelist'):
+                parts.append(f'--nodelist={self.config["srun_nodelist"]}')
+            parts.append(app_cmd)
+            srun_cmd = ' '.join(parts)
+            print(f'[gray-scott] srun launch: {srun_cmd}')
+            Exec(srun_cmd, LocalExecInfo(env=self.mod_env,
+                                         cwd=os.getcwd())).run()
+        else:
+            Exec(app_cmd,
                  MpiExecInfo(nprocs=self.config['nprocs'],
                              ppn=self.config['ppn'],
                              hostfile=self.jarvis.hostfile,
@@ -525,13 +594,6 @@ class Adios2GrayScott(Application):
                              do_dbg=self.config.get('do_dbg', False),
                              dbg_port=self.config.get('dbg_port', None)
                              )).run()
-        elif self.config['engine'].lower() in ['hermes', 'bp5']:
-            derived = 0
-            Exec(f'adios2-gray-scott {self.settings_json_path} {derived}',
-                 MpiExecInfo(nprocs=self.config['nprocs'],
-                             ppn=self.config['ppn'],
-                             hostfile=self.jarvis.hostfile,
-                             env=self.mod_env)).run()
 
 
     def stop(self):
