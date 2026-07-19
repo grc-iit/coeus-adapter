@@ -327,15 +327,75 @@ accordingly (≥ `plotgap × 1.5 × 24·(L/64)`), and note the RAM CTE tier must
 all outputs to the halt (no eviction tier configured): at L=256 that is
 0.25 GB/output/node - 125 outputs ≈ 31 GB, just inside the 32 GB tier.
 
-**Known limitation - L=512 producer-side stall (open).** At L=512 the writer's
-4 MB-per-rank blob Puts stall inside the CTE (daemon intake plateaus, a subset
-of ranks spin in clio `Wait()`, the rest block in the next collective); L=256
-(0.5 MB blobs) runs cleanly with the same 256 ranks, so blob **size** - not
-rank count - is the trigger. `client_data_segment_size=8G`/`num_threads=8`
-delays but does not fix it. Until fixed in the CTE, the verified maximum for
-the full loop on Delta is **L=256 with 256 ranks**; the same L=512 config on
-Ares (different backbone) is documented working in
-[BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md) §3.
+**Known limitation - L=512 producer-side stall (ROOT-CAUSED 2026-07-18).** At
+L=512 the writer's 4 MB-per-rank blob Puts stall inside the CTE (daemon intake
+plateaus, a subset of ranks spin in clio `Wait()`, the rest block in the next
+collective); L=256 (0.5 MB blobs) runs cleanly with the same 256 ranks.
+`client_data_segment_size=8G`/`num_threads=8` delays but does not fix it.
+
+The stall was **reproduced and diagnosed on Ares** (15 nodes × 40 cores,
+512 ranks, 2026-07-18) with the identical signature - output interval grew
+27 s → 110+ s while daemon RSS climbed without bound, ranks caught in gdb
+spinning in `Future::Wait` inside `EndStep → ComputeDerivedVariables →
+CTETagClient::Get`, one rank in the trigger `MPI_Allreduce`, the rest piled
+into the next halo exchange. The cause is a four-factor chain, not a race:
+
+1. **CTE placement scatters every blob.** `HashBlobToContainer()`
+   (clio-core `context-transfer-engine/core/src/core_runtime.cc`, used by
+   `Route()` for all PutBlob/GetBlob) maps each blob to a **uniformly random
+   node** via `DirectHash(hash(tag, blob_name))`. With N producer nodes,
+   (N-1)/N of all output bytes cross the network (Delta 2 nodes: 50%;
+   Ares 15 nodes: ~93%). `neighborhood: 1` does **not** localize placement -
+   it only pins each container's storage target to its own bdev.
+2. **The engine reads everything back at every output.**
+   `HermesEngine::ComputeDerivedVariables()` (`src/hermes_engine.cc`) calls
+   `hermes_->tag->Get(source)` for each source of each of the **4** derived
+   variables (AddU/AddV/VarU/VarV) - per rank per output that is a 4 MB Put
+   (U+V) plus an **8 MB Get-back** (U ×2, V ×2), again hash-scattered.
+3. **The daemon↔daemon ZMQ mesh (port 9413) is the choke point.** Measured on
+   Ares 1 GbE: all-to-all streams pinned at `cwnd:10` (~14 KB in flight),
+   RTT inflated 14-22 ms by the co-resident MPI halo traffic, ~1 MB/s per
+   stream, 300-460 KB Send-Q backlogs - aggregate drain far below the
+   ~6 GB/output intake, so the backlog (and each output's latency) grows
+   monotonically until it presents as a stall.
+4. **The per-output trigger `Allreduce` couples the cohort** to the slowest
+   rank's CTE ops, so one slow Get stalls all ranks.
+
+Since bytes/output ∝ L³ at fixed rank count, this is exactly why **blob size,
+not rank count**, is the trigger, and why L=256 stays clean (A/B-verified on
+Ares: L=256/512 ranks = 5.8 s/output flat, completed; L=512/512 ranks on the
+same nodes degraded 27→110+ s/output and never finished).
+
+**Potential fix** (in order of leverage):
+
+- **Operational, verified:** put the CTE daemon mesh (and MPI) on the fastest
+  fabric. On Ares, moving clio's `networking.hostfile` to the 40 GbE hostnames
+  + `net_if=<40G NIC>` turned the same L=512/512-rank run from a degrading
+  stall into a **steady ~28.6 s/output, completing 40/40 outputs in 1160 s**
+  (streams idle between outputs, delivery 0.8-87 Gbps when active). On Delta,
+  confirm the daemon hostfile resolves to `hsn0` addresses - if the daemons
+  inter-connect over the management network, the same collapse follows. (Ares
+  gotcha: seed `known_hosts` for the alternate hostnames with `ssh-keyscan` -
+  the mpirun wrapper's Spack openssh fails as a misleading "PRTE has lost
+  communication with a remote daemon".)
+- **CTE fix (root):** add a local-first placement mode - route `PutBlob` to
+  the writer's local container (`PoolQuery::Local`) instead of
+  `DirectHash(hash)`. Simulation output has no reason to leave the node at
+  Put time; DHT-style scatter can remain opt-in for shared/global tags.
+- **Engine fix (removes ~2/3 of the traffic):** compute derived variables
+  from the in-memory data the rank just Put instead of `Get`-ing the blobs
+  back in `ComputeDerivedVariables()` (cache the Put buffers for the step, or
+  Get once per source variable instead of once per derived variable).
+- **Diagnosis aid:** under fabric congestion rank-0 stdout arrives *minutes*
+  late through the launcher (13+ outputs behind on Ares) - a silent writer is
+  not necessarily stalled. Ground-truth progress = CTE step tags
+  (`cte_search ".*" "step.*"`) or `ss -tin` byte counters on port 9413.
+
+Until the CTE/engine fixes land, the verified maximum for the full loop on
+Delta is **L=256 with 256 ranks**; on Ares, **L=512 with 512 ranks completes
+when the daemon mesh runs on the 40 GbE fabric**. The 64-rank L=512 Ares
+reference in [BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md) §3
+predates this diagnosis.
 
 Baseline (no-agent, engine-only) and larger-`L`/rank reference points from Ares
 are tabulated in [BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md) §3.
