@@ -189,6 +189,59 @@ STATUS_FILE_PATH = None
 TIMING_FILE = None
 SCREENSHOT_FILE = None
 STOP_FLAG_PATH = None  # <output>.stop written by fire_stop_simulation (agent verdict)
+FRAMES_DIR = None      # async snapshot dir written by insitu_streaming.py --frames-dir
+
+
+def _read_frames_manifest():
+    """Read the async-snapshot manifest (frames.jsonl) written by the bridge.
+
+    Returns a list of {step, png, v_min, v_max, timestamp} records, oldest
+    first. Empty if the bridge hasn't captured any flagged frame yet.
+    """
+    if not FRAMES_DIR:
+        return []
+    path = os.path.join(FRAMES_DIR, "frames.jsonl")
+    if not os.path.exists(path):
+        return []
+    records = []
+    try:
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+    except OSError:
+        pass
+    return records
+
+
+def _wait_for_frames(min_frames, timeout_s, settle_s=10.0):
+    """Block server-side until the flagged window has landed on disk.
+
+    Returns as soon as `min_frames` frames are present, OR (if at least one
+    frame exists) the manifest has stopped growing for `settle_s` (the window
+    shipped fewer than min_frames), OR `timeout_s` elapses. This keeps the agent
+    from busy-polling at LLM speed and giving up before the window lands -- one
+    patient call instead of many empty ones, while the simulation runs on.
+    """
+    deadline = time.monotonic() + timeout_s
+    last_count = -1
+    last_change = time.monotonic()
+    while time.monotonic() < deadline:
+        recs = _read_frames_manifest()
+        n = len(recs)
+        if n >= min_frames:
+            return recs
+        if n != last_count:
+            last_count = n
+            last_change = time.monotonic()
+        if n >= 1 and (time.monotonic() - last_change) >= settle_s:
+            return recs
+        time.sleep(0.5)
+    return _read_frames_manifest()
 
 
 def timed_tool(func):
@@ -404,6 +457,81 @@ def fire_stop_simulation(reason: str = "") -> str:
 # ============================================================================
 # Standard ParaView MCP Tools (from paraview_mcp_server.py)
 # ============================================================================
+
+@mcp.tool()
+@timed_tool
+def get_flagged_frames_info() -> str:
+    """
+    ASYNC verdict path. Report the flagged-window frames the streaming bridge has
+    already captured to disk, WITHOUT touching the SST stream.
+
+    In async snapshot mode the bridge greedily drains the flagged window to
+    per-step PNGs + a manifest as soon as the trigger fires, so the simulation
+    never waits on you. Call this first to see how many flagged steps are ready
+    and their V-field ranges (v_max rising = pattern forming; v_min/v_max
+    collapsing toward a single value = homogenising). Then call get_flagged_frames
+    to view the images and issue your verdict. Do NOT call advance_step in this
+    mode — it is not needed and the sim is not gated on you.
+
+    Returns:
+        JSON text: {"ready": N, "frames": [{step, v_min, v_max}, ...]}.
+    """
+    recs = _read_frames_manifest()
+    summary = {
+        "ready": len(recs),
+        "frames": [
+            {"step": r.get("step"), "v_min": r.get("v_min"), "v_max": r.get("v_max")}
+            for r in recs
+        ],
+    }
+    return json.dumps(summary)
+
+
+@mcp.tool()
+@timed_tool
+def get_flagged_frames(min_frames: int = 4, wait_s: float = 240.0,
+                       max_frames: int = 8):
+    """
+    ASYNC verdict path. Return the captured flagged-window frames as images so you
+    can visually judge whether the run is healthy, reading them straight from disk
+    (no SST pull, no advance_step — the simulation runs on independently).
+
+    This BLOCKS server-side until the flagged window has landed (up to min_frames
+    frames, or the manifest stops growing, or wait_s elapses), so you make ONE
+    patient call instead of polling. The trigger may take a minute or two to fire
+    at scale; that wait is expected, not a hang, and the simulation is NOT gated
+    on it.
+
+    Args:
+        min_frames: how many flagged frames to wait for (default = inspect window).
+        wait_s: max seconds to wait for the window to land.
+        max_frames: cap on how many of the most recent frames to return.
+
+    Returns:
+        A list whose first item is a JSON text summary (per-frame step + V range)
+        followed by one image per flagged step. If nothing lands in time, a short
+        status string.
+    """
+    recs = _wait_for_frames(min_frames, wait_s)
+    if not recs:
+        return (f"No flagged frames captured within {wait_s:.0f}s. The trigger "
+                f"may not have fired yet or the bridge is not in --frames-dir "
+                f"mode.")
+    recs = recs[-max_frames:]
+    summary = json.dumps({
+        "count": len(recs),
+        "frames": [
+            {"step": r.get("step"), "v_min": r.get("v_min"), "v_max": r.get("v_max")}
+            for r in recs
+        ],
+    })
+    out = [summary]
+    for r in recs:
+        png = r.get("png")
+        if png and os.path.exists(png):
+            out.append(Image(path=png))
+    return out
+
 
 @mcp.tool()
 @timed_tool
@@ -914,6 +1042,13 @@ def main():
              "fire_stop_simulation tool writes it so the agent's fire verdict "
              "halts the run (paired with the engine's collapse WARNING).",
     )
+    parser.add_argument(
+        "--frames-dir", type=str, default=None,
+        help="Async snapshot dir written by insitu_streaming.py --frames-dir. "
+             "When set, get_flagged_frames / get_flagged_frames_info serve the "
+             "captured flagged window from disk so the agent's verdict never "
+             "paces the simulation.",
+    )
 
     args = parser.parse_args()
 
@@ -923,12 +1058,13 @@ def main():
     STATUS_FILE_PATH = os.path.abspath(args.status_file)
 
     # Store connection params for lazy connect (pvserver may not be up yet)
-    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE, STOP_FLAG_PATH
+    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE, STOP_FLAG_PATH, FRAMES_DIR
     _pv_server = args.server
     _pv_port = args.port
     TIMING_FILE = args.timing_file
     SCREENSHOT_FILE = os.path.abspath(args.screenshot_file) if args.screenshot_file else None
     STOP_FLAG_PATH = os.path.abspath(args.stop_flag) if args.stop_flag else None
+    FRAMES_DIR = os.path.abspath(args.frames_dir) if args.frames_dir else None
 
     try:
         logger.info("Starting In-Situ ParaView MCP Server")

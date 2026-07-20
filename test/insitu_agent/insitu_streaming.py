@@ -196,6 +196,73 @@ def setup_initial_display(fides, view):
     return display
 
 
+def prewarm_render(view):
+    """
+    Absorb the one-time VTK/OpenGL volume-render warm-up (~20 s on first real
+    frame) BEFORE any flagged data arrives, by volume-rendering a throwaway
+    Wavelet source once. In async snapshot mode the writer only waits while the
+    bridge is draining the flagged window, so paying this cost up front (off the
+    critical path) keeps the per-flagged-step drain fast (~1 s render each).
+    """
+    try:
+        # Mirror setup_initial_display's exact path (uniform-grid Volume + a
+        # colour LUT) on a throwaway Wavelet so the one-time volume shader/LUT
+        # compilation is paid here, not on the first real flagged frame. A
+        # non-trivial extent warms the volume texture path too.
+        w = Wavelet()
+        w.WholeExtent = [0, 63, 0, 63, 0, 63]
+        d = Show(w, view, "UniformGridRepresentation")
+        try:
+            d.SetRepresentationType("Volume")
+            ColorBy(d, ("POINTS", "RTData"))
+            lut = GetColorTransferFunction("RTData")
+            lut.AutomaticRescaleRangeMode = "Clamp and update every timestep"
+            d.RescaleTransferFunctionToDataRange(True, False)
+        except Exception:
+            d.SetRepresentationType("Surface")
+        view.ResetCamera()
+        Render(view)
+        Hide(w, view)
+        Delete(w)
+        del w
+        print("[insitu_streaming] Render pipeline pre-warmed")
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: prewarm failed (non-fatal): {e}")
+
+
+def _save_frame(frames_dir, step, view, vr, screenshot_file):
+    """
+    Async snapshot: persist this flagged step as its own frame_<step>.png plus a
+    line in frames.jsonl, so the AI agent can inspect the whole flagged window
+    from disk WITHOUT driving the SST stream (the simulation never waits on the
+    agent). Copies the bridge screenshot when available (no extra server render);
+    otherwise renders the frame directly.
+    """
+    try:
+        frame_png = os.path.join(frames_dir, f"frame_{step:04d}.png")
+        if screenshot_file and os.path.exists(screenshot_file):
+            import shutil
+            shutil.copyfile(screenshot_file, frame_png)
+        else:
+            tmp = frame_png + ".tmp.png"
+            SaveScreenshot(tmp, view)
+            os.replace(tmp, frame_png)
+        record = {
+            "step": step,
+            "png": frame_png,
+            "v_min": round(vr[0], 6) if vr else None,
+            "v_max": round(vr[1], 6) if vr else None,
+            "timestamp": time.time(),
+        }
+        with open(os.path.join(frames_dir, "frames.jsonl"), "a") as f:
+            json.dump(record, f)
+            f.write("\n")
+        print(f"[insitu_streaming] Snapshot -> {frame_png} "
+              f"V=[{record['v_min']},{record['v_max']}]")
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: failed to save frame {step}: {e}")
+
+
 def _debug_view_state(view, tag, fides=None):
     """Dump per-representation state (gated by INSITU_DEBUG_VIEW=1)."""
     if os.environ.get("INSITU_DEBUG_VIEW") != "1":
@@ -312,6 +379,15 @@ def streaming_loop(args, state):
     timing_file = getattr(args, 'timing_file', None)
     max_steps = getattr(args, 'max_steps', 0) or 0  # 0 = unlimited
     screenshot_file = getattr(args, 'screenshot_file', None)
+    frames_dir = getattr(args, 'frames_dir', None)
+    if frames_dir:
+        os.makedirs(frames_dir, exist_ok=True)
+        # Start each run with a clean manifest so stale frames from a prior run
+        # can never be read as this run's flagged window.
+        try:
+            os.remove(os.path.join(frames_dir, "frames.jsonl"))
+        except OSError:
+            pass
 
     # Which steps should actually render + save a screenshot? Default "all".
     # Skipping render/save on non-interesting steps avoids the ~1.6 s of
@@ -342,6 +418,12 @@ def streaming_loop(args, state):
 
     fides = setup_fides_reader(args.json_filename, args.bp_filename, args.staging)
     view = setup_render_view()
+
+    # In async snapshot mode, warm the render pipeline now (before the gated
+    # window arrives) so draining the flagged window stays fast and the writer
+    # stalls only briefly.
+    if frames_dir:
+        prewarm_render(view)
 
     with state.lock:
         state.fides = fides
@@ -454,6 +536,11 @@ def streaming_loop(args, state):
               f"pipeline={t_pipeline_end - t_pipeline_start:.3f}s "
               f"render={t_render_end - t_render_start:.3f}s)")
 
+        # Async snapshot: persist this flagged step to its own frame + manifest
+        # so the agent can inspect the window from disk (never pacing the sim).
+        if frames_dir and should_render:
+            _save_frame(frames_dir, state.step, view, vr, screenshot_file)
+
         # --- SAFETY: hard step cap ---
         if max_steps > 0 and state.step >= max_steps:
             with state.lock:
@@ -542,6 +629,15 @@ def parse_args():
              "Other steps just consume the SST step and record timing. "
              "Default 'all' renders every step.",
         type=str, default="all",
+    )
+    parser.add_argument(
+        "--frames-dir",
+        help="Async snapshot mode: directory to persist each flagged step as "
+             "frame_<step>.png plus a frames.jsonl manifest (step, V min/max). "
+             "Run WITHOUT --paused so the bridge greedily drains the flagged "
+             "window to disk; the AI agent then inspects the frames from disk "
+             "via the MCP get_flagged_frames tool without pacing the simulation.",
+        type=str, default=None,
     )
     return parser.parse_args()
 

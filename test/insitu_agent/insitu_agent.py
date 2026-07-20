@@ -405,6 +405,13 @@ async def main():
              "fire verdict paired with the engine's collapse WARNING).",
     )
     parser.add_argument(
+        "--frames-dir", type=str, default=None,
+        help="Async snapshot dir (matches insitu_streaming.py --frames-dir), "
+             "forwarded to the MCP server so the agent reads the flagged window "
+             "from disk (get_flagged_frames) instead of pacing the sim via "
+             "advance_step.",
+    )
+    parser.add_argument(
         "--results-dir", type=str, default=None,
         help="Directory to save per-run artifacts (screenshots, token_usage.json)",
     )
@@ -478,6 +485,8 @@ async def main():
         mcp_args.extend(["--screenshot-file", args.screenshot_file])
     if args.stop_flag:
         mcp_args.extend(["--stop-flag", args.stop_flag])
+    if args.frames_dir:
+        mcp_args.extend(["--frames-dir", args.frames_dir])
 
     mcp_command = args.pvpython or sys.executable
 
