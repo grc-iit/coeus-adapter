@@ -33,7 +33,11 @@ done
 
 log "bridge (pvpython insitu_streaming) --paused, reading $STREAM"
 ( spack load "$PV_HASH"
-  exec pvpython "$INSITU/insitu_streaming.py" \
+  # -u: unbuffered. Without it pvpython block-buffers and bridge_mn.log stays
+  # 0 bytes until exit -- so a killed run leaves NO evidence of whether the
+  # bridge ever connected, and "did the SST reader attach?" has to be inferred
+  # indirectly from daemon RSS. Keep this; it costs nothing.
+  exec pvpython -u "$INSITU/insitu_streaming.py" \
        -j "$INSITU/gs-fides.json" -b "$STREAM" --staging \
        --server localhost --port "$PORT" --paused \
        --status-file "$STATUS_FILE" --screenshot-file "$SHOT_FILE" \

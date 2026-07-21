@@ -23,7 +23,13 @@ env:
 pkgs:
   - pkg_type: jarvis_clio_core.clio_runtime
     pkg_name: runtime
-    num_threads: 4
+    num_threads: 8
+    # L=512 stall root-cause lever: TaskQueue is a FIXED ring with
+    # WAIT_FOR_SPACE (spin) on full. Default queue_depth=1024/lane overflows at
+    # L=512 (128 ranks x 2 fields x 64 block-subtasks ~= 16k/node/output ->
+    # 2 workers livelock spinning for space). 32768 lifts capacity above the
+    # demand; L=256 never crossed the 1024 threshold (8 blocks/blob ~= 2k).
+    queue_depth: 32768
     client_data_segment_size: "2G"
     port: 9413
     dbg_port: 4000
@@ -44,12 +50,12 @@ pkgs:
   - pkg_type: jarvis_coeus.adios2_gray_scott
     pkg_name: jarvis_coeus.adios2_gray_scott
     # --- domain / physics: the saturating regime ---
-    L: 256
-    # --- multi-node: 512 ranks, 128/node, srun+PMIx across the 4 producer nodes ---
-    nprocs: 512
+    L: 512
+    # --- multi-node: 256 ranks, 128/node, srun+PMIx across the 2 producer nodes ---
+    nprocs: 256
     ppn: 128
     launcher: "srun"
-    srun_nodelist: "PRODUCER_NODELIST_PLACEHOLDER"   # the 4 producer nodes (consumer in a separate job)
+    srun_nodelist: "cn063,cn064"   # the 2 producer nodes (consumer in a separate job)
     srun_mpi: "pmix"
     net_if: "hsn0"
     out_file: "${HOME}/iowarp/gs_warn.bp"
@@ -57,11 +63,15 @@ pkgs:
     k: 0.03
     dt: 1.0
     plotgap: 50
-    steps: 20000                   # large so the writer outlives the agent's verdict
+    steps: 200                     # L=512 stall retest: 4 outputs, producer-only
     noise: 0.01
     checkpoint: false
     engine: "hermes_derived"
-    # --- collapse-WARNING trigger (engine warns; agent fires) ---
+    # --- trigger ON even for the stall retest: the hermes_derived writer ALWAYS
+    #     opens the catalyst SST stream (RendezvousReaderCount=1) and blocks at
+    #     rendezvous until a consumer connects, so a consumer is required either
+    #     way; with steps=200 the warn never fires and the gated stream ships
+    #     nothing, so the consumer just satisfies the rendezvous. ---
     trigger: true
     trigger_baseline_ratio: 20
     trigger_warn_on_collapse: true

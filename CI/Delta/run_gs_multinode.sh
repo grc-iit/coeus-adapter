@@ -20,7 +20,10 @@
 set -uo pipefail
 
 REPO="${REPO:-/u/hxu13/software/coeus-adapter}"
-ENV_SH="$REPO/CI/Delta/env.sh"
+# Overridable so the iowarp@dev variant (CI/Delta/env-dev.sh -> build-dev/) can
+# reuse this orchestrator verbatim. Was hardcoded, which silently put the
+# iowarp@main build/bin on PATH even when the caller had sourced env-dev.sh.
+ENV_SH="${ENV_SH:-$REPO/CI/Delta/env.sh}"
 INSITU="$REPO/test/insitu_agent"
 PV_HASH="${PV_HASH:-/7fqo3o7}"
 PRODUCER_NODES="${PRODUCER_NODES:-cn024,cn046}"
