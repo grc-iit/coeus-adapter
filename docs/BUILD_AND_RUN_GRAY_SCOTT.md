@@ -456,7 +456,7 @@ Gotchas (each cost a debugging session - details in
   against the reader's current data - while **never** touching the reader
   proxy itself (forcing it to re-execute outside the bridge's
   `PrepareNextStep` cycle is exactly the empty-screenshot failure mode
-  above). Regression harness: `test/insitu_agent/probe_mcp_view.py`
+  above). Regression harness: `test/insitu_agent/assets/scripts/probe_mcp_view.py`
   (Section 7.6). Residual: the MCP client's cached *metadata* (e.g. field
   ranges from `get_available_arrays`) can still read stale; the bridge log's
   per-step `V=[min,max]` is the scalar ground truth.
@@ -759,7 +759,7 @@ of Section 4).
 
 #### 7.6.2 Regression harness (no LLM, reproducible A/B)
 
-`test/insitu_agent/probe_mcp_view.py` drives the *real* MCP tool functions
+`test/insitu_agent/assets/scripts/probe_mcp_view.py` drives the *real* MCP tool functions
 in-process (connect as second client → `create_isosurface` → `advance_step`
 ×4 → save both the bridge PNG and the MCP-view PNG per confirmed step) and
 reports distinct-frame counts. Against a live 4-rank L=64 SST stream

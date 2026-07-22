@@ -181,10 +181,14 @@ and a JSON-lines event in `<script_location>/lammps_trigger_log.jsonl`:
    host, where mpirun places ranks by default) to the pipeline hostfile so app
    and runtime co-locate.
 
-3. **Render side not wired.** Streaming flagged atoms to ParaView needs a Fides
-   **particle** data model (the Gray-Scott uniform-grid `gs-fides.json` does
-   not apply); `x y z` are already dumped for it. Enable via the commented
-   Catalyst block in `adios2_config.xml`.
+3. **Render + reason.** A ParaView-free consumer now renders the flagged atoms
+   as a particle scatter and drives the AI-agent stop verdict -
+   `consumer/lammps_{sst_reader,insitu_mcp_server,agent}.py`; verified
+   end-to-end on the offline BP5 path 2026-07-21 (see `README.md` §5.1/§5.3).
+   The *live gated SST* path still needs a Fides **particle** data model (the
+   Gray-Scott uniform-grid `gs-fides.json` does not apply; `x y z` are already
+   dumped) + a Catalyst pipeline, because the engine gates SST behind
+   `Script`+`DataModel` - the commented block in `adios2_config.xml`.
 
 ## 7. File inventory
 

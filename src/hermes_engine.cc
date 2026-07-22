@@ -20,6 +20,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <cstring>
 #include <limits>
 #include <thread>
@@ -306,6 +307,20 @@ void HermesEngine::Init_() {
   }
   if (params.find("TriggerMetricsLogFile") != params.end()) {
     trigger_metrics_log_file_ = params["TriggerMetricsLogFile"];
+  }
+  // Derive a sibling wall-clock timeline file (…/trigger_timeline.jsonl) and
+  // truncate it once per run (rank 0) so a run's timeline starts clean.
+  {
+    trigger_timeline_file_ = trigger_log_file_;
+    auto pos = trigger_timeline_file_.rfind("trigger_log");
+    if (pos != std::string::npos)
+      trigger_timeline_file_.replace(pos, std::string("trigger_log").size(),
+                                     "trigger_timeline");
+    else
+      trigger_timeline_file_ = "trigger_timeline.jsonl";
+    if (m_Comm.Rank() == 0) {
+      std::ofstream reset(trigger_timeline_file_, std::ios::trunc);
+    }
   }
 
   if (trigger_type_ == "dissipation") {
@@ -668,6 +683,13 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   IncrementCurrentStep();
 
+  // Wall-clock timeline (writer side): the first step marks the simulation
+  // stepping start; every step marks its compute-begin.
+  if (m_OpenMode == adios2::Mode::Write) {
+    if (currentStep == 1) LogTimeline_("sim_start", 0, 0.0);
+    LogTimeline_("step_begin", currentStep, 0.0);
+  }
+
   #ifdef COEUS_HAVE_CATALYST
   inline_writer_in_step_ = false;
   if (CatalystState && CatalystState->UseSST()) {
@@ -891,6 +913,12 @@ void HermesEngine::EndStep()
     inline_writer_in_step_ = false;
    }
   #endif
+
+  // Wall-clock timeline: this output step is now fully produced (field +
+  // derived variables written to CTE), just before the trigger evaluates it.
+  if (m_OpenMode == adios2::Mode::Write) {
+    LogTimeline_("output", currentStep, 0.0);
+  }
 
   // Statistical trigger: evaluate every step (collective); stream flagged
   // steps over SST from the CTE blobs written earlier in this step.
@@ -1187,7 +1215,25 @@ bool HermesEngine::EvaluateTrigger_() {
           << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
     }
   }
+  LogTimeline_("fire", currentStep, stat);
   return true;
+}
+
+/**
+ * Append one wall-clock timeline event (rank 0 only). `wall` is system_clock
+ * epoch seconds so writer-side events align with the Python consumer's
+ * time.time() timestamps (streaming_timing.jsonl, mcp_tool_timing.jsonl).
+ */
+void HermesEngine::LogTimeline_(const char *event, int step, double value) {
+  if (m_Comm.Rank() != 0 || trigger_timeline_file_.empty()) return;
+  const double wall = std::chrono::duration<double>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+  std::ofstream log(trigger_timeline_file_, std::ios::app);
+  if (log) {
+    log << std::fixed << std::setprecision(6)
+        << "{\"event\":\"" << event << "\",\"step\":" << step
+        << ",\"value\":" << value << ",\"wall\":" << wall << "}\n";
+  }
 }
 
 /**
@@ -1503,6 +1549,7 @@ void HermesEngine::StreamFlaggedStepToSST_(bool fired_now) {
         std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(),
         fired_now, trigger_window_remaining_);
   }
+  LogTimeline_("ship", currentStep, static_cast<double>(trigger_window_remaining_));
 }
 #endif
 

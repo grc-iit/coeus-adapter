@@ -1,7 +1,53 @@
-# In-Situ AI Agent for Gray-Scott Simulation
+[← real_apps cases](../real_apps/README.md) · [Trigger-Render-Reason Pipeline](../../docs/TRIGGER_RENDER_REASON_PIPELINE.md) · [Gray-Scott case](../real_apps/gray-scott/README.md)
 
-Interactive AI agent that uses ParaView MCP tools to explore live Gray-Scott
-simulation data streamed via ADIOS2 SST.
+# In-Situ AI-Agent Consumer: Render + Reason
+
+This directory is the **render + reason** consumer stack of the COEUS
+[Trigger-Render-Reason pipeline](../../docs/TRIGGER_RENDER_REASON_PIPELINE.md)
+(*Vigil*). A Gray-Scott simulation streams its flagged window over ADIOS2 **SST**;
+here a ParaView streaming bridge renders those steps and an **AI agent** (via an
+MCP server) inspects them and issues a verdict, e.g. `fire_stop_simulation`,
+which early-stops the run.
+
+The three moving parts:
+
+- **`insitu_streaming.py`** - streaming bridge: reads the SST stream through a
+  Fides data model into a headless **pvserver**, renders each step, and (async
+  mode) writes frames to disk.
+- **`insitu_mcp_server.py`** - MCP server: exposes streaming control + ParaView
+  visualization + frame-inspection tools to any MCP client.
+- **`insitu_agent.py`** - the LLM driver: connects to the MCP server, sees the
+  streamed frames, and calls the verdict tool.
+
+These three **entry-point scripts stay at the top level**; everything else
+(engine/sim configs, batch run-scripts, evaluation reports) is organized under
+[`assets/`](assets/).
+
+## Repository layout
+
+```
+test/insitu_agent/
+├── README.md                 # this file - unified pipeline reference
+├── insitu_streaming.py       # SST → pvserver streaming bridge (core)
+├── insitu_mcp_server.py      # MCP server: streaming + ParaView + frame tools (core)
+├── insitu_agent.py           # LLM agent driver (core)
+├── requirements.txt          # python deps for the agent + MCP server
+├── prompts/                  # agent prompt texts (agent_*.txt)
+├── results/  agent_results/  # run outputs (timings, token usage, frames)
+├── streaming_status.json     # runtime state (auto-generated)
+└── assets/
+    ├── xml/                  # ADIOS2 engine configs: adios2-sst*.xml
+    ├── configs/              # sim + Fides configs: settings-*.json, gs-fides.json
+    ├── scripts/              # batch run-scripts (run_*.sh) + helpers
+    │                         #   (analyze_timeline.py, run_baseline.py, probe_mcp_view.py)
+    └── docs/                 # historical records: timeline, eval plans, run reports
+```
+
+> The batch run-scripts in `assets/scripts/` are written to be launched **from
+> this `insitu_agent/` directory** (they resolve `SCRIPT_DIR` two levels up and
+> reference configs via `assets/configs/`, the streamed `gs.bp` and
+> `streaming_status.json` at the top level). Run them as
+> `bash assets/scripts/run_<name>.sh` from here.
 
 ## Architecture
 
@@ -27,51 +73,48 @@ simulation data streamed via ADIOS2 SST.
                                                                             │
                                                                      ┌──────┴──────┐
                                                                      │  AI Agent   │
-                                                                     │ (Cursor/    │
-                                                                     │  Claude)    │
+                                                                     │ (insitu_    │
+                                                                     │  agent.py)  │
                                                                      └─────────────┘
 ```
 
 ## Prerequisites
 
-- ParaView with pvserver and pvpython (conda install conda-forge::paraview)
+- ParaView with `pvserver` and `pvpython` (conda `conda-forge::paraview`, or a
+  headless OSMesa build for GPU-less nodes)
 - ADIOS2 with SST support
-- Gray-Scott simulation binary (adios2-gray-scott)
-- Python packages: `mcp[cli]`, `httpx`
+- Gray-Scott simulation binary (`adios2-gray-scott`)
+- Python packages: `mcp[cli]`, `httpx`, `anthropic`/`openai` - `pip install -r requirements.txt`
 
-## Quick Start
+## Quick start
 
-### Step 1: Install dependencies
+Run every command **from this `insitu_agent/` directory**.
 
-```bash
-pip install -r requirements.txt
-```
-
-### Step 2: Start pvserver
+### 1. Start pvserver
 
 ```bash
 pvserver --multi-clients --server-port=11111
 ```
 
-### Step 3: (Optional) Connect ParaView GUI
+### 2. (Optional) connect the ParaView GUI
 
-Open ParaView GUI → File → Connect → localhost:11111.
-This lets you see the visualization live alongside the AI agent.
+Open ParaView GUI → File → Connect → `localhost:11111` to watch the visualization
+live alongside the agent.
 
-### Step 4: Start the Gray-Scott simulation
+### 3. Start the Gray-Scott simulation (writer)
 
 ```bash
-cd test/insitu_agent
-mpirun -n 4 adios2-gray-scott settings-staging.json
+mpirun -n 4 adios2-gray-scott assets/configs/settings-staging.json
 ```
 
-This writes to the SST stream `gs.bp` using the config in `adios2-sst.xml`.
+Writes to the SST stream `gs.bp` using `assets/xml/adios2-sst.xml` (referenced by
+`adios_config` inside the settings file).
 
-### Step 5: Start the streaming bridge
+### 4. Start the streaming bridge
 
 ```bash
 pvpython insitu_streaming.py \
-    -j gs-fides.json \
+    -j assets/configs/gs-fides.json \
     -b gs.bp \
     --staging \
     --server localhost \
@@ -79,36 +122,30 @@ pvpython insitu_streaming.py \
     --paused
 ```
 
-The `--paused` flag starts in paused mode so the AI agent controls when to
-advance timesteps. Remove it for auto-advance mode (2s delay between steps).
+`--paused` starts paused so the agent controls stepping. Remove it for
+auto-advance (2 s/step). For **async (non-blocking)** mode, drop `--paused` and
+add `--frames-dir <dir>` (see below).
 
-### Step 6: Run the AI agent
+### 5. Run the AI agent
 
-The agent launches the MCP server internally - you don't need to start it separately.
+The agent launches the MCP server internally.
 
 ```bash
-# With OpenAI
+# Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+python insitu_agent.py --provider anthropic --model claude-haiku-4-5-20251001
+
+# OpenAI
 export OPENAI_API_KEY=sk-...
 python insitu_agent.py --provider openai --model gpt-4o
 
-# With Anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-python insitu_agent.py --provider anthropic --model claude-sonnet-4-20250514
-
-# Single-shot mode (one prompt, no interactive loop)
-python insitu_agent.py --provider openai --prompt "Create an isosurface of V at 0.5 and take a screenshot"
+# Single-shot
+python insitu_agent.py --provider anthropic --prompt "Create an isosurface of V at 0.5 and take a screenshot"
 ```
 
-The agent will:
-1. Launch `insitu_mcp_server.py` as a subprocess (stdio MCP transport)
-2. Connect to the same pvserver where the streaming bridge is running
-3. Discover all available tools (streaming control + ParaView visualization)
-4. Enter an interactive loop where you type prompts and the LLM calls tools
+### Alternative: MCP server with Cursor / Claude Desktop
 
-### Alternative: Use the MCP server with Cursor / Claude Desktop
-
-Instead of `insitu_agent.py`, you can connect the MCP server to any MCP-compatible
-client. Add to your MCP configuration (e.g., Cursor `mcp.json` or Claude Desktop config):
+Instead of `insitu_agent.py`, point any MCP client at the server:
 
 ```json
 {
@@ -126,113 +163,87 @@ client. Add to your MCP configuration (e.g., Cursor `mcp.json` or Claude Desktop
 }
 ```
 
-## Available MCP Tools
+## Synchronous vs asynchronous render-reason
 
-### Streaming Control
+| | Synchronous (`--paused` + `advance_step`) | Asynchronous (`--frames-dir`) |
+|---|---|---|
+| What paces the sim | the agent's `advance_step` calls | nothing - bridge drains at its own speed |
+| Agent on sim critical path? | yes | **no** - reads frames from disk |
+| Sim stall during flagged window | LLM-paced (~65 s at 128 ranks) | bridge-drain only (~7–17 s) |
+
+In **async** mode the bridge (`insitu_streaming.py --frames-dir <dir>`) drains the
+flagged window as fast as SST + render allow, writing `frame_<NNNN>.png` + a
+`frames.jsonl` manifest; the agent (`insitu_agent.py --frames-dir <dir>`) issues
+its verdict from the on-disk frames via the blocking `get_flagged_frames` tool,
+fully off the simulation's critical path. Full mechanism + per-part timing:
+[`assets/docs/PIPELINE_TIMELINE.md`](assets/docs/PIPELINE_TIMELINE.md) and
+[gray-scott `VARIANCE_TRIGGER.md` §8](../real_apps/gray-scott/VARIANCE_TRIGGER.md).
+
+## MCP tools
+
+### Streaming control
 | Tool | Description |
 |------|-------------|
-| `get_streaming_status` | Check current timestep, pause state, stream status |
-| `pause_streaming` | Pause the stream to explore current data |
-| `resume_streaming` | Resume auto-advancing through timesteps |
-| `advance_step` | Advance exactly one timestep, then pause |
+| `get_streaming_status` | current timestep, pause state, stream status |
+| `pause_streaming` | pause the stream to explore current data |
+| `resume_streaming` | resume auto-advancing |
+| `advance_step` | advance exactly one timestep, then pause |
 
 ### Visualization
 | Tool | Description |
 |------|-------------|
-| `create_isosurface` | Create isosurface on live data (field, value) |
-| `create_slice` | Slice through the volume at any plane |
-| `toggle_volume_rendering` | Enable/disable volume rendering |
-| `color_by` | Color by field (U or V) |
-| `set_color_map` | Custom color transfer function |
-| `edit_volume_opacity` | Custom opacity transfer function |
-| `create_streamline` | Streamline visualization |
+| `create_isosurface` | isosurface on live data (field, value) |
+| `create_slice` | slice through the volume at any plane |
+| `toggle_volume_rendering` | enable/disable volume rendering |
+| `color_by` · `set_color_map` · `edit_volume_opacity` | color / transfer functions |
+| `create_streamline` | streamline visualization |
 
-### Inspection
+### Inspection / verdict
 | Tool | Description |
 |------|-------------|
-| `get_screenshot` | Capture current view as image |
-| `get_pipeline` | Show pipeline structure |
-| `get_available_arrays` | List data arrays (U, V) |
-| `compute_surface_area` | Compute surface area of active mesh |
+| `get_screenshot` | capture current view as an image |
+| `get_pipeline` · `get_available_arrays` · `compute_surface_area` | pipeline / arrays / mesh area |
+| `get_flagged_frames` · `get_flagged_frames_info` | (async) captured flagged-window frames + V ranges |
+| `fire_stop_simulation` | write the `.stop` flag that early-stops the run |
 
-## Example Agent Session
+## Batch runs & evaluations
 
-```
-$ python insitu_agent.py --provider openai --model gpt-4o
+Reproducible experiment drivers live in [`assets/scripts/`](assets/scripts/) and
+write to `results/`:
 
-Launching MCP server: python insitu_mcp_server.py --server localhost --port 11111 ...
-Using LLM: openai/gpt-4o
+| Script | What it runs |
+|---|---|
+| `run_scaling_test.sh` · `run_scaling_test_B.sh` | infrastructure scaling (producer × consumer ranks) |
+| `run_L256_pg20_haiku_8shots*.sh` · `run_pg20_haiku_8shots*.sh` | L=256 / L=512, Haiku 8-shot agent (Block vs Discard) |
+| `run_bl_vs_ag_512.sh` · `run_all_512.sh` · `run_sonnet_only.sh` | agent vs fixed-schedule baseline |
+| `run_gs_F008k003_inspect_20_22.sh` | the `F=0.08/k=0.03` collapse-window intercept |
+| `run_baseline.py` | baseline (fixed-schedule) visualization driver |
+| `analyze_timeline.py <results_dir>` | build the single-wall-clock timeline (→ PIPELINE_TIMELINE.md) |
+| `probe_mcp_view.py` | LLM-free A/B regression harness for the MCP view |
 
-Discovered 24 MCP tools:
-  - get_streaming_status: Get the current status of the in-situ streaming...
-  - pause_streaming: Pause the streaming pipeline...
-  - advance_step: Advance the stream by exactly one timestep...
-  - create_isosurface: Create an isosurface visualization on the live...
-  - create_slice: Create a slice through the live simulation volume...
-  - get_screenshot: Capture a screenshot of the current view...
-  ...
+Design notes and run reports (historical records) are in
+[`assets/docs/`](assets/docs/):
 
-============================================================
-  In-Situ AI Agent - Interactive Mode
-  Type your prompts. Type 'quit' or 'exit' to stop.
-============================================================
+- [`PIPELINE_TIMELINE.md`](assets/docs/PIPELINE_TIMELINE.md) - async pipeline timeline (128-rank, per-part breakdown)
+- [`SCALABILITY_EVAL_PLAN.md`](assets/docs/SCALABILITY_EVAL_PLAN.md) - scalability evaluation plan
+- [`AGENT_VS_BASELINE_PLAN.md`](assets/docs/AGENT_VS_BASELINE_PLAN.md) · [`RUN_BL_VS_AG_PLAN.md`](assets/docs/RUN_BL_VS_AG_PLAN.md) - agent vs baseline
+- [`eval3_ares_report.md`](assets/docs/eval3_ares_report.md) - Ares run report (`F=0.08/k=0.03`)
 
-👤 You: Check the status and show me what the data looks like
+## SST tuning
 
-  🔧 Calling: get_streaming_status({})
-  ✅ Result: Streaming status: Current timestep: 0, Paused: true...
-  🔧 Calling: advance_step({})
-  ✅ Result: Advance command sent. The stream will read one step and pause.
-  🔧 Calling: get_screenshot({})
-  ✅ Result: [Image: 45231 bytes]
+Edit the engine config in [`assets/xml/`](assets/xml/) to change coupling behavior
+(`adios2-sst.xml` = default; `-blocking` / `-discard` / `-discard-noreader`
+variants):
 
-🤖 Agent: The simulation is at timestep 1. I can see the initial volume data
-   colored by V. The domain shows early-stage pattern formation. Would you like
-   me to create an isosurface to highlight the reaction fronts?
+- **`QueueLimit`** - steps buffered (higher = more lag tolerance for the agent).
+- **`QueueFullPolicy`** - `Discard` (drop old data, non-blocking sim) or `Block` (sim waits).
+- **`RendezvousReaderCount`** - `1` = sim waits for the reader; `0` = sim starts immediately.
+- **`DataTransport`** - `WAN` for TCP (cross-node), `MPI` for same-node.
 
-👤 You: Yes, show me isosurfaces of V at 0.3 and 0.5
+## Related documentation
 
-  🔧 Calling: create_isosurface({"value": 0.3, "field": "V"})
-  ✅ Result: Created isosurface at value 0.3. Filter registered as 'Contour1'.
-  🔧 Calling: get_screenshot({})
-  ✅ Result: [Image: 52108 bytes]
-
-🤖 Agent: I've created an isosurface at V=0.3 showing the outer boundary of
-   the reaction zone. Let me advance a few steps to see evolution...
-
-👤 You: Advance 5 steps and take a screenshot after each
-
-  🔧 Calling: advance_step({})
-  🔧 Calling: get_screenshot({})
-  ... (repeats 5 times)
-
-🤖 Agent: The pattern is clearly evolving - the V=0.3 isosurface shows
-   expanding spots that are beginning to merge. Want me to add a slice
-   to see the interior structure?
-
-👤 You: quit
-Exiting.
-```
-
-## Files
-
-| File | Purpose |
-|------|---------|
-| `insitu_agent.py` | **AI agent** - LLM loop that calls MCP tools interactively |
-| `insitu_mcp_server.py` | **MCP server** - streaming control + ParaView tools via MCP |
-| `insitu_streaming.py` | **Streaming bridge** - reads SST data into pvserver via Fides |
-| `adios2-sst.xml` | ADIOS2 config: SST engine with QueueLimit=3, Discard policy |
-| `gs-fides.json` | Fides data model: maps U, V arrays to VTK Cartesian grid |
-| `settings-staging.json` | Gray-Scott simulation settings pointing to SST config |
-| `requirements.txt` | Python dependencies |
-| `streaming_status.json` | Runtime: current step/pause state (auto-generated) |
-| `streaming_command.json` | Runtime: MCP→bridge commands (auto-generated) |
-
-## SST Tuning
-
-Edit `adios2-sst.xml` to change the coupling behavior:
-
-- **`QueueLimit`**: How many steps to buffer. Higher = more lag tolerance for the agent.
-- **`QueueFullPolicy`**: `Discard` (drop old data, non-blocking sim) or `Block` (sim waits).
-- **`RendezvousReaderCount`**: `1` = sim waits for reader; `0` = sim starts immediately.
-- **`DataTransport`**: `WAN` for TCP (cross-node), `MPI` for same-node.
+- [Trigger-Render-Reason Pipeline](../../docs/TRIGGER_RENDER_REASON_PIPELINE.md) - the pipeline concept and trigger types
+- [Gray-Scott case](../real_apps/gray-scott/README.md) · [`VARIANCE_TRIGGER.md`](../real_apps/gray-scott/VARIANCE_TRIGGER.md) - the `variance(V)` trigger this consumer pairs with
+- [Build & Run Gray-Scott (single node)](../../docs/BUILD_AND_RUN_GRAY_SCOTT.md) - full end-to-end walkthrough
+- [Artifact Description - Delta at scale](../../docs/ARTIFACT_DESCRIPTION_DELTA.md) - 256-rank producer + this agent consumer on NCSA Delta
+- [real_apps case index](../real_apps/README.md) - all four Vigil cases

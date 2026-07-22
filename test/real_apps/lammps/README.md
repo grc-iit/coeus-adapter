@@ -171,22 +171,84 @@ plus a JSON-lines event in `<script_location>/lammps_trigger_log.jsonl`:
 
 ---
 
-## 5. Render side (not yet wired)
+## 5. Render + Reason (ParaView-free consumer)
 
-Streaming flagged atoms to ParaView needs a Fides **particle** data model (the
-Gray-Scott uniform-grid `gs-fides.json` does not apply); `x y z` are already
-dumped for it. Enable via the commented Catalyst block in `adios2_config.xml`
-(`DataModel` + `Script` + `CatalystStream`). Multi-rank runs pool correctly (the
-statistic is N_b-weighted per writer block).
+The `consumer/` directory holds a **ParaView-free** render + reason stack (the
+same architecture as the LBM-CFD case): it reads the streamed atoms directly with
+the ADIOS2 python bindings, renders each flagged step as a **particle scatter**
+(atoms colored by speed `|v|`, numpy + stdlib PNG - no ParaView / Fides), and an
+AI agent inspects the frames and issues the stop verdict.
+
+| Script | Vigil stage | Role |
+|---|---|---|
+| `consumer/lammps_sst_reader.py` | **render** | SST/BP5 reader → atom-scatter PNG + `lammps_status.json` (kinetic temperature `T*`, max speed, non-finite/escaped atoms, trigger scalars) |
+| `consumer/lammps_insitu_mcp_server.py` | **reason** | MCP server: `inspect_latest_frame`, `get_frame_image`, `fire_stop_simulation` |
+| `consumer/lammps_agent.py` | **reason** | LLM driver: LOOKs at the scatter, fires stop when the integration is blowing up |
+| `consumer/run_lammps_consumer.sh` | - | convenience: reader → agent |
+
+### 5.1 Offline test on a BP5 file (easiest - no SST / hermes / ParaView)
+
+```bash
+spack load adios2-coeus@vigil openmpi
+cd test/real_apps/lammps
+cp adios2_config-bp5.xml adios2_config.xml          # dump reads this fixed name
+COEUS_LAMMPS_DERIVED=1 mpirun -n 1 ~/software/lammps_bench/lammps/build/lmp -in in.lj_explosion_hermes
+# render + reason on the resulting file:
+python3 consumer/lammps_sst_reader.py --stream lammps.bp --engine BP5 \
+    --png-dir frames --status-file lammps_status.json
+export ANTHROPIC_API_KEY=sk-ant-...                 # never commit it
+python3 consumer/lammps_agent.py --status-file lammps_status.json \
+    --stop-flag lammps.bp.stop
+# or both at once:  ENGINE=BP5 bash consumer/run_lammps_consumer.sh
+```
+
+Restore `adios2_config.xml` (the hermes-trigger config) afterwards.
+
+### 5.2 Live gated SST
+
+The reader also consumes a live SST stream (`--engine SST`). The hermes engine
+opens the gated SST writer only when **both** `Script` and `DataModel` are set
+(`hermes_engine.cc` `enableCatalyst`), so the live path additionally needs a
+Fides **particle** data model (the Gray-Scott uniform-grid `gs-fides.json` does
+not apply) + a Catalyst pipeline - the commented block in `adios2_config.xml`.
+`x y z` are already dumped for it. Multi-rank runs pool correctly (the statistic
+is N_b-weighted per writer block).
+
+> **Verdict caveat.** `fire_stop_simulation` writes a `lammps.bp.stop` flag, but
+> stock `lmp` does not itself poll it (unlike the Gray-Scott / LBM writers) - the
+> LJ case aborts on its own with "Lost atoms" at step ~6. Wiring the LAMMPS
+> writer or the engine to halt on the flag is the remaining integration step; the
+> reason stage (detect + verdict + flag) is otherwise complete.
+
+### 5.3 Verified end-to-end (2026-07-21, offline BP5, single rank)
+
+The §5.1 path was run start to finish (`adios2-coeus@vigil` + `openmpi@5.0.9`,
+the `~/software/lammps_bench/lammps/build/lmp` build, 2048 atoms):
+
+- **Writer.** `lammps.bp` (BP5) got the de-interleaved named columns - `bpls`
+  shows `x y z vx vy vz` each `{2048}`, plus `id`, `ntimestep`, and (with
+  `COEUS_LAMMPS_DERIVED=1`) `derive/VarVx` / `derive/AddVx`.
+- **Render** (`lammps_sst_reader.py`, 7 steps). Kinetic temperature tracked the
+  runaway exactly as expected - `T*` 0.75 → 0.83 → **1.79** (step 5) →
+  **2.04e6** (step 6), `speed_max` 3.9 → 51 → **78160**; 7 atom-scatter PNGs.
+  Step 0 is a clean cold-blue FCC lattice; step 6 is a scattered cloud with the
+  few runaway red atoms that dominate `T*` (the physical onset of the blow-up).
+- **Reason - MCP** (`--selftest`). `inspect_latest_frame` → `"assessment":
+  "DIVERGING"`; `get_frame_image` served the frame; `fire_stop_simulation` wrote
+  the flag.
+- **Reason - agent** (`lammps_agent.py`, `claude-haiku-4-5`). Called
+  `get_frame_image` + `inspect_latest_frame`, read **both** the picture
+  (*"blue low-speed and red/orange high-speed atoms - signature of numerical
+  instability, not physical heating"*) and the numbers (*"~2.7 million times
+  above setpoint"*), and issued `fire_stop_simulation` with a physics-accurate
+  reason → `lammps.bp.stop`.
+
+One fix from this run: `ntimestep` is `uint64_t`, so the reader's scalar-int
+reader now selects the buffer dtype from the variable type (previously `step`
+read back `null`).
 
 ## 6. Known issues
 
-- **Two-hostfile gotcha (Ares).** The app's mpirun uses the *global* jarvis
-  hostfile (`~/server_list/server.list`); the runtime daemons use the *pipeline*
-  hostfile. If they differ, LAMMPS lands on a node with no daemon →
-  `ERROR: Could not initialize Chimaera`. Co-locate app and runtime (add the
-  launch host to the pipeline hostfile). Same root cause as the Gray-Scott
-  two-hostfile note.
 - **Temperature fires the explosion** (`dt*=0.05`). The subtle dense drift
   (`rho*=0.8442, dt*=0.02`) injects energy into *potential* energy while `T*`
   stays ~0.76 - that sub-case needs a per-atom PE derived signal
@@ -200,7 +262,27 @@ statistic is N_b-weighted per writer block).
 | `RUNBOOK.md` | dev log: build/run/internals, verified 2026-07-12 |
 | `DERIVED_QUANTITIES.md` | dev log: the derived `variance(vx)` path + the define-time-dims fix |
 | `adios2_config.xml` | standalone hermes-plugin config (IO group `custom`) |
+| `adios2_config-bp5.xml` | offline BP5 variant for the ParaView-free consumer test (#5.1) |
 | `in.lj_explosion_hermes` | standalone LAMMPS input (raw-field trigger) |
+| `consumer/lammps_sst_reader.py` | **render**: SST/BP5 → atom-scatter PNG + status JSON |
+| `consumer/lammps_insitu_mcp_server.py` | **reason**: MCP server (inspect / image / stop) |
+| `consumer/lammps_agent.py` | **reason**: LLM agent driver (stop verdict) |
+| `consumer/run_lammps_consumer.sh` | convenience runner (reader → agent) |
 | `../../jarvis/jarvis_coeus/jarvis_coeus/lammps/` | jarvis package (`pkg.py`, `config/`) |
 | `~/software/lammps_bench/lammps/src/ADIOS/dump_custom_adios.cpp` | modified dump (LAMMPS tree) |
 | `../../../src/hermes_engine.cc` | engine `mean` trigger (`TriggerType=mean`) |
+
+---
+
+<details>
+<summary><b>Ares-specific setup & troubleshooting</b></summary>
+
+### Two-hostfile gotcha (Ares)
+
+The app's mpirun uses the *global* jarvis hostfile (`~/server_list/server.list`);
+the runtime daemons use the *pipeline* hostfile. If they differ, LAMMPS lands on
+a node with no daemon → `ERROR: Could not initialize Chimaera`. Co-locate app and
+runtime (add the launch host to the pipeline hostfile). Same root cause as the
+Gray-Scott two-hostfile note.
+
+</details>

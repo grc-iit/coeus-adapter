@@ -1,4 +1,54 @@
-# LBM-CFD with Ascent-Trame (2D)
+# LBM-CFD 2D: `variance(vorticity)` instability trigger (agent rescue)
+
+The **LBM-CFD** case of the COEUS
+[Trigger-Render-Reason pipeline](../../../docs/TRIGGER_RENDER_REASON_PIPELINE.md)
+(*Vigil*): a 2D lattice-Boltzmann (D2Q9) flow whose scheme can go numerically
+unstable. The Coeus `hermes` engine watches **`variance(vorticity)`**
+(`derive/VarVort`, the same derived-variable pattern Gray-Scott uses for
+`derive/VarV`) every output step; as the scheme destabilises, that statistic
+spikes by orders of magnitude (a cheap, collective instability detector), and
+the engine streams only the flagged chaos-onset window over gated SST to the AI
+agent.
+
+This is the pipeline's example of a **distinct *reason* action**: the agent can
+**repair** the run instead of only stopping it. It views the rendered frame and
+calls `fire_rescue_simulation`, which writes a `.rescue` flag the simulation
+polls to **revert to its last checkpoint and double the timestep count** (halving
+the lattice speed to restabilise the D2Q9 scheme). `fire_stop_simulation` remains
+available for the halt verdict. The agent side is **ParaView-free**: the reader
+publishes a rendered PNG + stats, and the MCP server hands the image to the model
+via `get_frame_image`.
+
+## ➜ Authoritative case doc
+
+The full build/run/agent recipe for the Vigil case lives one level down:
+
+> **[`examples/lbm-cfd/README.md`](examples/lbm-cfd/README.md)**: ADIOS2
+> SST/BP5 streaming of the raw `vorticity` field + in-situ derived
+> `variance`/`add`, the stdlib (ParaView-free) SST consumer, the MCP server +
+> LLM agent with rescue/stop verdict tools, and **the full loop through COEUS**
+> via the jarvis pipeline `coeus-lbm-cfd-agent`.
+
+Verified end-to-end on Ares (2026-07-16): the engine fires
+`variance(derive/VarVort)=209.2` at output 2, ships exactly the 3 flagged steps
+(nothing before the fire), a Haiku agent sees *"grid-scale salt-and-pepper
+speckle … no coherent von Kármán street"* and calls `fire_rescue_simulation`;
+the sim reverts to its step-0 checkpoint, doubles 6000→12000 steps, and recovers.
+
+- 2D case (this Vigil path): [`examples/lbm-cfd/`](examples/lbm-cfd/README.md)
+- 3D variant (ParaView VTS path): [`examples/lbm-cfd-3d/`](examples/lbm-cfd-3d/README.md)
+- jarvis package: [`../../jarvis/jarvis_coeus/jarvis_coeus/lbm_cfd/`](../../jarvis/jarvis_coeus/jarvis_coeus/lbm_cfd/)
+- Sibling cases + index: [`../README.md`](../README.md)
+
+---
+
+# Upstream: Ascent-Trame bridge & build
+
+*The original upstream documentation for the LBM-CFD application and its
+Ascent/Trame + ParaView visualization paths follows. The COEUS/Vigil trigger
+path above builds on the same application (`examples/lbm-cfd/`).*
+
+## LBM-CFD with Ascent-Trame (2D)
 Bridge for accessing Ascent extracts in a Trame application
 
 

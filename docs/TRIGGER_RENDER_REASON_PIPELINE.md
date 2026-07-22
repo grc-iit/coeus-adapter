@@ -35,7 +35,8 @@ The `variance` and `mean` statistics are read from ADIOS2
 
 ## Example applications
 
-Each trigger type has a worked example under `test/real_apps/` - build, run, and
+Each trigger type has a worked example under
+[`test/real_apps/`](../test/real_apps/README.md) - build, run, and
 configuration for that app:
 
 | Trigger | Application | Guide |
@@ -43,7 +44,7 @@ configuration for that app:
 | `variance` | Gray-Scott (pattern collapse) | [gray-scott](../test/real_apps/gray-scott/README.md) · [full walkthrough](BUILD_AND_RUN_GRAY_SCOTT.md) |
 | `dissipation` | Xcompact3d TGV (numerical dissipation) | [Xcompact3d](../test/real_apps/Xcompact3d/README.md) |
 | `mean` | LAMMPS (kinetic temperature) | [lammps](../test/real_apps/lammps/README.md) |
-| `variance` | LBM-CFD 2D (instability onset) | [lbm-cfd](../test/real_apps/ascent-trame/examples/lbm-cfd/README.md) |
+| `variance` | LBM-CFD 2D (instability onset) | [ascent-trame](../test/real_apps/ascent-trame/README.md) · [case doc](../test/real_apps/ascent-trame/examples/lbm-cfd/README.md) |
 
 The **LBM-CFD 2D** case demonstrates a distinct *reason* action - the agent can
 **repair** the run instead of only stopping it. Its `variance(vorticity)` trigger

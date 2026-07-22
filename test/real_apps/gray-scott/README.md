@@ -18,7 +18,20 @@ v_t = Dv * (v_xx + v_yy + v_zz) + u * v^2 - (F + k) * v
 >
 > - **[docs/BUILD_AND_RUN_GRAY_SCOTT.md](../../../docs/BUILD_AND_RUN_GRAY_SCOTT.md)** -
 >   full end-to-end walkthrough: build → run → trigger-gated SST → agent → early stop.
-> - **[VARIANCE_TRIGGER.md](VARIANCE_TRIGGER.md)** - trigger configuration reference.
+> - **[VARIANCE_TRIGGER.md](VARIANCE_TRIGGER.md)** - trigger configuration reference,
+>   plus **§8: asynchronous (non-blocking) render-reason** - the greedy-bridge +
+>   buffered-frame-agent mode that keeps the simulation from stalling on the AI
+>   agent, with a verified per-part timing breakdown (128 ranks, ~196 s total).
+> - **[docs/ARTIFACT_DESCRIPTION_DELTA.md](../../../docs/ARTIFACT_DESCRIPTION_DELTA.md)** -
+>   **256-rank scale run on NCSA Delta** (2× AMD EPYC 7763, 128 cores/node,
+>   Slingshot-11; one 3-node SLURM job = two 128-rank producer nodes + one
+>   agent-consumer node, launched entirely through `srun`/PMIx). Verified
+>   2026-07-17 across `cn[024,046,071]` at **L=256**: the collapse-warn fired at
+>   output **125** (`variance(V)=5.61e-4`, 12× vs baseline `4.66e-5`), a
+>   `claude-haiku-4-5` agent read the homogenised field off the rendered frames
+>   and called `fire_stop_simulation`, and the 256-rank writer **halted early at
+>   step 6500/20000 (~67% of compute skipped)**. The pooled `variance(V)`
+>   statistic is **rank-invariant - bit-identical at 1, 4, and 256 ranks**.
 >
 > The rest of this file is the upstream ADIOS2-examples Gray-Scott documentation
 > (simulation parameters and plain SST / Catalyst usage).

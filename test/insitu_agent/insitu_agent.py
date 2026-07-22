@@ -450,6 +450,7 @@ async def main():
     _run_stats["model"] = args.model
     _run_stats["provider"] = args.provider
     _run_stats["wall_start"] = time.monotonic()
+    _run_stats["start_epoch"] = time.time()  # wall clock, aligns with engine timeline
     if args.results_dir:
         _results_dir = args.results_dir
         Path(_results_dir).mkdir(parents=True, exist_ok=True)
@@ -535,6 +536,7 @@ async def main():
         summary = {
             **_run_stats,
             "wall_time_s": round(wall_total, 3),
+            "end_epoch": time.time(),  # wall clock, aligns with engine timeline
             "estimated_cost_usd": round(cost, 4),
             "pricing_per_million": rates,
         }

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+          Offline BP5 variant of adios2_config.xml for the LAMMPS Vigil case.
+
+          Same IO group name "custom" (so the modified `dump custom/adios`
+          binds to it) but a plain BP5 file engine instead of the hermes
+          plugin: NO clio runtime / CTE / SST / ParaView needed. It writes the
+          de-interleaved named columns (x y z vx vy vz, + derive/V2mean when
+          COEUS_LAMMPS_DERIVED=1) to a readable `lammps.bp` file.
+
+          Use it to exercise the render + reason consumer end-to-end offline:
+
+            spack load adios2-coeus@vigil openmpi
+            cd test/real_apps/lammps
+            cp adios2_config-bp5.xml adios2_config.xml        # dump reads this fixed name
+            COEUS_LAMMPS_DERIVED=1 mpirun -n 1 <lmp> -in in.lj_explosion_hermes
+            # then render + reason on the file (no ParaView):
+            python3 consumer/lammps_sst_reader.py --stream lammps.bp --engine BP5 \
+                --png-dir frames --status-file lammps_status.json
+            python3 consumer/lammps_agent.py --status-file lammps_status.json \
+                --stop-flag lammps.bp.stop        # needs ANTHROPIC_API_KEY
+
+          (Restore adios2_config.xml afterwards for the live hermes-trigger run.)
+        =====================================================================-->
+
+    <io name="custom">
+        <engine type="BP5"/>
+    </io>
+
+    <io name="atom">
+        <engine type="BP5"/>
+    </io>
+</adios-config>

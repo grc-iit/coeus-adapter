@@ -69,14 +69,13 @@ jarvis pipeline clean
 
 Create the environment variables needed by Hermes + Gray Scott
 ```bash
-# On personal
 spack install hermes@master adios2
 spack load hermes adios2
-# On Ares
-spack load hermes@master
 # export GRAY_SCOTT_PATH=$/coeus_adapter/build/bin
 export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```
+
+> On **Ares**, Hermes/ADIOS2 are prebuilt; see the foldable **Ares-specific setup & troubleshooting** section at the end of this file.
 
 
 ## 2. Create a Pipeline
@@ -217,3 +216,21 @@ jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 npr
 
 
 ```
+
+---
+
+<details>
+<summary><b>Ares-specific setup & troubleshooting</b></summary>
+
+### Setup environment on Ares (Hermes + Gray-Scott)
+
+Hermes and ADIOS2 are already installed on Ares, so load the module instead of
+installing (this replaces the `spack install` / `spack load hermes adios2` step
+in "Gray Scott With Hermes → Setup Environment" above):
+
+```bash
+spack load hermes@master
+export PATH="${COEUS_Adapter/build/bin}:$PATH"
+```
+
+</details>

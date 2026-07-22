@@ -52,12 +52,23 @@
             <parameter key="TriggerRefire" value="false"/>
             <parameter key="TriggerLogFile" value="lammps_trigger_log.jsonl"/>
 
-            <!-- ===== RENDER side (optional): Catalyst SST streaming of
-                 flagged steps. Enable by uncommenting and supplying a Fides
-                 PARTICLE data model (the gray-scott uniform-grid gs-fides.json
-                 does NOT apply to atoms) plus a ParaView pipeline script. The
-                 dump must also output x y z positions for rendering. Catalyst
-                 activates only when BOTH Script and DataModel are present. =====
+            <!-- ===== RENDER + REASON side =====
+                 The ParaView-FREE consumer in consumer/ (lammps_sst_reader.py
+                 -> lammps_insitu_mcp_server.py -> lammps_agent.py) renders the
+                 streamed atoms as a particle scatter (numpy + stdlib PNG, no
+                 ParaView/Fides) and issues the stop verdict. See README.md #5.
+
+                 Easiest test is OFFLINE on a BP5 file (no SST/hermes/ParaView):
+                 use adios2_config-bp5.xml and read the file with --engine BP5.
+
+                 For a LIVE gated SST stream the engine only opens the SST
+                 writer when BOTH Script and DataModel are present
+                 (hermes_engine.cc: enableCatalyst), i.e. Catalyst must be
+                 configured too -- a Fides PARTICLE data model (the gray-scott
+                 uniform-grid gs-fides.json does NOT apply to atoms) plus a
+                 ParaView pipeline. Uncomment and supply them to enable it; the
+                 ParaView-free reader above then consumes the resulting SST
+                 stream. x y z are already dumped for rendering.
             <parameter key="DataModel" value="lammps-fides.json"/>
             <parameter key="Script" value="catalyst/lammps-pipeline.py"/>
             <parameter key="CatalystStream" value="lammps.bp"/>

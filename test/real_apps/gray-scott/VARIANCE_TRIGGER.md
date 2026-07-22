@@ -248,11 +248,14 @@ pooled formula stays correct.
       Also fixed in `ComputeDerivedVariables`: source blobs now outlive
       `ApplyExpression` (previously each blob was a loop-local vector destroyed
       before the expression read it - dangling `MinBlockInfo::BufferP`).
-- [ ] Verify the derived-path fire end-to-end (expect the same fire step/value
-      as the raw path: output ~12, pooled variance ≈ 0.0569 at threshold 0.05)
+- [x] **Derived-path fire verified end-to-end** (2026-07-20, clio-core backbone).
+      At `L=256`, `baseline_ratio=10`, it fires at **output 8** with pooled
+      `variance(derive/VarV) = 5.01e-04 = 10.75× baseline 4.67e-05`, rank- and
+      node-invariant (same signature at 32 / 128 / 256 ranks, since the engine
+      pools the exact global variance).
+- [x] **Asynchronous (non-blocking) render-reason** implemented and verified:
+      the simulation no longer stalls on the AI agent. See **§8**.
 - [ ] (optional) Fix `main.cpp` to validate `argc >= 3` before reading the `derived` flag
-- [ ] Bridge/agent side: have `insitu_streaming.py` / the agent consume
-      `vigil/trigger_*` and `trigger_log.jsonl` instead of hardcoded `--render-steps`
 
 ### Caveat discovered during verification
 The engine's *consensus rank* (from the `rankConsensus` pool) is **not** guaranteed to
@@ -264,7 +267,113 @@ engine silently disappear in this scenario.
 
 ---
 
-## 8. Reference - key file locations
+## 8. Asynchronous render-reason (non-blocking consumer)
+
+By default the trigger-gated SST stream is **synchronous**: `QueueFullPolicy=Block`
++ `QueueLimit=1` (`src/hermes_engine.cc`) means the writer's `EndStep` blocks
+until the reader consumes each flagged step, and the reader (`insitu_streaming.py
+--paused`) only advances when the AI agent calls the MCP `advance_step` tool. The
+256-rank simulation is therefore **paced by the LLM** for the whole inspect
+window: a measured **~65 s stall** while the agent reasons.
+
+The **async mode** decouples *render* (fast, bridge-driven) from *reason*
+(off-critical-path, agent reads from disk), so the simulation runs on
+independently. **No engine change** is required; it is entirely consumer-side.
+
+### Mechanism
+1. **Greedy bridge**: run `insitu_streaming.py` **without** `--paused` and with
+   `--frames-dir <dir>`. When the trigger fires the bridge drains the flagged
+   window as fast as SST + render allow, writing each step to
+   `frame_<NNNN>.png` plus a `frames.jsonl` manifest (`step, png, v_min, v_max,
+   timestamp`). The writer unblocks at bridge-drain speed, **not** LLM speed. A
+   one-time render pre-warm (a throwaway volume render at start-up) moves the
+   ~14 s first-frame VTK warm-up off the window so each flagged-step render is
+   ~0.7 s.
+2. **Buffered-frame agent**: the MCP server (`insitu_mcp_server.py --frames-dir
+   <dir>`) exposes `get_flagged_frames` (returns the captured window as images;
+   **blocks server-side** until the window lands so the agent makes one patient
+   call, never busy-polling) and `get_flagged_frames_info` (per-frame V ranges).
+   The agent (`prompts/agent_async_verdict_256.txt`) issues its verdict from the
+   on-disk frames and **never calls `advance_step`**, so its LLM time is fully
+   off the simulation's critical path.
+3. **Verdict**: `fire_stop_simulation` still writes the `<out_file>.stop` flag
+   the simulation polls. Because the sim runs ahead, the stop is
+   *advisory-with-latency* (still an early stop, just not step-exact).
+
+### Run it
+```bash
+# writer (gated, dev/clio-core backbone) - e.g. 128 ranks over 4 nodes
+jarvis ppl run
+# consumer (all on the reader node): pvserver already up on :11112
+# 1) greedy bridge - NOTE: no --paused, WITH --frames-dir
+pvpython insitu_streaming.py -j gs-fides.json -b <abs>/gs.bp --staging \
+    --server localhost --port 11112 --max-steps 4 \
+    --frames-dir <RES>/frames --screenshot-file <RES>/bridge_latest.png
+# 2) async agent - reads frames from disk, one blocking get_flagged_frames call
+python3 insitu_agent.py --provider anthropic --model claude-haiku-4-5-20251001 \
+    --server-host localhost --server-port 11112 \
+    --frames-dir <RES>/frames \
+    --prompt-file prompts/agent_async_verdict_256.txt \
+    --stop-flag <out_file>.stop
+```
+
+### Verified timing (2026-07-20, `L=256`, 128 ranks / 4 producer nodes → 16-rank
+pvserver on 1 reader node, gated `baseline_ratio=10 inspect_steps=4`)
+
+> Full per-step + flagged-window breakdown (instrumented, single wall clock):
+> **[../../insitu_agent/assets/docs/PIPELINE_TIMELINE.md](../../insitu_agent/assets/docs/PIPELINE_TIMELINE.md)**
+> (regenerate with `insitu_agent/assets/scripts/analyze_timeline.py`).
+
+Per-part cost (measured from `streaming_timing.jsonl`, `mcp_tool_timing.jsonl`,
+`token_usage.json`):
+
+| Stage | Cost | On sim critical path? |
+| ----- | ---- | --------------------- |
+| Writer launch + 128-rank SST **rendezvous** (one-time) | **~63 s** | yes (start-up) |
+| pvserver (16-rank) launch | ~10–15 s | no (before writer) |
+| Bridge connect + render pre-warm | ~12 s | no (before window) |
+| **Simulation compute to fire** (8 outputs @ ~5.7 s) | **~46 s** | yes (physics) |
+| Per flagged step - Fides pipeline pull (256³ from SST + VTK rebuild) | **~2.4 s** | during window |
+| Per flagged step - volume render → PNG (post pre-warm) | ~0.67 s | during window |
+| Per flagged step - SST wait | ~0.01 s | during window |
+| **Flagged-window drain** (4 steps @ ~5.7 s) | **~17 s** | this is the *only* stall added by the consumer |
+| Agent - `get_flagged_frames` server-side wait for window | ~18.5 s | **no** (overlaps drain) |
+| Agent - LLM image analysis (2 calls, 4 images) | ~25 s | **no** (off critical path) |
+
+End-to-end timeline (T = 0 at `jarvis ppl run`):
+
+| T+ | event |
+| -- | ----- |
+| ~63 s | SST contact file - runtime + CTE + 128 ranks up, rendezvous ready |
+| 124 s | **trigger fires** at output 8 |
+| 138 s | frame 1 lands (bridge pulls 1st flagged step) |
+| 154 s | frame 4 lands - window complete |
+| **160 s** | **agent verdict issued** ("KEEP RUNNING") |
+| **196 s** | writer finishes all 20 outputs and exits |
+
+**Total whole-run wall clock ≈ 196 s (~3.3 min)**, dominated by the one-time
+start-up rendezvous (~63 s, 32%) and the full 20-output simulation compute
+(~114 s, 58%). The trigger→render→reason machinery is essentially free on the
+critical path because it is asynchronous.
+
+### Sync vs async
+
+| | Synchronous (`--paused` + `advance_step`) | **Asynchronous** (`--frames-dir`) |
+| --- | --- | --- |
+| Sim stall during window | **~65 s** (LLM-paced) | **~17 s** (bridge drain) |
+| What paces the sim | the agent's `advance_step` | nothing - bridge drains at its own speed |
+| Agent on critical path? | yes | **no** - reads frames from disk |
+| Agent verdict | 68–97 s, ~10 tool calls | **47 s, 1 tool call, $0.017** |
+| Sim completion | gated on the agent | **ran to step 1000 (T+196 s) while the agent still reasoned (done T+160 s)** |
+
+Agent cost, async run: 2 LLM calls, 1 tool call, 15.4k in / 0.4k out tokens,
+47.2 s wall, ~$0.017 (claude-haiku-4-5). The proof of decoupling: the writer
+produced outputs 12–20 and **completed 36 s after the agent had already issued
+its verdict**.
+
+---
+
+## 9. Reference - key file locations
 
 | What | Path |
 | ---- | ---- |
@@ -275,3 +384,8 @@ engine silently disappear in this scenario.
 | CLI / derived flag | `simulation/main.cpp` (`argv[2]`) |
 | Installed library | `../ADIOS2/install/lib/libadios2_core.so.2.11` |
 | `bpls` tool | `../ADIOS2/install/bin/bpls` |
+| Gated-SST ship + `QueueFullPolicy` | `../../../src/hermes_engine.cc` (`StreamFlaggedStepToSST_`, `EvaluateTrigger_`) |
+| Greedy async bridge (`--frames-dir`) | `../../insitu_agent/insitu_streaming.py` (`prewarm_render`, `_save_frame`) |
+| MCP async frame tools (blocking) | `../../insitu_agent/insitu_mcp_server.py` (`get_flagged_frames`, `get_flagged_frames_info`, `_wait_for_frames`) |
+| Async agent driver + prompt | `../../insitu_agent/insitu_agent.py` (`--frames-dir`) · `../../insitu_agent/prompts/agent_async_verdict_256.txt` |
+| Trigger-gated SST XML configs | `adios2-hermes-trigger-sst.xml`, `adios2-hermes-trigger-derived.xml` |

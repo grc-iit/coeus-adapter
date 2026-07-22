@@ -221,6 +221,11 @@ void CatalystExecute();
   int trigger_inspect_steps_ = 3;
   bool trigger_refire_ = false;
   std::string trigger_log_file_ = "trigger_log.jsonl";
+  // Per-event wall-clock timeline (rank 0 only) for offline timeline analysis:
+  // sim_start, step_begin/step_end per output, fire/warn, and each SST ship.
+  // Derived from trigger_log_file_ (…/trigger_timeline.jsonl); each line is
+  // {"event","step","value","wall"} with wall = system_clock epoch seconds.
+  std::string trigger_timeline_file_;
   // Runtime state
   double trigger_baseline_ = -1.0;       // variance at first evaluated step
   double trigger_last_stat_ = 0.0;       // most recent global variance
@@ -264,6 +269,8 @@ void CatalystExecute();
   bool SumBlob_(const std::string &name, double &sum, double &n);
   /** True when SST field mirroring is deferred to EndStep and gated on the trigger. */
   bool SstGated_() const;
+  /** Append a wall-clock timeline event (rank 0 only) for offline timeline analysis. */
+  void LogTimeline_(const char *event, int step, double value);
 //  std::shared_ptr<coeus::MPI> mpiComm;
   uint rank;
   int comm_size;

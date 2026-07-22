@@ -30,12 +30,19 @@ jarvis ppl append paraview port_id=11111
 jarvis ppl run
 ```
 
-## How to use it in local computer 
-###
-Run this command in local terminal:
+---
+
+<details>
+<summary><b>Ares-specific setup & troubleshooting</b></summary>
+
+### How to use it on a local computer (connect to Ares)
+
+Run this command in the local terminal:
 ```
 ssh -N -L 11111:localhost:11111 your_id@ares.cs.iit.edu
 ```
-In local paraview, following these instructions:
+In local ParaView, follow these instructions:
 File -> connect </br>
-Then set the port number and connect to Ares.  
+Then set the port number and connect to Ares.
+
+</details>  
