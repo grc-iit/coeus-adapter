@@ -1,0 +1,24 @@
+{
+  "needle": "cavity",
+  "outer_center_voxel": [
+    32,
+    32,
+    32
+  ],
+  "outer_radius_voxels": 21,
+  "inner_center_voxel": [
+    38,
+    31,
+    39
+  ],
+  "inner_radius_voxels": 4,
+  "case_id": 15,
+  "seed": 1688060240,
+  "shape": [
+    64,
+    64,
+    64
+  ],
+  "array_name": "Density",
+  "file": "case_015_cavity.vti"
+}

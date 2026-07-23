@@ -1,0 +1,21 @@
+{
+  "needle": "hotspot",
+  "center_voxel": [
+    48,
+    22,
+    24
+  ],
+  "sigma": 3.791395722870152,
+  "amplitude": 4.239744756325602,
+  "background": 1.0,
+  "peak_value": 5.239744756325602,
+  "case_id": 1,
+  "seed": 1662057957,
+  "shape": [
+    64,
+    64,
+    64
+  ],
+  "array_name": "Temperature",
+  "file": "case_001_hotspot.vti"
+}

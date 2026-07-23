@@ -1,0 +1,272 @@
+[
+  {
+    "case_id": 0,
+    "needle": "hotspot",
+    "file": "case_000_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_000_hotspot.vti",
+    "truth_file": "case_000_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_000_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 1,
+    "needle": "hotspot",
+    "file": "case_001_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_001_hotspot.vti",
+    "truth_file": "case_001_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_001_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 2,
+    "needle": "hotspot",
+    "file": "case_002_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_002_hotspot.vti",
+    "truth_file": "case_002_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_002_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 3,
+    "needle": "hotspot",
+    "file": "case_003_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_003_hotspot.vti",
+    "truth_file": "case_003_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_003_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 4,
+    "needle": "hotspot",
+    "file": "case_004_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_004_hotspot.vti",
+    "truth_file": "case_004_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_004_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 5,
+    "needle": "hotspot",
+    "file": "case_005_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_005_hotspot.vti",
+    "truth_file": "case_005_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_005_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 6,
+    "needle": "hotspot",
+    "file": "case_006_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_006_hotspot.vti",
+    "truth_file": "case_006_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_006_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 7,
+    "needle": "hotspot",
+    "file": "case_007_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_007_hotspot.vti",
+    "truth_file": "case_007_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_007_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 8,
+    "needle": "hotspot",
+    "file": "case_008_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_008_hotspot.vti",
+    "truth_file": "case_008_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_008_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 9,
+    "needle": "hotspot",
+    "file": "case_009_hotspot.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_009_hotspot.vti",
+    "truth_file": "case_009_hotspot.truth.json",
+    "array_name": "Temperature",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_009_hotspot.vti. It contains a scalar field with a single localized 'hot spot' (a Gaussian bump) somewhere inside an otherwise flat background. Use the ParaView MCP tools to find the approximate (x, y, z) voxel coordinates of the peak. Report your final answer as three integers."
+  },
+  {
+    "case_id": 10,
+    "needle": "cavity",
+    "file": "case_010_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_010_cavity.vti",
+    "truth_file": "case_010_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_010_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 11,
+    "needle": "cavity",
+    "file": "case_011_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_011_cavity.vti",
+    "truth_file": "case_011_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_011_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 12,
+    "needle": "cavity",
+    "file": "case_012_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_012_cavity.vti",
+    "truth_file": "case_012_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_012_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 13,
+    "needle": "cavity",
+    "file": "case_013_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_013_cavity.vti",
+    "truth_file": "case_013_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_013_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 14,
+    "needle": "cavity",
+    "file": "case_014_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_014_cavity.vti",
+    "truth_file": "case_014_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_014_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 15,
+    "needle": "cavity",
+    "file": "case_015_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_015_cavity.vti",
+    "truth_file": "case_015_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_015_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 16,
+    "needle": "cavity",
+    "file": "case_016_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_016_cavity.vti",
+    "truth_file": "case_016_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_016_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 17,
+    "needle": "cavity",
+    "file": "case_017_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_017_cavity.vti",
+    "truth_file": "case_017_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_017_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 18,
+    "needle": "cavity",
+    "file": "case_018_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_018_cavity.vti",
+    "truth_file": "case_018_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_018_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 19,
+    "needle": "cavity",
+    "file": "case_019_cavity.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_019_cavity.vti",
+    "truth_file": "case_019_cavity.truth.json",
+    "array_name": "Density",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_019_cavity.vti. It is a solid spherical object that contains a hidden internal cavity (a smaller spherical region of zero value). Use the ParaView MCP tools to determine (a) the approximate voxel-space center of the cavity and (b) its approximate radius. Report both."
+  },
+  {
+    "case_id": 20,
+    "needle": "blobs",
+    "file": "case_020_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_020_blobs.vti",
+    "truth_file": "case_020_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_020_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 21,
+    "needle": "blobs",
+    "file": "case_021_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_021_blobs.vti",
+    "truth_file": "case_021_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_021_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 22,
+    "needle": "blobs",
+    "file": "case_022_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_022_blobs.vti",
+    "truth_file": "case_022_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_022_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 23,
+    "needle": "blobs",
+    "file": "case_023_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_023_blobs.vti",
+    "truth_file": "case_023_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_023_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 24,
+    "needle": "blobs",
+    "file": "case_024_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_024_blobs.vti",
+    "truth_file": "case_024_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_024_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 25,
+    "needle": "blobs",
+    "file": "case_025_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_025_blobs.vti",
+    "truth_file": "case_025_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_025_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 26,
+    "needle": "blobs",
+    "file": "case_026_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_026_blobs.vti",
+    "truth_file": "case_026_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_026_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 27,
+    "needle": "blobs",
+    "file": "case_027_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_027_blobs.vti",
+    "truth_file": "case_027_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_027_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 28,
+    "needle": "blobs",
+    "file": "case_028_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_028_blobs.vti",
+    "truth_file": "case_028_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_028_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  },
+  {
+    "case_id": 29,
+    "needle": "blobs",
+    "file": "case_029_blobs.vti",
+    "abs_path": "/mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_029_blobs.vti",
+    "truth_file": "case_029_blobs.truth.json",
+    "array_name": "Intensity",
+    "task": "Load the dataset at /mnt/common/hxu40/software/paraview_mcp/benchmark/cases_30/case_029_blobs.vti. It contains several disconnected blob-like objects. Use the ParaView MCP tools to determine how many distinct objects there are and report a rough voxel-space center for each one."
+  }
+]
