@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ParaView": {
+      "command": "/mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/bin/pvpython",
+      "args": ["/mnt/common/hxu40/software/paraview_mcp/paraview_mcp_server.py"]
+    }
+  }
+}

@@ -530,7 +530,7 @@ The engine trigger only **warns**; an LLM agent renders the flagged steps and
 issues the **fire** verdict, which halts the run early to save compute. It
 composes Section 3 (the statistical trigger) and Section 4 (the agent), and
 adds a collapse-warning mode plus an agent-driven stop. Baked-in pipeline:
-`test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml`.
+`test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/gray-scott-warn-collapse.yaml`.
 
 ### 7.1 The phenomenon - pattern formation, then saturation to "blank"
 
@@ -588,7 +588,7 @@ Load the self-contained pipeline (config baked in):
 
 ```bash
 spack load iowarp@main adios2-coeus@vigil
-jarvis ppl load yaml coeus-adapter/test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml
+jarvis ppl load yaml coeus-adapter/test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/gray-scott-warn-collapse.yaml
 jarvis ppl print | grep -E "trigger|collapse|engine|L:|F:|k:"   # VERIFY
 ```
 

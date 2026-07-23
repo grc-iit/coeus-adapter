@@ -42,18 +42,18 @@ export ADIOS2_PLUGIN_PATH=<coeus>/build/bin
 
 | pipeline | stages | what it does |
 |---|---|---|
-| `pipelines/lbm-cfd.yaml` | trigger | log-only fire → `<script_location>/lbm_trigger_log.jsonl` |
-| `pipelines/lbm-cfd-sst.yaml` | trigger + render | gated SST stream; a reader consumes the flagged window |
-| `pipelines/lbm-cfd-agent.yaml` | trigger + render + **reason** | the full loop: agent views the flagged frames and rescues the run |
+| `pipelines/vigil/lbm/lbm-cfd.yaml` | trigger | log-only fire → `<script_location>/lbm_trigger_log.jsonl` |
+| `pipelines/vigil/lbm/lbm-cfd-sst.yaml` | trigger + render | gated SST stream; a reader consumes the flagged window |
+| `pipelines/vigil/lbm/lbm-cfd-agent.yaml` | trigger + render + **reason** | the full loop: agent views the flagged frames and rescues the run |
 
 ## The full Trigger-Render-Reason loop
 
-`pipelines/lbm-cfd-agent.yaml` runs all three stages. Three shells - the writer
+`pipelines/vigil/lbm/lbm-cfd-agent.yaml` runs all three stages. Three shells - the writer
 blocks in `Init_` until the SST reader connects (`RendezvousReaderCount=1`).
 
 ```bash
 # --- shell 1: WRITER (needs iowarp + coeus build/bin, per Prerequisites) ---
-jarvis ppl load yaml pipelines/lbm-cfd-agent.yaml
+jarvis ppl load yaml pipelines/vigil/lbm/lbm-cfd-agent.yaml
 jarvis ppl kill && jarvis ppl run                  # waits for the reader
 
 # --- shell 2: READER, once <script_location>/lbm_sst.bp.sst appears ---

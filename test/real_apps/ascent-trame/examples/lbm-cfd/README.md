@@ -108,7 +108,7 @@ pipeline `coeus-lbm-cfd-agent` - recipe and knobs in
 [`test/jarvis/.../lbm_cfd/README.md`](../../../../jarvis/jarvis_coeus/jarvis_coeus/lbm_cfd/README.md):
 
 ```bash
-jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/lbm-cfd-agent.yaml
+jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/vigil/lbm/lbm-cfd-agent.yaml
 jarvis ppl kill && jarvis ppl run     # writer blocks until the SST reader connects
 # then: reader (isolated adios2 env) --status-file/--png-dir on lbm_sst.bp
 # then: lbm_agent.py (isolated system-python env) --rescue-flag <run>/lbmcfd.bp.rescue

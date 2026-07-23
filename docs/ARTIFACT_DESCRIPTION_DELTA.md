@@ -151,7 +151,7 @@ jarvis hostfile set $HOME/producer_hostfile
 **Edit the two producer/consumer bindings to your allocation's node names**
 before loading the pipeline:
 
-- `test/jarvis/jarvis_coeus/pipelines/delta/gray-scott-warn-mn.yaml` →
+- `test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/delta/gray-scott-warn-mn.yaml` →
   `srun_nodelist: "cn024,cn046"` (your producers) and the absolute path of
   `CI/Delta/jarvis-ssh-local-shim.sh` in `ssh_cmd`/`pssh_cmd`.
 - `CI/Delta/run_gs_multinode.sh` → `PRODUCER_NODES`, `CONSUMER_NODE`, and
@@ -160,7 +160,7 @@ before loading the pipeline:
 Load and build the pipeline environment:
 
 ```bash
-jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/delta/gray-scott-warn-mn.yaml
+jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/delta/gray-scott-warn-mn.yaml
 jarvis ppl env build
 jarvis ppl print | grep -E "nprocs|ppn|launcher|srun_nodelist|steps|Hosts"
 #   Hosts: cn024, cn046
@@ -178,7 +178,7 @@ the same node). Renders the 4 flagged frames, no LLM:
 
 ```bash
 jarvis hostfile set $HOME/producer_hostfile   # (single node is fine too)
-jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/delta/gray-scott-warn.yaml
+jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/delta/gray-scott-warn.yaml
 jarvis ppl env build
 MODE=render bash CI/Delta/run_gray_scott_agent.sh
 #   -> $HOME/iowarp/output-0000{0..3}.png  and a trigger_warning in trigger_log.jsonl

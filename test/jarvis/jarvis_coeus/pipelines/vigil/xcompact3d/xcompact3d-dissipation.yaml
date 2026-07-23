@@ -1,0 +1,81 @@
+# Xcompact3d TGV two-stage Yellow/Red DISSIPATION trigger (Vigil "dark waste").
+#
+# An under-resolved Taylor-Green Vortex on a deliberately coarse 65^3 grid: the
+# solver never crashes, CFL stays < 0.04, the velocity field stays smooth, yet
+# implicit numerical dissipation silently erases small-scale physics -- the
+# failure class no crash-detector or SDC tool can catch. The Coeus hermes engine
+# (TriggerType=dissipation) pools the derived block means tke_mean/enst_mean
+# (N_b-weighted, exact) at every output step and forms the paper metrics:
+#   eps_frac = eps_num/eps_total      nu_ratio = nu_eff/nu
+#   YELLOW  eps_frac >= 5%  or nu_ratio >= 1.05  -> log-only (watch carefully)
+#   RED     eps_frac >= 15% or nu_ratio >= 1.20  -> opens the SST inspect window
+# trigger_nu (= 1/re) and trigger_output_dt (= dt*io_frequency) auto-derive from
+# the re/dt/io_frequency knobs below. See test/real_apps/Xcompact3d/README.md.
+#
+# Paper sweep: Re = 3000 / 5000 / 10000 on the same 65^3 grid; Yellow fires near
+# step 4200 for all three, Red progressively earlier as Re rises. Re=5000 is the
+# canonical run (eval 2 / eval 3). Change `re` to 3000.0 or 10000.0 for the others.
+#
+# Log-only by default (reproduces the Figure-3 detection timeline, no reader
+# needed). For the RENDER + REASON phases, set `catalyst_stream: tgv.bp` plus
+# `script`/`data_model` (catalyst/tgv-pipeline.py + tgv-fides.json) and connect
+# an SST reader; only the Red-window steps then ship over SST.
+#
+# Load:  jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/vigil/xcompact3d/xcompact3d-dissipation.yaml
+#        jarvis ppl print | grep -Ei "trigger|re:|nx|engine"
+#        jarvis ppl kill && jarvis ppl run
+name: coeus-xcompact3d
+
+env:
+  TMPDIR: "/home/hxu40/iowarp_prte_tmp"
+  # A literal, per-node /dev/shm dir shared by the clio daemon (pssh) and the
+  # application ranks (mpiexec -x). See ../../gray-scott/... for the rationale.
+  CLIO_MEMFD_DIR: "/dev/shm/clio_hxu40"
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    swim_enabled: false
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.Incompact3d
+    pkg_name: jarvis_coeus.Incompact3d
+    # --- under-resolved TGV grid / physics ---
+    benchmarks: "tgv"
+    nx: 65
+    ny: 65
+    nz: 65
+    re: 5000.0                          # 3000.0 / 10000.0 are the other two paper runs
+    dt: 0.001
+    total_step: 20000
+    io_frequency: 100                   # ADIOS output + trigger-eval interval (trigger_output_dt = dt*io_frequency = 0.1)
+    output_location: "/mnt/common/hxu40/incompact3d/output"
+    # single rank -> exact global reductions (matches eval 2); the trigger pools
+    # block means N_b-weighted, so a valid multi-rank 2decomp run is bit-identical.
+    nprocs: 1
+    ppn: 1
+    engine: "hermes"
+    # --- two-stage Yellow/Red dissipation trigger ---
+    trigger: true
+    trigger_yellow_fraction: 0.05       # Yellow: 5% numerical-dissipation fraction
+    trigger_red_fraction: 0.15          # Red:   15% -> opens the SST inspect window
+    trigger_yellow_nu_ratio: 1.05       # Yellow: nu_eff/nu
+    trigger_red_nu_ratio: 1.2           # Red:   nu_eff/nu
+    trigger_inspect_steps: 3            # Red-window output steps shipped over SST
+    trigger_refire: false
+    trigger_metrics_log_file: ""        # set to a path to log per-step eps_frac / nu_ratio

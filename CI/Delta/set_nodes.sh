@@ -23,7 +23,7 @@ set -euo pipefail
 REPO="${REPO:-/u/hxu13/software/coeus-adapter}"
 PRODUCERS="${1:?usage: set_nodes.sh <prod1,prod2> <consumer> [pipeline.yaml]}"
 CONSUMER="${2:?usage: set_nodes.sh <prod1,prod2> <consumer> [pipeline.yaml]}"
-YAML="${3:-$REPO/test/jarvis/jarvis_coeus/pipelines/delta/gray-scott-warn-mn-dev.yaml}"
+YAML="${3:-$REPO/test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/delta/gray-scott-warn-mn-dev.yaml}"
 
 [[ -f "$YAML" ]] || { echo "ERROR: no such pipeline yaml: $YAML" >&2; exit 1; }
 

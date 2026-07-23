@@ -55,7 +55,7 @@ the simulation polls to **revert to its last checkpoint and double the timesteps
 remains available for the halt verdict.
 
 It is also the worked example of all three stages in **one continuous run**
-(`jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/lbm-cfd-agent.yaml`):
+(`jarvis ppl load yaml test/jarvis/jarvis_coeus/pipelines/vigil/lbm/lbm-cfd-agent.yaml`):
 
 ```
 TRIGGER  engine: variance(derive/VarVort) = 209.2 >= 1.0  -> fires at output 2
@@ -102,6 +102,6 @@ set (`TriggerKEVariable`, `TriggerEnstrophyVariable`, `TriggerNu`,
 - **[BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md)** - full
   walkthrough, including the collapse-warning → agent → early-stop demo (§7).
 - **[test/real_apps/gray-scott/VARIANCE_TRIGGER.md](../test/real_apps/gray-scott/VARIANCE_TRIGGER.md)** - trigger config reference.
-- **[Ready-to-run pipeline](../test/jarvis/jarvis_coeus/pipelines/gray-scott-warn-collapse.yaml)** -
+- **[Ready-to-run pipeline](../test/jarvis/jarvis_coeus/pipelines/vigil/gray-scott/gray-scott-warn-collapse.yaml)** -
   `jarvis ppl load yaml <file> && jarvis ppl run`.
 - **[test/insitu_agent](../test/insitu_agent)** - the AI agent (render + reason stages).
