@@ -33,6 +33,7 @@ sys.stderr = io.TextIOWrapper(_real_stderr, write_through=True)
 import argparse
 import asyncio
 import json
+import shutil
 from pathlib import Path
 
 import anthropic
@@ -41,11 +42,13 @@ from mcp.client.stdio import stdio_client
 
 
 REPO = Path(__file__).resolve().parent.parent
-MCP_SERVER_PATH = REPO / "paraview_mcp_server.py"
-DEFAULT_PVPYTHON = (
-    "/mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/"
-    "paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/bin/pvpython"
-)
+# LLNL ParaView-MCP server location: $PARAVIEW_MCP (dir holding
+# paraview_mcp_server.py), default ~/software/paraview_mcp; override with
+# --mcp-server.
+MCP_DIR = Path(os.environ.get("PARAVIEW_MCP", Path.home() / "software" / "paraview_mcp"))
+MCP_SERVER_PATH = MCP_DIR / "paraview_mcp_server.py"
+# pvpython: $PVPYTHON, else the pvpython on PATH; override with --pvpython.
+DEFAULT_PVPYTHON = shutil.which("pvpython") or "pvpython"
 
 SYSTEM_PROMPT = """You are an autonomous scientific visualization agent with
 access to ParaView through MCP tools. The user will give you a dataset and a

@@ -1,0 +1,6 @@
+# Generated benchmark volumes + ground truth (reproduce with gen_needles.py).
+# The manifest.json embeds absolute paths, so these must be regenerated locally.
+cases/
+cases_30/
+cases*/
+__pycache__/

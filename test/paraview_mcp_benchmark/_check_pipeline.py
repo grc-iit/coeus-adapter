@@ -13,14 +13,14 @@ sys.stdin = io.TextIOWrapper(_real_stdin, encoding="utf-8")
 sys.stdout = io.TextIOWrapper(_real_stdout, encoding="utf-8", write_through=True)
 sys.stderr = io.TextIOWrapper(_real_stderr, encoding="utf-8", write_through=True)
 
-import asyncio, json
+import asyncio, json, shutil
 from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 REPO = Path(__file__).resolve().parent.parent
-PVPYTHON = ("/mnt/common/hxu40/spack/opt/spack/linux-skylake_avx512/"
-            "paraview-5.13.3-ssmv5hp4czyfvuu5eps6s2ljpug7lkus/bin/pvpython")
+PVPYTHON = os.environ.get("PVPYTHON") or shutil.which("pvpython") or "pvpython"
+MCP_DIR = Path(os.environ.get("PARAVIEW_MCP", Path.home() / "software" / "paraview_mcp"))
 CASE_VTI = REPO / "benchmark/cases/case_000_hotspot.vti"
 TRUTH = REPO / "benchmark/cases/case_000_hotspot.truth.json"
 
@@ -42,7 +42,7 @@ async def main():
 
     params = StdioServerParameters(
         command=PVPYTHON,
-        args=[str(REPO / "paraview_mcp_server.py"),
+        args=[str(MCP_DIR / "paraview_mcp_server.py"),
               "--server", "localhost", "--port", "11111"],
         env=os.environ.copy(),
     )
