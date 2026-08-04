@@ -8,6 +8,12 @@ where the agent *does* fire because the field has genuinely homogenized.
 
 ![Agent inspection window](false_positive_contact_sheet.png)
 
+*The five frames of the fired window, isosurface `V=0.25` with the camera fitted to the
+V-structure bounds (the pattern occupies only ~20% of the `64³` domain per axis, so a
+domain-framed camera renders it too small to read). Re-rendered from the equivalent BP5
+run — identical config, same output steps; the agent's own screenshots are unmodified in
+`agent_results/screenshots/`.*
+
 ## Why it false-alarms
 
 The run uses the Gray-Scott **spots regime** (`F=0.03`, `k=0.062`). Here the V field forms a
@@ -56,13 +62,17 @@ trigger_inspect_steps=5        # stream a 5-step window to the agent
 
 ## Frames
 
-| Frame | Output step | Agent's note |
-|-------|-------------|--------------|
-| 1 | 28 | Clear coherent cubic/hexagonal structure, well-defined boundaries. |
-| 2 | 29 | Pattern persists, same structure. No homogenization. |
-| 3 | 30 | Pattern unchanged, robust cubic structure. No degradation. |
-| 4 | 31 | Structure fully intact, internal features clear. No collapse. |
-| 5 | 32 | Pattern persists identically across all 5 steps. → **VERDICT: KEEP RUNNING** |
+| Frame | Output step | Sim step | V range at render | Agent's note |
+|-------|-------------|----------|-------------------|--------------|
+| 1 | 28 | 1400 | [0.000, 0.494449] | Clear coherent cubic/hexagonal structure, well-defined boundaries. |
+| 2 | 29 | 1450 | [0.000, 0.480069] | Pattern persists, same structure. No homogenization. |
+| 3 | 30 | 1500 | [0.000, 0.493554] | Pattern unchanged, robust cubic structure. No degradation. |
+| 4 | 31 | 1550 | [0.000, 0.496816] | Structure fully intact, internal features clear. No collapse. |
+| 5 | 32 | 1600 | [0.000, 0.492100] | Pattern persists identically across all 5 steps. → **VERDICT: KEEP RUNNING** |
+
+V ranges are the bridge's own per-step readings (`aw_bridge.log`) and are the quantitative
+form of the verdict: max holds at ~0.48–0.50 and min stays at exactly 0 throughout. A
+genuine collapse drives min → max.
 
 ## Artifacts
 
@@ -76,6 +86,20 @@ Run directory: `/mnt/common/hxu40/gray_scott_cases/false_alarm_run/`
 | `agent_results/screenshots/agent_0001..0005.png` | The 5 source frames composited above. |
 | `agent_results/token_usage.json` | Cost / tool-call accounting. |
 | `.../jarvis_coeus.adios2_gray_scott/trigger_log.jsonl` | The `trigger_fired` event (top line). |
+| `pv3d_zoom.py` | Re-renders the window with the camera fitted to the contour bounds (two passes: union the bounds over the window, then render with that fixed camera). |
+| `make_sheet.py` | Composes the contact sheet above from those frames (pvbatch; VTK FreeType text, stdlib zlib PNG writer). |
+| `frames_zoom/` | The 1000×1000 zoomed frames the sheet is built from. |
+
+Regenerate the figure with:
+
+```bash
+pvbatch pv3d_zoom.py /mnt/common/hxu40/gray_scott_cases/F0.03_k0.062_spots/out.bp \
+        frames_zoom 0.25 28 32 1000
+pvbatch make_sheet.py frames_zoom false_positive_contact_sheet.png
+```
+
+> `pvbatch` needs a clean `PYTHONPATH` (`env -u PYTHONPATH`) — the spack ADIOS2/numpy
+> entries on it shadow ParaView's own numpy and break the import.
 
 *Frame labels (output steps 28–32) reflect the fired window (`fire_step=28`,
 `inspect_steps=5`); the agent's own log numbers them 1–5 as stream-local indices.*

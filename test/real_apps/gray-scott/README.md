@@ -33,8 +33,69 @@ v_t = Dv * (v_xx + v_yy + v_zz) + u * v^2 - (F + k) * v
 >   step 6500/20000 (~67% of compute skipped)**. The pooled `variance(V)`
 >   statistic is **rank-invariant - bit-identical at 1, 4, and 256 ranks**.
 >
-> The rest of this file is the upstream ADIOS2-examples Gray-Scott documentation
+> - **[FALSE_POSITIVE_CASE.md](FALSE_POSITIVE_CASE.md)** - the complement of the
+>   collapse case: an over-sensitive trigger fires on a *healthy* spots-regime run,
+>   the agent inspects the streamed frames and returns **keep running**, and the
+>   simulation completes all 5000 steps. This is the case the trigger-calibration
+>   section below explains.
+>
+> **Trigger calibration is below** ([Choosing a trigger threshold](#choosing-a-trigger-threshold));
+> the rest of this file is the upstream ADIOS2-examples Gray-Scott documentation
 > (simulation parameters and plain SST / Catalyst usage).
+
+---
+
+## Choosing a trigger threshold
+
+`trigger_baseline_ratio` is **regime-specific**, and picking it by intuition is how
+you get false alarms. The engine's baseline is the statistic on the *first evaluated
+output* - that is, the `t = 0` seed, which is the least representative state of the
+run - and every later value is a ratio against it. Two things follow.
+
+**Healthy pattern formation raises the variance permanently.** It is not a transient.
+Measured over all 100 outputs of an `L=64` run (exact global variance, which is what
+the pooled trigger statistic reproduces):
+
+| Regime | F | k | ratio range | shape | verdict |
+| ------ | --- | --- | ----------- | ----- | ------- |
+| spots | 0.03 | 0.062 | **0.79 - 1.22x** | dips 21%, then climbs monotonically to a **1.19x plateau** by output 45 and stays there | healthy for all 5000 steps |
+| saturating | 0.08 | 0.03 | **0.022 - 29.6x** | spikes to 29.6x at output 17, then **collapses three orders of magnitude** and stays flat | genuine homogenization |
+
+The spots climb *is* the physics - spots nucleating and sharpening - so any threshold
+below ~1.18x is crossed by a healthy run and **stays** crossed. At `1.05` it is not a
+near miss: **90 of 100 outputs sit above it**, which is exactly how
+[FALSE_POSITIVE_CASE.md](FALSE_POSITIVE_CASE.md) is constructed.
+
+**There is a wide separation corridor.** Nothing in either regime occupies
+**1.22x - 10x**. Put the threshold there:
+
+```
+trigger_baseline_ratio=10     # production: inside the corridor, fires only on the real spike
+trigger_baseline_ratio=1.05   # the deliberate false-alarm configuration - below the healthy plateau
+```
+
+**Two further consequences.**
+
+- *The fire step is noise-determined, not event-determined.* When the threshold sits
+  below the plateau the curve creeps across it, so the crossing output moves by tens
+  of outputs between runs at identical configuration (observed: 9, 26, 28, 62, and at
+  `1.08` occasionally never). Do not treat a fire step as reproducible.
+- *A rising-edge test cannot detect collapse.* Homogenization makes the variance
+  **fall**. Use `trigger_warn_on_collapse=true` (arm on the rise, warn on the fall
+  back through `trigger_collapse_baseline_ratio`) whenever the failure mode is a
+  field going uniform. The two cases need different rules, not just different numbers.
+
+Calibrate a new regime before wiring the gated pipeline by running the simulation once
+to a plain BP file and tracing the statistic offline:
+
+```
+$ spack load adios2
+$ python3 varv_trace.py /path/to/out.bp          # add --full for every output step
+```
+
+It prints the baseline, the ratio range, the baseline's sensitivity to the first step,
+and the first rising-edge crossing of each candidate threshold - the numbers in the
+table above are its output.
 
 ---
 
