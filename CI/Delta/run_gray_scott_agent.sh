@@ -58,8 +58,18 @@ MAX_WALL="${MAX_WALL:-300}"           # agent wall-time cap (s)
 SSTFILE="$RUNDIR/$STREAM.sst"
 STATUS_FILE="$INSITU/streaming_status.json"
 SHOT_FILE="/tmp/gs_bridge_view_${USER}.png"
+# Timing sink. analyze_timeline.py joins these against the engine's
+# trigger_timeline.jsonl (written next to the pipeline's trigger_log.jsonl).
+RES="${RES:-$INSITU/agent_results}"
+BRIDGE_TIMING="$RES/streaming_timing.jsonl"   # sst_wait / pipeline_update / render per step
+MCP_TIMING="$RES/mcp_tool_timing.jsonl"       # per MCP tool call
+FRAMES_DIR="$RES/frames"
 
-mkdir -p "$RUNDIR"
+mkdir -p "$RUNDIR" "$RES" "$FRAMES_DIR"
+# Both timing files are opened append-only, so clear them per run or the
+# analysis silently mixes this run with the previous one.
+: > "$BRIDGE_TIMING"
+: > "$MCP_TIMING"
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 
 # Load the headless spack paraview into a clean (no-iowarp) subshell.
@@ -137,11 +147,16 @@ fi
 # ----- 4b. AGENT mode: bridge (pvpython) + MCP server (pvpython) + agent (spack py) -----
 log "AGENT: starting streaming bridge (pvpython) --paused"
 ( pv_env
+  # This single-node driver runs the L=64 pipeline (gray-scott-warn.yaml), where
+  # Volume rendering is verified to show the collapse. See gs_profiles.py.
   exec pvpython "$INSITU/insitu_streaming.py" \
+       --profile "${GS_PROFILE:-l64}" \
        -j "$INSITU/gs-fides.json" \
        -b "$RUNDIR/$STREAM" --staging \
        --server localhost --port "$PORT" --paused \
        --status-file "$STATUS_FILE" \
+       --timing-file "$BRIDGE_TIMING" \
+       --frames-dir "$FRAMES_DIR" \
        --screenshot-file "$SHOT_FILE" --max-steps 8 ) \
     > "$RUNDIR/bridge.log" 2>&1 &
 pids+=($!)
@@ -165,7 +180,9 @@ log "AGENT: launching insitu_agent.py ($MODEL); MCP server spawned via pvpython"
         --status-file "$STATUS_FILE" \
         --screenshot-file "$SHOT_FILE" \
         --stop-flag "$STOP_FLAG" \
-        --results-dir "$INSITU/agent_results" \
+        --timing-file "$MCP_TIMING" \
+        --frames-dir "$FRAMES_DIR" \
+        --results-dir "$RES" \
         --max-iterations 15 --max-wall-seconds "$MAX_WALL" \
         --prompt "You are inspecting a gated collapse window of exactly $NUM_STEPS \
 streamed steps from a live Gray-Scott run. For each step: call advance_step, then \
@@ -176,5 +193,6 @@ reason. IMPORTANT: call advance_step at most $NUM_STEPS times; the stream ships 
 nothing after this window, so any further advance_step just blocks. Do not stall — \
 issue the fire verdict promptly once the collapse is clear." )
 
-log "AGENT done. Verdict + screenshots in $INSITU/agent_results;"
+log "AGENT done. Verdict + screenshots + timing in $RES;"
+log "  timeline: analyze_timeline.py $RES [<pkg_dir>/trigger_timeline.jsonl]"
 log "stop flag (if fired): $STOP_FLAG ; writer log: $RUNDIR/writer.log"

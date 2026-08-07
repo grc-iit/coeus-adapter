@@ -36,6 +36,7 @@ eng = jl(TL)
 btime = jl(os.path.join(RES, "streaming_timing.jsonl"))
 frames = jl(os.path.join(RES, "frames", "frames.jsonl"))
 mcp = jl(os.path.join(RES, "mcp_tool_timing.jsonl"))
+llm = jl(os.path.join(RES, "llm_call_timing.jsonl"))
 tok = json.load(open(os.path.join(RES, "token_usage.json")))
 
 T0 = next(e["wall"] for e in eng if e["event"] == "sim_start")
@@ -77,6 +78,22 @@ if mcp:
           f"(blocked {mcp[0]['mcp_total_ms']/1000:.1f}s for the window)")
 print(f"  VERDICT: T+{rel(tok['end_epoch']):6.1f}s  ({tok['num_tool_calls']} tool / "
       f"{tok['num_llm_calls']} LLM calls, {tok['wall_time_s']}s, ${tok['estimated_cost_usd']})")
+
+# Split the agent's wall time into reasoning vs tool work. llm_total_s comes from
+# token_usage.json (newer runs); fall back to summing the per-call records.
+n_llm = tok.get("num_llm_calls", 0)
+llm_s = tok.get("llm_total_s")
+if llm_s is None and llm:
+    llm_s = sum(c.get("llm_ms", 0) for c in llm) / 1000
+if llm_s is not None:
+    tool_s = sum(m.get("mcp_total_ms", 0) for m in mcp) / 1000
+    mean = llm_s / n_llm if n_llm else 0.0
+    print(f"  LLM reasoning: {llm_s:6.1f}s over {n_llm} calls (mean {mean:.1f}s/call)")
+    print(f"  MCP tools:     {tool_s:6.1f}s   loop/other: "
+          f"{tok['wall_time_s'] - llm_s - tool_s:.1f}s")
+    if llm:
+        per = "  ".join(f"#{c['call']}:{c['llm_ms']/1000:.1f}s" for c in llm)
+        print(f"  per call: {per}")
 
 sim_end = outs[max(outs)]
 stall = sum(max(0, (begins[s+1]-begins[s]) - freecad) for s in range(8, 12) if s+1 in begins)

@@ -9,10 +9,14 @@
 
 source "${SPACK_ROOT:-$HOME/spack}/share/spack/setup-env.sh"
 
-# iowarp@dev -- load BY HASH: iowarp@main coexists in the spack tree and
-# `spack load iowarp` alone is ambiguous.
-#   spack install --fresh iowarp@dev ~adios2 ^openmpi@5.0.10
-spack load /pj67x7i
+# iowarp@dev +debug -- load BY HASH: iowarp@main AND the older ~debug iowarp@dev
+# (/pj67x7i) both coexist in the spack tree, so `spack load iowarp` (or even
+# `iowarp@dev`) is ambiguous. /alfdy55 is the +debug build (clio-core commit
+# 6b2913a3, built +debug for gdb'ing the L=512 stall).
+#   spack install --fresh iowarp@dev +debug ^openmpi@5.0.10
+# NOTE: build-dev/ MUST be rebuilt whenever this hash changes -- the iowarp
+# prefix is baked into the coeus binaries' RUNPATH at link time.
+spack load /alfdy55
 
 # adios2-coeus@vigil = ADIOS2 v2.11.0 + the coeus derived variables. See env.sh.
 spack load adios2-coeus@vigil
@@ -42,7 +46,7 @@ mkdir -p "$TMPDIR" 2>/dev/null
 #         -DMPI_C_COMPILER=$(spack location -i openmpi@5.0.10)/bin/mpicc \
 #         -DMPI_CXX_COMPILER=$(spack location -i openmpi@5.0.10)/bin/mpicxx ..
 
-echo "[coeus-dev] iowarp:       $(spack location -i /pj67x7i)"
+echo "[coeus-dev] iowarp:       $(spack location -i /alfdy55)"
 echo "[coeus-dev] adios2-coeus: $(spack location -i adios2-coeus@vigil)"
 echo "[coeus-dev] mpicc:        $(which mpicc)"
 echo "[coeus-dev] plugin path:  $ADIOS2_PLUGIN_PATH"

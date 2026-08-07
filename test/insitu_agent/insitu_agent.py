@@ -49,6 +49,7 @@ _run_stats = {
     "cache_creation_input_tokens": 0,
     "cache_read_input_tokens": 0,
     "num_llm_calls": 0,
+    "llm_total_ms": 0.0,
     "num_tool_calls": 0,
     "num_screenshots": 0,
     "total_image_bytes": 0,
@@ -59,6 +60,31 @@ _run_stats = {
 
 # Optional results directory; when set, screenshot bytes are persisted to disk.
 _results_dir = None
+
+# Per-call LLM latency, written next to the other timing sinks so
+# analyze_timeline.py can separate reasoning time from tool/render time.
+LLM_TIMING_NAME = "llm_call_timing.jsonl"
+
+
+def _record_llm_call(elapsed_ms, provider, model, in_tok, out_tok):
+    """Accumulate LLM wall time and append one per-call record."""
+    _run_stats["llm_total_ms"] += elapsed_ms
+    if not _results_dir:
+        return
+    try:
+        with open(Path(_results_dir) / LLM_TIMING_NAME, "a") as f:
+            json.dump({
+                "call": _run_stats["num_llm_calls"],
+                "provider": provider,
+                "model": model,
+                "llm_ms": round(elapsed_ms, 2),
+                "input_tokens": in_tok,
+                "output_tokens": out_tok,
+                "timestamp": time.time(),  # wall clock, aligns with engine timeline
+            }, f)
+            f.write("\n")
+    except OSError:
+        pass
 
 
 def _save_screenshot_bytes(b64_data):
@@ -227,11 +253,19 @@ async def _call_openai(messages, tools, model):
 
     client = openai.AsyncOpenAI()
 
+    t0 = time.monotonic()
     response = await client.chat.completions.create(
         model=model,
         messages=messages,
         tools=tools if tools else None,
     )
+    llm_ms = (time.monotonic() - t0) * 1000
+
+    _run_stats["num_llm_calls"] += 1
+    usage = getattr(response, "usage", None)
+    in_tok = getattr(usage, "prompt_tokens", 0) or 0
+    out_tok = getattr(usage, "completion_tokens", 0) or 0
+    _record_llm_call(llm_ms, "openai", model, in_tok, out_tok)
 
     choice = response.choices[0]
     msg = choice.message
@@ -282,15 +316,21 @@ async def _call_anthropic(messages, tools, model):
     if tools:
         kwargs["tools"] = tools
 
+    t0 = time.monotonic()
     response = await client.messages.create(**kwargs)
+    llm_ms = (time.monotonic() - t0) * 1000
 
     # Accumulate token usage
     _run_stats["num_llm_calls"] += 1
+    in_tok = out_tok = 0
     if hasattr(response, "usage") and response.usage is not None:
-        _run_stats["input_tokens"] += getattr(response.usage, "input_tokens", 0) or 0
-        _run_stats["output_tokens"] += getattr(response.usage, "output_tokens", 0) or 0
+        in_tok = getattr(response.usage, "input_tokens", 0) or 0
+        out_tok = getattr(response.usage, "output_tokens", 0) or 0
+        _run_stats["input_tokens"] += in_tok
+        _run_stats["output_tokens"] += out_tok
         _run_stats["cache_creation_input_tokens"] += getattr(response.usage, "cache_creation_input_tokens", 0) or 0
         _run_stats["cache_read_input_tokens"] += getattr(response.usage, "cache_read_input_tokens", 0) or 0
+    _record_llm_call(llm_ms, "anthropic", model, in_tok, out_tok)
 
     content_text = ""
     tool_calls = []
@@ -454,6 +494,8 @@ async def main():
     if args.results_dir:
         _results_dir = args.results_dir
         Path(_results_dir).mkdir(parents=True, exist_ok=True)
+        # Append-only sink: clear it so a run's LLM timings start clean.
+        (Path(_results_dir) / LLM_TIMING_NAME).write_text("")
 
     _run_limits["max_iterations"] = args.max_iterations
     _run_limits["max_wall_seconds"] = args.max_wall_seconds
@@ -535,6 +577,8 @@ async def main():
         )
         summary = {
             **_run_stats,
+            "llm_total_ms": round(_run_stats["llm_total_ms"], 2),
+            "llm_total_s": round(_run_stats["llm_total_ms"] / 1000, 3),
             "wall_time_s": round(wall_total, 3),
             "end_epoch": time.time(),  # wall clock, aligns with engine timeline
             "estimated_cost_usd": round(cost, 4),

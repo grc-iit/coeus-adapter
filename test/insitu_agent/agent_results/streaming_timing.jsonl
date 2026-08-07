@@ -1,0 +1,4 @@
+{"step": 1, "sst_wait_ms": 2.14, "pipeline_update_ms": 618.69, "render_ms": 181.65, "step_total_ms": 802.49, "timestamp": 1786116080.9689803}
+{"step": 2, "sst_wait_ms": 6.81, "pipeline_update_ms": 92.29, "render_ms": 91.28, "step_total_ms": 190.38, "timestamp": 1786116085.7554722}
+{"step": 3, "sst_wait_ms": 4.12, "pipeline_update_ms": 90.06, "render_ms": 81.3, "step_total_ms": 175.48, "timestamp": 1786116090.0137246}
+{"step": 4, "sst_wait_ms": 111.69, "pipeline_update_ms": 87.27, "render_ms": 88.98, "step_total_ms": 287.94, "timestamp": 1786116094.8969035}

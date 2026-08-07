@@ -100,6 +100,52 @@ class StreamingState:
             pass
 
 
+# --- Scale profile ----------------------------------------------------------
+# The render stage is the only scale-dependent part of the agent stack: L=64
+# works with Volume rendering, L=256 REQUIRES a Contour (see gs_profiles.py for
+# the measurements). Selected with --profile, or inferred from the domain extent
+# when not given. Env vars still win, so a one-off sweep needs no code edit.
+PROFILE_NAME = os.environ.get('INSITU_PROFILE')      # may be None -> infer
+PROFILE = None                                       # dict, set in main()
+
+# Isovalue for the V contour (field range ~[0, 0.74]; V*~0.592 at collapse).
+CONTOUR_ISOVALUE = 0.3
+# Isovalues probed once at setup so a bad default is diagnosed in the SAME run
+# rather than costing another allocation.
+CONTOUR_PROBES = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+# "volume" or "contour" -- what setup_initial_display leaves visible.
+RENDER_MODE = "contour"
+OPACITY_DIVISOR = 64.0
+# Set by setup_initial_display so the render loop can log the surface size.
+CONTOUR_SOURCE = None
+
+
+def apply_profile(name, extent=None):
+    """
+    Resolve and install the scale profile into the module globals. Env vars
+    override the profile so a single knob can be swept without editing code.
+    """
+    import gs_profiles
+    key = name or gs_profiles.profile_for_extent(extent)
+    prof = gs_profiles.get_profile(key)
+
+    g = globals()
+    g["PROFILE"] = prof
+    g["PROFILE_NAME"] = key
+    g["RENDER_MODE"] = os.environ.get("INSITU_RENDER_MODE", prof["render_mode"])
+    g["CONTOUR_ISOVALUE"] = float(
+        os.environ.get("INSITU_CONTOUR_ISOVALUE", prof["contour_isovalue"]))
+    probes_env = os.environ.get("INSITU_CONTOUR_PROBES")
+    g["CONTOUR_PROBES"] = ([float(x) for x in probes_env.split(",") if x.strip()]
+                           if probes_env else list(prof["contour_probes"]))
+    g["OPACITY_DIVISOR"] = float(
+        os.environ.get("INSITU_OPACITY_DIVISOR", prof["opacity_divisor"]))
+
+    print(f"[insitu_streaming] profile '{key}': {prof['name']}")
+    print(f"[insitu_streaming]   render_mode={g['RENDER_MODE']} "
+          f"isovalue={g['CONTOUR_ISOVALUE']:g} probes={g['CONTOUR_PROBES']}")
+    return prof
+
 # Global streaming state — the MCP server reads/writes this
 streaming_state = StreamingState()
 
@@ -188,12 +234,105 @@ def setup_initial_display(fides, view):
         vLUT.AutomaticRescaleRangeMode = "Clamp and update every timestep"
         vLUT.RescaleOnVisibilityChange = 1
         display.RescaleTransferFunctionToDataRange(True, False)
+
+        # --- L-portable volume opacity (fixed 2026-08-07) -------------------
+        # gs-fides.json hardcodes spacing=[0.1,0.1,0.1] regardless of L, so the
+        # PHYSICAL domain is L*0.1 units: 6.4 at L=64 but 25.6 at L=256. Volume
+        # rendering accumulates opacity along the ray in physical distance, so
+        # with a fixed ScalarOpacityUnitDistance the L=256 ray saturates inside
+        # the outer shell and NO interior structure reaches the image -- every
+        # frame renders as an identical featureless blob and the agent cannot
+        # judge collapse at all (measured: L=64 window shows labyrinth creases
+        # dissolving; L=256 window is 4 indistinguishable blobs).
+        # Scale the unit distance with the domain so optical depth across the
+        # volume is L-INVARIANT. The /64.0 reproduces the known-good L=64 look
+        # (6.4/64 = 0.1 = one cell) at any L; at L=256 it gives 0.4 = 4 cells.
+        try:
+            b = fides.GetDataInformation().GetBounds()   # (xmin,xmax,ymin,...)
+            extent = max(b[1] - b[0], b[3] - b[2], b[5] - b[4])
+            # Late profile resolution: if no --profile was given we can now infer
+            # the scale from the real domain size (extent = L * 0.1).
+            if PROFILE is None:
+                apply_profile(PROFILE_NAME, extent)
+            if extent > 0:
+                soud = extent / OPACITY_DIVISOR
+                display.ScalarOpacityUnitDistance = soud
+                print(f"[insitu_streaming] Volume opacity: domain extent={extent:.3f} "
+                      f"-> ScalarOpacityUnitDistance={soud:.4f} (L-portable)")
+            else:
+                print("[insitu_streaming] WARN: zero domain extent; leaving default opacity")
+        except Exception as e:
+            print(f"[insitu_streaming] WARN: could not set ScalarOpacityUnitDistance ({e})")
+
         print("[insitu_streaming] Using Volume rendering of V")
     except Exception as e:
         print(f"[insitu_streaming] WARN: Volume rendering unavailable ({e}); keeping Outline")
 
+    # --- Isosurface of V (added 2026-08-07) --------------------------------
+    # Volume rendering CANNOT show the collapse at scale: it integrates opacity
+    # along the ray, so a thin feature's contrast scales with its fraction of
+    # the path (a 2-cell crease is 1/32 of the path at L=64 but 1/128 at L=256
+    # -- a 4x contrast loss no opacity setting recovers; measured, the L=256
+    # window rendered as 4 indistinguishable blobs while L=64 showed creases
+    # dissolving). A Contour extracts GEOMETRY at a fixed V value instead, so it
+    # is resolution-independent: as the field homogenises toward V*~0.592 the
+    # V=0.3 surface shrinks and vanishes. That is the signal the agent is asked
+    # to judge -- and, despite every prior verdict saying "the V isosurface
+    # vanished", no isosurface existed in this pipeline until now.
+    # Falls back to the volume display on any error.
+    iso_display = None
+    if RENDER_MODE != "contour":
+        # L=64 profile: Volume rendering is verified to show the collapse at
+        # this scale (creases in frame 1 dissolve by frame 4), so keep the
+        # original published visualization and skip the contour entirely.
+        print(f"[insitu_streaming] render_mode={RENDER_MODE}: keeping Volume "
+              f"(verified at L=64; NOT usable at L=256 -- see gs_profiles.py)")
+        SetActiveSource(fides)
+        return display
+    try:
+        # Set properties AFTER construction. Passing them as constructor kwargs
+        # (esp. PointMergeMethod="Don't Merge Points") blew up inside
+        # paraview.simple's property setter with "cannot access local variable
+        # 'new_value'" on 2026-08-07 -- the enum string did not match the
+        # property's domain and the setter fell through without binding.
+        contour = Contour(Input=fides)
+        contour.ContourBy = ["POINTS", "V"]
+
+        # ISOVALUE SWEEP, once, on the first flagged step. Picking an isovalue
+        # blind costs a whole allocation to discover it was empty or saturated,
+        # so probe several here and print the surface size at each. A usable
+        # isovalue is one with a LARGE BUT NOT DEGENERATE point count; 0 means
+        # the whole field is on one side of it (nothing to see).
+        for probe in CONTOUR_PROBES:
+            try:
+                contour.Isosurfaces = [probe]
+                contour.UpdatePipeline()
+                n = contour.GetDataInformation().GetNumberOfPoints()
+                print(f"[insitu_streaming] isovalue probe V={probe:.2f} -> {n} surface points")
+            except Exception as e:
+                print(f"[insitu_streaming] isovalue probe V={probe:.2f} failed: {e}")
+
+        contour.Isosurfaces = [CONTOUR_ISOVALUE]
+        contour.UpdatePipeline()
+        globals()["CONTOUR_SOURCE"] = contour   # so the loop can log its size
+        iso_display = Show(contour, view, "GeometryRepresentation")
+        iso_display.SetRepresentationType("Surface")
+        ColorBy(iso_display, ("POINTS", "V"))
+        # Hide the volume so the (opaque) blob does not occlude the isosurface.
+        display.Visibility = 0
+        view.ResetCamera()
+        print(f"[insitu_streaming] Isosurface of V at {CONTOUR_ISOVALUE} "
+              f"(volume hidden); this is the collapse signal")
+    except Exception as e:
+        print(f"[insitu_streaming] WARN: contour unavailable ({e}); keeping Volume")
+        try:
+            display.Visibility = 1
+        except Exception:
+            pass
+        iso_display = None
+
     SetActiveSource(fides)
-    return display
+    return iso_display if iso_display is not None else display
 
 
 def prewarm_render(view):
@@ -531,7 +670,18 @@ def streaming_loop(args, state):
         tag = "RENDER" if should_render else "SKIP  "
         vr = array_range(fides, "V")
         vr_txt = f" V=[{vr[0]:.6f},{vr[1]:.6f}]" if vr else " V=[n/a]"
-        print(f"[insitu_streaming] Step {state.step} {tag}{vr_txt} "
+        # Surface size of the V isosurface: the QUANTITATIVE collapse signal.
+        # "The isosurface vanished" has been asserted by every agent verdict
+        # since July but never measured; as the field homogenises toward
+        # V*~0.592 this count should fall monotonically toward 0. Unlike pixels,
+        # it cannot be confabulated.
+        iso_txt = ""
+        if CONTOUR_SOURCE is not None:
+            try:
+                iso_txt = f" iso@{CONTOUR_ISOVALUE:g}={CONTOUR_SOURCE.GetDataInformation().GetNumberOfPoints()}pts"
+            except Exception:
+                iso_txt = " iso=[n/a]"
+        print(f"[insitu_streaming] Step {state.step} {tag}{vr_txt}{iso_txt} "
               f"(sst={t_sst_end - t_sst_start:.3f}s "
               f"pipeline={t_pipeline_end - t_pipeline_start:.3f}s "
               f"render={t_render_end - t_render_start:.3f}s)")
@@ -639,11 +789,25 @@ def parse_args():
              "via the MCP get_flagged_frames tool without pacing the simulation.",
         type=str, default=None,
     )
+    parser.add_argument(
+        "--profile",
+        help="Scale profile selecting the render configuration: 'l64' (Volume "
+             "rendering -- the original published config, verified to show the "
+             "collapse at L=64) or 'l256' (Contour -- REQUIRED at L=256, where "
+             "Volume renders 4 identical featureless blobs). Omit to infer from "
+             "the domain extent. See gs_profiles.py for the measurements.",
+        type=str, default=None, choices=["l64", "l256"],
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+
+    # Resolve the scale profile. If --profile was omitted we defer to
+    # setup_initial_display, which infers it from the real domain extent.
+    if args.profile or PROFILE_NAME:
+        apply_profile(args.profile or PROFILE_NAME)
 
     # Connect to the pvserver
     print(f"[insitu_streaming] Connecting to pvserver at {args.server}:{args.port}")

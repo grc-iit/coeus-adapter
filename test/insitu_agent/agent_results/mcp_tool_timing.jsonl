@@ -1,0 +1,9 @@
+{"tool": "get_streaming_status", "pv_operation_ms": 0, "mcp_total_ms": 0.53, "mcp_overhead_ms": 0.53, "timestamp": 1786116077.9353976}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 1812.31, "mcp_overhead_ms": 1812.31, "timestamp": 1786116081.0342083}
+{"tool": "get_screenshot", "pv_operation_ms": 0.71, "mcp_total_ms": 1.72, "mcp_overhead_ms": 1.01, "timestamp": 1786116082.3160622}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 1008.78, "mcp_overhead_ms": 1008.78, "timestamp": 1786116085.7738905}
+{"tool": "get_screenshot", "pv_operation_ms": 0.8, "mcp_total_ms": 1.32, "mcp_overhead_ms": 0.52, "timestamp": 1786116086.5875552}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 1112.47, "mcp_overhead_ms": 1112.47, "timestamp": 1786116090.111114}
+{"tool": "get_screenshot", "pv_operation_ms": 0.75, "mcp_total_ms": 1.54, "mcp_overhead_ms": 0.79, "timestamp": 1786116091.004277}
+{"tool": "advance_step", "pv_operation_ms": 0, "mcp_total_ms": 1208.94, "mcp_overhead_ms": 1208.94, "timestamp": 1786116094.9772835}
+{"tool": "get_screenshot", "pv_operation_ms": 0.65, "mcp_total_ms": 1.15, "mcp_overhead_ms": 0.5, "timestamp": 1786116096.1829157}

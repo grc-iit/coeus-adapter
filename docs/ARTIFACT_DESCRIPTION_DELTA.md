@@ -31,7 +31,8 @@ be followed top-to-bottom by an evaluator with a Delta allocation.
 | Model | Anthropic `claude-haiku-4-5` (any Claude model works; needs an API key) |
 | Metrics | trigger fire step + value; agent verdict; early-halt step; wall-time; \$ cost |
 | Output | `trigger_log.jsonl`, rendered PNGs, agent `token_usage.json` + screenshots |
-| Approx. run time | build ≈ 2–3 h (ParaView is the long pole); one scale run ≈ 5 min |
+| Approx. run time | build ≈ 2–3 h (ParaView is the long pole); one L=256 scale run ≈ **20 min** (warn at ~15 min, §8) - request a **≥ 2 h** allocation, since a 1 h one leaves no margin and Delta does **not** permit extending a running job |
+| Allocation cost | 3 exclusive Delta CPU nodes = **384 core-hours per wall-hour**; `scancel` when done (releasing a 2 h job 38 min early saved ~245 core-hours) |
 | Public repo | `https://github.com/grc-iit/coeus-adapter` (branch used here: `iowarp_2`) |
 
 ---
@@ -253,13 +254,101 @@ Two verified reference runs, 2026-07-17 on Delta (job across `cn[024,046,071]`),
 256 producer ranks, `F=0.08`, `k=0.03`, `plotgap=50`, `steps=20000`,
 `claude-haiku-4-5`:
 
-**Scale reference (L=256, 32-rank parallel consumer)** - the headline config:
-warn at output **125** (`variance 5.61e-4` = 12× collapse vs baseline
-`4.66e-5`; the 64×-smaller baseline vs L=64 confirms the 1/L³ scaling), agent
-started only after the warn and fired **43 s** later ("V field expanded to
-uniform bulk - collapsed to homogeneous state"), writer halted early at step
-**6500** of 20000 (67% skipped). Agent: 10 tool calls, 4 screenshots, ~39 s,
-≈ \$0.08.
+**Scale reference (L=256, 256 ranks, 32-rank parallel consumer)** - the headline
+config. Re-measured in depth 2026-08-06/07 on `cn[009,011,020]` and
+`cn[060,092,114]` with `test/jarvis/.../delta/gray-scott-overhead-mn.yaml`
+(`L=256 nprocs=256 ppn=128 steps=8000 plotgap=50`, `queue_depth=32768`,
+`iowarp@main` + `build/`). The trigger half is settled; the reason half is not
+(see "Honest status" below).
+
+*Trigger - reproducible to 3 significant figures.* Five independent runs, two
+different node sets, all warning at **output 125**:
+
+| run | value | baseline | ratio |
+|---|---|---|---|
+| 1 | 5.6016e-04 | 4.6748e-05 | 12.0× |
+| 2 | 5.5977e-04 | 4.6704e-05 | 12.0× |
+| 3 | 5.6184e-04 | 4.6589e-05 | 12.1× |
+| 4 | 5.6100e-04 | 4.6592e-05 | 12.0× |
+
+The baseline is **64× smaller than L=64's** `2.96e-3`, confirming the 1/L³
+scaling, and the same 20×/13× ratios warn correctly - the ratios are L-portable.
+
+*Measured cost (this is the answer to "how long does the simulation take").*
+Subtracting ~75 s of MPI/engine init plus the SST rendezvous block, the
+compute+I/O window is **~1145 s for 8000 steps / 160 outputs**:
+
+| Metric | Measured |
+|---|---|
+| Per output step | **~7.2 s** |
+| Per simulation step | **~143 ms** |
+| Time to the warn (output 125) | **~15 min** |
+| Full 160 outputs | ~19 min |
+| Gated SST ship, per flagged step | 185-279 ms (mean 231 ms) |
+| Trigger cost as measured | **0.92 s total = 0.08 % of the run** |
+| Bridge render, contour | 0.08-0.18 s/frame (volume: 0.2-0.9 s) |
+
+Two independent checks agree: the warn at output 125 predicts 125 × 7.2 s = 895 s
+(observed ~15 min), and the bridge's own `sst_wait_ms` on step 4 was **7030 ms** -
+one output interval, measured on the reader side. Note the per-output *trigger
+evaluation* is not separately instrumented; the 0.08 % above is only the gated
+SST ship. Isolating the variance-pooling cost needs an A/B against
+`trigger=false`, and that control **still needs a consumer** (see §10).
+
+*Render - a Contour is REQUIRED at L=256.* Volume rendering integrates opacity
+along the ray, so a thin feature's contrast scales with its fraction of the path:
+a 2-cell crease is 1/32 of the path at L=64 but 1/128 at L=256. The L=256 window
+therefore renders as **four indistinguishable featureless blobs** under Volume,
+and no opacity setting recovers it (an L-portable `ScalarOpacityUnitDistance`
+was added and did *not* help). `setup_initial_display` now builds a Contour on V
+instead. With it, the collapse becomes a crisp quantitative signal - the V=0.3
+isosurface size across the 4-step window:
+
+```
+step 1: 10825 pts -> 7542 -> 5091 -> step 4: 3168 pts     (-71 %, monotonic)
+```
+
+logged per step by the bridge as `iso@0.3=<N>pts`. An isovalue sweep runs once at
+setup (`INSITU_CONTOUR_PROBES`, default `0.1..0.6`) so a bad isovalue is
+diagnosed in the same run instead of costing another allocation:
+
+```
+V=0.10 9891 | 0.20 10408 | 0.30 10825 | 0.40 11019 | 0.50 11351
+V=0.60 12,166,473      <- 1000x jump
+```
+
+That discontinuity **independently confirms `V* ≈ 0.592`**: the bulk sits just
+below 0.6, so a 0.60 surface slices the whole domain. `0.3` is a good working
+isovalue.
+
+*Honest status of the agent verdict at L=256.* **Not yet grounded.** The engine
+warns at collapse *onset* - variance falling through 13× baseline from a ~30×
+peak, still ~8.5× baseline - which is by design and is what makes the early halt
+valuable. But the 4-frame window closes long before homogenisation, so an agent
+asked to confirm a *completed* collapse can never satisfy that criterion here.
+Observed, with `claude-haiku-4-5` (10-11 LLM calls, 4 screenshots, ~30 s,
+≈ \$0.08 per run):
+
+- With a prompt containing "…**or after you have seen all N frames** - call
+  `fire_stop_simulation`", the agent fires but its reason contradicts itself
+  ("V isosurface **persists without collapse** - triggering halt"). Procedural,
+  not evidential.
+- With that escape removed and declining made legitimate, the agent **correctly
+  refuses**, and describes the physics accurately: *"clear evidence of pattern
+  attenuation, structures shrinking from step 1 through step 4 … the isosurface
+  has not vanished."*
+
+So the early-halt compute saving is real but was being obtained by telling the
+agent to fire regardless of evidence. The fix is a **trend** criterion - fire on
+a sustained monotonic shrink of the isosurface count (the −71 % above), which is
+satisfiable at warn time - rather than demanding disappearance, or widening
+`trigger_inspect_steps` until the window reaches blankness (which forfeits the
+saving). Designed, not yet run.
+
+Earlier editions of this document reported a 2026-07-17 L=256 fire at 43 s
+("V field expanded to uniform bulk"). That wording is near-verbatim what the
+model produces when it has *not* seen a collapse, so treat it as unverified
+until re-checked against the isosurface count above.
 
 **Mechanics reference (L=64, single consumer)** - fast smoke config:
 
@@ -324,8 +413,15 @@ then `jarvis ppl env build`:
 fill (and then homogenise) the domain scales ~linearly with L: the collapse-warn
 fires at output ~24 at L=64 but output ~125 at L=256 (verified). Budget `steps`
 accordingly (≥ `plotgap × 1.5 × 24·(L/64)`), and note the RAM CTE tier must hold
-all outputs to the halt (no eviction tier configured): at L=256 that is
-0.25 GB/output/node - 125 outputs ≈ 31 GB, just inside the 32 GB tier.
+all outputs to the halt (no eviction tier configured): at L=256 on 2 producer
+nodes that is **~134 MB/output/node** (2 fields × 16.78 M cells × 8 B ÷ 2 nodes),
+so 125 outputs ≈ 17 GB and the full 160 ≈ 21 GB - comfortably inside the 48 GB
+tier `gray-scott-overhead-mn.yaml` requests.
+
+> **Correction (2026-08-07).** Earlier editions said 0.25 GB/output/node here,
+> which is ~2× too high and oversizes the tier. The measured value reconciles
+> with observed daemon-RSS growth of 1.15 GB/min/node → 8.6 outputs/min →
+> ~7.0 s/output, matching the elapsed writer time in §8.
 
 **Known limitation - L=512 producer-side stall (ROOT-CAUSED 2026-07-18).** At
 L=512 the writer's 4 MB-per-rank blob Puts stall inside the CTE (daemon intake
@@ -410,8 +506,11 @@ are tabulated in [BUILD_AND_RUN_GRAY_SCOTT.md](BUILD_AND_RUN_GRAY_SCOTT.md) §3.
 | `prterun was unable to find … adios2-gray-scott` | `build/bin` not on the **captured** PATH - `source CI/Delta/env.sh` then re-run `jarvis ppl env build` |
 | `PMIX_ERR_FILE_OPEN_FAILURE … gds_shmem2` / ranks become singletons | need `PMIX_MCA_gds=hash` and `--mpi=pmix` - set by `env.sh` + the pkg's srun path; ensure binaries are on NFS |
 | Reader/pvbatch aborts with `bad X server connection` | wrong ParaView - use the **`+osmesa`/`~x`** build (load by hash), not the `+x` one |
-| Writer runs to completion (no early halt) | `steps` too small vs. agent latency (§9), or the agent kept calling `advance_step` past the window and blocked - the provided prompt fires after `trigger_inspect_steps` frames |
+| Writer runs to completion (no early halt) | `steps` too small vs. agent latency (§9); or the agent kept calling `advance_step` past the window and blocked; or - expected with the evidence-grounded prompt - the agent legitimately **declined** to fire (§8, "Honest status") |
 | Rendezvous never reached | start a **fresh** run (stale `gs.bp.sst`), and confirm the clio daemons came up on both producers (`writer_mn.log` shows `IOWarp runtime started` + `CTE started`) |
+| **Writer hangs forever in SST `Open()`**: daemon RSS byte-flat (~110 MB), daemon threads **idle**, all 256 ranks spinning `R`, `bridge_mn.log` full of `PrepareNextStep() has been called, but Fides has not been set up yet` | **`test/insitu_agent/gs-fides.json` is missing.** `FidesJSONReader` accepts a nonexistent `FileName` and `UpdatePipelineInformation()` returns *without raising and without setting Fides up*, so the reader never opens SST and the writer waits at rendezvous forever. Restore it: `cp /path/to/jarvis-pipelines/coeus-gray-scott/jarvis_coeus.adios2_gray_scott/gs-fides.json test/insitu_agent/`. **Do not** mistake this for the L=512 CTE stall - that one has *2 pegged* daemon worker threads, this one has idle daemons. Reader rank count is irrelevant (1-rank and 32-rank fail identically), so do not chase the N-to-M SST rendezvous hypothesis until this file is confirmed present |
+| L=256 frames are 4 identical featureless blobs; agent reports "no structure visible" | Volume rendering cannot resolve thin features at L=256 (§8, "Render"). Use the **Contour** path in `setup_initial_display` and check the per-step `iso@<v>=<N>pts` line - it should fall monotonically. If `N` is 0 or ~10⁷, the isovalue is wrong; read the `isovalue probe` sweep printed at setup and set `INSITU_CONTOUR_ISOVALUE` |
+| Agent starts immediately and burns its budget before the warn | the consumer's warn gate depends on `gs-fides.json` existing (it is what makes `setup_fides_reader` block until the warn). Do **not** re-gate on `pipeline_ready` - that deadlocks, since the paused bridge only sets it after the agent's first `advance_step` |
 
 For the single-node walkthrough, deeper trigger semantics, and the Ares
 reference numbers, see
