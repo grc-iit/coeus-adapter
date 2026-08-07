@@ -1,0 +1,156 @@
+# SciVis QA benchmark — evaluation harness configuration
+#
+# Consumed by:
+#   eval_scivis_benchmark.py   (T1 — VLM inference)
+#   judge_free_text.py         (T2 — LLM-as-judge)
+#   aggregate_results.py       (T3 — result tables)
+
+paths:
+  # Root of the paper collection. Every `image_path` in qa_dataset.jsonl is
+  # resolved relative to this directory.
+  collection_root: /u/hxu13/dataset/paper_collection
+  qa_dataset: /u/hxu13/dataset/paper_collection/benchmark/qa_dataset.jsonl
+  # Per-model JSONL checkpoints are written to results/<model_key>.jsonl
+  results_dir: /u/hxu13/dataset/paper_collection/benchmark/results
+  # Per-model judge scores are written to judged/<model_key>.jsonl
+  judged_dir: /u/hxu13/dataset/paper_collection/benchmark/judged
+  tables_dir: /u/hxu13/dataset/paper_collection/benchmark/tables
+
+# ---------------------------------------------------------------------------
+# T1 — VLM inference
+# ---------------------------------------------------------------------------
+generation:
+  # Greedy decoding for every model, as specified in the artifact description.
+  do_sample: false
+  num_beams: 1
+
+  # max_new_tokens is set per question format. 15 tokens is the value from the
+  # artifact description: it is sufficient for "Yes"/"No" and for a single
+  # multiple-choice letter, and it deliberately truncates chatty preambles.
+  #
+  # Free-text answers CANNOT be graded at 15 tokens — an L2_description answer
+  # is one or two sentences, and truncating it at 15 tokens would make the
+  # LLM-as-judge scores measure truncation rather than comprehension. The
+  # free_text budget is therefore larger. Set it to 15 only if you explicitly
+  # want the truncated-output condition.
+  # The published runs used 15 for EVERY format, including free text. Keep it
+  # at 15 to reproduce Table 2. Note what that means when reading the results:
+  # the open-ended columns (Gemma 21.6%, Qwen 20.7%) are scores on ~15-token
+  # fragments, which is why both models score 0 on roughly 60% of free-text
+  # items. Raising free_text to ~256 measures comprehension instead, but the
+  # numbers then no longer correspond to the paper's open-ended columns.
+  max_new_tokens:
+    yes_no: 15
+    multiple_choice: 15
+    free_text: 15
+
+image:
+  # Longest-edge cap applied before the processor sees the image. `null`
+  # disables resizing and passes figures at native resolution. Figures in this
+  # collection are page-extracted PNGs, typically 800-2000 px on the long edge.
+  max_long_edge: 1536
+
+models:
+  # The three models reported in Table 2. Gemma4 and Qwen3.5 ran locally on a
+  # GH200; Gemini 3.1 Flash Lite ran against Google's Generative Language API
+  # and is NOT served by this script — see `cloud_models` below.
+  #
+  # `hf_id`          HuggingFace repo id.
+  # `dtype_kwarg`    Name of the dtype argument this model's loader expects.
+  #                  transformers >= 5.0 standardises on `dtype`; some
+  #                  trust_remote_code models still only honour `torch_dtype`
+  #                  and SILENTLY LOAD FP32 if given the wrong one (watch the
+  #                  reported parameter memory on load to catch this).
+  # `chat_template_kwargs`  Extra kwargs forwarded to apply_chat_template.
+  # `auto_class`     Loader class; `image_text_to_text` is the transformers 5.x
+  #                  unified multimodal class and is correct for most models.
+
+  gemma4-31b:
+    hf_id: google/gemma-4-31B-it
+    dtype_kwarg: dtype
+    trust_remote_code: false
+    auto_class: image_text_to_text
+    chat_template_kwargs: {}
+
+  qwen3.5-35b-a3b:
+    hf_id: Qwen/Qwen3.5-35B-A3B
+    dtype_kwarg: dtype
+    trust_remote_code: false
+    # This is the MoE variant (35B total / 3B active) and needs the MoE
+    # conditional-generation class, not the dense one. If AutoModel resolves to
+    # the dense class, set `model_class` to force it.
+    model_class: Qwen3_5MoeForConditionalGeneration
+    auto_class: image_text_to_text
+    chat_template_kwargs:
+      # Required: Qwen3.5 emits chain-of-thought unless thinking is disabled in
+      # the chat template. With thinking on, the 15-token budget is consumed
+      # entirely by the reasoning preamble and the answer never appears. Doing
+      # this in the template is the fix; stripping thinking afterwards is not,
+      # because the answer was never generated in the first place.
+      enable_thinking: false
+
+# Reported in Table 2 but served by a different code path — this harness is
+# HuggingFace-local only. Gemini was run against Google's Generative Language
+# API (`generateContent`, temperature=0.0, maxOutputTokens=1024, PNG base64 as
+# an inline_data part) with all questions for one figure bundled into a single
+# call: 683 requests rather than 3,947. Reproducing the Gemini column requires
+# that separate cloud path.
+cloud_models:
+  gemini-3.1-flash-lite:
+    provider: google-generativelanguage
+    model_id: gemini-3.1-flash-lite-preview
+    temperature: 0.0
+    max_output_tokens: 1024
+    requests_per_minute: 30
+    batch_questions_per_figure: true
+
+# ---------------------------------------------------------------------------
+# T2 — LLM-as-judge
+# ---------------------------------------------------------------------------
+judge:
+  # Model IDs are exact strings — never append a date suffix.
+  model: claude-sonnet-4-6
+  max_tokens: 200
+  # Sonnet 4.6 defaults to effort "high". A 0-2 rubric scoring task does not
+  # need it, and "low" materially reduces cost across ~1.6k items per model.
+  effort: low
+  # Concurrent in-flight requests in interactive mode. The SDK already retries
+  # 429/5xx with exponential backoff; lower this if you are on a small tier.
+  max_workers: 8
+  # Categories scored by the judge.
+  #
+  # L1_perception is free-text in the dataset but is DELIBERATELY EXCLUDED
+  # here, matching the published local-model runs: 1609 free-text items minus
+  # 130 L1_perception = the 1,479 ("~1,480") judged per model, and the
+  # per-domain open-ended sample sizes in Table 2's Gemma and Qwen columns.
+  # The reason is a known construction defect — L1_perception asks "How many
+  # panels does this figure contain?" but the generator phrases it so models
+  # answer it as a binary, which is why both local models score 0% on it.
+  #
+  # Note the Gemini column in Table 2 DOES include L1_perception (n=1609), so
+  # the three columns of Table 2 do not share an open-ended denominator.
+  free_text_categories:
+    - L2_description
+    - L3_comparison
+    - L4_reasoning
+    - L5_domain
+    - L6_spatial
+
+# ---------------------------------------------------------------------------
+# T3 — Aggregation
+# ---------------------------------------------------------------------------
+scoring:
+  # What to do with a binary/MC answer the parser could not resolve to a label.
+  #
+  #   exclude   — drop it from the denominator. This is what the published runs
+  #               did: Gemma's multiple-choice n is 874, not 972, because 98
+  #               answers were unparseable. Use this to reproduce Table 2.
+  #   incorrect — count it as wrong, keeping the denominator at the full 972.
+  #
+  # The choice is not cosmetic. Under `exclude`, a model that emits parseable
+  # answers only when it is confident is rewarded for abstaining, and the
+  # denominators stop being comparable across models. Recomputing the published
+  # numbers under `incorrect` moves Gemma from 44.1% to 41.5% and Qwen from
+  # 44.0% to 42.6% — the Gemma/Qwen tie survives, but the gap to Gemini widens.
+  # aggregate_results.py reports both so the difference is visible.
+  unparsed_policy: exclude
