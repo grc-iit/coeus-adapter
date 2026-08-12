@@ -12,6 +12,13 @@ env:
 jobs:
   container-test-job:
     runs-on: ubuntu-latest
+    # Force bash for every step. In a container job the runner may fall back to
+    # /bin/sh (dash), where "set -o pipefail" is not a valid option and the step
+    # dies with "Illegal option -o pipefail" (exit 2). This makes the runner use
+    # "bash --noprofile --norc -eo pipefail {0}" instead.
+    defaults:
+      run:
+        shell: bash
     container:
       # Built from CI/docker/coeus.dockerfile by the docker-publish workflow.
       # Must contain iowarp-core; the old scslab/coeus:0.9.x images do not.
