@@ -22,17 +22,23 @@ jobs:
       with:
         ref: ${{ github.ref }}
 
+    # Paths below are RELATIVE on purpose. A step's cwd already defaults to the
+    # workspace, and in a container job the workspace is bind-mounted at
+    # /__w/<repo>/<repo> while ${{github.workspace}} still reads as the host
+    # path. The runner translates that for `run` scripts but not reliably for
+    # `working-directory`, which failed with "chdir to cwd ... no such file or
+    # directory" (exit 127). Relative paths sidestep the translation entirely.
     - name: Configure CMake
       # Compilers are passed explicitly: find_package(iowarp-core) transitively
       # runs HDF5/MPI config tests that can trip "CMAKE_C_COMPILER not set".
       run: |
-        cmake -B ${{github.workspace}}/build \
+        cmake -B build \
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
           -DCMAKE_C_COMPILER=$(which gcc) \
           -DCMAKE_CXX_COMPILER=$(which g++)
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --parallel $(nproc)
+      run: cmake --build build --parallel $(nproc)
 
     # No "lint" step: the lint target is commented out in CMakeLists.txt:211,
     # so `make lint` fails with "No rule to make target". Re-add it here if that
@@ -45,9 +51,9 @@ jobs:
       # *_hermes ones additionally need a live Chimaera runtime + CTE pool that
       # a bare container cannot provide. Restore the driver (and a runtime-free
       # subset) to bring `ctest` back here.
-      working-directory: ${{github.workspace}}/build/bin
       run: |
         set -euo pipefail
+        cd build/bin
         for lib in libhermes_engine.so \
                    libcoeus_coeus_mdm_client.so libcoeus_coeus_mdm_runtime.so \
                    libcoeus_rankConsensus_client.so libcoeus_rankConsensus_runtime.so; do
