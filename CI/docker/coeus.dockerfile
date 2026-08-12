@@ -8,14 +8,17 @@
 # Build from the REPOSITORY ROOT - CI/coeus (the Spack repo providing
 # adios2-coeus) and CI/docker/spack.yaml must both be in the build context:
 #
-#   docker build -f CI/docker/coeus.dockerfile -t ghcr.io/grc-iit/coeus:1.0.0 .
+#   docker build -f CI/docker/coeus.dockerfile -t ghcr.io/grc-iit/coeus:1.0.1 .
+#
+# The image must be portable to unknown CI hardware: CI/docker/spack.yaml pins
+# target=x86_64 so the result does not inherit the build host's microarchitecture.
 #
 # Spack >= 1.0 is required: CI/coeus/packages/adios2-coeus/package.py imports
 # from spack_repo.builtin.build_systems, which does not exist before 1.0.
 # Note the tag has no "v" prefix - that convention was dropped after v0.20.3.
 # Pinned to the 1.2 line to match the Spack the specs were concretized against.
 FROM spack/ubuntu-jammy:1.2.2 AS builder
-ENV DOCKER_TAG=1.0.0
+ENV DOCKER_TAG=1.0.1
 
 RUN apt-get update -y \
  && apt-get install -y --no-install-recommends pkg-config \

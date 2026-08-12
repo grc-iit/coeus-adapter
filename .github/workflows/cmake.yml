@@ -15,7 +15,7 @@ jobs:
     container:
       # Built from CI/docker/coeus.dockerfile by the docker-publish workflow.
       # Must contain iowarp-core; the old scslab/coeus:0.9.x images do not.
-      image: ghcr.io/grc-iit/coeus:1.0.0
+      image: ghcr.io/grc-iit/coeus:1.0.1
     steps:
     - name: Get Sources
       uses: actions/checkout@v4
