@@ -1,0 +1,23 @@
+# Build context filter for CI/docker/coeus.dockerfile, which is built from the
+# repository root (it COPYs CI/coeus and CI/docker/spack.yaml).
+#
+# The repo root is ~8 GB - test/ alone is 7.9 GB - and all of it would be
+# uploaded to the daemon on every build. Exclude everything, then opt the two
+# needed paths back in one directory level at a time: neither the legacy builder
+# nor BuildKit will descend into a directory excluded without an explicit
+# re-include of that directory itself.
+#
+# NOTE: this is a root .dockerignore, so it applies to ANY image built with the
+# repo root as context. Today that is only coeus.dockerfile (.devcontainer builds
+# use .devcontainer/ as their context and COPY nothing). If you add another
+# root-context image, re-include what it needs here.
+*
+
+!CI
+CI/*
+
+!CI/coeus
+
+!CI/docker
+CI/docker/*
+!CI/docker/spack.yaml

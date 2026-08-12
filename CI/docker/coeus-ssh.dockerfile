@@ -1,4 +1,4 @@
-FROM scslab/coeus:0.5
+FROM ghcr.io/grc-iit/coeus:1.0.0
 ENV DEBIAN_FRONTEND="noninteractive"
 
 RUN apt-get install -y openssh-server sudo
