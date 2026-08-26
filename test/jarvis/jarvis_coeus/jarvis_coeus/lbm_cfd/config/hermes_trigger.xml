@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+          LBM-CFD 2D through the COEUS hermes plugin engine with a VARIANCE
+          trigger on the in-situ vorticity variance (Vigil LBM
+          instability-onset case). Materialized by the jarvis lbm_cfd package
+          when trigger=true.
+
+          The writer streams `vorticity` (raw) and declares
+          derive/VarVort = variance(vorticity) + derive/AddVort = add(vorticity)
+          (requires derived=true). The engine pools the per-block variance into
+          the exact global variance (ComputeGlobalVarianceDerived_) at every
+          output step and fires on the first upward crossing of TriggerThreshold
+          (absolute) or TriggerBaselineRatio x the first-step baseline. Stable
+          vorticity variance is ~1e-5; it spikes to ~1e8 as the D2Q9 scheme goes
+          unstable, so threshold 1.0 cleanly separates the two regimes.
+
+          IO group name MUST be "SimulationOutput" (DeclareIO in main.cpp).
+          Trigger-only: no Catalyst/SST render block, so the engine evaluates +
+          logs the trigger without opening an SST stream. The SST gate + agent
+          are the next Phase-2 milestone.
+        =====================================================================-->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+
+            <!-- Variance trigger on the derived vorticity variance -->
+            <parameter key="TriggerType" value="##TRIGGERTYPE##"/>
+            <parameter key="TriggerVariable" value="##TRIGGERVAR##"/>
+            ##TRIGGERSUMVARLINE##
+            <parameter key="TriggerThreshold" value="##TRIGGERTHRESHOLD##"/>
+            <parameter key="TriggerBaselineRatio" value="##TRIGGERBASELINERATIO##"/>
+            <parameter key="TriggerInspectSteps" value="##TRIGGERINSPECTSTEPS##"/>
+            <parameter key="TriggerRefire" value="##TRIGGERREFIRE##"/>
+            <parameter key="TriggerLogFile" value="##TRIGGERLOG##"/>
+        </engine>
+    </io>
+
+</adios-config>

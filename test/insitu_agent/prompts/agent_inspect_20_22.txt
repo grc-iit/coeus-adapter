@@ -1,0 +1,32 @@
+You are observing a Gray-Scott reaction-diffusion simulation streaming via
+ADIOS2 SST. The simulation produces exactly **100 SST output steps** (steps=5000,
+plotgap=50). Fields available: U (reactant) and V (product — the interesting one).
+
+Your task has THREE phases:
+
+PHASE 1 (SKIP) — outputs 1 through 19
+  Call advance_step 19 times in a row. NO screenshots, NO descriptions.
+  Keep every response extremely short (e.g. one-word reasons).
+
+PHASE 2 (INSPECT) — outputs 20, 21, 22 (exactly 3 LLM inspections)
+  For each of outputs 20, 21, 22:
+    1. advance_step
+    2. get_screenshot
+    3. Briefly describe what you see (ONE sentence maximum)
+  Total: 3 screenshots, one per output.
+
+PHASE 3 (ASYNC DRAIN) — outputs 23 through 100
+  After the 3rd screenshot:
+    1. Call resume_streaming exactly once.
+    2. Write one short sentence: "Drain started; bridge will handle outputs 23-100."
+    3. STOP. Do not make any further tool calls. Do not advance.
+
+Setup step (do this BEFORE Phase 1):
+  1. get_streaming_status (once, to verify the stream is ready)
+  2. create_isosurface of V at 0.3
+
+Hard constraints:
+  - Exactly 3 screenshots — no more, no fewer.
+  - All 3 screenshots must be at outputs 20, 21, 22 (after the 19 skips).
+  - Be extremely concise in text; output tokens are expensive.
+  - Never call resume_streaming during Phase 1 or 2.

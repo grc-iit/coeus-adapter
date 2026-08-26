@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--=====================================================================
+           Hermes engine with a statistical variance trigger gating the
+           Catalyst SST stream (Vigil trigger-render-reason pipeline).
+
+           Materialized by jarvis from the adios2_gray_scott package when
+           trigger=true. Reference configuration and semantics:
+           test/real_apps/gray-scott/adios2-hermes-trigger-sst.xml and
+           test/real_apps/gray-scott/VARIANCE_TRIGGER.md.
+
+           The engine pools per-block variance of TriggerVariable into the
+           exact global variance at every output step. On the first upward
+           crossing of TriggerThreshold (or TriggerBaselineRatio x the
+           first-step baseline) the trigger fires: the firing step plus the
+           next TriggerInspectSteps-1 steps ship over SST; all other steps
+           ship nothing. Derived trigger variables (derive/VarV) require
+           engine=hermes_derived so the writer declares them.
+        =====================================================================-->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+            <parameter key="DataModel" value="##DATAMODEL##"/>
+            <parameter key="Script" value="##SCRIPT##"/>
+            <parameter key="CatalystStream" value="##CATALYSTSTREAM##"/>
+
+            <!-- SST transport; QueueFullPolicy defaults to Block when the
+                 trigger is enabled so flagged steps are never dropped -->
+            <parameter key="SSTDataTransport" value="##SSTTRANSPORT##"/>
+            ##SSTQUEUEPOLICYLINE##
+
+            <!-- Statistical trigger (variance) -->
+            <parameter key="TriggerVariable" value="##TRIGGERVAR##"/>
+            ##TRIGGERSUMVARLINE##
+            <parameter key="TriggerThreshold" value="##TRIGGERTHRESHOLD##"/>
+            <parameter key="TriggerBaselineRatio" value="##TRIGGERBASELINERATIO##"/>
+            <parameter key="TriggerInspectSteps" value="##TRIGGERINSPECTSTEPS##"/>
+            <parameter key="TriggerRefire" value="##TRIGGERREFIRE##"/>
+            <parameter key="TriggerLogFile" value="##TRIGGERLOG##"/>
+
+            <!-- Collapse-WARNING mode ("expanding to blank"): the engine arms
+                 on the rise and WARNS (streams the inspect window to the AI
+                 agent) when the statistic collapses back down. The engine only
+                 warns; the agent issues the fire verdict. Empty when disabled. -->
+            ##TRIGGERWARNLINES##
+        </engine>
+    </io>
+
+    <!--===========================================
+           Configuration for PDF calc and PDF Plot
+        ===========================================-->
+
+    <io name="PDFAnalysisOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+
+            <parameter key="ppn" value='##PPN##'/>
+            <parameter key="VarFile" value="##VARFILE##"/>
+            <parameter key="OPFile" value="##OPFILE##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+        </engine>
+    </io>
+
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5">
+        </engine>
+    </io>
+</adios-config>

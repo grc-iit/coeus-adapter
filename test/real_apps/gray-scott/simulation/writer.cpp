@@ -98,14 +98,29 @@ Writer::Writer(const Settings &settings, const GrayScott &sim, adios2::IO io, bo
 
     if(derived == 1) {
         std::cout << "use derived variables" << std::endl;
-        auto PDFU = io.DefineDerivedVariable("derive/hashU",
+        auto PDFU = io.DefineDerivedVariable("derive/AddU",
                                              "x = U \n"
-                                             "hash(x)",
+                                             "add(x)",
                                              adios2::DerivedVarType::StoreData);
 
-        auto PDFV = io.DefineDerivedVariable("derive/hashV",
+        auto PDFV = io.DefineDerivedVariable("derive/AddV",
                                              "x = V \n"
-                                             "hash(x)",
+                                             "add(x)",
+                                             adios2::DerivedVarType::StoreData);
+
+        // Per-writer-block variance of the U and V fields, used as the
+        // statistical trigger signal for the perturbation -> pattern
+        // transition (variance(V) jumps once reactive spots form). Each
+        // reduces the local block to a single double; a global variance is
+        // combined across writer blocks on the trigger/reader side.
+        auto VarU = io.DefineDerivedVariable("derive/VarU",
+                                             "x = U \n"
+                                             "variance(x)",
+                                             adios2::DerivedVarType::StoreData);
+
+        auto VarV = io.DefineDerivedVariable("derive/VarV",
+                                             "x = V \n"
+                                             "variance(x)",
                                              adios2::DerivedVarType::StoreData);
 
     }

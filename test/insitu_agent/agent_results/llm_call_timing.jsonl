@@ -1,0 +1,10 @@
+{"call": 1, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 1602.43, "input_tokens": 5174, "output_tokens": 69, "timestamp": 1786116077.9311702}
+{"call": 2, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 1263.59, "input_tokens": 5282, "output_tokens": 87, "timestamp": 1786116079.2183423}
+{"call": 3, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 1256.26, "input_tokens": 5398, "output_tokens": 36, "timestamp": 1786116082.3092923}
+{"call": 4, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 2425.8, "input_tokens": 6519, "output_tokens": 138, "timestamp": 1786116084.7608669}
+{"call": 5, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 791.45, "input_tokens": 6686, "output_tokens": 36, "timestamp": 1786116086.5830371}
+{"call": 6, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 2389.79, "input_tokens": 7807, "output_tokens": 127, "timestamp": 1786116088.9950948}
+{"call": 7, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 865.63, "input_tokens": 7963, "output_tokens": 36, "timestamp": 1786116090.997927}
+{"call": 8, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 2743.22, "input_tokens": 9084, "output_tokens": 161, "timestamp": 1786116093.7648032}
+{"call": 9, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 1182.45, "input_tokens": 9274, "output_tokens": 36, "timestamp": 1786116096.1785805}
+{"call": 10, "provider": "anthropic", "model": "claude-haiku-4-5", "llm_ms": 5821.27, "input_tokens": 10395, "output_tokens": 330, "timestamp": 1786116102.0220952}

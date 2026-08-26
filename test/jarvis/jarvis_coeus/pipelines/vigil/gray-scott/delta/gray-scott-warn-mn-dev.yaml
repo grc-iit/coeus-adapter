@@ -1,0 +1,104 @@
+name: coeus-gray-scott
+
+# iowarp@dev variant of gray-scott-warn-mn.yaml -- the L=512 / 256-rank stall
+# retest against clio-core 2192c467 (which carries the #768 SHM MPSC ring fix,
+# 4 slots -> 32 slots; absent from iowarp@main b3ee500e).
+#
+# Launch with CI/Delta/run_gs_multinode_dev.sh (sets ENV_SH=env-dev.sh so the
+# orchestrator puts build-dev/bin, not build/bin, on PATH).
+#
+# EXPERIMENT: the runtime block below is deliberately IDENTICAL to the config
+# used by the 2026-07-19 retest #2 that STALLED on main -- num_threads: 4,
+# client_data_segment_size: 2G, queue_depth UNSET (=> jarvis default 1024).
+# The only variable changed vs that run is iowarp main -> dev. Adding the
+# queue_depth: 32768 escalation here would confound two independent fixes;
+# that escalation lives in gray-scott-warn-mn.yaml and is run #2 if this stalls.
+#
+# Producers: 256 gray-scott ranks across 2 nodes (128/node) via srun+PMIx.
+# Consumer:  a 3rd node (not in this pipeline; launched by the orchestrator).
+# A consumer is MANDATORY even though this run never reaches the trigger warn:
+# hermes_engine.cc hardcodes RendezvousReaderCount=1, so the hermes_derived
+# writer always blocks at the SST rendezvous in Open until a reader connects.
+ssh_cmd:  "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+pssh_cmd: "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+
+env:
+  CLIO_MEMFD_DIR: "/tmp/clio_memfd_${USER}_${HOSTNAME}"
+  LIGHTBEAM_TCP_DEVICE: hsn0    # pin daemon<->daemon ZMQ to the Slingshot rail
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    # Stock retest-#2 values -- do NOT tune these in this run (see header).
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    # "warning" = WARNING + ERROR only. At "info" a 256-rank run emits ~7.9k
+    # lines / 2 MB of per-client chatter (2322 Loaded ChiMod, 520 ClientInit,
+    # 536 CreatePool) that buries the application output. This feeds both
+    # CTP_LOG_LEVEL and logging.level, so it covers the daemon AND the 256
+    # client ranks; clio_cte has no separate knob and logs through the same
+    # logger. Use "error" for even less -- or put it back to "info" when you
+    # need the per-rank ClientInit trace to prove the init phase is clean.
+    log_level: "warning"
+    # "ipc" = lightbeam unix-socket transport (/tmp/clio_$USER/clio_9413.ipc)
+    # instead of "shm". This BYPASSES shm_mpsc_transport entirely -- the fixed
+    # ring (128KB/4 slots on main, 1MB/32 slots on dev per #768) whose
+    # WAIT_FOR_SPACE blocking is one of our two stall candidates. So this run is
+    # a direct probe: if L=512 flows under "ipc" but stalls under "shm", the shm
+    # client<->daemon ring is implicated even at 32 slots; if it stalls
+    # identically, the bottleneck is downstream of the transport (worker
+    # TaskQueue lanes / CTE blob scatter) and queue_depth is the next lever.
+    ipc_mode: "ipc"
+    sleep: 4
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      # 96GB, up from 32GB. At L=512 each output is ~1.07 GB/node (measured:
+      # RSS 4134 MB at 4 outputs), and there is NO eviction tier configured, so
+      # the RAM tier must hold EVERY output for the whole run. steps=3000 =>
+      # 60 outputs => ~64 GB/node, which overflows a 32 GB tier around output
+      # 30. Delta CPU nodes have 256 GB and the 128 ranks/node need only ~2-4 GB,
+      # so 96 GB leaves generous headroom. Scale this with steps: need
+      # >= 1.1 GB * (steps/plotgap) per node.
+      - ["ram::cte_ram_tier1", "96GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.adios2_gray_scott
+    pkg_name: jarvis_coeus.adios2_gray_scott
+    # --- domain / physics: the saturating regime ---
+    L: 512
+    # --- 256 ranks, 128/node, srun+PMIx across the 2 producer nodes ---
+    nprocs: 256
+    ppn: 128
+    launcher: "srun"
+    srun_nodelist: "cn016,cn085"   # stamped by set_nodes.sh
+    srun_mpi: "pmix"
+    net_if: "hsn0"
+    out_file: "${HOME}/iowarp/gs_warn.bp"
+    F: 0.08
+    k: 0.03
+    dt: 1.0
+    plotgap: 50
+    steps: 3000                 # 60 outputs at plotgap=50 -- long enough to see
+                                # whether pacing is steady or degrades. Still far
+                                # below the L=512 collapse warn (~output 200 =>
+                                # steps~10000), so the trigger never fires and the
+                                # consumer only satisfies the SST rendezvous.
+    noise: 0.01
+    checkpoint: false
+    engine: "hermes_derived"
+    # Trigger stays ON: at L=512 the collapse warn lands near output ~200, so
+    # steps=200 never reaches it. The gated stream ships nothing and the
+    # consumer merely satisfies the SST rendezvous. This is a DATA-PATH test.
+    trigger: true
+    trigger_baseline_ratio: 20
+    trigger_warn_on_collapse: true
+    trigger_collapse_baseline_ratio: 13
+    trigger_inspect_steps: 4

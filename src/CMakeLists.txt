@@ -4,31 +4,62 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Set sources
 #------------------------------------------------------------------------------
 set(HERMES_ENGINE_SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc)
+        ${CMAKE_CURRENT_SOURCE_DIR}/hermes_engine.cc
+        ${CMAKE_SOURCE_DIR}/include/comms/CTETagClient.cc
+        ${CMAKE_SOURCE_DIR}/include/comms/CTEHermes.cc)
 
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
 add_library(hermes_engine ${HERMES_ENGINE_SRCS} ../include/coeus/MetadataSerializer.h)
 add_dependencies(hermes_engine spdlog)
-add_dependencies(hermes_engine coeus_mdm)
-add_dependencies(hermes_engine rankConsensus)
 target_include_directories(hermes_engine PUBLIC
         ../include
-        ${Hermes_INCLUDE_DIR}
         ${ADIOS2_INCLUDE_DIR}
         ${SQLite3_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/tasks/coeus_mdm/include
         ${CMAKE_SOURCE_DIR}/tasks/rankConsensus/include
         )
 target_link_libraries(hermes_engine LINK_PUBLIC
-        ${Hermes_LIBRARIES}
         ${ADIOS2_LIBRARIES}
         spdlog
         cereal
         rapidjson
         ${SQLite3_LIBRARIES}
-        coeus_mdm)
+        # Unified iowarp-core (clio-core) targets
+        clio::run::cxx              # Core Clio runtime library
+        clio::run::admin_client    # Admin ChiMod (always available)
+        clio::run::bdev_client     # Block device ChiMod (always available)
+        clio::cte::core_client     # CTE client for I/O placement
+        # Local ChiMods (clio-core port)
+        coeus::coeus_mdm_client
+        coeus::coeus_mdm_runtime
+        coeus::rankConsensus_client
+        coeus::rankConsensus_runtime)
+
+
+# Enable C++20 coroutines for hermes_engine (needed for Chimaera TaskResume)
+set_target_properties(hermes_engine PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON)
+target_compile_options(hermes_engine PRIVATE -fcoroutines)
+#############################################
+# Optional Catalyst/Fides in-situ integration
+#############################################
+# Try to locate Catalyst (Catalyst 2 provides a CMake target catalyst::catalyst)
+find_package(Catalyst QUIET CONFIG)
+# Enable COEUS_HAVE_CATALYST if Catalyst was found OR user set COEUS_ENABLE_CATALYST=ON
+if(Catalyst_FOUND OR COEUS_ENABLE_CATALYST)
+  target_compile_definitions(hermes_engine PRIVATE COEUS_HAVE_CATALYST=1)
+  if(Catalyst_FOUND)
+    message(STATUS "Catalyst found: enabling in-situ integration in hermes_engine")
+    target_link_libraries(hermes_engine PRIVATE catalyst::catalyst)
+  else()
+    message(STATUS "COEUS_ENABLE_CATALYST=ON: COEUS_HAVE_CATALYST defined but Catalyst not found (link at runtime or disable)")
+  endif()
+else()
+  message(STATUS "Catalyst not found and COEUS_ENABLE_CATALYST=OFF: building without in-situ integration")
+endif()
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------

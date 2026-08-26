@@ -1,0 +1,77 @@
+name: coeus-gray-scott
+
+# 256-PROCESS OVERHEAD MEASUREMENT run (for paper Fig. 4 update).
+# Derived from gray-scott-warn-mn.yaml but at L=256 (the figure's 256^3 domain)
+# with 256 producer ranks (vs eval-3's 128) and enough steps to reach the
+# collapse WARN so the agent actually fires -> lets us re-measure the sim
+# per-output cost at 256 procs and confirm the consumer-side bars (agent /
+# render / trigger-LLM / SST, which are producer-proc-independent).
+#
+#   Producers: 256 gray-scott ranks across 2 nodes (128/node) via srun+PMIx.
+#   Consumer:  a 3rd node (SST reader + agent), launched by run_gs_multinode.sh.
+#   Warn: at L=256 the collapse warn lands near output ~125 (= step ~6250);
+#         steps=8000 gives margin for the 4-frame inspect window + a few more
+#         outputs before the agent's fire_stop_simulation halts the run early.
+#   Stack: OPTIMIZED iowarp@main (env.sh / build/bin) -- NOT the +debug dev
+#          build, whose slow sim step would distort the baseline bar.
+ssh_cmd:  "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+pssh_cmd: "/u/hxu13/software/coeus-adapter/CI/Delta/jarvis-ssh-local-shim.sh"
+
+env:
+  CLIO_MEMFD_DIR: "/tmp/clio_memfd_${USER}_${HOSTNAME}"
+  LIGHTBEAM_TCP_DEVICE: hsn0    # pin daemon<->daemon ZMQ to the Slingshot rail
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 8
+    # L=256 never crosses the 1024-slot TaskQueue threshold (~2k subtasks/blob),
+    # but keep the escalated depth -- it is harmless and matches the tuned stack.
+    queue_depth: 32768
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    sleep: 4
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      # L=256 is ~0.25 GB/output/node; ~130 outputs to the early halt => ~33 GB.
+      # 48 GB gives headroom (no eviction tier; RAM must hold all outputs).
+      - ["ram::cte_ram_tier1", "48GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.adios2_gray_scott
+    pkg_name: jarvis_coeus.adios2_gray_scott
+    # --- domain / physics: 256^3, the paper's Fig. 4 domain ---
+    L: 256
+    # --- 256 ranks, 128/node, srun+PMIx across the 2 producer nodes ---
+    nprocs: 256
+    ppn: 128
+    launcher: "srun"
+    srun_nodelist: "cn009,cn011"   # stamped by set_nodes.sh
+    srun_mpi: "pmix"
+    net_if: "hsn0"
+    out_file: "${HOME}/iowarp/gs_warn.bp"
+    F: 0.08
+    k: 0.03
+    dt: 1.0
+    plotgap: 50
+    steps: 8000                    # warn ~output 125 (step ~6250); margin to halt
+    noise: 0.01
+    checkpoint: false
+    engine: "hermes_derived"
+    # Full trigger-render-reason loop: the collapse warn fires, streams the
+    # 4-frame window over gated SST to the agent, which inspects + renders +
+    # fires fire_stop_simulation. This is what exercises the agent/render bars.
+    trigger: true
+    trigger_baseline_ratio: 20
+    trigger_warn_on_collapse: true
+    trigger_collapse_baseline_ratio: 13
+    trigger_inspect_steps: 4

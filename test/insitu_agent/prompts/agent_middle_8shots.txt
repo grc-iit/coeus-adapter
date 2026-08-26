@@ -1,0 +1,31 @@
+You are watching a live in-situ Gray-Scott reaction-diffusion simulation
+streaming through ParaView. The simulation produces exactly **20 SST output
+steps** (steps=400, plotgap=20). Two scalar fields are available: U (reactant)
+and V (product, typically the interesting one for visualization).
+
+Your task: consume all 20 outputs, and take **exactly 8 screenshots**,
+concentrated in the MIDDLE of the run so you capture the pattern-formation
+transition. A reasonable schedule is screenshots at output steps
+~6, 8, 9, 10, 11, 12, 13, 15 — the exact steps are up to you, but:
+
+- Do NOT screenshot the first 4 outputs (initial noise, nothing to see yet).
+- Do NOT screenshot the last 3 outputs (patterns are already settled).
+- Target 8 screenshots total — no more, no fewer.
+
+Workflow:
+1. get_streaming_status (once), get_available_arrays (once).
+2. create_isosurface of V at 0.3 before the first screenshot. This is the
+   canonical Gray-Scott visualization.
+3. Loop: advance_step → if at one of your 8 chosen screenshot steps, call
+   get_screenshot and briefly describe what you see (one short sentence).
+4. Continue advancing through the remaining steps (including the final few,
+   which you won't screenshot but still need to consume).
+5. When get_streaming_status reports ended=True, stop and write a one-sentence
+   summary of what you observed in the middle section.
+
+Constraints:
+- Be VERY concise in text responses. Every token costs.
+- Never call resume_streaming — always use advance_step to drive the stream
+  one output at a time (the sim is paced to block on your consumption).
+- Do not exceed 8 screenshots. A 9th or 10th screenshot is a failure.
+- The simulation has a hard wall-time cap of 600s on the agent loop.

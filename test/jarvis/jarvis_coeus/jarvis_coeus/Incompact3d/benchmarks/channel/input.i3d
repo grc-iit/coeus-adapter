@@ -1,0 +1,128 @@
+! -*- mode: f90 -*-
+
+!===================
+&BasicParam
+!===================
+
+! Flow type (1=Lock-exchange, 2=TGV, 3=Channel, 4=Periodic hill, 5=Cylinder, 6=dbg-schemes)
+itype = 3
+
+! Domain decomposition
+p_row = 0              ! Row partition
+p_col = 0              ! Column partition
+
+! Mesh
+nx = 1025              ! X-direction nodes (increased from 513)
+ny = 257               ! Y-direction nodes (increased from 257)
+nz = 512             ! Z-direction nodes (increased from 128)
+istret = 2             ! y mesh refinement (0:no, 1:center, 2:both sides, 3:bottom)
+beta = 0.259065151     ! Refinement parameter (beta)
+
+! Domain
+xlx = 8.0              ! Lx (Size of the box in x-direction)
+yly = 2.0              ! Ly (Size of the box in y-direction)
+zlz = 4.0              ! Lz (Size of the box in z-direction)
+
+! Flow parameters
+re  = 4200.0           ! nu=1/re (Kinematic Viscosity)
+cpg = F                ! if cpg=T, then re is friction Reynolds number
+
+! Time stepping
+dt = 0.001             ! Time step
+ifirst = 1             ! First iteration
+ilast = ##total_step## ! Last iteration
+
+! Enable modelling tools
+ilesmod = 0            ! if 0 then DNS
+numscalar = 0          ! Number of scalars (0 = disabled)
+iibm = 0               ! Immersed boundary method flag
+
+! Boundary and initial conditions
+iin = 1                ! Inflow condition (1: classic, 2: turbinit, 4: SEM)
+u1 = 1.0               ! u1 (max velocity)
+u2 = 1.0               ! u2 (min velocity)
+init_noise = 0.125     ! Initial turbulence intensity (1=100%)
+inflow_noise = 0.0     ! Inflow turbulence intensity (1=100%)
+idir_stream = 1        ! Streamwise direction index (1=X, 3=Z)
+
+nclx1 = 0
+nclxn = 0
+ncly1 = 2
+nclyn = 2
+nclz1 = 0
+nclzn = 0
+
+/End
+
+!====================
+&NumOptions
+!====================
+
+ifirstder = 4
+isecondder = 5
+ipinter = 3
+
+iimplicit = 0
+itimescheme = 5
+
+nu0nu = 4.0
+cnu = 0.44
+
+/End
+
+!=================
+&InOutParam
+!=================
+
+irestart = 0
+icheckpoint = 2000         ! Write backup more frequently to test I/O scaling
+ioutput = ##io_frequency##  ! Visualization output frequency
+ilist = 1
+nvisu = 1
+
+/End
+
+!=================
+&Statistics
+!=================
+
+wrotation = 0.12
+spinup_time = 5000
+nstat = 1
+initstat = 40000
+
+/End
+
+!########################
+! OPTIONAL PARAMETERS
+!########################
+
+!================
+&ScalarParam
+!================
+
+Sc(1) = 1.0
+
+nclxS1 = 0
+nclxSn = 0
+nclyS1 = 2
+nclySn = 2
+nclzS1 = 0
+nclzSn = 0
+
+/End
+
+!================
+&LESModel
+!================
+
+iles = 0
+smagcst = 0.14
+SmagWallDamp = 0
+walecst = 0.5
+iconserv = 0
+
+/End
+
+&CASE
+/End

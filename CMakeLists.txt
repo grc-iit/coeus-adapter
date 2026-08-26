@@ -39,6 +39,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static on
 option(COEUS_ENABLE_COVERAGE "Enable coverage calaculation" OFF)
 option(COEUS_ENABLE_DOXYGEN "Enable documentation" OFF)
 option(COEUS_ENABLE_JARVIS "Enable use of jarvis" ON)
+option(COEUS_ENABLE_CATALYST "Enable Catalyst in-situ integration (define COEUS_HAVE_CATALYST)" OFF)
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
@@ -87,13 +88,13 @@ endif()
 # This is for compatability with SPACK
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Hermes
-find_package(Hermes CONFIG REQUIRED)
-message(STATUS "found Hermes at ${Hermes_DIR}")
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_definitions(HERMES_LOG_VERBOSITY=1)
-endif()
-include_directories(${HermesShm_INCLUDE_DIRS})
+# Unified iowarp-core package - includes HermesShm, Chimaera, CTE, and all ChiMods
+find_package(iowarp-core REQUIRED)
+message(STATUS "found iowarp-core at ${iowarp-core_DIR}")
+
+# Note: Hermes types (hermes::Blob, hermes::BlobId) come from HermesShm 
+# which is included in iowarp-core. The full Hermes package is no longer needed
+# since I/O has been migrated to CTE.
 # COEUS
 find_package(ADIOS2 REQUIRED)
 message(STATUS "Found Adios2")
@@ -120,16 +121,12 @@ add_subdirectory(external_libraries/spdlog)
 add_subdirectory(external_libraries/cereal)
 add_subdirectory(external_libraries/rapidjson)
 
-#Gtest
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        f8d7d77c06936315286eb55f8de22cd23c188571
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+#Gtest - Use system/conda GoogleTest
+find_package(GTest REQUIRED)
+message(STATUS "Found GoogleTest: ${GTest_VERSION}")
+# Include GoogleTest CMake module for gtest_discover_tests
+include(GoogleTest)
+
 #------------------------------------------------------------------------------
 # Code Coverage
 #------------------------------------------------------------------------------
@@ -200,6 +197,17 @@ if(debug_mode)
     add_compile_definitions(debug_mode)
 endif ()
 add_subdirectory(src)
+
+#------------------------------------------------------------------------------
+# Optional add-on operators (currently: time-derivative). OFF by default; when
+# ON, builds standalone CTE-consumer tools that never touch the engine.
+# (hash() is an ADIOS2 derived variable and needs no target here — see
+# addons/HASH.md.)
+#------------------------------------------------------------------------------
+option(COEUS_ENABLE_OPERATORS "Build add-on consumer tools (time-derivative)" OFF)
+if(COEUS_ENABLE_OPERATORS)
+  add_subdirectory(addons)
+endif()
 #add_custom_target(lint ALL COMMAND bash ${COEUS_ROOT}/CI/lint.sh ${COEUS_ROOT})
 
 #------------------------------------------------------------------------------

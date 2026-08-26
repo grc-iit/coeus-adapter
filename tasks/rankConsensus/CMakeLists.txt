@@ -1,10 +1,17 @@
 #------------------------------------------------------------------------------
-# Build Hrun Admin Task Library
+# Build rankConsensus ChiMod (clio-core)
 #------------------------------------------------------------------------------
-include_directories(include)
-add_subdirectory(src)
+cmake_minimum_required(VERSION 3.20)
 
-#-----------------------------------------------------------------------------
-# Install HRUN Admin Task Library Headers
-#-----------------------------------------------------------------------------
-install(DIRECTORY include DESTINATION ${CMAKE_INSTALL_PREFIX})
+# Client library -> target coeus_rankConsensus_client, alias coeus::rankConsensus_client
+add_clio_module_client(
+  SOURCES
+    src/rankConsensus_client.cc
+)
+
+# Runtime library -> target coeus_rankConsensus_runtime, alias coeus::rankConsensus_runtime
+add_clio_module_runtime(
+  SOURCES
+    src/rankConsensus_runtime.cc
+    src/autogen/rankConsensus_lib_exec.cc
+)

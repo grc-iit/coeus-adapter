@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!--============================================
+           Configuration for Gray-Scott and GS Plot
+        ============================================-->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <!-- ParaViewFides engine parameters -->
+            <parameter key="ppn" value='16'/>
+            <parameter key="VarFile" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/var.yaml"/>
+            <parameter key="OPFile" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/operator.yaml"/>
+            <parameter key="db_file" value="benchmark_metadata.db"/>
+            <parameter key="DataModel" value='/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/gs-fides.json'/>
+            <parameter key="Script" value="/home/ubuntu/.jarvis/shared/gray-scott/adios2_gray_scott/gs-catalyst.py"/>
+        </engine>
+    </io>
+
+    <!--===========================================
+           Configuration for PDF calc and PDF Plot
+        ===========================================-->
+
+    <io name="PDFAnalysisOutput">
+        <engine type="FileStream">
+            <!-- SST engine parameters -->
+            <parameter key="RendezvousReaderCount" value="1"/>
+            <parameter key="QueueLimit" value="5"/>
+            <parameter key="QueueFullPolicy" value="Block"/>
+            <!-- BP4/SST engine parameters -->
+            <parameter key="OpenTimeoutSecs" value="10.0"/>
+            <!-- SSC engine parameters -->
+            <parameter key="MaxStreamsPerApp" value="2"/>
+        </engine>
+
+        <!-- Compress variables -->
+        <!--
+        <variable name="U">
+            <operation type="sz">
+                <parameter key="accuracy" value="0.001"/>
+            </operation>
+        </variable>
+        <variable name="V">
+            <operation type="sz">
+                <parameter key="accuracy" value="0.001"/>
+            </operation>
+        </variable>
+        -->
+    </io>
+
+    <!--====================================
+           Configuration for isosurface,
+           find_blobs and render_isosurface
+        ====================================-->
+
+    <io name="IsosurfaceOutput">
+        <engine type="FileStream">
+        </engine>
+    </io>
+
+    <!--================================================
+           Configuration for Gray-Scott (checkpointing)
+        ================================================-->
+
+    <io name="SimulationCheckpoint">
+        <engine type="FileStream">
+        </engine>
+    </io>
+
+
+    
+</adios-config>

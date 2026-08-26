@@ -69,14 +69,13 @@ jarvis pipeline clean
 
 Create the environment variables needed by Hermes + Gray Scott
 ```bash
-# On personal
 spack install hermes@master adios2
 spack load hermes adios2
-# On Ares
-spack load hermes@master
 # export GRAY_SCOTT_PATH=$/coeus_adapter/build/bin
 export PATH="${COEUS_Adapter/build/bin}:$PATH"
 ```
+
+> On **Ares**, Hermes/ADIOS2 are prebuilt; see the foldable **Ares-specific setup & troubleshooting** section at the end of this file.
 
 
 ## 2. Create a Pipeline
@@ -125,6 +124,52 @@ To clean data produced by Hermes + Gray-Scott:
 jarvis pipeline clean
 ```
 
+# Trigger-gated Catalyst SST stream (Vigil trigger-render-reason)
+
+With `trigger=true` (hermes engines only) the package materializes
+`config/hermes_trigger.xml` instead of `config/hermes.xml`: the engine pools
+the per-block variance of `trigger_variable` into the exact global variance
+at every output step and only ships steps over the Catalyst SST stream once
+the trigger fires (the firing step plus the next `trigger_inspect_steps - 1`
+steps). Untriggered steps ship nothing, so the SST reader just waits.
+
+```bash
+# Paper configuration: derived-variable trigger on variance(V)
+jarvis pipeline append adios2_gray_scott engine=hermes_derived trigger=true \
+    F=0.08 k=0.03 plotgap=50 steps=5000
+```
+
+Trigger knobs (defaults follow
+`test/real_apps/gray-scott/adios2-hermes-trigger-sst.xml`; semantics in
+`test/real_apps/gray-scott/VARIANCE_TRIGGER.md`):
+
+| Config | Default | Meaning |
+|---|---|---|
+| `trigger` | `false` | Enable the variance trigger + gated SST |
+| `trigger_variable` | auto | `derive/VarV` for `hermes_derived`, raw `V` for `hermes` |
+| `trigger_sum_variable` | auto | `derive/AddV` when the trigger variable is derived; `none` = pool with a raw pass |
+| `trigger_threshold` | `0.05` | Absolute variance threshold (0 disables) |
+| `trigger_baseline_ratio` | `0` | Fire at ratio × first-step baseline instead (0 disables) |
+| `trigger_inspect_steps` | `3` | Steps shipped over SST per fire |
+| `trigger_refire` | `false` | Allow multiple fires |
+| `trigger_log_file` | `shared_dir/trigger_log.jsonl` | Rank 0 fire-event log (JSON lines) |
+| `catalyst_stream` | `gs.bp` | SST stream name the reader connects to |
+| `sst_data_transport` | `WAN` | SST DataTransport |
+| `sst_queue_full_policy` | engine default | `Block` when trigger enabled; override if needed |
+
+Notes:
+
+- Derived trigger variables need `engine=hermes_derived` (the writer's
+  `derived=1` flag declares `derive/VarV`/`derive/AddV`) and an ADIOS2 build
+  with the `variance` operator (`adios2-coeus@vigil`).
+- The SST reader (e.g. `pvbatch catalyst/gs-pipeline.py` or
+  `insitu_streaming.py`) connects as usual; it simply receives nothing until
+  the trigger fires. Rendezvous still applies: the writer waits for one
+  reader at Open.
+- Gray-Scott reference points (F=0.08 k=0.03 dt=1 plotgap=50): variance(V)
+  baseline ~0.003; threshold 0.05 fires at output ~12 with L=64, output ~20
+  with L=256.
+
 # Adios2 Write engine for a BP5 file copy
 
 ## 1. Add this package to the Jarvis package folder
@@ -171,3 +216,21 @@ jarvis pkg config adios2_gray_scott_2 out_file=/mnt/ssd/hxu40/out2.bp ppn=16 npr
 
 
 ```
+
+---
+
+<details>
+<summary><b>Ares-specific setup & troubleshooting</b></summary>
+
+### Setup environment on Ares (Hermes + Gray-Scott)
+
+Hermes and ADIOS2 are already installed on Ares, so load the module instead of
+installing (this replaces the `spack install` / `spack load hermes adios2` step
+in "Gray Scott With Hermes → Setup Environment" above):
+
+```bash
+spack load hermes@master
+export PATH="${COEUS_Adapter/build/bin}:$PATH"
+```
+
+</details>

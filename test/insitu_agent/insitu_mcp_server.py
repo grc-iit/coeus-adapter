@@ -1,0 +1,1081 @@
+"""
+In-Situ ParaView MCP Server
+
+Extends the ParaView MCP server with streaming-aware tools so an AI agent
+can interactively explore live simulation data from an ADIOS2 SST stream.
+
+The streaming bridge (insitu_streaming.py) reads SST data into a pvserver.
+This MCP server connects to the same pvserver and provides:
+  - All standard ParaView MCP tools (isosurface, slice, screenshot, etc.)
+  - Streaming control tools (pause, resume, advance step, get status)
+
+Usage:
+  python insitu_mcp_server.py --server localhost --port 11111 \
+      --status-file streaming_status.json
+"""
+
+import os
+import sys
+import io
+import json
+import time
+import logging
+import argparse
+from pathlib import Path
+
+# pvpython replaces sys.stdout/stdin with VTK wrappers that lack .buffer,
+# breaking MCP's stdio transport. Restore real file descriptors before
+# importing MCP.
+if not hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(io.FileIO(1, 'wb', closefd=False), write_through=True)
+if not hasattr(sys.stdin, 'buffer'):
+    sys.stdin = io.TextIOWrapper(io.FileIO(0, 'rb', closefd=False))
+
+from mcp.server.fastmcp import FastMCP, Image
+
+# Ares cluster MPI environment — needed when MCP server runs under pvpython
+os.environ['OMPI_MCA_pml'] = 'ob1'
+os.environ['OMPI_MCA_btl'] = 'tcp,self'
+os.environ['OMPI_MCA_osc'] = '^ucx'
+os.environ['OMPI_MCA_btl_tcp_if_include'] = 'eno1'
+os.environ['OMPI_MCA_oob_tcp_if_include'] = 'eno1'
+
+# Add the paraview_mcp directory to the path so we can import ParaViewManager
+SCRIPT_DIR = Path(__file__).resolve().parent
+PARAVIEW_MCP_DIR = Path.home() / "software" / "paraview_mcp"
+sys.path.insert(0, str(PARAVIEW_MCP_DIR))
+
+from paraview_manager import ParaViewManager
+
+log_dir = Path.home() / "paraview_logs"
+os.makedirs(log_dir, exist_ok=True)
+log_file = log_dir / "insitu_mcp.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler(),
+    ],
+)
+
+logger = logging.getLogger("insitu_mcp")
+
+INSITU_PROMPT = """
+You are an AI agent controlling a live in-situ scientific visualization pipeline.
+A Gray-Scott reaction-diffusion simulation is streaming data via ADIOS2 SST,
+and you can interact with it in real-time through ParaView.
+
+Key capabilities:
+1. **Streaming control**: pause/resume the stream, advance one step at a time,
+   or check what timestep you're on with get_streaming_status.
+2. **Visualization**: create isosurfaces, slices, volume renderings, etc.
+   on the LIVE simulation data — these update as new steps arrive.
+3. **Inspection**: take screenshots, query available arrays, check data ranges.
+
+Recommended workflow:
+- Start by calling get_streaming_status to see the current state.
+- Pause the stream if you want to carefully explore a single timestep.
+- Use get_available_arrays to discover what fields are available (U, V).
+- Apply filters (isosurface, slice) to explore the data.
+- Take screenshots to observe results and iterate.
+- Resume or advance_step to move through the simulation.
+
+The simulation has two scalar fields:
+- U: reactant concentration
+- V: product concentration (typically more interesting for visualization)
+
+IMPORTANT: Only call strictly necessary ParaView functions per reply.
+Pause the stream before doing multi-step explorations on a single timestep.
+"""
+
+pv_manager = ParaViewManager()
+mcp = FastMCP("InSitu-ParaView", instructions=INSITU_PROMPT)
+
+# Lazy connection state — pvserver may not be running when MCP starts
+_pv_connected = False
+_pv_server = "localhost"
+_pv_port = 11112
+
+
+def _ensure_connected():
+    """Lazily connect to pvserver on first tool call."""
+    global _pv_connected
+    if not _pv_connected:
+        logger.info(f"Lazy-connecting to pvserver at {_pv_server}:{_pv_port}")
+        _pv_connected = pv_manager.connect(_pv_server, _pv_port)
+        if not _pv_connected:
+            logger.warning("Failed to connect to pvserver — visualization tools will fail")
+        else:
+            _isolate_mcp_view()
+    return _pv_connected
+
+
+def _isolate_mcp_view():
+    """
+    Give this MCP client its own render view so pv_manager's Show() calls
+    never land in the streaming bridge's shared view.
+
+    In --multi-clients collaboration mode GetActiveView() returns the
+    bridge's view. Showing a filter (e.g. create_isosurface) there breaks
+    every subsequent bridge render server-side — the bridge (a batch
+    pvpython client that never processes collaboration sync) renders its
+    view empty from then on: the "empty screenshot" bug. With a dedicated
+    view, MCP-created filters render here via get_screenshot instead.
+    """
+    try:
+        from paraview.simple import CreateView, SetActiveView, GetActiveView
+        view = CreateView("RenderView")
+        view.ViewSize = [1024, 768]
+        SetActiveView(view)
+        logger.info("Created dedicated MCP render view (bridge view isolated)")
+    except Exception as e:
+        logger.warning(f"Could not create dedicated MCP view: {e}")
+
+def _refresh_mcp_view(view):
+    """
+    Force this client's filters to re-execute on the CURRENT (bridge-advanced)
+    data before rendering, so get_screenshot never serves a stale frame.
+
+    Why (measured 2026-07-15): the bridge advances the shared Fides reader in
+    ITS OWN session (PrepareNextStep + UpdatePipeline); nothing marks THIS
+    client's proxies dirty, so the representation of a filter created here
+    (e.g. create_isosurface) kept re-delivering cached geometry — over a
+    4-step window the bridge rendered 4 distinct frames while this view
+    rendered only 2, even though V's server-side range changed every step.
+    A bare UpdatePipeline() does NOT fix it (verified: md5s unchanged): the
+    proxy-layer NeedsUpdate flag gates representation re-delivery and it is
+    never set from this client.
+
+    The refresh: for each visible representation whose input is NOT the
+    streaming reader itself, re-push all its properties (bumps the server-side
+    VTK MTime so the filter genuinely re-executes against the reader's current
+    cached output) and update its pipeline. The Fides reader is deliberately
+    left untouched — forcing IT to re-execute outside the bridge's
+    PrepareNextStep cycle delivers an empty grid (the empty-screenshot failure
+    mode). Reps showing the reader directly are only marked dirty so they
+    re-deliver its current output without re-executing it.
+
+    Set INSITU_MCP_NO_REFRESH=1 to disable (A/B harness for the stale-render
+    bug this fixes; see probe_mcp_view.py).
+    """
+    if os.environ.get("INSITU_MCP_NO_REFRESH") == "1":
+        return
+    for rep in view.Representations:
+        try:
+            if not getattr(rep, "Visibility", 0):
+                continue
+            src = getattr(rep, "Input", None)
+            if src is None:
+                continue
+            xml_name = ""
+            try:
+                xml_name = src.SMProxy.GetXMLName() or ""
+            except Exception:
+                pass
+            if "fides" in xml_name.lower():
+                rep.SMProxy.MarkDirty(rep.SMProxy)
+                continue
+            src.SMProxy.MarkAllPropertiesAsModified()
+            src.UpdateVTKObjects()
+            src.UpdatePipeline()
+            rep.SMProxy.MarkDirty(rep.SMProxy)
+        except Exception as e:
+            logger.warning(f"MCP view refresh: rep refresh failed: {e}")
+
+
+STATUS_FILE_PATH = None
+TIMING_FILE = None
+SCREENSHOT_FILE = None
+STOP_FLAG_PATH = None  # <output>.stop written by fire_stop_simulation (agent verdict)
+FRAMES_DIR = None      # async snapshot dir written by insitu_streaming.py --frames-dir
+
+
+def _read_frames_manifest():
+    """Read the async-snapshot manifest (frames.jsonl) written by the bridge.
+
+    Returns a list of {step, png, v_min, v_max, timestamp} records, oldest
+    first. Empty if the bridge hasn't captured any flagged frame yet.
+    """
+    if not FRAMES_DIR:
+        return []
+    path = os.path.join(FRAMES_DIR, "frames.jsonl")
+    if not os.path.exists(path):
+        return []
+    records = []
+    try:
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        pass
+    except OSError:
+        pass
+    return records
+
+
+def _wait_for_frames(min_frames, timeout_s, settle_s=10.0):
+    """Block server-side until the flagged window has landed on disk.
+
+    Returns as soon as `min_frames` frames are present, OR (if at least one
+    frame exists) the manifest has stopped growing for `settle_s` (the window
+    shipped fewer than min_frames), OR `timeout_s` elapses. This keeps the agent
+    from busy-polling at LLM speed and giving up before the window lands -- one
+    patient call instead of many empty ones, while the simulation runs on.
+    """
+    deadline = time.monotonic() + timeout_s
+    last_count = -1
+    last_change = time.monotonic()
+    while time.monotonic() < deadline:
+        recs = _read_frames_manifest()
+        n = len(recs)
+        if n >= min_frames:
+            return recs
+        if n != last_count:
+            last_count = n
+            last_change = time.monotonic()
+        if n >= 1 and (time.monotonic() - last_change) >= settle_s:
+            return recs
+        time.sleep(0.5)
+    return _read_frames_manifest()
+
+
+def timed_tool(func):
+    """Decorator: measures total MCP tool time and PV operation time."""
+    import functools
+    import time as _time
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = _time.monotonic()
+        result = func(*args, **kwargs)
+        mcp_total_ms = (_time.monotonic() - t0) * 1000
+        pv_op_ms = getattr(wrapper, '_last_pv_ms', 0)
+        if TIMING_FILE:
+            try:
+                with open(TIMING_FILE, "a") as f:
+                    json.dump({
+                        "tool": func.__name__,
+                        "pv_operation_ms": round(pv_op_ms, 2),
+                        "mcp_total_ms": round(mcp_total_ms, 2),
+                        "mcp_overhead_ms": round(mcp_total_ms - pv_op_ms, 2),
+                        "timestamp": _time.time(),
+                    }, f)
+                    f.write("\n")
+            except OSError:
+                pass
+        return result
+    return wrapper
+
+
+def _timed_pv(tool_wrapper, pv_method, *args, **kwargs):
+    """Time a ParaViewManager method call and store on the tool wrapper."""
+    import time as _time
+    t0 = _time.monotonic()
+    result = pv_method(*args, **kwargs)
+    tool_wrapper._last_pv_ms = (_time.monotonic() - t0) * 1000
+    return result
+
+
+def _read_streaming_status():
+    """Read the streaming status JSON written by insitu_streaming.py."""
+    if STATUS_FILE_PATH and os.path.exists(STATUS_FILE_PATH):
+        try:
+            with open(STATUS_FILE_PATH, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return None
+    return None
+
+
+def _write_streaming_command(command):
+    """
+    Write a command to the streaming bridge via a command file.
+    The streaming bridge polls this file to receive pause/resume/advance commands.
+    """
+    cmd_file = STATUS_FILE_PATH.replace("streaming_status.json", "streaming_command.json") if STATUS_FILE_PATH else "streaming_command.json"
+    try:
+        with open(cmd_file, "w") as f:
+            json.dump(command, f)
+        return True
+    except OSError as e:
+        logger.error(f"Failed to write command: {e}")
+        return False
+
+
+# ============================================================================
+# Streaming Control Tools
+# ============================================================================
+
+@mcp.tool()
+@timed_tool
+def get_streaming_status() -> str:
+    """
+    Get the current status of the in-situ streaming pipeline.
+
+    Returns:
+        Current timestep, whether the stream is paused, and whether it has ended.
+    """
+    status = _read_streaming_status()
+    if status is None:
+        return (
+            "Streaming status unavailable. The streaming bridge may not be running. "
+            "Make sure insitu_streaming.py is running and connected to the same pvserver."
+        )
+
+    parts = [
+        f"Current timestep: {status.get('step', 'unknown')}",
+        f"Paused: {status.get('paused', 'unknown')}",
+        f"Stream ended: {status.get('ended', 'unknown')}",
+        f"Pipeline ready: {status.get('pipeline_ready', 'unknown')}",
+    ]
+    return "Streaming status:\n" + "\n".join(parts)
+
+
+@mcp.tool()
+@timed_tool
+def pause_streaming() -> str:
+    """
+    Pause the streaming pipeline. Data stays at the current timestep,
+    allowing you to interactively explore it with visualization tools.
+
+    Returns:
+        Status message
+    """
+    success = _write_streaming_command({"action": "pause"})
+    if success:
+        return "Pause command sent. The stream will hold at the current timestep."
+    return "Failed to send pause command."
+
+
+@mcp.tool()
+@timed_tool
+def resume_streaming() -> str:
+    """
+    Resume the streaming pipeline. New timesteps will be read automatically.
+
+    Returns:
+        Status message
+    """
+    success = _write_streaming_command({"action": "resume"})
+    if success:
+        return "Resume command sent. The stream will continue advancing."
+    return "Failed to send resume command."
+
+
+@mcp.tool()
+@timed_tool
+def advance_step(timeout_s: float = 300.0) -> str:
+    """
+    Advance the stream by exactly one timestep, then pause again.
+
+    This BLOCKS until the bridge confirms the new step has actually been read and
+    rendered, so any screenshot taken afterwards is guaranteed to show the new
+    timestep. On a trigger-gated stream it will block until the engine ships the
+    next flagged step -- that wait is expected, not a hang.
+
+    Args:
+        timeout_s: Max seconds to wait for the step to land.
+
+    Returns:
+        Status message naming the new timestep, or an explicit STALE warning if
+        the step never landed.
+    """
+    before = _read_streaming_status()
+    if before is None:
+        return ("Streaming status unavailable -- cannot confirm a step landed. Is "
+                "insitu_streaming.py running with --status-file?")
+    before_step = before.get("step", 0)
+    if before.get("ended"):
+        return f"Stream already ended at timestep {before_step}; cannot advance."
+
+    if not _write_streaming_command({"action": "advance_one"}):
+        return "Failed to send advance command."
+
+    # Block until the bridge's step counter increments. The bridge writes the
+    # status file only AFTER it has re-pulled the step and saved the screenshot,
+    # so a bumped counter means the frame on disk is fresh.
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        time.sleep(0.1)
+        status = _read_streaming_status()
+        if status is None:
+            continue
+        step = status.get("step", before_step)
+        if step > before_step:
+            return (f"Advanced to timestep {step} (was {before_step}). "
+                    f"Data and screenshot are fresh.")
+        if status.get("ended"):
+            return (f"Stream ended while advancing; still at timestep {before_step}. "
+                    f"No new frame -- do not treat the current image as a new step.")
+    return (f"TIMEOUT after {timeout_s:.0f}s waiting for a step past {before_step}. "
+            f"The stream is gated (no flagged step shipped yet) or the writer stalled. "
+            f"The current frame is STALE -- do NOT interpret it as a new timestep.")
+
+
+@mcp.tool()
+@timed_tool
+def fire_stop_simulation(reason: str = "") -> str:
+    """
+    Issue the FIRE verdict: stop the running simulation.
+
+    The engine's variance trigger only WARNS (streams the collapse steps to you)
+    when the pattern is expanding to a uniform/blank field. After inspecting the
+    streamed steps, call this to confirm the pattern has homogenised and the run
+    has nothing new to produce. It writes the halt flag the simulation polls, so
+    the simulation breaks its loop early and exits (saving compute).
+
+    Only fire once you have visually confirmed the collapse (e.g. isosurfaces
+    vanishing / the field going uniform). This is irreversible for the run.
+
+    Args:
+        reason: Short justification recorded in the flag (e.g. "V isosurface
+                vanished; field uniform ~0.59 — saturated").
+
+    Returns:
+        Status message
+    """
+    if not STOP_FLAG_PATH:
+        return ("No stop-flag path configured (start the MCP server with "
+                "--stop-flag <output>.stop). Cannot fire the stop.")
+    try:
+        # encoding is explicit: under a C/POSIX locale Python's default is ascii,
+        # so a non-ascii reason (e.g. an em-dash) would raise UnicodeEncodeError.
+        with open(STOP_FLAG_PATH, "w", encoding="utf-8") as f:
+            f.write(f"fired_by_agent reason={reason}\n")
+        logger.info(f"FIRE verdict: wrote halt flag {STOP_FLAG_PATH} (reason={reason})")
+        return (f"FIRE issued. Wrote halt flag {STOP_FLAG_PATH}. The simulation "
+                f"will detect it after its next output step and stop.")
+    except (OSError, UnicodeEncodeError) as e:
+        return f"Failed to write halt flag {STOP_FLAG_PATH}: {e}"
+
+
+# ============================================================================
+# Standard ParaView MCP Tools (from paraview_mcp_server.py)
+# ============================================================================
+
+@mcp.tool()
+@timed_tool
+def get_flagged_frames_info() -> str:
+    """
+    ASYNC verdict path. Report the flagged-window frames the streaming bridge has
+    already captured to disk, WITHOUT touching the SST stream.
+
+    In async snapshot mode the bridge greedily drains the flagged window to
+    per-step PNGs + a manifest as soon as the trigger fires, so the simulation
+    never waits on you. Call this first to see how many flagged steps are ready
+    and their V-field ranges (v_max rising = pattern forming; v_min/v_max
+    collapsing toward a single value = homogenising). Then call get_flagged_frames
+    to view the images and issue your verdict. Do NOT call advance_step in this
+    mode — it is not needed and the sim is not gated on you.
+
+    Returns:
+        JSON text: {"ready": N, "frames": [{step, v_min, v_max}, ...]}.
+    """
+    recs = _read_frames_manifest()
+    summary = {
+        "ready": len(recs),
+        "frames": [
+            {"step": r.get("step"), "v_min": r.get("v_min"), "v_max": r.get("v_max")}
+            for r in recs
+        ],
+    }
+    return json.dumps(summary)
+
+
+@mcp.tool()
+@timed_tool
+def get_flagged_frames(min_frames: int = 4, wait_s: float = 240.0,
+                       max_frames: int = 8):
+    """
+    ASYNC verdict path. Return the captured flagged-window frames as images so you
+    can visually judge whether the run is healthy, reading them straight from disk
+    (no SST pull, no advance_step — the simulation runs on independently).
+
+    This BLOCKS server-side until the flagged window has landed (up to min_frames
+    frames, or the manifest stops growing, or wait_s elapses), so you make ONE
+    patient call instead of polling. The trigger may take a minute or two to fire
+    at scale; that wait is expected, not a hang, and the simulation is NOT gated
+    on it.
+
+    Args:
+        min_frames: how many flagged frames to wait for (default = inspect window).
+        wait_s: max seconds to wait for the window to land.
+        max_frames: cap on how many of the most recent frames to return.
+
+    Returns:
+        A list whose first item is a JSON text summary (per-frame step + V range)
+        followed by one image per flagged step. If nothing lands in time, a short
+        status string.
+    """
+    recs = _wait_for_frames(min_frames, wait_s)
+    if not recs:
+        return (f"No flagged frames captured within {wait_s:.0f}s. The trigger "
+                f"may not have fired yet or the bridge is not in --frames-dir "
+                f"mode.")
+    recs = recs[-max_frames:]
+    summary = json.dumps({
+        "count": len(recs),
+        "frames": [
+            {"step": r.get("step"), "v_min": r.get("v_min"), "v_max": r.get("v_max")}
+            for r in recs
+        ],
+    })
+    out = [summary]
+    for r in recs:
+        png = r.get("png")
+        if png and os.path.exists(png):
+            out.append(Image(path=png))
+    return out
+
+
+@mcp.tool()
+@timed_tool
+def get_screenshot():
+    """
+    Capture a screenshot of the current view and display it in chat.
+
+    Returns:
+        Image data or error message
+    """
+    # If this MCP client has shown filters (isosurface, slice, ...) in its
+    # own dedicated view, render THAT view: it is the only way the agent
+    # can see the filters it created (they are deliberately kept out of
+    # the bridge's view — see _isolate_mcp_view).
+    if _pv_connected:
+        try:
+            from paraview.simple import GetActiveView, SaveScreenshot
+            view = GetActiveView()
+            if view is not None and any(
+                    getattr(rep, "Visibility", 0) for rep in view.Representations):
+                import tempfile
+                import time as _time
+                t0 = _time.monotonic()
+                # Without this, the frame is a cached render even after the
+                # bridge advanced the stream (see _refresh_mcp_view docstring).
+                _refresh_mcp_view(view)
+                view.ResetCamera()
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    tmp_path = tmp.name
+                SaveScreenshot(tmp_path, view)
+                get_screenshot._last_pv_ms = (_time.monotonic() - t0) * 1000
+                return Image(path=tmp_path)
+        except Exception as e:
+            logger.warning(f"MCP-view screenshot failed, falling back: {e}")
+
+    # Otherwise read the bridge-saved screenshot file. The bridge's own
+    # process renders its view (volume rendering of the live V field)
+    # after every SST step and atomically writes a PNG to SCREENSHOT_FILE.
+    # Reading that file gives us the true pixels the bridge produced.
+    if SCREENSHOT_FILE and os.path.exists(SCREENSHOT_FILE):
+        import time as _time
+        t0 = _time.monotonic()
+        try:
+            with open(SCREENSHOT_FILE, "rb") as f:
+                data = f.read()
+            get_screenshot._last_pv_ms = (_time.monotonic() - t0) * 1000
+            # Write to a unique temp file so FastMCP can re-read it
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                tmp.write(data)
+                tmp_path = tmp.name
+            return Image(path=tmp_path)
+        except Exception as e:
+            logger.warning(f"Failed to read bridge screenshot {SCREENSHOT_FILE}: {e}")
+
+    # Fallback: use pv_manager (historical path, often returns empty pixels
+    # because MCP's local view state doesn't match the bridge's).
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, img_path = _timed_pv(get_screenshot, pv_manager.get_screenshot)
+    if not success:
+        return message
+    return Image(path=img_path)
+
+
+@mcp.tool()
+@timed_tool
+def create_isosurface(value: float, field: str = None) -> str:
+    """
+    Create an isosurface visualization on the live simulation data.
+
+    Args:
+        value: Isovalue
+        field: Field name to contour by (e.g. "U" or "V")
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _, contour_name = _timed_pv(create_isosurface, pv_manager.create_isosurface, value, field)
+    if success:
+        return f"{message}. Filter registered as '{contour_name}'."
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def create_slice(
+    origin_x: float = None, origin_y: float = None, origin_z: float = None,
+    normal_x: float = 0, normal_y: float = 0, normal_z: float = 1,
+) -> str:
+    """
+    Create a slice through the live simulation volume.
+
+    Args:
+        origin_x, origin_y, origin_z: Slice plane origin. Defaults to data center.
+        normal_x, normal_y, normal_z: Slice plane normal (default [0,0,1]).
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _, slice_name = _timed_pv(create_slice, pv_manager.create_slice,
+        origin_x, origin_y, origin_z, normal_x, normal_y, normal_z
+    )
+    return message if success else f"Error creating slice: {message}"
+
+
+@mcp.tool()
+@timed_tool
+def toggle_volume_rendering(enable: bool = True) -> str:
+    """
+    Toggle volume rendering for the simulation data.
+
+    Args:
+        enable: True to show volume rendering, False to hide it.
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, source_name = pv_manager.create_volume_rendering(enable)
+    if success:
+        return f"{message}. Source: '{source_name}'."
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def toggle_visibility(enable: bool = True) -> str:
+    """
+    Toggle visibility for the active source.
+
+    Args:
+        enable: True to show, False to hide.
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, source_name = pv_manager.toggle_visibility(enable)
+    if success:
+        return f"{message}. Source: '{source_name}'."
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def set_active_source(name: str) -> str:
+    """
+    Set the active pipeline object by its name.
+
+    Args:
+        name: Pipeline object name (e.g. "Contour1", "Slice1")
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.set_active_source(name)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def get_active_source_names_by_type(source_type: str = None) -> str:
+    """
+    Get a list of source names filtered by type.
+
+    Args:
+        source_type: Filter by type (e.g. "Contour", "Slice"). None for all.
+
+    Returns:
+        List of source names
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, source_names = pv_manager.get_active_source_names_by_type(source_type)
+    if success and source_names:
+        return f"{message}:\n- " + "\n- ".join(source_names)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def color_by(field: str, component: int = -1) -> str:
+    """
+    Color the active visualization by a specific field.
+
+    Args:
+        field: Field name (e.g. "U", "V")
+        component: Component index (-1 for magnitude)
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.color_by(field, component)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def set_color_map(field_name: str, color_points: list[dict]) -> str:
+    """
+    Set the color transfer function for a field.
+
+    Args:
+        field_name: Scalar field name
+        color_points: List of dicts: [{"value": float, "rgb": [r, g, b]}]
+
+    Returns:
+        Status message
+    """
+    try:
+        formatted = [(pt["value"], tuple(pt["rgb"])) for pt in color_points]
+    except Exception as e:
+        return f"Invalid format for color_points: {e}"
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.set_color_map(field_name, formatted)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def edit_volume_opacity(field_name: str, opacity_points: list[dict[str, float]]) -> str:
+    """
+    Edit the opacity transfer function for a field.
+
+    Args:
+        field_name: Scalar field name
+        opacity_points: List of dicts: [{"value": float, "alpha": float}]
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    formatted = [[pt["value"], pt["alpha"]] for pt in opacity_points]
+    success, message = pv_manager.edit_volume_opacity(field_name, formatted)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def set_representation_type(rep_type: str) -> str:
+    """
+    Set the representation type for the active source.
+
+    Args:
+        rep_type: "Surface", "Wireframe", "Points", "Volume", etc.
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.set_representation_type(rep_type)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def get_pipeline() -> str:
+    """
+    Get the current pipeline structure showing all sources and filters.
+
+    Returns:
+        Pipeline description
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.get_pipeline()
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def get_available_arrays() -> str:
+    """
+    Get available data arrays (fields) in the active source.
+
+    Returns:
+        List of point and cell data arrays
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.get_available_arrays()
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def compute_surface_area() -> str:
+    """
+    Compute the surface area of the active surface mesh.
+
+    Returns:
+        Surface area value
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _ = pv_manager.compute_surface_area()
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def save_contour_as_stl(stl_filename: str = "contour.stl") -> str:
+    """
+    Save the active contour/surface as an STL file.
+
+    Args:
+        stl_filename: Output filename
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _ = pv_manager.save_contour_as_stl(stl_filename)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def rotate_camera(azimuth: float = 30.0, elevation: float = 0.0) -> str:
+    """
+    Rotate the camera by specified angles.
+
+    Args:
+        azimuth: Rotation around vertical axis (degrees)
+        elevation: Rotation around horizontal axis (degrees)
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.rotate_camera(azimuth, elevation)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def reset_camera() -> str:
+    """
+    Reset the camera to show all data.
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message = pv_manager.reset_camera()
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def plot_over_line(
+    point1: list[float] = None, point2: list[float] = None, resolution: int = 100
+) -> str:
+    """
+    Sample data along a line between two points.
+
+    Args:
+        point1: Start point [x, y, z]. None for data bounds.
+        point2: End point [x, y, z]. None for data bounds.
+        resolution: Number of sample points (default: 100)
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _ = pv_manager.plot_over_line(point1, point2, resolution)
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def create_streamline(
+    seed_point_number: int,
+    vector_field: str = None,
+    integration_direction: str = "BOTH",
+    max_steps: int = 1000,
+    initial_step: float = 0.1,
+    maximum_step: float = 50.0,
+) -> str:
+    """
+    Create streamlines from the active vector volume.
+
+    Args:
+        seed_point_number: Number of seed points
+        vector_field: Vector field name (auto-detected if None)
+        integration_direction: "FORWARD", "BACKWARD", or "BOTH"
+        max_steps: Max integration steps
+        initial_step: Initial step length
+        maximum_step: Maximum streamline length
+
+    Returns:
+        Status message
+    """
+    if not _ensure_connected():
+        return "Not connected to pvserver"
+    success, message, _, tube_name = pv_manager.create_stream_tracer(
+        vector_field=vector_field,
+        base_source=None,
+        point_center=None,
+        integration_direction=integration_direction,
+        initial_step_length=initial_step,
+        maximum_stream_length=maximum_step,
+        number_of_streamlines=seed_point_number,
+    )
+    if success:
+        return f"{message} Tube registered as '{tube_name}'."
+    return message
+
+
+@mcp.tool()
+@timed_tool
+def list_commands() -> str:
+    """
+    List all available commands in this in-situ ParaView MCP server.
+
+    Returns:
+        List of available commands
+    """
+    commands = [
+        "--- Streaming Control ---",
+        "get_streaming_status: Check current timestep and stream state",
+        "pause_streaming: Pause the stream to explore current data",
+        "resume_streaming: Resume auto-advancing through timesteps",
+        "advance_step: Advance exactly one timestep then pause",
+        "fire_stop_simulation: FIRE verdict - halt the run (pattern went blank)",
+        "",
+        "--- Visualization ---",
+        "create_isosurface: Create an isosurface on live data",
+        "create_slice: Create a slice plane through the volume",
+        "toggle_volume_rendering: Enable/disable volume rendering",
+        "toggle_visibility: Show/hide the active source",
+        "color_by: Color by a specific field",
+        "set_color_map: Set custom color transfer function",
+        "edit_volume_opacity: Edit opacity transfer function",
+        "set_representation_type: Change representation (Surface, Wireframe, etc.)",
+        "create_streamline: Create streamline visualization",
+        "",
+        "--- Inspection ---",
+        "get_screenshot: Capture current view as image",
+        "get_pipeline: Show the current pipeline structure",
+        "get_available_arrays: List available data arrays",
+        "compute_surface_area: Compute surface area of active mesh",
+        "set_active_source: Set active pipeline object by name",
+        "get_active_source_names_by_type: List sources by type",
+        "",
+        "--- Camera ---",
+        "rotate_camera: Rotate the camera view",
+        "reset_camera: Reset camera to show all data",
+        "",
+        "--- Export ---",
+        "save_contour_as_stl: Save active surface as STL",
+        "plot_over_line: Sample data along a line",
+    ]
+    return "Available in-situ ParaView commands:\n\n" + "\n".join(commands)
+
+
+def main():
+    global STATUS_FILE_PATH
+
+    parser = argparse.ArgumentParser(description="In-Situ ParaView MCP Server")
+    parser.add_argument(
+        "--server", type=str, default="localhost",
+        help="ParaView server hostname (default: localhost)",
+    )
+    parser.add_argument(
+        "--port", type=int, default=11112,
+        help="ParaView server port (default: 11112)",
+    )
+    parser.add_argument(
+        "--status-file", type=str, default="streaming_status.json",
+        help="Path to the streaming status JSON file written by insitu_streaming.py",
+    )
+    parser.add_argument(
+        "--paraview_package_path", type=str, default=None,
+        help="Path to the ParaView Python package",
+    )
+    parser.add_argument(
+        "--timing-file", type=str, default=None,
+        help="Path to write per-tool timing JSONL file",
+    )
+    parser.add_argument(
+        "--screenshot-file", type=str, default=None,
+        help="Path to the bridge-saved screenshot PNG. When set, get_screenshot "
+             "reads this file instead of asking pvserver to re-render from the "
+             "MCP client's local state.",
+    )
+    parser.add_argument(
+        "--stop-flag", type=str, default=None,
+        help="Path to the simulation halt flag (<output>.stop). When set, the "
+             "fire_stop_simulation tool writes it so the agent's fire verdict "
+             "halts the run (paired with the engine's collapse WARNING).",
+    )
+    parser.add_argument(
+        "--frames-dir", type=str, default=None,
+        help="Async snapshot dir written by insitu_streaming.py --frames-dir. "
+             "When set, get_flagged_frames / get_flagged_frames_info serve the "
+             "captured flagged window from disk so the agent's verdict never "
+             "paces the simulation.",
+    )
+
+    args = parser.parse_args()
+
+    if args.paraview_package_path:
+        sys.path.append(args.paraview_package_path)
+
+    STATUS_FILE_PATH = os.path.abspath(args.status_file)
+
+    # Store connection params for lazy connect (pvserver may not be up yet)
+    global _pv_server, _pv_port, TIMING_FILE, SCREENSHOT_FILE, STOP_FLAG_PATH, FRAMES_DIR
+    _pv_server = args.server
+    _pv_port = args.port
+    TIMING_FILE = args.timing_file
+    SCREENSHOT_FILE = os.path.abspath(args.screenshot_file) if args.screenshot_file else None
+    STOP_FLAG_PATH = os.path.abspath(args.stop_flag) if args.stop_flag else None
+    FRAMES_DIR = os.path.abspath(args.frames_dir) if args.frames_dir else None
+
+    try:
+        logger.info("Starting In-Situ ParaView MCP Server")
+        logger.info(f"ParaView server: {args.server}:{args.port} (lazy connect)")
+        logger.info(f"Status file: {STATUS_FILE_PATH}")
+        mcp.run()
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    except Exception as e:
+        logger.error(f"Error running MCP server: {e}")
+
+
+if __name__ == "__main__":
+    main()

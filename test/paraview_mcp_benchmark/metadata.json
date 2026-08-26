@@ -1,0 +1,38 @@
+{
+  "total_figures": 683,
+  "total_qa_pairs": 3947,
+  "avg_qa_per_figure": 5.8,
+  "categories": {
+    "L1_multichoice": 115,
+    "L1_perception": 130,
+    "L1_yesno": 1366,
+    "L2_description": 683,
+    "L2_multichoice": 857,
+    "L3_comparison": 261,
+    "L4_reasoning": 30,
+    "L5_domain": 267,
+    "L6_spatial": 238
+  },
+  "domains": {
+    "astrophysics": 61,
+    "cfd": 63,
+    "data-compression": 12,
+    "geoscience": 85,
+    "materials-science": 66,
+    "medical-visualization": 14,
+    "ml-simulation": 118,
+    "numerical-methods": 14,
+    "plasma-physics": 25,
+    "scientific-visualization": 225
+  },
+  "difficulties": {
+    "easy": 2294,
+    "hard": 297,
+    "medium": 1356
+  },
+  "skipped": {
+    "no_caption": 40,
+    "no_qa_generated": 0,
+    "missing_png": 0
+  }
+}

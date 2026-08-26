@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<adios-config>
+
+    <!-- LBM-CFD 2D through the hermes plugin engine, no trigger.
+         Materialized by the jarvis lbm_cfd package when engine=hermes and
+         trigger=false. IO group name MUST be "SimulationOutput". -->
+
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes"/>
+            <parameter key="PluginLibrary" value="hermes_engine"/>
+            <parameter key="ppn" value="##PPN##"/>
+            <parameter key="db_file" value="##DBFILE##"/>
+        </engine>
+    </io>
+
+</adios-config>

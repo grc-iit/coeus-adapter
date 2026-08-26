@@ -1,0 +1,79 @@
+# LBM-CFD 2D FULL Trigger-Render-Reason loop through the COEUS hermes engine.
+#
+#   TRIGGER  engine pools variance(derive/VarVort); fires on instability onset.
+#   RENDER   the flagged window ships over the gated Catalyst SST stream
+#            (vorticity + vigil/trigger_* scalars); nothing ships before the fire.
+#   REASON   agent_rescue=true -> the sim's automatic self-heal is OFF and it
+#            polls the agent's verdict flags. The agent LOOKS at the streamed
+#            frame and calls fire_rescue_simulation, so the sim reverts to its
+#            last checkpoint and doubles the timesteps (halving the lattice
+#            speed) -> the run recovers.
+#
+# steps=6000 (not force_unstable): the lattice speed u=0.12 diverges, and one
+# rescue doubling lands at 12000 (u=0.06) which is stable -- so the agent's
+# verdict visibly recovers the run. force_unstable halts at step 400, which
+# leaves no room for a rescue, so it is off here.
+#
+# Run order (the writer blocks until the SST reader connects):
+#   jarvis ppl load yaml <this file>
+#   jarvis ppl kill && jarvis ppl run                      # writer waits
+#   # once <script_location>/lbm_sst.bp.sst appears, in an ISOLATED adios2-only
+#   # env (iowarp pollutes numpy -- see the lbm_cfd README):
+#   python3 <lbm-cfd>/consumer/lbm_sst_reader.py \
+#       --stream <script_location>/lbm_sst.bp --engine SST --max-steps 3 \
+#       --status-file <run>/status.json --png-dir <run>/pngs
+#   # then the agent (system python; needs ANTHROPIC_API_KEY in the env):
+#   python3 <lbm-cfd>/consumer/lbm_agent.py --model claude-haiku-4-5 \
+#       --status-file <run>/status.json \
+#       --rescue-flag <script_location>/lbmcfd.bp.rescue \
+#       --stop-flag   <script_location>/lbmcfd.bp.stop
+name: coeus-lbm-cfd-agent
+
+env:
+  TMPDIR: "/home/hxu40/iowarp_prte_tmp"
+  CLIO_MEMFD_DIR: "/dev/shm/clio_hxu40"
+
+pkgs:
+  - pkg_type: jarvis_clio_core.clio_runtime
+    pkg_name: runtime
+    num_threads: 4
+    client_data_segment_size: "2G"
+    port: 9413
+    dbg_port: 4000
+    log_level: "info"
+    ipc_mode: "shm"
+    swim_enabled: false
+
+  - pkg_type: jarvis_clio_core.clio_cte
+    pkg_name: cte_core
+    devices:
+      - ["ram::cte_ram_tier1", "32GB", 1.0]
+    dpe_type: "max_bw"
+    neighborhood: 1
+    default_target_timeout_ms: 30000
+    poll_period_ms: 5000
+    pool_query: "local"
+
+  - pkg_type: jarvis_coeus.lbm_cfd
+    pkg_name: jarvis_coeus.lbm_cfd
+    nprocs: 4
+    ppn: 4
+    engine: "hermes"
+    script_location: "/mnt/common/hxu40/lbm_cfd/output"
+    out_file: "lbmcfd.bp"
+    # --- diverging case with room to recover (one doubling -> 12000 = stable) ---
+    force_unstable: false
+    steps: 6000
+    derived: true
+    # --- TRIGGER: variance(derive/VarVort) ---
+    trigger: true
+    trigger_type: "variance"
+    trigger_variable: "derive/VarVort"
+    trigger_sum_variable: "derive/AddVort"
+    trigger_threshold: 1.0
+    trigger_inspect_steps: 3
+    # --- RENDER: gated Catalyst SST stream ---
+    catalyst_stream: "lbm_sst.bp"
+    sst_data_transport: "WAN"
+    # --- REASON: agent owns the verdict (no automatic self-heal) ---
+    agent_rescue: true

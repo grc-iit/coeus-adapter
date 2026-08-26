@@ -126,7 +126,7 @@ class SQLiteWrapper {
                                        "step INTEGER,"
                                        "mpi_rank INTEGER,"
                                        "name TEXT,"
-                                       "bucket_name TEXT,"
+                                       "tag_name TEXT,"
                                        "blob_name TEXT,"
                                        "PRIMARY KEY (step, mpi_rank, name));";
     return execute(createTableSQL);
@@ -134,26 +134,26 @@ class SQLiteWrapper {
 
   void InsertBlobLocation(int step, int mpi_rank, const std::string& varName, const BlobInfo& blobInfo) {
     sqlite3_stmt* stmt;
-    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO BlobLocations (step, mpi_rank, name, bucket_name, blob_name) VALUES (?, ?, ?, ?, ?);";
+    const std::string insertOrUpdateSQL = "INSERT OR REPLACE INTO BlobLocations (step, mpi_rank, name, tag_name, blob_name) VALUES (?, ?, ?, ?, ?);";
     sqlite3_prepare_v2(db, insertOrUpdateSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
     sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, blobInfo.bucket_name.c_str(), -1, SQLITE_STATIC);
+      sqlite3_bind_text(stmt, 4, blobInfo.tag_name.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 5, blobInfo.blob_name.c_str(), -1, SQLITE_STATIC);
     sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 
   }
 
-    bool FindVariable(int step, int mpi_rank, const std::string& varName, const std::string& bucketName) {
+    bool FindVariable(int step, int mpi_rank, const std::string& varName, const std::string& tagName) {
         sqlite3_stmt* stmt;
-        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ? AND bucket_name = ?;";
+        const std::string findVariable = "SELECT COUNT(*) FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ? AND tag_name = ?;";
         sqlite3_prepare_v2(db, findVariable.c_str(), -1, &stmt, 0);
         sqlite3_bind_int(stmt, 1, step);
-       sqlite3_bind_int(stmt, 2, mpi_rank);
+        sqlite3_bind_int(stmt, 2, mpi_rank);
         sqlite3_bind_text(stmt, 3, varName.c_str(), -1, SQLITE_STATIC);
-       sqlite3_bind_text(stmt, 4, bucketName.c_str(), -1, SQLITE_STATIC);
+       sqlite3_bind_text(stmt, 4, tagName.c_str(), -1, SQLITE_STATIC);
 
         bool exists = false;
         if (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -170,14 +170,14 @@ class SQLiteWrapper {
 
     BlobInfo GetBlobLocation(int step, int mpi_rank, const std::string& name) {
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
+    const std::string selectSQL = "SELECT tag_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ? AND name = ?;";
     sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, 0);
     sqlite3_bind_int(stmt, 1, step);
     sqlite3_bind_int(stmt, 2, mpi_rank);
     sqlite3_bind_text(stmt, 3, name.c_str(), -1, SQLITE_STATIC);
     BlobInfo blobInfo;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-      blobInfo.bucket_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      blobInfo.tag_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
       blobInfo.blob_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
     }
     sqlite3_finalize(stmt);
@@ -191,7 +191,7 @@ class SQLiteWrapper {
 
     std::vector<BlobInfo> allBlobInfos;
     sqlite3_stmt* stmt;
-    const std::string selectSQL = "SELECT bucket_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ?;";
+    const std::string selectSQL = "SELECT tag_name, blob_name FROM BlobLocations WHERE step = ? AND mpi_rank = ?;";
 
     if (sqlite3_prepare_v2(db, selectSQL.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
       // Handle error...
@@ -202,7 +202,7 @@ class SQLiteWrapper {
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
       BlobInfo blobInfo;
-      blobInfo.bucket_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+      blobInfo.tag_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
       blobInfo.blob_name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
       allBlobInfos.push_back(blobInfo);
     }
@@ -307,7 +307,7 @@ class SQLiteWrapper {
                                        "variable TEXT,"
                                        "operation TEXT,"
                                        "blob_name TEXT,"
-                                       "bucket_name TEXT,"
+                                       "tag_name TEXT,"
                                        "value REAL,"
                                        "PRIMARY KEY (step, variable, operation));";
 
@@ -316,14 +316,14 @@ class SQLiteWrapper {
 
   void insertOrUpdateDerivedQuantity(int step, const std::string& variable,
                                      const std::string& operation, const std::string& blob_name,
-                                     const std::string& bucket_name, float value) {
+                                     const std::string& tag_name, float value) {
     sqlite3_stmt* stmt;
     std::string sqlInsertOrUpdate = R"(
-        INSERT INTO derived_targets (step, variable, operation, blob_name, bucket_name, value)
+        INSERT INTO derived_targets (step, variable, operation, blob_name, tag_name, value)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(step, variable, operation) DO UPDATE SET
             blob_name = excluded.blob_name,
-            bucket_name = excluded.bucket_name,
+            tag_name = excluded.tag_name,
             value = CASE
                 WHEN operation = 'min' AND excluded.value < value THEN excluded.value
                 WHEN operation = 'max' AND excluded.value > value THEN excluded.value
@@ -336,7 +336,7 @@ class SQLiteWrapper {
       sqlite3_bind_text(stmt, 2, variable.c_str(), -1, SQLITE_TRANSIENT);
       sqlite3_bind_text(stmt, 3, operation.c_str(), -1, SQLITE_TRANSIENT);
       sqlite3_bind_text(stmt, 4, blob_name.c_str(), -1, SQLITE_TRANSIENT);
-      sqlite3_bind_text(stmt, 5, bucket_name.c_str(), -1, SQLITE_TRANSIENT);
+      sqlite3_bind_text(stmt, 5, tag_name.c_str(), -1, SQLITE_TRANSIENT);
       sqlite3_bind_double(stmt, 6, static_cast<double>(value));
 
       if (sqlite3_step(stmt) != SQLITE_DONE) {

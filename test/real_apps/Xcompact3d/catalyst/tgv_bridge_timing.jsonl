@@ -1,0 +1,3 @@
+{"step": 1, "sst_wait_ms": 4.06, "pipeline_update_ms": 1411.98, "render_ms": 1199.52, "step_total_ms": 2615.57, "timestamp": 1784032107.6799753}
+{"step": 2, "sst_wait_ms": 6.82, "pipeline_update_ms": 842.76, "render_ms": 294.1, "step_total_ms": 1143.68, "timestamp": 1784032114.20504}
+{"step": 3, "sst_wait_ms": 4.25, "pipeline_update_ms": 845.83, "render_ms": 276.35, "step_total_ms": 1126.44, "timestamp": 1784032120.584883}

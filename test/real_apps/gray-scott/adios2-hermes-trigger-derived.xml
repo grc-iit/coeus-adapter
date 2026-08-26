@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!-- Hermes engine, trigger fed by ADIOS2 derived quantities:
+         derive/VarV = variance(V) per block, derive/AddV = add(V) block sums.
+         The engine pools them into the exact global variance (§6). -->
+    <io name="SimulationOutput">
+        <engine type="Plugin">
+            <parameter key="PluginName" value="hermes" />
+            <parameter key="PluginLibrary" value="hermes_engine" />
+            <parameter key="ppn" value="4"/>
+            <parameter key="db_file" value="metadata.db"/>
+            <parameter key="TriggerVariable" value="derive/VarV"/>
+            <parameter key="TriggerSumVariable" value="derive/AddV"/>
+            <parameter key="TriggerThreshold" value="0.05"/>
+            <parameter key="TriggerInspectSteps" value="3"/>
+            <parameter key="TriggerLogFile" value="trigger_log_derived.jsonl"/>
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5">
+        </engine>
+    </io>
+</adios-config>

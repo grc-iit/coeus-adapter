@@ -1,0 +1,19 @@
+name: rankConsensus
+module_name: rankConsensus
+namespace: coeus
+description: Rank assignment (consensus) module for Coeus adapter
+version: 1.0.0
+
+tasks:
+  - name: Create
+    description: Create the rankConsensus container
+    task_type: LongRunningTask
+    params: []
+  - name: GetRank
+    description: Get a monotonically increasing rank assignment
+    task_type: Task
+    params: []
+
+methods: []
+
+singleton: true

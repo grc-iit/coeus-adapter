@@ -1,0 +1,48 @@
+spack:
+  specs:
+    # IOWarp core = Chimaera runtime + CTE. Provides iowarp-coreConfig.cmake,
+    # which CMakeLists.txt:92 requires. ~test~benchmark only drops iowarp's own
+    # test/benchmark targets; the exported CMake targets COEUS links are unaffected.
+    - iowarp@main~test~benchmark
+
+    # ADIOS2 v2.11 + the COEUS derived-variable commits. Stock adios2 is NOT
+    # enough: src/hermes_engine.cc uses adios2::core::VariableDerived (>=2.10)
+    # and the variance/mean/hash derived ops that only exist on this branch.
+    # Compression/format variants are off to keep the image build tractable;
+    # ~libcatalyst keeps CI on the deterministic "Catalyst not found" path
+    # (src/CMakeLists.txt:50 auto-enables Catalyst whenever it is findable).
+    # Add +kokkos here if CI ever needs to exercise hash().
+    - adios2-coeus@vigil+mpi+sst~kokkos~hdf5~fortran~python~libcatalyst~blosc2~bzip2~sz~zfp~png~mgard~xrootd
+
+    - openmpi
+    - sqlite
+    - yaml-cpp
+    - googletest    # CMakeLists.txt:125 find_package(GTest REQUIRED)
+    # Quoted: a trailing colon makes YAML parse this as a mapping key.
+    - "cmake@3.25:"  # iowarp requires cmake@3.25:; jammy's apt cmake is 3.22
+
+  packages:
+    all:
+      # Build for the generic x86-64 baseline, NOT the build host's native
+      # microarchitecture. Spack otherwise optimizes for whatever machine builds
+      # the image: building on a skylake_avx512 host emitted AVX-512 (%zmm) into
+      # every binary, and the resulting image died with SIGILL (exit 132) the
+      # instant a GitHub runner - which has no AVX-512 - invoked cmake.
+      # This image must run on unknown CI hardware, so portability beats speed;
+      # none of these packages are performance-critical at CI time.
+      require:
+        - target=x86_64
+
+  concretizer:
+    # unify:true is deliberate - adios2 and iowarp MUST agree on one MPI, or
+    # libhermes_engine.so ends up linking two of them. If concretization fails
+    # here, fix the conflicting spec rather than relaxing to when_possible.
+    unify: true
+
+  config:
+    # Spack >= 1.0 requires the object form here; the bare string that worked
+    # under 0.20 is now a schema error.
+    install_tree:
+      root: /opt/software
+
+  view: /opt/view

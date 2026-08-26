@@ -9,8 +9,21 @@
  * If you do not have access to the file, you may request a copy             *
  * from scslab@iit.edu.                                                      *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
+// IMPORTANT: Include HermesEngine.h (ADIOS2) before CatalystHelper.h (Catalyst/Conduit)
+// to avoid preprocessor macro collisions with adios2::core::Variable<T>.
 #include "coeus/HermesEngine.h"
+#include "common/CatalystHelper.h"
+#include "comms/CTEHermes.h"
+#include <clio_runtime/clio_runtime.h>
+#include <clio_runtime/module_manager.h>
+#include <clio_runtime/ipc_manager.h>
+#include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <iomanip>
+#include <cstring>
+#include <limits>
+#include <thread>
 
 namespace coeus {
 /**
@@ -28,45 +41,78 @@ HermesEngine::HermesEngine(adios2::core::IO &io,//NOLINT
                            const adios2::Mode mode,
                            adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  Hermes = std::make_shared<coeus::Hermes>();
-  //  mpiComm = std::make_shared<coeus::MPI>(comm.Duplicate());
+  // CTE requires Chimaera to be initialized first (CLIO_CTE_CLIENT_INIT calls
+  // CHIMAERA_INIT internally; initializing here gives a clear error if runtime is down).
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
+    std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
+  hermes_ = new coeus::CTEHermes();
+  // Initialize CTE via CTEHermes::connect() (creates/attaches to CTE pool)
+  if (!hermes_->connect()) {
+    delete hermes_;
+    hermes_ = nullptr;
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect(). "
+                            "Ensure Chimaera runtime is running (see error above or start with chimaera_start_runtime).");
+  }
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-
-
 }
 
 /**
  * Test initializer
  * */
-HermesEngine::HermesEngine(std::shared_ptr<coeus::IHermes> h,
-                           std::shared_ptr<coeus::MPI> mpi,
+HermesEngine::HermesEngine(std::shared_ptr<coeus::MPI> mpi,
                            adios2::core::IO &io, const std::string &name,
                            const adios2::Mode mode, adios2::helper::Comm comm)
     : adios2::plugin::PluginEngineInterface(io, name, mode, comm.Duplicate()) {
-  Hermes = h;
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
+    std::cout << "ERROR: Could not initialize Chimaera (required for CTE)" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
+    throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
+  }
+  hermes_ = new coeus::CTEHermes();
+  if (!hermes_->connect()) {
+    delete hermes_;
+    hermes_ = nullptr;
+    throw std::runtime_error("Failed to initialize CTE via CTEHermes::connect(). "
+                            "Ensure Chimaera runtime is running (see error above or start with chimaera_start_runtime).");
+  }
   Init_();
-  engine_logger->info("rank {} with name {} and mode {}", rank, name, adios2::ToString(mode));
-
 }
 
 /**
  * Initialize the engine.
  * */
 void HermesEngine::Init_() {
+  // Initialize rank to 0 (will be set by rank consensus)
+  rank = 0;
+  comm_size = 0;  // Initialize comm_size as well
 
   // initiate the trace manager
-   std::random_device rd;  // Obtain a random seed
-    std::mt19937 gen(rd()); // Mersenne Twister generator
-    std::uniform_int_distribution<> dis(1, 10000);
-    // Generate a random number
-    int randomNumber = dis(gen);
-    // Step 2: Convert the random number to a string
-    std::string randomNumberStr = std::to_string(randomNumber);
+  std::random_device rd;  // Obtain a random seed
+  std::mt19937 gen(rd()); // Mersenne Twister generator
+  std::uniform_int_distribution<> dis(1, 10000);
+  // Generate a random number
+  int randomNumber = dis(gen);
+  // Step 2: Convert the random number to a string
+  std::string randomNumberStr = std::to_string(randomNumber);
 
-    // Step 3: Add the random number to a base string
-    std::string baseString = "logs/engine_test_";
-    std::string logname = baseString + randomNumberStr + ".txt";
+  // Step 3: Add the random number to a base string
+  std::string baseString = "logs/engine_test_";
+  std::string logname = baseString + randomNumberStr + ".txt";
 
   auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
   console_sink->set_level(spdlog::level::trace);
@@ -77,30 +123,29 @@ void HermesEngine::Init_() {
       logname, true);
   file_sink->set_level(spdlog::level::trace);
   file_sink->set_pattern("%^[Coeus engine] [%!:%# @ %s] [%l] %$ %v");
- 
   
   // File log for metadata collection
   #ifdef Meta_enabled
-  auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+   auto file_sink2 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_get.txt", true);
-  file_sink2->set_level(spdlog::level::trace);
-  file_sink2->set_pattern("%v");
-  spdlog::logger logger2("metadata_logger_get", {file_sink2});
-  logger2.set_level(spdlog::level::trace);
-  meta_logger_get = std::make_shared<spdlog::logger>(logger2);
-  meta_logger_get->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
+   file_sink2->set_level(spdlog::level::trace);
+   file_sink2->set_pattern("%v");
+   spdlog::logger logger2("metadata_logger_get", {file_sink2});
+   logger2.set_level(spdlog::level::trace);
+   meta_logger_get = std::make_shared<spdlog::logger>(logger2);
+   meta_logger_get->info(
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable\n ShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
 
-  auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+   auto file_sink3 = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
       "logs/metadataCollect_put.txt", true);
-  file_sink3->set_level(spdlog::level::trace);
-  file_sink3->set_pattern("%v");
-  spdlog::logger logger3("metadata_logger_put", {file_sink3});
-  logger3.set_level(spdlog::level::trace);
-  meta_logger_put = std::make_shared<spdlog::logger>(logger3);
-  meta_logger_put->info(
-      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, bucket_name, processor, process");
-#endif
+   file_sink3->set_level(spdlog::level::trace);
+   file_sink3->set_pattern("%v");
+   spdlog::logger logger3("metadata_logger_put", {file_sink3});
+   logger3.set_level(spdlog::level::trace);
+   meta_logger_put = std::make_shared<spdlog::logger>(logger3);
+   meta_logger_put->info(
+      "\nName, shape, start, Count, Constant Shape, Time, selectionSize, sizeofVariable, \nShapeID, steps, stepstart, blockID, blob_name, tag_name, processor, process");
+   #endif
 
   //Merge Log
 
@@ -108,24 +153,91 @@ void HermesEngine::Init_() {
   logger.set_level(spdlog::level::debug);
   engine_logger = std::make_shared<spdlog::logger>(logger);
 
-
-  // hermes setup
-  if (!Hermes->connect()) {
-    engine_logger->warn("Could not connect to Hermes", rank);
+  // Chimaera is already initialized in the constructor (before CTE connect).
+  // This call is idempotent; we use default_with_runtime=false so runtime is
+  // started separately (chimaera_start_runtime or CHI_WITH_RUNTIME=1).
+  const char* with_runtime_env = std::getenv("CHI_WITH_RUNTIME");
+  if (!with_runtime_env) {
+    with_runtime_env = std::getenv("CHIMAERA_WITH_RUNTIME");  // legacy
+  }
+  if (with_runtime_env && (std::strcmp(with_runtime_env, "1") == 0 ||
+                           std::strcmp(with_runtime_env, "true") == 0 ||
+                           std::strcmp(with_runtime_env, "TRUE") == 0)) {
+    std::cout << "WARNING: CHI_WITH_RUNTIME=1 (or CHIMAERA_WITH_RUNTIME=1) is set. "
+              << "This will start runtime on every MPI rank." << std::endl;
+    std::cout << "  This may cause port conflicts. Consider unsetting it or starting runtime separately." << std::endl;
+  }
+  if (!clio::run::CLIO_INIT(clio::run::RuntimeMode::kClient, false)) {
+    std::cout << "ERROR: Could not initialize Chimaera" << std::endl;
+    std::cout << "This usually means:" << std::endl;
+    std::cout << "  1. Chimaera runtime is not running - start it with: chimaera_start_runtime" << std::endl;
+    std::cout << "  2. Port 5555 is already in use by another process" << std::endl;
+    std::cout << "  3. Cannot connect to existing Chimaera runtime" << std::endl;
+    std::cout << "Solutions:" << std::endl;
+    std::cout << "  - Start runtime separately: chimaera_start_runtime" << std::endl;
+    std::cout << "  - Check if runtime is running: check port 5555" << std::endl;
     throw coeus::common::ErrorException(HERMES_CONNECT_FAILED);
   }
-  if (rank == 0) std::cout << "Connected to Hermes" << std::endl;
+  std::cout << "Initialized Chimaera (client mode)" << std::endl;
 
-  // add rank with consensus
-  rank_consensus.CreateRoot(DomainId::GetLocal(), "rankConsensus");
-  rank = rank_consensus.GetRankRoot(DomainId::GetLocal());
-  const size_t bufferSize = 1024;  // Define the buffer size
-  char buffer[bufferSize];         // Create a buffer to hold the hostname
-  // Get the hostname
+  // Get MPI rank/size from ADIOS2 communicator for coordinating pool creation.
+  // Only one rank should create pools to avoid flooding the runtime with
+  // duplicate Create tasks (which causes 30s "SendIn task timed out" errors).
+  int mpi_rank = m_Comm.Rank();
 
-  comm_size = m_Comm.Size();
-  pid_t processId = getpid();
+  // Verify required ChiMod modules are discoverable (diagnostic only)
+  if (CLIO_MODULE_MANAGER) {
+    if (!CLIO_MODULE_MANAGER->IsInitialized()) {
+      CLIO_MODULE_MANAGER->ServerInit();
+    }
+    auto* rankConsensus_mod = CLIO_MODULE_MANAGER->GetChiMod("coeus_rankConsensus");
+    auto* coeus_mdm_mod = CLIO_MODULE_MANAGER->GetChiMod("coeus_coeus_mdm");
+    if (mpi_rank == 0) {
+      if (rankConsensus_mod) {
+        engine_logger->info("rankConsensus module loaded: {}", rankConsensus_mod->lib_path);
+      } else {
+        engine_logger->warn("rankConsensus module not found - may fail during pool creation");
+      }
+      if (coeus_mdm_mod) {
+        engine_logger->info("coeus_mdm module loaded: {}", coeus_mdm_mod->lib_path);
+      } else {
+        engine_logger->warn("coeus_mdm module not found - may fail during pool creation");
+      }
+    }
+  }
 
+  // NOTE: The admin pool is built-in to the Chimaera runtime.
+  // Do NOT create it from client mode -- it already exists.
+
+  // Initialize rank consensus pool (only MPI rank 0 creates it)
+  rankConsensus_pool_id_ = clio::run::PoolId(8001, 0);
+  rank_consensus = coeus::rankConsensus::Client(rankConsensus_pool_id_);
+  if (mpi_rank == 0) {
+    rank_consensus.Create(clio::run::PoolQuery::Dynamic(), "rankConsensus", rankConsensus_pool_id_);
+    std::cout << "Rank 0: rankConsensus pool created" << std::endl;
+  }
+  m_Comm.Barrier("Init_:rankConsensus_pool_created");
+  if (mpi_rank != 0) {
+    rank_consensus.Init(rankConsensus_pool_id_);
+  }
+  // The consensus pool keeps one atomic counter per container (per node),
+  // so querying it from every process hands out per-node ranks: the
+  // step_N_rankR CTE tags then collide across nodes and ranks read and
+  // overwrite each other's blobs (corrupted derived block means / trigger
+  // statistics). Instead, only MPI rank 0 draws one value per run (the
+  // across-runs uniquifier on a persistent runtime) and broadcasts it as a
+  // run base; every process derives a globally unique rank from it and its
+  // MPI rank. On a fresh runtime the base is 0, so rank == MPI rank.
+  int run_base = 0;
+  if (mpi_rank == 0) {
+    run_base = rank_consensus.GetRank(clio::run::PoolQuery::Local());
+  }
+  run_base = m_Comm.BroadcastValue(run_base, 0);
+  rank = run_base * 1000000 + mpi_rank;
+
+
+  std::cout << "MPI rank " << mpi_rank << " -> consensus rank: " << rank << std::endl;
+ 
   //Identifier, should be the file, but we don't get it
   uid = this->m_IO.m_Name;
 
@@ -142,6 +254,7 @@ void HermesEngine::Init_() {
       throw e;
     }
   }
+  // find the ppn
   if (params.find("ppn") != params.end()) {
     ppn = stoi(params["ppn"]);
     if (rank == 0)
@@ -167,29 +280,281 @@ void HermesEngine::Init_() {
     std::string varFile = params["VarFile"];
     if (rank == 0)
       std::cout << "varFile: " << varFile << std::endl;
+
     try {
       variableMap = YAMLParser(varFile).parse();
     } catch (std::exception &e) {
       engine_logger->warn("Could not parse variable file", rank);
       throw e;
     }
+
   }
 
-  //Hermes setup
+  // Statistical trigger configuration (Vigil trigger phase).
+  // Knobs shared by all trigger types:
+  if (params.find("TriggerType") != params.end()) {
+    trigger_type_ = params["TriggerType"];
+  }
+  if (params.find("TriggerInspectSteps") != params.end()) {
+    trigger_inspect_steps_ = std::max(1, std::stoi(params["TriggerInspectSteps"]));
+  }
+  if (params.find("TriggerRefire") != params.end()) {
+    const std::string &v = params["TriggerRefire"];
+    trigger_refire_ = (v == "1" || v == "true" || v == "TRUE" || v == "True");
+  }
+  if (params.find("TriggerLogFile") != params.end()) {
+    trigger_log_file_ = params["TriggerLogFile"];
+  }
+  if (params.find("TriggerMetricsLogFile") != params.end()) {
+    trigger_metrics_log_file_ = params["TriggerMetricsLogFile"];
+  }
+  // Derive a sibling wall-clock timeline file (…/trigger_timeline.jsonl) and
+  // truncate it once per run (rank 0) so a run's timeline starts clean.
+  {
+    trigger_timeline_file_ = trigger_log_file_;
+    auto pos = trigger_timeline_file_.rfind("trigger_log");
+    if (pos != std::string::npos)
+      trigger_timeline_file_.replace(pos, std::string("trigger_log").size(),
+                                     "trigger_timeline");
+    else
+      trigger_timeline_file_ = "trigger_timeline.jsonl";
+    if (m_Comm.Rank() == 0) {
+      std::ofstream reset(trigger_timeline_file_, std::ios::trunc);
+    }
+  }
 
+  if (trigger_type_ == "dissipation") {
+    // Two-stage Yellow/Red numerical-dissipation trigger (Xcompact3d TGV).
+    if (params.find("TriggerKEVariable") != params.end()) {
+      trigger_ke_variable_ = params["TriggerKEVariable"];
+    }
+    if (params.find("TriggerEnstrophyVariable") != params.end()) {
+      trigger_enst_variable_ = params["TriggerEnstrophyVariable"];
+    }
+    if (params.find("TriggerNu") != params.end()) {
+      trigger_nu_ = std::stod(params["TriggerNu"]);
+    }
+    if (params.find("TriggerOutputDt") != params.end()) {
+      trigger_output_dt_ = std::stod(params["TriggerOutputDt"]);
+    }
+    if (params.find("TriggerYellowFraction") != params.end()) {
+      trigger_yellow_fraction_ = std::stod(params["TriggerYellowFraction"]);
+    }
+    if (params.find("TriggerRedFraction") != params.end()) {
+      trigger_red_fraction_ = std::stod(params["TriggerRedFraction"]);
+    }
+    if (params.find("TriggerYellowNuRatio") != params.end()) {
+      trigger_yellow_nu_ratio_ = std::stod(params["TriggerYellowNuRatio"]);
+    }
+    if (params.find("TriggerRedNuRatio") != params.end()) {
+      trigger_red_nu_ratio_ = std::stod(params["TriggerRedNuRatio"]);
+    }
+    trigger_enabled_ = (!trigger_ke_variable_.empty() &&
+                        !trigger_enst_variable_.empty() &&
+                        trigger_nu_ > 0.0 && trigger_output_dt_ > 0.0);
+    if (mpi_rank == 0) {
+      if (trigger_enabled_) {
+        std::cout << "Trigger: dissipation ke=" << trigger_ke_variable_
+                  << " enst=" << trigger_enst_variable_
+                  << " nu=" << trigger_nu_
+                  << " output_dt=" << trigger_output_dt_
+                  << " yellow(frac=" << trigger_yellow_fraction_
+                  << ",nu_ratio=" << trigger_yellow_nu_ratio_ << ")"
+                  << " red(frac=" << trigger_red_fraction_
+                  << ",nu_ratio=" << trigger_red_nu_ratio_ << ")"
+                  << " inspect_steps=" << trigger_inspect_steps_
+                  << " refire=" << (trigger_refire_ ? "true" : "false") << std::endl;
+      } else {
+        std::cout << "Trigger: TriggerType=dissipation needs TriggerKEVariable,"
+                     " TriggerEnstrophyVariable, TriggerNu and TriggerOutputDt"
+                     " - trigger disabled" << std::endl;
+      }
+    }
+  } else if (params.find("TriggerVariable") != params.end()) {
+    // Scalar-statistic trigger over a single variable. TriggerType selects the
+    // statistic: "variance" (default) pools per-block variances (or a raw-field
+    // pass); "mean" pools an ADIOS2 derived per-block MEAN N_b-weighted into the
+    // exact global mean (e.g. derive/V2mean = mean(|v|^2) = 3*T* for the LAMMPS
+    // velocity-Verlet temperature trigger). Both share the threshold/baseline/
+    // rising-edge/inspect-window machinery below.
+    trigger_variable_ = params["TriggerVariable"];
+    if (params.find("TriggerSumVariable") != params.end()) {
+      trigger_sum_variable_ = params["TriggerSumVariable"];
+    }
+    if (params.find("TriggerThreshold") != params.end()) {
+      trigger_threshold_ = std::stod(params["TriggerThreshold"]);
+    }
+    if (params.find("TriggerBaselineRatio") != params.end()) {
+      trigger_baseline_ratio_ = std::stod(params["TriggerBaselineRatio"]);
+    }
+    // Collapse WARNING mode ("expanding to blank"): with TriggerWarnOnCollapse
+    // the trigger arms on the rise and WARNS (streams the inspect window to the
+    // agent) when the statistic falls back below TriggerCollapseThreshold /
+    // TriggerCollapseBaselineRatio. The engine only warns; the agent fires.
+    if (params.find("TriggerWarnOnCollapse") != params.end()) {
+      const std::string &v = params["TriggerWarnOnCollapse"];
+      trigger_warn_on_collapse_ =
+          (v == "1" || v == "true" || v == "TRUE" || v == "True");
+    }
+    if (params.find("TriggerCollapseThreshold") != params.end()) {
+      trigger_collapse_threshold_ = std::stod(params["TriggerCollapseThreshold"]);
+    }
+    if (params.find("TriggerCollapseBaselineRatio") != params.end()) {
+      trigger_collapse_baseline_ratio_ =
+          std::stod(params["TriggerCollapseBaselineRatio"]);
+    }
+    trigger_enabled_ = (trigger_threshold_ > 0.0 || trigger_baseline_ratio_ > 0.0);
+    const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
+    if (mpi_rank == 0) {
+      if (trigger_enabled_) {
+        std::cout << "Trigger: " << stat_name << "(" << trigger_variable_ << ")"
+                  << (trigger_sum_variable_.empty()
+                          ? ""
+                          : " sum_var=" + trigger_sum_variable_)
+                  << " threshold=" << trigger_threshold_
+                  << " baseline_ratio=" << trigger_baseline_ratio_
+                  << " inspect_steps=" << trigger_inspect_steps_
+                  << " refire=" << (trigger_refire_ ? "true" : "false");
+        if (trigger_warn_on_collapse_) {
+          std::cout << " | WARN-on-collapse: arm=" << trigger_baseline_ratio_
+                    << "x collapse_baseline_ratio="
+                    << trigger_collapse_baseline_ratio_
+                    << " collapse_threshold=" << trigger_collapse_threshold_;
+        }
+        std::cout << std::endl;
+      } else {
+        std::cout << "Trigger: TriggerVariable set but no TriggerThreshold/"
+                     "TriggerBaselineRatio - trigger disabled" << std::endl;
+      }
+    }
+  }
+
+  // Chimaera setup for metadata management (coeus_mdm)
   if (params.find("db_file") != params.end()) {
     db_file = params["db_file"];
     db = new SQLiteWrapper(db_file);
-    client.CreateRoot(DomainId::GetGlobal(), "db_operation", db_file);
-    if (rank % ppn == 0) {
-      db->createTables();
+    coeus_mdm_pool_id_ = clio::run::PoolId(8000, 0);
+    client = coeus::coeus_mdm::Client(coeus_mdm_pool_id_);
+    if (mpi_rank == 0) {
+      client.Create(clio::run::PoolQuery::Dynamic(), "db_operation", coeus_mdm_pool_id_, db_file);
     }
-  } else {
-    throw std::invalid_argument("db_file not found in parameters");
+    m_Comm.Barrier("Init_:coeus_mdm_pool_created");
+ 
+    if (mpi_rank != 0) {
+      client.Init(coeus_mdm_pool_id_);
+    }
+    if (rank % ppn == 0) {
+
+      db->createTables();
+
+    }
   }
-  if(params.find("execution_order") != params.end()) {
-      adiosOutput = params["execution_order"];
+
+  // Synchronize before Catalyst/Inline setup so all ranks enter together.
+  // Otherwise ranks that skip createTables() can reach Open()/catalyst_initialize()
+  // while others are still in createTables(); if those calls are collective, we deadlock.
+
+  m_Comm.Barrier("Init_:before_catalyst");
+
+
+  // if(params.find("execution_order") != params.end()) {
+  //     adiosOutput = params["execution_order"];
+  // }
+  #ifdef COEUS_HAVE_CATALYST
+  // Optional Catalyst/Fides activation if parameters provided
+  bool enableCatalyst = (params.find("Script") != params.end()) && (params.find("DataModel") != params.end());
+  if (enableCatalyst)
+  {
+    CatalystState = std::unique_ptr<CatalystImpl>(new CatalystImpl());
+    CatalystState->ScriptFileName = params["Script"];
+    CatalystState->JSONFileName = params["DataModel"];
+    if (params.find("CatalystStream") != params.end()) {
+      CatalystState->CatalystStreamName = params["CatalystStream"];
+    }
+
+    const auto &varMap = m_IO.GetVariables();
+
+    if (!CatalystState->CatalystStreamName.empty())
+    {
+      // Multi-node: use SST so a separate Catalyst reader can connect
+      CatalystState->SSTIO = &m_IO.m_ADIOS.DeclareIO("CatalystSSTIO");
+      CatalystState->SSTIO->SetEngine("SST");
+      CatalystState->SSTIO->SetParameter("RendezvousReaderCount", "1");
+      CatalystState->SSTIO->SetParameter("QueueLimit", "1");
+      // Trigger-gated streams ship only flagged steps, which must not be
+      // dropped; ungated streams keep the historical Discard behavior.
+      std::string queue_policy = trigger_enabled_ ? "Block" : "Discard";
+      if (params.find("SSTQueueFullPolicy") != params.end()) {
+        queue_policy = params["SSTQueueFullPolicy"];
+      }
+      CatalystState->SSTIO->SetParameter("QueueFullPolicy", queue_policy);
+      CatalystState->SSTIO->SetParameter("OpenTimeoutSecs", "60.0");
+      if (params.find("SSTDataTransport") != params.end()) {
+        CatalystState->SSTIO->SetParameter("DataTransport", params["SSTDataTransport"]);
+      } else {
+        CatalystState->SSTIO->SetParameter("DataTransport", "WAN");
+      }
+
+      for (const auto &it : varMap)
+      {
+   #define declare_type_sst(T) \
+     if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
+     { \
+       CatalystState->SSTIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
+         it.second->m_Count, it.second->IsConstantDims()); \
+       continue; \
+     }
+        ADIOS2_FOREACH_STDTYPE_1ARG(declare_type_sst)
+   #undef declare_type_sst
+      }
+
+      if (trigger_enabled_) {
+        // Trigger state travels with every shipped step (rank 0 writes them).
+        CatalystState->SSTIO->DefineVariable<int32_t>("vigil/trigger_fired");
+        CatalystState->SSTIO->DefineVariable<double>("vigil/trigger_stat");
+        CatalystState->SSTIO->DefineVariable<int32_t>("vigil/trigger_fire_step");
+      }
+
+      CatalystState->SSTWriter = &CatalystState->SSTIO->Open(
+          CatalystState->CatalystStreamName, adios2::Mode::Write, m_Comm.Duplicate());
+
+      if (rank == 0) {
+        engine_logger->info("Catalyst SST stream: {} (multi-node{})",
+                            CatalystState->CatalystStreamName,
+                            trigger_enabled_ ? ", trigger-gated" : "");
+      }
+    }
+    else
+    {
+      // Single-node: Inline engine (Catalyst reads in-process)
+      CatalystState->InlineIO = &m_IO.m_ADIOS.DeclareIO("InlinePluginIO");
+      CatalystState->InlineIO->SetEngine("inline");
+
+      for (const auto &it : varMap)
+      {
+   #define declare_type(T) \
+     if (it.second->m_Type == adios2::helper::GetDataType<T>()) \
+     { \
+       CatalystState->InlineIO->DefineVariable<T>(it.first, it.second->m_Shape, it.second->m_Start, \
+         it.second->m_Count, it.second->IsConstantDims()); \
+       continue; \
+     }
+        ADIOS2_FOREACH_STDTYPE_1ARG(declare_type)
+   #undef declare_type
+      }
+
+      CatalystState->InlineWriter = &CatalystState->InlineIO->Open("write", adios2::Mode::Write);
+      CatalystInit();
+    }
   }
+  #endif
+
+  // Synchronize all ranks after pool setup and optional Catalyst/Inline init.
+  // Prevents deadlock when the application (or ADIOS2) performs a collective
+  // immediately after opening the engine (e.g. first BeginStep or Put).
+  m_Comm.Barrier("Init_:setup_complete");
+ 
+
   open = true;
 
 }
@@ -199,14 +564,73 @@ void HermesEngine::Init_() {
  * */
 void HermesEngine::DoClose(const int transportIndex) {
   TRACE_FUNC("engine close");
-
+  int mpi_rank = m_Comm.Rank();
+  // Ensure all ranks have completed EndStep before closing SST collectively.
+  
+  m_Comm.Barrier("DoClose:before_sst_close");
+  
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && CatalystState->CatalystWriter())
+  {
+    if (CatalystState->UseSST()) {
+      // SST Close() blocks indefinitely waiting for the reader to
+      // acknowledge EndOfStream.  Skip it — RemoveIO below destroys
+      // the engine (closing TCP sockets), and the reader will detect
+      // the disconnect.
+      engine_logger->info("DoClose: MPI rank {} skipping SST Close", mpi_rank);
+      // Give the reader time to finish processing the last step.
+      // Without this delay, destroying the SST engine immediately causes
+      // "Writer failed before returning data" abort on the reader side
+      // (C++ std::runtime_error that cannot be caught in Python).
+      engine_logger->info("DoClose: MPI rank {} waiting 4s for reader to finish last step", mpi_rank);
+      std::this_thread::sleep_for(std::chrono::seconds(4));
+      engine_logger->info("DoClose: MPI rank {} done waiting, destroying SST engine", mpi_rank);
+      // Remove the SST contact file so external watchdogs can detect
+      // that the writer has exited.  Only rank 0 needs to do this.
+      if (mpi_rank == 0 && !CatalystState->CatalystStreamName.empty()) {
+        std::string sst_contact = CatalystState->CatalystStreamName + ".sst";
+        if (std::remove(sst_contact.c_str()) == 0) {
+          engine_logger->info("DoClose: removed SST contact file '{}'", sst_contact);
+        }
+      }
+      CatalystState->SSTWriter = nullptr;
+      CatalystState->SSTIO = nullptr;
+      // Remove the IO so the ADIOS2 destructor (which runs after
+      // MPI_Finalize) does not attempt a late SST cleanup.
+      try { m_IO.m_ADIOS.RemoveIO("CatalystSSTIO"); }
+      catch (...) { engine_logger->warn("DoClose: RemoveIO(CatalystSSTIO) failed"); }
+    } else {
+      CatalystState->CatalystWriter()->Close(transportIndex);
+    }
+  }
+  #endif
+  // Clear tag on close (match IowarpEngine: current_tag_.reset() in DoClose)
+  // if (hermes_ && hermes_->tag) {
+  //   delete hermes_->tag;
+  //   hermes_->tag = nullptr;
+  // }
+  
   open = false;
 }
 
 HermesEngine::~HermesEngine() {
   TRACE_FUNC();
+  #ifdef COEUS_HAVE_CATALYST
+  if (CatalystState && !CatalystState->UseSST())
+  {
+    conduit_cpp::Node node;
+    catalyst_finalize(conduit_cpp::c_node(&node));
+  }
+  #endif
   delete db;
-
+  db = nullptr;
+  if (hermes_) {
+    delete hermes_;
+    hermes_ = nullptr;
+  }
+  if (CLIO_IPC) {
+    CLIO_IPC->ClientFinalize();
+  }
 }
 
 /**
@@ -214,30 +638,80 @@ HermesEngine::~HermesEngine() {
  * */
 
 bool HermesEngine::Promote(int step){
+    if (!hermes_) {
+      engine_logger->error("Promote: CTE not connected");
+      return false;
+    }
+
+    std::string tag_name = "step_" + std::to_string(step)
+                                + "_rank" + std::to_string(rank);
+
+    auto metadata_vector = db->GetAllVariableMetadata(step, rank);
     bool success = true;
-    if(step < total_steps) {
-        auto var_locations = db->getAllBlobs(currentStep + lookahead, rank);
-        for (const auto &location : var_locations) {
-            success &= Hermes->Prefetch(location.bucket_name, location.blob_name);
-        }
+    for (auto &variableMetadata : metadata_vector) {
+      if (!hermes_->Prefetch(tag_name, variableMetadata.name)) {
+        engine_logger->warn("Promote: Prefetch failed for blob '{}' in tag '{}'",
+                            variableMetadata.name, tag_name);
+        success = false;
+      }
     }
     return success;
 }
 
 bool HermesEngine::Demote(int step){
+    if (!hermes_) {
+      engine_logger->error("Demote: CTE not connected");
+      return false;
+    }
+
+    std::string tag_name = "step_" + std::to_string(step)
+                                + "_rank" + std::to_string(rank);
+
+    auto metadata_vector = db->GetAllVariableMetadata(step, rank);
     bool success = true;
-    if (step > 0) {
-        auto var_locations = db->getAllBlobs(step, rank);
-        for (const auto &location: var_locations) {
-            success &= Hermes->Demote(location.bucket_name, location.blob_name);
-        }
-}
+    for (auto &variableMetadata : metadata_vector) {
+      if (!hermes_->Demote(tag_name, variableMetadata.name)) {
+        engine_logger->warn("Demote: Demote failed for blob '{}' in tag '{}'",
+                            variableMetadata.name, tag_name);
+        success = false;
+      }
+    }
     return success;
 }
 
 adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
                                            const float timeoutSeconds) {
   IncrementCurrentStep();
+
+  // Wall-clock timeline (writer side): the first step marks the simulation
+  // stepping start; every step marks its compute-begin.
+  if (m_OpenMode == adios2::Mode::Write) {
+    if (currentStep == 1) LogTimeline_("sim_start", 0, 0.0);
+    LogTimeline_("step_begin", currentStep, 0.0);
+  }
+
+  #ifdef COEUS_HAVE_CATALYST
+  inline_writer_in_step_ = false;
+  if (CatalystState && CatalystState->UseSST()) {
+    sst_put_time_us_ = 0;  // Reset per-step SST Put timing for in-transit metrics
+  }
+
+  if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
+  {
+    try
+    {
+      adios2::StepStatus status =
+          CatalystState->CatalystWriter()->BeginStep(mode, timeoutSeconds);
+
+      inline_writer_in_step_ = (status == adios2::StepStatus::OK);
+    }
+    catch (...)
+    {
+      inline_writer_in_step_ = false;
+      throw;
+    }
+  }
+  #endif
   if (m_OpenMode == adios2::Mode::Read) {
     if (total_steps == -1)
       total_steps = db->GetTotalSteps(uid);
@@ -247,31 +721,28 @@ adios2::StepStatus HermesEngine::BeginStep(adios2::StepMode mode,
     LoadMetadata();
   }
 
-    std::string bucket_name = "step_" + std::to_string(currentStep)
+  std::string tag_name = "step_" + std::to_string(currentStep)
                               + "_rank" + std::to_string(rank);
-  //std::string bucket_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
-    Hermes->GetBucket(bucket_name);
-// derived part
-//  if(m_OpenMode == adios2::Mode::Read){
-//      for(int i = 0; i < num_layers; i++) {
- //         Promote(currentStep + lookahead + i);
-//      }
-//  }
-//  if(m_OpenMode == adios2::Mode::Write){
-//      for(int i = 0; i < num_layers; i++) {
-//          Demote(currentStep - lookahead - i);
- //     }
-//  }
-
+  // if two same run happened in one pipeline
+  //std::string tag_name =  adiosOutput + "_step_" + std::to_string(currentStep) + "_rank" + std::to_string(rank);
+    // Get or create CTE tag using IHermes interface
+    if (!hermes_) {
+      throw std::runtime_error("BeginStep: hermes_ is null (CTE not initialized)");
+    }
+    if (!hermes_->GetTag(tag_name)) {
+      throw std::runtime_error("BeginStep: Failed to get/create tag '" + tag_name
+                               + "'. Check that the CTE core runtime is running "
+                               "and the CTE pool is properly deployed.");
+    }
 
   return adios2::StepStatus::OK;
 }
 
 
 
-//derived part
+//compute the derived variable
 void HermesEngine::ComputeDerivedVariables() {
-    auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
+  auto const &m_VariablesDerived = m_IO.GetDerivedVariables();
   auto const &m_Variables = m_IO.GetVariables();
         // parse all derived variables
   if(rank == 0) {
@@ -290,6 +761,10 @@ void HermesEngine::ComputeDerivedVariables() {
     // to create a mapping between variable name and the varInfo (dim and data
     // pointer)
       std::map<std::string, adios2::MinVarInfo> nameToVarInfo;
+    // Blobs must outlive ApplyExpression below: MinBlockInfo stores raw
+    // pointers into these buffers (moving the outer vector is fine, the
+    // inner heap buffers stay put).
+    std::vector<std::vector<uint8_t>> blobStorage;
     for (auto varName : varList) {
 
       auto itVariable = m_Variables.find(varName);
@@ -297,11 +772,42 @@ void HermesEngine::ComputeDerivedVariables() {
             std::cout <<"throw error commented" <<std::endl;
       // extract the dimensions and data for each variable
       adios2::core::VariableBase *varBase = itVariable->second.get();
-      auto blob = Hermes->bkt->Get(varName);
+      blobStorage.push_back(hermes_->tag->Get(varName));
+      auto &blob = blobStorage.back();
+
+      if (std::getenv("COEUS_DERIVED_DEBUG")) {
+        size_t count_prod = 1;
+        for (auto c : varBase->m_Count) count_prod *= c;
+        size_t blob_elems = blob.size() / sizeof(double);
+        double direct_mean = 0.0, direct_min = 0.0, direct_max = 0.0;
+        if (blob_elems > 0) {
+          const double *d = reinterpret_cast<const double *>(blob.data());
+          direct_min = direct_max = d[0];
+          for (size_t i = 0; i < blob_elems; i++) {
+            direct_mean += d[i];
+            direct_min = std::min(direct_min, d[i]);
+            direct_max = std::max(direct_max, d[i]);
+          }
+          direct_mean /= static_cast<double>(blob_elems);
+        }
+        engine_logger->info(
+            "DERIVED_DEBUG mpi_rank={} derived={} src={} shape={} start={} count={} "
+            "count_prod={} blob_elems={} blob_mean={} blob_min={} blob_max={}",
+            m_Comm.Rank(), name, varName, adios2::ToString(varBase->m_Shape),
+            adios2::ToString(varBase->m_Start), adios2::ToString(varBase->m_Count),
+            count_prod, blob_elems, direct_mean, direct_min, direct_max);
+        if (m_Comm.Rank() == 0 && varName == "ux" && name == "tke_mean" &&
+            blob_elems >= 70) {
+          const double *d = reinterpret_cast<const double *>(blob.data());
+          std::string vals;
+          for (int i = 0; i < 70; i++) vals += fmt::format("{:.4f} ", d[i]);
+          engine_logger->info("DERIVED_DEBUG ux[0..69]: {}", vals);
+        }
+      }
 
       adios2::MinBlockInfo blk({0, 0, itVariable->second.get()->m_Start.data(),
                                 itVariable->second.get()->m_Count.data(),
-                                adios2::MinMaxStruct(), blob.data()});
+                                adios2::MinMaxStruct(), blob.empty() ? nullptr : blob.data()});
 
 
         // if this is the first block for the variable
@@ -332,19 +838,19 @@ void HermesEngine::ComputeDerivedVariables() {
     }
 
     for (auto derivedBlock : DerivedBlockData) {
-#define DEFINE_VARIABLE_PUT(T)       \
+  #define DEFINE_VARIABLE_PUT(T)       \
   if (adios2::helper::GetDataType<T>() == derivedVar->m_Type) { \
     T* data = static_cast<T *>(std::get<0>(derivedBlock));\
     PutDerived(*derivedVar, data);   \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(DEFINE_VARIABLE_PUT)
-#undef DEFINE_VARIABLE_PUT
+  #undef DEFINE_VARIABLE_PUT
       free(std::get<0>(derivedBlock));
     }
 
   }
 
-    }
+}
 
 
 
@@ -356,19 +862,697 @@ size_t HermesEngine::CurrentStep() const {
   return currentStep;
 }
 
-void HermesEngine::EndStep() {
+void HermesEngine::EndStep()
+{
+  #ifdef COEUS_HAVE_CATALYST
+  adios2::core::Engine *catWriter = CatalystState ? CatalystState->CatalystWriter() : nullptr;
+  bool catalyst_active = (catWriter && inline_writer_in_step_);
+  bool use_inline = CatalystState && !CatalystState->UseSST();
+  #endif
 
+  try
+  {
     ComputeDerivedVariables();
-//  if (m_OpenMode == adios2::Mode::Write) {
-//    if (rank % ppn == 0) {
-//      DbOperation db_op(uid, currentStep);
-//      client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-//    }
-//  }
+  }
+  catch (...)
+  {
+  #ifdef COEUS_HAVE_CATALYST
+    if (catalyst_active && catWriter)
+    {
+      catWriter->EndStep();
+      inline_writer_in_step_ = false;
+    }
+  #endif
+    throw;
+  }
 
-  delete Hermes->bkt;
+  #ifdef COEUS_HAVE_CATALYST
+   if (catalyst_active && catWriter)
+   {
+    if (CatalystState->UseSST())
+    {
+      auto sst_endstep_t0 = std::chrono::high_resolution_clock::now();
+      catWriter->EndStep();
+      auto sst_endstep_t1 = std::chrono::high_resolution_clock::now();
+      int64_t sst_endstep_us = static_cast<int64_t>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              sst_endstep_t1 - sst_endstep_t0).count());
+      if (rank == 0) {
+        engine_logger->info(
+            "SST in-transit step {}: Put time (us): {}, EndStep time (us): {}",
+            currentStep, sst_put_time_us_, sst_endstep_us);
+      }
+    }
+    else
+    {
+      catWriter->EndStep();
+      if (use_inline) {
+        CatalystExecute();
+      }
+    }
+    inline_writer_in_step_ = false;
+   }
+  #endif
 
+  // Wall-clock timeline: this output step is now fully produced (field +
+  // derived variables written to CTE), just before the trigger evaluates it.
+  if (m_OpenMode == adios2::Mode::Write) {
+    LogTimeline_("output", currentStep, 0.0);
+  }
+
+  // Statistical trigger: evaluate every step (collective); stream flagged
+  // steps over SST from the CTE blobs written earlier in this step.
+  if (trigger_enabled_ && m_OpenMode == adios2::Mode::Write &&
+      hermes_ && hermes_->tag) {
+    bool fired_now = EvaluateTrigger_();
+    #ifdef COEUS_HAVE_CATALYST
+    if (trigger_window_remaining_ > 0 && CatalystState &&
+        CatalystState->UseSST()) {
+      StreamFlaggedStepToSST_(fired_now);
+    }
+    #endif
+    if (trigger_window_remaining_ > 0) {
+      trigger_window_remaining_--;
+    }
+  }
+
+  if (hermes_ && hermes_->tag)
+  {
+    delete hermes_->tag;
+    hermes_->tag = nullptr;
+  }
 }
+
+bool HermesEngine::SstGated_() const {
+  #ifdef COEUS_HAVE_CATALYST
+  return trigger_enabled_ && CatalystState && CatalystState->UseSST();
+  #else
+  return false;
+  #endif
+}
+
+/**
+ * Exact pooled global variance of `name` across all ranks (collective).
+ *
+ * Each rank accumulates (n, sum, sum of squares) over its local block from
+ * the CTE blob, a single Allreduce combines them, and the global variance
+ * follows as E[x^2] - E[x]^2. This is the pooled-variance formula: per-block
+ * variances are never averaged, so the between-block term is fully captured.
+ * */
+double HermesEngine::ComputeGlobalVariance_(const std::string &name) {
+  double local[3] = {0.0, 0.0, 0.0};  // n, sum, sumsq
+
+  auto blob = hermes_->tag->Get(name);
+  const adios2::DataType type = m_IO.InquireVariableType(name);
+  if (!blob.empty()) {
+    if (type == adios2::DataType::Double) {
+      const double *data = reinterpret_cast<const double *>(blob.data());
+      const size_t n = blob.size() / sizeof(double);
+      for (size_t i = 0; i < n; ++i) {
+        local[1] += data[i];
+        local[2] += data[i] * data[i];
+      }
+      local[0] = static_cast<double>(n);
+    } else if (type == adios2::DataType::Float) {
+      const float *data = reinterpret_cast<const float *>(blob.data());
+      const size_t n = blob.size() / sizeof(float);
+      for (size_t i = 0; i < n; ++i) {
+        const double v = static_cast<double>(data[i]);
+        local[1] += v;
+        local[2] += v * v;
+      }
+      local[0] = static_cast<double>(n);
+    } else if (m_Comm.Rank() == 0) {
+      engine_logger->warn("Trigger: variable '{}' has unsupported type '{}'",
+                          name, adios2::ToString(type));
+    }
+  }
+
+  double global[3] = {0.0, 0.0, 0.0};
+  m_Comm.Allreduce(local, global, 3, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  const double mean = global[1] / global[0];
+  const double var = global[2] / global[0] - mean * mean;
+  return var < 0.0 ? 0.0 : var;  // clamp tiny negative round-off
+}
+
+/**
+ * Sum all elements of `name`'s CTE blob (double or float). Works for raw
+ * fields and for derived partial sums (e.g. add(x)): summing the partial
+ * sums yields the block total either way. Returns false if the blob is
+ * missing or the type is unsupported.
+ * */
+bool HermesEngine::SumBlob_(const std::string &name, double &sum, double &n) {
+  sum = 0.0;
+  n = 0.0;
+
+  auto blob = hermes_->tag->Get(name);
+  if (blob.empty()) {
+    return false;
+  }
+
+  adios2::DataType type = adios2::DataType::None;
+  auto const &derivedMap = m_IO.GetDerivedVariables();
+  auto dit = derivedMap.find(name);
+  if (dit != derivedMap.end()) {
+    type = dit->second->m_Type;
+  } else {
+    type = m_IO.InquireVariableType(name);
+  }
+
+  if (type == adios2::DataType::Double) {
+    const double *data = reinterpret_cast<const double *>(blob.data());
+    const size_t count = blob.size() / sizeof(double);
+    for (size_t i = 0; i < count; ++i) sum += data[i];
+    n = static_cast<double>(count);
+    return true;
+  }
+  if (type == adios2::DataType::Float) {
+    const float *data = reinterpret_cast<const float *>(blob.data());
+    const size_t count = blob.size() / sizeof(float);
+    for (size_t i = 0; i < count; ++i) sum += static_cast<double>(data[i]);
+    n = static_cast<double>(count);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Pooled global variance from an ADIOS2 derived-quantity variance
+ * (collective).
+ *
+ * The derived operator (variance(x), computed by ComputeDerivedVariables
+ * earlier in this EndStep) reduces each rank's block to one local variance
+ * var_b. Per VARIANCE_TRIGGER.md §6, var_b alone is not poolable: the exact
+ * combine also needs the block mean mean_b and size N_b,
+ *
+ *   N = sum_b N_b,  mean = (1/N) sum_b N_b*mean_b,
+ *   var = (1/N) sum_b N_b*(var_b + mean_b^2) - mean^2.
+ *
+ * N_b comes from the source field's local Count (no data read); mean_b from
+ * the block sum, taken from TriggerSumVariable's derived blob (e.g. add(x))
+ * when configured, else from one pass over the raw source blob. A single
+ * 3-double Allreduce yields the exact global variance; per-block variances
+ * are never averaged.
+ * */
+double HermesEngine::ComputeGlobalVarianceDerived_(
+    adios2::core::VariableDerived *derivedVar) {
+  double local[3] = {0.0, 0.0, 0.0};  // N_b, sum_b, N_b*(var_b + mean_b^2)
+  bool have_block = false;
+
+  do {
+    if (!derivedVar) break;
+
+    // Per-block variance computed by the derived-quantity operator.
+    auto var_blob = hermes_->tag->Get(trigger_variable_);
+    if (var_blob.empty()) break;
+    double var_b;
+    if (derivedVar->m_Type == adios2::DataType::Double &&
+        var_blob.size() >= sizeof(double)) {
+      var_b = *reinterpret_cast<const double *>(var_blob.data());
+    } else if (derivedVar->m_Type == adios2::DataType::Float &&
+               var_blob.size() >= sizeof(float)) {
+      var_b = static_cast<double>(
+          *reinterpret_cast<const float *>(var_blob.data()));
+    } else {
+      break;
+    }
+
+    // Block size N_b from the source field named in the derived expression.
+    std::vector<std::string> sources = derivedVar->VariableNameList();
+    if (sources.empty()) break;
+    auto const &varMap = m_IO.GetVariables();
+    auto sit = varMap.find(sources.front());
+    if (sit == varMap.end()) break;
+    double n_b = 1.0;
+    for (auto c : sit->second->m_Count) n_b *= static_cast<double>(c);
+    if (n_b <= 0.0) break;
+
+    // Block sum for mean_b: derived partial sums if configured, else the
+    // raw source blob.
+    double sum_b = 0.0, unused = 0.0;
+    const std::string &sum_source = trigger_sum_variable_.empty()
+                                        ? sources.front()
+                                        : trigger_sum_variable_;
+    if (!SumBlob_(sum_source, sum_b, unused)) break;
+
+    const double mean_b = sum_b / n_b;
+    local[0] = n_b;
+    local[1] = sum_b;
+    local[2] = n_b * (var_b + mean_b * mean_b);
+    have_block = true;
+  } while (false);
+
+  if (!have_block && m_Comm.Rank() == 0) {
+    engine_logger->warn(
+        "Trigger: derived variance '{}' unavailable this step (blob or source"
+        " missing) - contributing empty block", trigger_variable_);
+  }
+
+  double global[3] = {0.0, 0.0, 0.0};
+  m_Comm.Allreduce(local, global, 3, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  const double mean = global[1] / global[0];
+  const double var = global[2] / global[0] - mean * mean;
+  return var < 0.0 ? 0.0 : var;  // clamp tiny negative round-off
+}
+
+/**
+ * Evaluate the trigger condition for the current step (collective).
+ *
+ * Rising-edge semantics: a fire opens an inspect window of
+ * trigger_inspect_steps_ steps (the firing step included). By default the
+ * trigger fires once per run; TriggerRefire=true re-arms it after the
+ * window closes. Returns true only on the step the trigger fires.
+ * */
+bool HermesEngine::EvaluateTrigger_() {
+  if (trigger_type_ == "dissipation") {
+    return EvaluateDissipationTrigger_();
+  }
+  // Compute the scalar statistic for this step. TriggerType=mean pools an
+  // ADIOS2 derived per-block MEAN into the exact N_b-weighted global mean
+  // (e.g. derive/V2mean = mean(|v|^2) = 3*T* for the LAMMPS temperature
+  // trigger). Otherwise (variance): if TriggerVariable names a derived
+  // variance (e.g. "derive/VarV" = variance(x)) pool the per-block variances
+  // it computed this step, else fall back to a direct pass over the raw field.
+  // Every branch is rank-uniform (same DefineDerivedVariable calls everywhere),
+  // so all stay collective.
+  double stat;
+  if (trigger_type_ == "mean") {
+    stat = ComputeGlobalBlockMean_(trigger_variable_);
+  } else {
+    auto const &derivedMap = m_IO.GetDerivedVariables();
+    auto dit = derivedMap.find(trigger_variable_);
+    if (dit != derivedMap.end()) {
+      stat = ComputeGlobalVarianceDerived_(
+          dynamic_cast<adios2::core::VariableDerived *>(dit->second.get()));
+    } else {
+      stat = ComputeGlobalVariance_(trigger_variable_);
+    }
+  }
+  trigger_last_stat_ = stat;
+  if (std::isnan(stat)) {
+    return false;
+  }
+  if (trigger_baseline_ < 0.0) {
+    trigger_baseline_ = stat;
+  }
+
+  const char *stat_name = (trigger_type_ == "mean") ? "mean" : "variance";
+
+  // Collapse-WARNING mode: the engine does NOT fire on the rise. It arms on the
+  // rise and WARNS (opens the SST inspect window, streaming the flagged steps to
+  // the agent) when the statistic collapses back down -> "expanding to blank".
+  // The engine never stops the run; the AI agent inspects the streamed steps and
+  // issues the fire verdict (e.g. writes the halt flag the simulation polls).
+  if (trigger_warn_on_collapse_) {
+    return EvaluateCollapseWarning_(stat, stat_name);
+  }
+
+  bool condition = false;
+  if (trigger_threshold_ > 0.0 && stat >= trigger_threshold_) {
+    condition = true;
+  }
+  if (!condition && trigger_baseline_ratio_ > 0.0 && trigger_baseline_ > 0.0 &&
+      stat >= trigger_baseline_ratio_ * trigger_baseline_) {
+    condition = true;
+  }
+
+  const bool rising = condition && !trigger_prev_condition_;
+  trigger_prev_condition_ = condition;
+
+  if (!rising || trigger_window_remaining_ > 0 ||
+      (trigger_has_fired_ && !trigger_refire_)) {
+    return false;
+  }
+
+  trigger_has_fired_ = true;
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  // Guard on the MPI rank: the consensus rank is not guaranteed to include 0
+  // when the runtime (and its rankConsensus pool) outlives a previous run.
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger FIRED at step {}: {}({}) = {} (threshold {}, baseline {},"
+        " ratio {}), streaming {} step(s)",
+        currentStep, stat_name, trigger_variable_, stat, trigger_threshold_,
+        trigger_baseline_, trigger_baseline_ratio_, trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_fired\",\"step\":" << currentStep
+          << ",\"variable\":\"" << trigger_variable_ << "\""
+          << ",\"stat\":\"" << stat_name << "\",\"value\":" << stat
+          << ",\"threshold\":" << trigger_threshold_
+          << ",\"baseline\":" << trigger_baseline_
+          << ",\"baseline_ratio\":" << trigger_baseline_ratio_
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  LogTimeline_("fire", currentStep, stat);
+  return true;
+}
+
+/**
+ * Append one wall-clock timeline event (rank 0 only). `wall` is system_clock
+ * epoch seconds so writer-side events align with the Python consumer's
+ * time.time() timestamps (streaming_timing.jsonl, mcp_tool_timing.jsonl).
+ */
+void HermesEngine::LogTimeline_(const char *event, int step, double value) {
+  if (m_Comm.Rank() != 0 || trigger_timeline_file_.empty()) return;
+  const double wall = std::chrono::duration<double>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+  std::ofstream log(trigger_timeline_file_, std::ios::app);
+  if (log) {
+    log << std::fixed << std::setprecision(6)
+        << "{\"event\":\"" << event << "\",\"step\":" << step
+        << ",\"value\":" << value << ",\"wall\":" << wall << "}\n";
+  }
+}
+
+/**
+ * Collapse WARNING (collective) — "expanding to blank" alert to the AI agent.
+ *
+ * Called every output step when TriggerWarnOnCollapse=true. The engine only
+ * WARNS; it never stops the run. Two phases:
+ *   arm   : the statistic rises above TriggerBaselineRatio*baseline (the
+ *           monitored structure formed / peaked).
+ *   warn  : the FIRST armed step where the statistic falls back to
+ *           <= TriggerCollapseThreshold or <= TriggerCollapseBaselineRatio*
+ *           baseline. The field is homogenising toward uniform/blank. This
+ *           opens the SST inspect window (streams the warn step + the next
+ *           TriggerInspectSteps-1 to the agent) and logs a WARNING. The agent
+ *           inspects those steps and issues the fire verdict (e.g. writes the
+ *           halt flag the simulation polls).
+ * Saturating Gray-Scott (F=0.08,k=0.03): variance peaks ~30x then collapses;
+ * arm=20x, collapse=13x warns at output ~23 (streams 23-26). The spots regime
+ * peaks ~1.2x so it never arms and never warns. Returns true only on the warn
+ * step (so the caller streams the flagged window).
+ * */
+bool HermesEngine::EvaluateCollapseWarning_(double stat, const char *stat_name) {
+  // Arm on the rise (structure formed / peaked).
+  if (trigger_baseline_ratio_ > 0.0 && trigger_baseline_ > 0.0 &&
+      stat >= trigger_baseline_ratio_ * trigger_baseline_) {
+    trigger_armed_ = true;
+  }
+  if (!trigger_armed_ || trigger_warned_) {
+    return false;  // not yet peaked, or the warning already fired
+  }
+  if (trigger_collapse_threshold_ <= 0.0 &&
+      trigger_collapse_baseline_ratio_ <= 0.0) {
+    return false;  // collapse level not configured
+  }
+  bool collapsed = false;
+  if (trigger_collapse_threshold_ > 0.0 && stat <= trigger_collapse_threshold_) {
+    collapsed = true;
+  }
+  if (!collapsed && trigger_collapse_baseline_ratio_ > 0.0 &&
+      trigger_baseline_ > 0.0 &&
+      stat <= trigger_collapse_baseline_ratio_ * trigger_baseline_) {
+    collapsed = true;
+  }
+  if (!collapsed) {
+    return false;
+  }
+
+  // WARN: open the SST inspect window so the flagged steps stream to the agent.
+  trigger_warned_ = true;
+  trigger_has_fired_ = true;  // marks that a flagged window is open
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger WARNING at step {}: {}({}) collapsed to {} (baseline {}, "
+        "arm {}x, collapse {}x); pattern expanding to blank - streaming {} "
+        "step(s) to the agent for the fire verdict",
+        currentStep, stat_name, trigger_variable_, stat, trigger_baseline_,
+        trigger_baseline_ratio_, trigger_collapse_baseline_ratio_,
+        trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_warning\",\"step\":" << currentStep
+          << ",\"variable\":\"" << trigger_variable_ << "\""
+          << ",\"stat\":\"" << stat_name << "\",\"value\":" << stat
+          << ",\"baseline\":" << trigger_baseline_
+          << ",\"arm_ratio\":" << trigger_baseline_ratio_
+          << ",\"collapse_ratio\":" << trigger_collapse_baseline_ratio_
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  return true;  // fired_now -> stream the flagged window to the agent
+}
+
+/**
+ * N_b-weighted global mean from an ADIOS2 derived per-block mean (collective).
+ *
+ * The custom "mean" operator (e.g. tke_mean, enst_mean in Xcompact3d) reduces
+ * each rank's block to one value mean_b. The exact global mean is the
+ * size-weighted combine  sum_b N_b*mean_b / sum_b N_b,  with N_b taken from
+ * the local Count of the first source field named in the derived expression
+ * (no field data is read). One 2-double Allreduce; NaN if unavailable.
+ * */
+double HermesEngine::ComputeGlobalBlockMean_(const std::string &name) {
+  double local[2] = {0.0, 0.0};  // N_b, N_b*mean_b
+  bool have_block = false;
+
+  do {
+    auto const &derivedMap = m_IO.GetDerivedVariables();
+    auto dit = derivedMap.find(name);
+    if (dit == derivedMap.end()) break;
+    auto *derivedVar =
+        dynamic_cast<adios2::core::VariableDerived *>(dit->second.get());
+    if (!derivedVar) break;
+
+    auto blob = hermes_->tag->Get(name);
+    if (blob.empty()) break;
+    double mean_b;
+    if (derivedVar->m_Type == adios2::DataType::Double &&
+        blob.size() >= sizeof(double)) {
+      mean_b = *reinterpret_cast<const double *>(blob.data());
+    } else if (derivedVar->m_Type == adios2::DataType::Float &&
+               blob.size() >= sizeof(float)) {
+      mean_b = static_cast<double>(
+          *reinterpret_cast<const float *>(blob.data()));
+    } else {
+      break;
+    }
+
+    std::vector<std::string> sources = derivedVar->VariableNameList();
+    if (sources.empty()) break;
+    auto const &varMap = m_IO.GetVariables();
+    auto sit = varMap.find(sources.front());
+    if (sit == varMap.end()) break;
+    double n_b = 1.0;
+    for (auto c : sit->second->m_Count) n_b *= static_cast<double>(c);
+    if (n_b <= 0.0) break;
+
+    local[0] = n_b;
+    local[1] = n_b * mean_b;
+    have_block = true;
+
+    if (std::getenv("COEUS_DERIVED_DEBUG")) {
+      engine_logger->info("DERIVED_DEBUG mpi_rank={} pooled_input name={} mean_b={} n_b={}",
+                          m_Comm.Rank(), name, mean_b, n_b);
+    }
+  } while (false);
+
+  if (!have_block && m_Comm.Rank() == 0) {
+    engine_logger->warn(
+        "Trigger: derived block mean '{}' unavailable this step (variable,"
+        " blob or source missing) - contributing empty block", name);
+  }
+
+  double global[2] = {0.0, 0.0};
+  m_Comm.Allreduce(local, global, 2, adios2::helper::Comm::Op::Sum);
+
+  if (global[0] <= 0.0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return global[1] / global[0];
+}
+
+/**
+ * Two-stage Yellow/Red numerical-dissipation trigger (collective).
+ *
+ * Pools the derived block-mean TKE and enstrophy, time-differences the TKE
+ * against the previous output step to get the total dissipation
+ * eps_total = -dE_k/dt, and compares it with the physical dissipation
+ * eps_phys = 2*nu*<enstrophy> (exact for periodic flow). The excess is
+ * numerical: eps_frac = (eps_total - eps_phys)/eps_total and
+ * nu_ratio = eps_total/eps_phys (= nu_eff/nu).
+ *
+ * Yellow (either yellow threshold crossed) logs an escalation event on its
+ * rising edge but does not stream. Red (either red threshold crossed) fires
+ * like the variance trigger: rising edge, once by default, opens the SST
+ * inspect window. Returns true only on the Red fire step.
+ * */
+bool HermesEngine::EvaluateDissipationTrigger_() {
+  const double ke = ComputeGlobalBlockMean_(trigger_ke_variable_);
+  const double enst = ComputeGlobalBlockMean_(trigger_enst_variable_);
+  if (std::isnan(ke) || std::isnan(enst)) {
+    return false;
+  }
+
+  const double eps_phys = 2.0 * trigger_nu_ * enst;
+  const bool have_prev = trigger_prev_ke_ >= 0.0;
+  double eps_total = std::numeric_limits<double>::quiet_NaN();
+  double eps_frac = std::numeric_limits<double>::quiet_NaN();
+  double nu_ratio = std::numeric_limits<double>::quiet_NaN();
+  if (have_prev) {
+    eps_total = (trigger_prev_ke_ - ke) / trigger_output_dt_;
+    if (eps_total > 0.0) {
+      eps_frac = (eps_total - eps_phys) / eps_total;
+      if (eps_frac < 0.0) eps_frac = 0.0;
+      nu_ratio = eps_phys > 0.0 ? eps_total / eps_phys : 0.0;
+    } else {
+      // Energy not decaying (early TGV phase): no dissipation deficit yet.
+      eps_frac = 0.0;
+      nu_ratio = 0.0;
+    }
+  }
+  trigger_prev_ke_ = ke;
+  trigger_last_stat_ = std::isnan(eps_frac) ? 0.0 : eps_frac;
+
+  if (!trigger_metrics_log_file_.empty() && m_Comm.Rank() == 0) {
+    std::ofstream mlog(trigger_metrics_log_file_, std::ios::app);
+    if (mlog) {
+      mlog << "{\"step\":" << currentStep
+           << ",\"ke\":" << ke
+           << ",\"enstrophy\":" << enst
+           << ",\"eps_total\":" << eps_total
+           << ",\"eps_phys\":" << eps_phys
+           << ",\"eps_frac\":" << eps_frac
+           << ",\"nu_ratio\":" << nu_ratio << "}\n";
+    }
+  }
+
+  if (!have_prev) {
+    return false;  // first evaluated step: no dE_k/dt yet
+  }
+
+  // NaN comparisons are false, so undefined metrics never escalate.
+  const bool yellow = eps_frac >= trigger_yellow_fraction_ ||
+                      nu_ratio >= trigger_yellow_nu_ratio_;
+  const bool red = eps_frac >= trigger_red_fraction_ ||
+                   nu_ratio >= trigger_red_nu_ratio_;
+
+  // Yellow: log-only escalation ("watch carefully") on its rising edge.
+  if (yellow && !trigger_yellow_prev_ && m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger YELLOW at step {}: eps_frac={} nu_ratio={} (thresholds {}, {})",
+        currentStep, eps_frac, nu_ratio, trigger_yellow_fraction_,
+        trigger_yellow_nu_ratio_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_yellow\",\"step\":" << currentStep
+          << ",\"ke\":" << ke << ",\"enstrophy\":" << enst
+          << ",\"eps_total\":" << eps_total << ",\"eps_phys\":" << eps_phys
+          << ",\"eps_frac\":" << eps_frac << ",\"nu_ratio\":" << nu_ratio
+          << "}\n";
+    }
+  }
+  trigger_yellow_prev_ = yellow;
+
+  const bool rising = red && !trigger_prev_condition_;
+  trigger_prev_condition_ = red;
+  if (!rising || trigger_window_remaining_ > 0 ||
+      (trigger_has_fired_ && !trigger_refire_)) {
+    return false;
+  }
+
+  trigger_has_fired_ = true;
+  trigger_fire_step_ = currentStep;
+  trigger_window_remaining_ = trigger_inspect_steps_;
+
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "Trigger RED at step {}: eps_frac={} nu_ratio={} (thresholds {}, {}),"
+        " streaming {} step(s)",
+        currentStep, eps_frac, nu_ratio, trigger_red_fraction_,
+        trigger_red_nu_ratio_, trigger_inspect_steps_);
+    std::ofstream log(trigger_log_file_, std::ios::app);
+    if (log) {
+      log << "{\"event\":\"trigger_red\",\"step\":" << currentStep
+          << ",\"ke\":" << ke << ",\"enstrophy\":" << enst
+          << ",\"eps_total\":" << eps_total << ",\"eps_phys\":" << eps_phys
+          << ",\"eps_frac\":" << eps_frac << ",\"nu_ratio\":" << nu_ratio
+          << ",\"inspect_steps\":" << trigger_inspect_steps_ << "}\n";
+    }
+  }
+  return true;
+}
+
+#ifdef COEUS_HAVE_CATALYST
+/**
+ * Ship the current (flagged) step over SST: every mirrored variable is
+ * re-Put from its CTE blob, plus the trigger-state scalars from rank 0.
+ * Runs only inside an open inspect window; unflagged steps ship nothing,
+ * so the reader simply waits until the next flagged step arrives.
+ * */
+void HermesEngine::StreamFlaggedStepToSST_(bool fired_now) {
+  auto *writer = CatalystState->SSTWriter;
+  auto *io = CatalystState->SSTIO;
+
+  auto t0 = std::chrono::high_resolution_clock::now();
+  writer->BeginStep(adios2::StepMode::Append, -1.0);
+
+  for (const auto &it : io->GetVariables()) {
+    const std::string &name = it.first;
+    if (name.rfind("vigil/", 0) == 0) {
+      continue;  // trigger scalars are written below
+    }
+    auto blob = hermes_->tag->Get(name);
+    if (blob.empty()) {
+      continue;
+    }
+ #define put_type_sst(T) \
+    if (it.second->m_Type == adios2::helper::GetDataType<T>()) { \
+      adios2::core::Variable<T> *v = io->InquireVariable<T>(name); \
+      if (v) { \
+        writer->Put(*v, reinterpret_cast<const T *>(blob.data()), \
+                    adios2::Mode::Sync); \
+      } \
+      continue; \
+    }
+    ADIOS2_FOREACH_STDTYPE_1ARG(put_type_sst)
+ #undef put_type_sst
+  }
+
+  if (m_Comm.Rank() == 0) {
+    const int32_t fired = fired_now ? 1 : 0;
+    const int32_t fire_step = trigger_fire_step_;
+    const double stat = trigger_last_stat_;
+    if (auto *v = io->InquireVariable<int32_t>("vigil/trigger_fired")) {
+      writer->Put(*v, &fired, adios2::Mode::Sync);
+    }
+    if (auto *v = io->InquireVariable<double>("vigil/trigger_stat")) {
+      writer->Put(*v, &stat, adios2::Mode::Sync);
+    }
+    if (auto *v = io->InquireVariable<int32_t>("vigil/trigger_fire_step")) {
+      writer->Put(*v, &fire_step, adios2::Mode::Sync);
+    }
+  }
+
+  writer->EndStep();
+  auto t1 = std::chrono::high_resolution_clock::now();
+  if (m_Comm.Rank() == 0) {
+    engine_logger->info(
+        "SST flagged step {} shipped in {} us (fired_now={}, window_left={})",
+        currentStep,
+        std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count(),
+        fired_now, trigger_window_remaining_);
+  }
+  LogTimeline_("ship", currentStep, static_cast<double>(trigger_window_remaining_));
+}
+#endif
+
 
 /**
  * Metadata operations.
@@ -380,10 +1564,12 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
   // We initialize the min and max values
   MinMax.Init(Var.m_Type);
 
-  // Obtain the blob from Hermes using the filename and variable name
-  hermes::Blob blob = Hermes->bkt->Get(Var.m_Name);
+  auto blob = hermes_->tag->Get(Var.m_Name);
+  if (blob.empty()) {
+    return false; // Blob not found
+  }
 
-#define DEFINE_VARIABLE(T)                                                     \
+ #define DEFINE_VARIABLE(T)                                                     \
   if (adios2::helper::GetDataType<T>() == Var.m_Type) {                        \
     size_t dataSize = blob.size() / sizeof(T);                                 \
     const T *data = reinterpret_cast<const T *>(blob.data());                  \
@@ -394,7 +1580,7 @@ bool HermesEngine::VariableMinMax(const adios2::core::VariableBase &Var,
     }                                                                          \
   }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE
+ #undef DEFINE_VARIABLE
   return true;
 }
 
@@ -471,13 +1657,16 @@ void HermesEngine::ElementMinMax(adios2::MinMaxStruct &MinMax, void *element) {
 }
 
 void HermesEngine::LoadMetadata() {
-
+  auto start_time = std::chrono::high_resolution_clock::now();
   auto metadata_vector = db->GetAllVariableMetadata(currentStep, rank);
   for (auto &variableMetadata : metadata_vector) {
     DefineVariable(variableMetadata);
   }
-
-
+  auto end_time = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+  if (rank == 0) {
+    std::cout << "Rank 0 - LoadMetadata time: " << duration << " microseconds (step: " << currentStep << ")" << std::endl;
+  }
 }
 
 void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
@@ -486,7 +1675,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
     m_IO.RemoveVariable(variableMetadata.name);
   }
 
-#define DEFINE_VARIABLE(T)                                                     \
+ #define DEFINE_VARIABLE(T)                                                     \
   if (adios2::helper::GetDataType<T>() ==                                      \
       adios2::helper::GetDataTypeFromString(variableMetadata.dataType)) {      \
     adios2::core::Variable<T> *variable = &(m_IO.DefineVariable<T>(            \
@@ -499,7 +1688,7 @@ void HermesEngine::DefineVariable(const VariableMetadata &variableMetadata) {
     variable->m_Engine = this;                                                 \
   }
   ADIOS2_FOREACH_STDTYPE_1ARG(DEFINE_VARIABLE)
-#undef DEFINE_VARIABLE
+ #undef DEFINE_VARIABLE
 }
 
 
@@ -507,16 +1696,13 @@ template<typename T>
 void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
                               T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = Hermes->bkt->Get(variable.m_Name);
+  auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
-#ifdef Meta_enabled
-  // add spdlog method to extract the variable metadata
 
-    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
 
-  memcpy(values, blob.data(), blob.size());
+  if (!blob.empty()) {
+    memcpy(values, blob.data(), blob.size());
+  }
 
 }
 
@@ -527,21 +1713,14 @@ void HermesEngine::DoGetSync_(const adios2::core::Variable<T> &variable,
 template<typename T>
 void HermesEngine::DoGetDeferred_(
     const adios2::core::Variable<T> &variable, T *values) {
-
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-  auto blob = Hermes->bkt->Get(variable.m_Name);
+  auto blob = hermes_->tag->Get(variable.m_Name);
   std::string name = variable.m_Name;
-#ifdef Meta_enabled
-  // add spdlog method to extract the variable metadata
-    metaInfo metaInfo(variable, adiosOpType::get, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
-  //finish metadata extraction
-  memcpy(values, blob.data(), blob.size());
+  if (!blob.empty()) {
+    memcpy(values, blob.data(), blob.size());
+  }
 
 }
-
-//    }
 
 
 
@@ -549,30 +1728,39 @@ template<typename T>
 void HermesEngine::DoPutSync_(const adios2::core::Variable<T> &variable,
                               const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
-
+  #ifdef COEUS_HAVE_CATALYST
+   // When trigger-gated, SST mirroring is deferred to EndStep (from CTE blobs).
+   if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
+   {
+     adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
+     adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
+     if (catVar)
+     {
+       if (CatalystState->UseSST()) {
+         auto t0 = std::chrono::high_resolution_clock::now();
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+         auto t1 = std::chrono::high_resolution_clock::now();
+         sst_put_time_us_ += static_cast<int64_t>(
+             std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
+       } else {
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+       }
+     }
+   }
+  #endif
   std::string name = variable.m_Name;
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
-
-
-#ifdef Meta_enabled
-  metaInfo metaInfo(variable, adiosOpType::put);
-  meta_logger_put->info("metadata sync: {}", metaInfoToString(metaInfo));
-
-#endif
-
+  const size_t blob_size = variable.SelectionSize() * sizeof(T);
+  if (!hermes_->Put(name, blob_size, values)) {
+    throw std::runtime_error("HermesEngine::DoPutSync_: Put failed for " + name);
+  }
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
+  BlobInfo blobInfo(hermes_->tag->name, name);
+  //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  //client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
-  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-  client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-
-#ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
 }
 
 
@@ -581,19 +1769,38 @@ void HermesEngine::DoPutDeferred_(
     const adios2::core::Variable<T> &variable, const T *values) {
   TRACE_FUNC(variable.m_Name, adios2::ToString(variable.m_Count));
   std::string name = variable.m_Name;
+  const size_t blob_size = variable.SelectionSize() * sizeof(T);
+  #ifdef COEUS_HAVE_CATALYST
+   // When trigger-gated, SST mirroring is deferred to EndStep (from CTE blobs).
+   if (CatalystState && CatalystState->CatalystWriter() && !SstGated_())
+   {
+     adios2::core::IO *catIO = CatalystState->UseSST() ? CatalystState->SSTIO : CatalystState->InlineIO;
+     adios2::core::Variable<T> *catVar = catIO->InquireVariable<T>(variable.m_Name);
+     if (catVar)
+     {
+       if (CatalystState->UseSST()) {
+         auto t0 = std::chrono::high_resolution_clock::now();
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+         auto t1 = std::chrono::high_resolution_clock::now();
+         sst_put_time_us_ += static_cast<int64_t>(
+             std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count());
+       } else {
+         CatalystState->CatalystWriter()->Put(*catVar, values);
+       }
+     }
+   }
+  #endif
 
-  Hermes->bkt->Put(name, variable.SelectionSize() * sizeof(T), values);
+  if (!hermes_->Put(name, blob_size, values)) {
+    throw std::runtime_error("HermesEngine::DoPutDeferred_: Put failed for " + name);
+  }
   // database
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, name);
-  DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
-       client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-#ifdef Meta_enabled
-    metaInfo metaInfo(variable, adiosOpType::put, Hermes->bkt->name, name, Get_processor_name(), static_cast<int>(getpid()));
-    meta_logger_put->info("MetaData: {}", metaInfoToString(metaInfo));
-#endif
+  BlobInfo blobInfo(hermes_->tag->name, name);
+  //DbOperation db_op(currentStep, rank, std::move(vm), name, std::move(blobInfo));
+  //client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
 
 }
@@ -609,36 +1816,11 @@ void HermesEngine::PutDerived(adios2::core::VariableDerived variable,
     for (auto count: variable.m_Count) {
         total_count *= count;
     }
-
-    Hermes->bkt->Put(name, total_count * sizeof(T), values);
+    if (!hermes_->Put(name, total_count * sizeof(T), values)) {
+      throw std::runtime_error("HermesEngine::PutDerived: Put failed for " + name);
+    }
     DbOperation db_op = generateMetadata(variable, (float *) values, total_count);
-    client.Mdm_insertRoot(DomainId::GetLocal(), db_op);
-    // switch the bucket
-
-//    int current_bucket = stoi(adiosOutput);
-//    if (current_bucket > 2) {
-//        // time here
-//        T* values2 = new T[total_count];
-//        std::string previous_bucket_name =
-//                std::to_string(current_bucket - 1) + "_step_" + std::to_string(currentStep) + "_rank" +
-//                std::to_string(rank);
-//        if (db->FindVariable(currentStep, rank, name,previous_bucket_name)) {
-//
-//            Hermes->GetBucket(previous_bucket_name);
-//            auto blob = Hermes->bkt->Get(name);
-//            memcpy(values2, blob.data(), blob.size());
-//            for (int i = 0; i < total_count; ++i) {
-//                if (static_cast<int>(values[i]) - static_cast<int>(values2[i]) > 0.01) {
-//                    auto app_end_time = std::chrono::system_clock::now();
-//                    std::time_t end_time_t = std::chrono::system_clock::to_time_t(app_end_time);
-//                    engine_logger->info("The difference happened at {}", std::ctime(&end_time_t));
-//                }
-//            }
-//        }
-//
-//
-//    }
-
+    client.Mdm_insert(clio::run::PoolQuery::Local(), db_op);
 
 }
 
@@ -653,7 +1835,7 @@ DbOperation HermesEngine::generateMetadata(adios2::core::Variable<T> variable) {
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                       variable.m_Count, variable.IsConstantDims(), true,
                       adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
+  BlobInfo blobInfo(hermes_->tag->name, variable.m_Name);
   return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 }
 
@@ -661,40 +1843,17 @@ DbOperation HermesEngine::generateMetadata(adios2::core::VariableDerived variabl
   VariableMetadata vm(variable.m_Name, variable.m_Shape, variable.m_Start,
                      variable.m_Count, variable.IsConstantDims(), true,
                      adios2::ToString(variable.m_Type));
-  BlobInfo blobInfo(Hermes->bkt->name, variable.m_Name);
-
-//  if(total_count < 1) {
-//    return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
-//  }
-//
-//  float min = std::numeric_limits<float>::max();
-//  float max = std::numeric_limits<float>::lowest();
-//
-//  for (size_t i = 0; i < total_count; i++) {
-//    // Calculate the address of the current element
-//    char* elementPtr = reinterpret_cast<char*>(values) + (i * variable.m_ElementSize);
-//    // Cast the element to the correct type
-//    float element = *reinterpret_cast<float*>(elementPtr);
-//
-//    // Update min and max
-//    if (element < min) min = element;
-//    if (element > max) max = element;
-//  }
-//  if (min == std::numeric_limits<float>::max() || max == std::numeric_limits<float>::lowest()) {
-//    std::cout << "BUUUUUG : Bucekt " << Hermes->bkt->name << " blob " << variable.m_Name << " min " << min << " max " << max
-//              << " total count " << total_count << std::endl;
-//  }
-//  derivedSemantics derived_semantics(min, max);
-//
-//  std::cout << "step_" << currentStep << "_rank" << rank <<  variable.m_Name << " derived min " << min << " max " << max << std::endl;
-//  return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo), derived_semantics);
+  BlobInfo blobInfo(hermes_->tag->name, variable.m_Name);
     return DbOperation(currentStep, rank, std::move(vm), variable.m_Name, std::move(blobInfo));
 
 }
 
 
 
-} // namespace coeus
+}
+ // namespace coeus
+// Catalyst helper function implementations (CatalystConfig, CatalystInit, CatalystExecute)
+
 /**
  * This is how ADIOS figures out where to dynamically load the engine.
  * */

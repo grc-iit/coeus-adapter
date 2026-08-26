@@ -1,116 +1,116 @@
-## install with spack
+# COEUS-Adapter Installation Guide
 
-# Dependencies
-* [Hermes](https://github.com/HDFGroup/hermes): a multi-tiered I/O buffering platform.
-* [ADIOS2](https://github.com/ornladios/ADIOS2): an I/O library
+## Dependencies
 
-### 1.Install ADIOS2
-please follow these steps to install the adios2 with derived variables
-step 1: Install Spack
-```
+* [clio-core (IOWarp core)](https://github.com/iowarp/clio-core): provides the
+  `iowarp-core` package (Chimaera runtime + Context-Transfer-Engine) - the
+  backbone I/O engine COEUS builds against.
+* [ADIOS2](https://github.com/ornladios/ADIOS2): I/O library, built with
+  derived-variable support (the `adios2-coeus` Spack package).
+* MPI (OpenMPI recommended).
+
+## 1. Install Spack
+
+```bash
 cd ${HOME}
 git clone https://github.com/spack/spack.git
 cd spack
-git checkout tags/v0.22.2
 echo ". ${PWD}/share/spack/setup-env.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
-step 2: Add Coeus repo packages for spack
-```
-spack repo add /coeus_adapter/CI/coeus
-```
-step 3: install the adios2
-```
-spack install adios2-coeus@2.10.0
+
+## 2. Install ADIOS2 (with derived variables)
+
+The `adios2-coeus` package lives in this repository's Spack repo:
+
+```bash
+git clone https://github.com/grc-iit/coeus-adapter.git ${HOME}/coeus-adapter
+spack repo add ${HOME}/coeus-adapter/CI/coeus
+spack install adios2-coeus@master
 ```
 
-### 2. Install the Hermes
-Please follow this [link](https://grc.iit.edu/docs/hermes/building-hermes/) for the hermes installation.
+## 3. Install IOWarp (clio-core)
 
-### 3. Install Coeus-adapter
-1. load environment variables
+The `iowarp` package lives in clio-core's own Spack repo:
+
+```bash
+cd ${HOME}
+git clone https://github.com/iowarp/clio-core.git
+spack repo add clio-core/installers/spack
+spack install iowarp@main
 ```
-spack load hermes@master
+
+## 4. Build COEUS-Adapter
+
+1. Load the environment:
+
+```bash
+spack load iowarp@main
 spack load adios2-coeus
 spack load openmpi
 ```
-2. install the coeus-adapter
-```
-git clone https://github.com/grc-iit/coeus-adapter.git
-cd coeus-adapter
-mkdir build
-cd build
-cmake ../
+
+2. Configure and build:
+
+```bash
+cd ${HOME}/coeus-adapter
+mkdir build && cd build
+cmake .. -Dmeta_enabled=ON -Ddebug_mode=OFF
 make -j8
 ```
-Note:
-To enable the metadata and function trace features, please add the appropriate flags during the CMake configuration.
-```
-cmake .. -Dmeta_enabled=ON -Ddebug_mode=ON
-```
-## Hermes Info log
-The Hermes info log is disabled by default. To enable the Hermes log, please set log_verbosity = 1 in hermes_run.
 
-## Disbale adios2 metadata
-add this to the adios2.xml
-```
-<parameter key="StatsLevel" value="0"/>
-```
+The plugin is built at `build/bin/libhermes_engine.so` (the Hermes-era name is
+retained for compatibility; the I/O backbone is clio-core's CTE).
 
-# coeus-adapter with Hash()
+Notes:
+- `-Dmeta_enabled=ON` enables metadata collection; `-Ddebug_mode=ON` enables
+  verbose engine logging.
+- If CMake fails with `CMAKE_C_COMPILER not set, after EnableLanguage`, pass
+  the compilers explicitly:
+  `cmake .. -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_CXX_COMPILER=$(which g++) ...`
+- See [BUILD_GUIDE.md](BUILD_GUIDE.md) for all options and troubleshooting.
 
-## Manually install adios2 for derived variables
+## Jarvis installation (unified platform for deploying applications)
 
-1. install kokkos:
-```
-  git clone -b develop  https://github.com/kokkos/kokkos.git
-  cd kokkos
-  mkdir build
-  cmake ../ -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2  -D Kokkos_ENABLE_SERIAL=ON -D CMAKE_CXX_STANDARD=17 -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON -D 
-  Kokkos_ENABLE_THREAD=ON
-  make -j8
-  make install
+1. Install Jarvis:
 
+```bash
+spack external find python
+spack install py-jarvis-cd
+spack load py-jarvis-cd
 ```
 
-2. install state-diff
-  ```
- mkdir build
-  cmake ../ -D CMAKE_BUILD_TYPE=RelWithDebInfo  -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2 -D Kokkos_ROOT=/mnt/common/hxu40/install2 -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON
-  make -j8
-  make install
-  ```
+2. Initialize Jarvis (follow this
+   [link](https://grc.iit.edu/docs/jarvis/jarvis-cd/index/#initialize-jarvis-configuration))
+   for the following steps:
+   - Initialize the Jarvis configuration
+   - Set or change the active hostfile
+   - Set up passwordless SSH
+   - Build a resource graph
 
-3. install adios2@coeus_hash:
-```
-git clone -b coeus-hash https://github.com/lizdulac/ADIOS2.git
-cd ADIOS2
-mkdir build
-cd build
-cmake ../ -D ADIOS2_USE_Kokkos=ON  -D CMAKE_INSTALL_PREFIX=/mnt/common/hxu40/install2 -D StateDiff_ROOT=/mnt/common/hxu40/install2 -D ADIOS2_USE_Derived_Variable=ON -D ADIOS2_USE_SST=OFF -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE -D BUILD_SHARED_LIBS=ON -D BUILD_TESTING=ON
-make -j8
-make isntall
- ```
-Note: if there is error message relate to BISON, please
- comment out the source/adios2/Cmakefile.txt from line from line 144 to 162
-```
-   find_package(BISON "3.8.2")
-  find_package(FLEX)
+## Incompact3d installation
 
-if(NOT BISON_FOUND OR NOT FLEX_FOUND)
-    include(ADIOSBisonFlexSub)
-    SETUP_ADIOS_BISON_FLEX_SUB()
- else()
-   BISON_TARGET(MyParser
-     toolkit/derived/parser/parser.y
-     ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp
-     COMPILE_FLAGS "-o parser.cpp --header=parser.h"
-     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.h)
- FLEX_TARGET(MyScanner
-    toolkit/derived/parser/lexer.l
-    COMPILE_FLAGS "-o lexer.cpp --header-file=lexer.h" 
-     ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
-      DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/lexer.h)
-   ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
- endif()
-``` 
+The installation, which includes the 2DECOMP&FFT library, enables both slab and
+pencil decompositions along with FFT support.
+
+In this setup, we apply a patch to the 2DECOMP&FFT library to add the derived
+variable for the Q-criterion.
+
+The Incompact3d application will use ADIOS2 for I/O, with the BP5 engine enabled
+through an additional patch. Note: the default Incompact3d uses MPI-IO.
+
+```bash
+spack load adios2-coeus@master
+spack install incompact3D io_backend=adios2 ^openmpi ^adios2-coeus@master
+```
+
+## Py4Incompact3D installation (post-processing tool for raw output)
+
+The raw ADIOS2 BP5 simulation output is used by this program to calculate the
+Q-criterion.
+
+```bash
+git clone https://github.com/xcompact3d/Py4Incompact3D.git
+cd Py4Incompact3D
+pip install .
+```

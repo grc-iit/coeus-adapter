@@ -34,17 +34,17 @@ struct derivedSemantics {
 };
 
 struct BlobInfo {
-  std::string bucket_name;
-  std::string blob_name;
+  std::string tag_name;  // CTE tag name (replaces bucket_name)
+  std::string blob_name; // CTE blob name
 
  public:
-  BlobInfo(const std::string &bucket_name, const std::string &blob_name) :
-      bucket_name(bucket_name), blob_name(blob_name){};
+  BlobInfo(const std::string &tag_name, const std::string &blob_name) :
+      tag_name(tag_name), blob_name(blob_name){};
   BlobInfo() = default;
 
   template <class Archive>
   void serialize(Archive &ar) {
-    ar(bucket_name, blob_name);
+    ar(tag_name, blob_name);
   }
 };
 
@@ -102,7 +102,7 @@ struct VariableMetadata {
   }
 };
 
-std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
+inline std::ostream& operator<<(std::ostream &out, const VariableMetadata &data) {
   out << "Name: " << data.name << "\n";
   out << "Shape: ";
   for (const auto &s : data.shape) {

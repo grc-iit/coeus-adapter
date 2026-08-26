@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<adios-config>
+    <!--
+        ADIOS2 config for measuring Gray-Scott simulation step time WITHOUT
+        being blocked by a reader. RendezvousReaderCount=0 means the writer
+        starts immediately without waiting for any reader. QueueFullPolicy=Discard
+        means data is dropped if no reader. This isolates pure simulation time.
+    -->
+
+    <io name="SimulationOutput">
+        <engine type="SST">
+            <parameter key="RendezvousReaderCount" value="0"/>
+            <parameter key="QueueLimit" value="1"/>
+            <parameter key="QueueFullPolicy" value="Discard"/>
+            <parameter key="DataTransport" value="WAN"/>
+            <parameter key="OpenTimeoutSecs" value="60.0"/>
+        </engine>
+    </io>
+
+    <io name="SimulationCheckpoint">
+        <engine type="BP5"/>
+    </io>
+
+</adios-config>
